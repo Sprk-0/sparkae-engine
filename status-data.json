@@ -3,7 +3,7 @@
     "Seed snapshot for status.html. In production a periodic polling agent",
     "overwrites this file next to the published page from the deployment's",
     "/health/ready and /metrics endpoints (cadence in",
-    "docs/operations/incident-response.md). The committed copy declares no",
+    "docs/operations/incident-response.md, private repository). The committed copy declares no",
     "state on purpose: the page used to hardcode five green 'Operational'",
     "badges and a clean incident history while telling visitors they",
     "reflected a published snapshot that did not exist.",

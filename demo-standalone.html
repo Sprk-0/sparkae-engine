@@ -14,7 +14,7 @@
 <meta name="twitter:card" content="summary">
 <style>
 /* Self-hosted editorial typography — same faces and same files as the rest of
-   the site (build.sh mirrors them into dist/static/fonts/ and rewrites
+   the site (the private repository's build.sh mirrors them into dist/static/fonts/ and rewrites
    ae-editorial.css to match). Replaces the 24 Google-Fonts subsets the export
    bundle inlined, so this page shares the site's font cache instead of
    shipping its own copy, and makes no request Google could log. */
@@ -6328,7 +6328,7 @@ function riskToLevel(risk) {
 
 function buildOSCALSAR(sample, useCase) {
   // Delegates to demo-exports.js so there is ONE OSCAL emitter on the site and
-  // it is the one tests/test_website_demo_exports.py validates against the
+  // it is the one the private repository's tests/test_website_demo_exports.py validates against the
   // vendored NIST 1.1.2 schema.
   //
   // The shape this replaced was not OSCAL. Its root key was

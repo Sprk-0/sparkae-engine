@@ -20,7 +20,20 @@ against independently labelled assessments, and the defensibility score is an
 internal rubric. Uploads are processed in memory in your browser; very large
 packages are limited by the browser, not by this code.
 
-Report anything in those classes — or anything else — privately through
-GitHub's **Security → Report a vulnerability** form on this repository, or
-by email to the contact address on the site. Please do not open a public
-issue for a security report. We acknowledge within two business days.
+## Dependencies
+
+The runtime has none: `demo-engine.js`, `demo-exports.js` and the pages load
+no third-party script, stylesheet or font from another origin, and the
+conformance suite (`tests/check.mjs`) fails if one appears. The only
+dependencies are development-time and pinned in `.github/workflows/ci.yml`:
+Playwright (headless Chromium for `tests/browser.mjs`), and `jsonschema` +
+`regex` for the OSCAL schema check. There is nothing else to inventory.
+
+## Reporting
+
+Report anything in those classes — or anything else — privately by email to
+the contact address on the site (the same address is in every page footer).
+Where GitHub's **Security → Report a vulnerability** form is enabled on this
+repository you may use it instead; the email path always works. Please do not
+open a public issue for a security report. We acknowledge within two business
+days.

@@ -180,7 +180,7 @@
         <ul>
           <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></span>7-gate engine evaluates all 1,307 Moderate DIFs against uploaded evidence in minutes</li>
           <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-lock"/></svg></span>Every ODP automatically checked — undefined parameters flagged immediately</li>
-          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-target"/></svg></span>BM25/semantic retrieval matches evidence to objectives with citations</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-target"/></svg></span>BM25 retrieval matches evidence to objectives with citations (lexical in the public reference build; semantic retrieval is a server-product option)</li>
           <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-doc"/></svg></span>Draft findings with evidence refs — nothing is final until an assessor adopts it</li>
           <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check-circle"/></svg></span>Same engine, same rules, same output — every assessor, every time</li>
           <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg></span>XLSX export with Results, Summary, POA&M sheets — one click</li>
@@ -230,7 +230,7 @@
     </div>
 
     <div class="pullquote">
-      SparkAE examines the package so the assessor can examine the system. Deterministic 7-gate Examine engine, self-contained by default; an integrity gate blocks any Satisfied that is not grounded in cited evidence; the same engine behind the assessor UI and the GRC API.
+      SparkAE examines the package so the assessor can examine the system. Deterministic 7-gate Examine engine, self-contained by default; an integrity gate — the evidence floors the reference build publishes as its ruleset — blocks any Satisfied that is not grounded in cited evidence; the same engine behind the assessor UI and the GRC API.
     </div>
   </div>
 </section>
@@ -270,8 +270,8 @@
         <div><strong>Evidence citations</strong> — BM25 lexical retrieval with scored citations: "SSP §3.2, Account Management (BM25 score: 0.87)".</div>
         <div><strong>Defensibility grades</strong> — 5-factor composite score (A–F): specificity, completeness, consistency, traceability, clarity. Low grade = assessor should dig deeper.</div>
         <div><strong>ODP validation</strong> — every organization-defined parameter checked. Mismatches flagged with gate-4 failure: "90-day vs FedRAMP 60-day requirement."</div>
-        <div><strong>Gap taxonomy</strong> — 25 FedRAMP-aligned gap types (missing_evidence, incomplete_policy, odp_frequency_mismatch, insufficient_scope, stale_documentation, scan_gap...).</div>
-        <div><strong>Contradiction detection</strong> — 13 types of conflicting assertions across DIFs flagged with severity levels.</div>
+        <div><strong>Gap taxonomy</strong> — 25 FedRAMP-aligned gap types in the server product — the public reference build classifies six (missing_evidence, incomplete_policy, odp_frequency_mismatch, insufficient_scope, stale_documentation, scan_gap...).</div>
+        <div><strong>Contradiction indicators</strong> — 13 pattern types of conflicting assertions across DIFs, flagged with severity levels (pattern-based, not semantic).</div>
         <div><strong>14+ export formats</strong> — OSCAL JSON (assessment-results + POA&M), SAR (JSON + DOCX), SAP, RET CSV, CRM, CIS, TCW — all from one assessment run. The public reference build ships six of them.</div>
       </div>
     </div>

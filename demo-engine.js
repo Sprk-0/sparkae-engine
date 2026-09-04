@@ -7,7 +7,7 @@
    coherence (staleness, scan cadence, future-dating, open-finding SLA), then
    confidence and defensibility scoring. It mirrors the server-side assessor;
    DIF texts come from demo-standalone-catalog.js, which mirrors
-   src/catalog/controls.py.
+   src/catalog/controls.py in the private product repository.
 
    Extracted verbatim from the previous single-file demo so the same engine can
    back more than one page and can be reviewed as source rather than as a blob.
@@ -224,8 +224,12 @@ async function parseDocx(file) {
   }
 }
 
-// Minimal ZIP extraction (no external library)
-async function unzip(buffer) {
+// Minimal ZIP extraction (no external library). Members that cannot be read
+// (an unsupported compression method, a deflate stream that does not inflate)
+// are reported through `failures` so the caller can list them as refused —
+// a member that vanished silently would look like evidence that was never
+// there.
+async function unzip(buffer, failures) {
   const view = new DataView(buffer);
   const entries = {};
   let offset = 0;
@@ -247,8 +251,11 @@ async function unzip(buffer) {
       try {
         const ds = new DecompressionStream('deflate-raw');
         const writer = ds.writable.getWriter();
-        writer.write(data);
-        writer.close();
+        // A bad deflate stream rejects these promises as well as the read
+        // below; swallow them here so the rejection surfaces once, through
+        // the read loop, instead of as an unhandled rejection.
+        writer.write(data).catch(() => {});
+        writer.close().catch(() => {});
         const reader = ds.readable.getReader();
         const chunks = [];
         while (true) {
@@ -261,7 +268,11 @@ async function unzip(buffer) {
         let pos = 0;
         chunks.forEach(c => { result.set(c, pos); pos += c.length; });
         entries[name] = new TextDecoder().decode(result);
-      } catch(e) { /* skip undecompressible entries */ }
+      } catch(e) {
+        if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
+      }
+    } else if (failures) {
+      failures.push({ name, reason: 'archive member uses unsupported compression method ' + compMethod });
     }
     offset = dataStart + compSize;
   }
@@ -270,8 +281,9 @@ async function unzip(buffer) {
 
 async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
-  const entries = await unzip(buf);
-  const chunks = [], parsed = [], skipped = [];
+  const skipped = [];
+  const entries = await unzip(buf, skipped);
+  const chunks = [], parsed = [];
   // Member order is the archive's own order, which is fixed for a given file.
   for (const [name, content] of Object.entries(entries)) {
     if (name.endsWith('/')) continue; // directory
