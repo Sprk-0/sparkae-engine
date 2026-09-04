@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkAE Integrations — Export Into Your Existing GRC Stack | ONE Solution Cyber</title>
+<meta name="description" content="SparkAE, from ONE Solution Cyber, is a Rev5 Examine engine — not a GRC platform. Export JSON, CSV, or OSCAL into the tool you already run. Not a certified two-way Drata/Vanta sync.">
+<link rel="canonical" href="https://sparkae-public.netlify.app/integrations.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/integrations.html">
+<meta property="og:title" content="SparkAE Integrations — Export Into Your Existing GRC Stack | ONE Solution Cyber">
+<meta property="og:description" content="SparkAE exports JSON, CSV, or OSCAL into the GRC tool you already run. Same 7-gate engine as the 3PAO UI. Not a certified two-way Drata/Vanta sync.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE Integrations — Export Into Your Existing GRC Stack | ONE Solution Cyber">
+<meta name="twitter:description" content="SparkAE exports JSON, CSV, or OSCAL into the GRC tool you already run. Same 7-gate engine as the 3PAO UI. Not a certified two-way Drata/Vanta sync.">
+<!-- OUT-053 → ADR-0016: full editorial re-skin. Shared editorial design system. -->
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+/* ── Page-specific (integrations) — editorial tokens only ── */
+/* Analogy */
+.analogy-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;max-width:980px;margin:0 auto;align-items:stretch}
+.analogy-card{background:var(--paper);border:1px solid var(--rule);padding:34px 30px;text-align:center}
+.analogy-card.featured{border-color:var(--vermillion);background:var(--paper-warm);border-top:3px solid var(--vermillion)}
+.analogy-card .emoji{font-size:32px;margin-bottom:14px}
+.analogy-card h3{font-family:var(--font-display);font-size:20px;font-weight:500;color:var(--ink);margin-bottom:6px}
+.analogy-card .role{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+.analogy-card.featured .role{color:var(--vermillion)}
+.analogy-card p{font-size:14px;color:var(--ink-soft);line-height:1.6}
+.analogy-eq{display:flex;align-items:center;justify-content:center;padding:0 24px;font-family:var(--font-display);font-size:28px;color:var(--ink-soft);font-style:italic}
+
+/* Architecture diagram */
+.arch-diagram{background:var(--paper);border:1px solid var(--rule);padding:40px;max-width:840px;margin:0 auto}
+.arch-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
+.arch-node{padding:16px 24px;border:1px solid var(--rule);font-family:var(--font-display);font-size:15px;font-weight:500;text-align:center;min-width:160px;background:var(--paper)}
+.arch-node.grc{background:var(--paper-warm);color:var(--ink)}
+.arch-node.spark{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.arch-node.spark span{color:var(--vermillion-soft)}
+.arch-node.output{background:var(--paper-warm);color:var(--moss);border-color:var(--moss)}
+.arch-node .meta{font-family:var(--font-mono);font-size:10px;font-weight:400;letter-spacing:0.04em;color:var(--ink-soft)}
+.arch-arrow{text-align:center;color:var(--vermillion);font-family:var(--font-mono);font-size:14px;padding:4px 0}
+.arch-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;color:var(--ink-soft);text-align:center}
+
+/* Integration cards */
+/* auto-fit, not repeat(3,1fr): three hard columns held 586px of content
+   inside a 390px viewport and scrolled the whole page sideways. */
+.int-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.int-card{background:var(--paper);padding:26px 24px;transition:background .25s}
+.int-card:hover{background:var(--paper-warm)}
+.int-card .int-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.int-card .int-icon{width:38px;height:38px;border:1px solid var(--rule);background:var(--paper-warm);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.int-card h3{font-family:var(--font-display);font-size:17px;font-weight:500;color:var(--ink)}
+.int-card .int-type{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft)}
+.int-card p{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:14px}
+.int-card .int-method{display:flex;gap:8px;flex-wrap:wrap}
+.int-tag{padding:3px 10px;font-family:var(--font-mono);font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;border:1px solid var(--rule);color:var(--ink-soft);background:var(--paper)}
+.int-tag.accent{border-color:var(--vermillion);color:var(--vermillion)}
+.int-tag.moss{border-color:var(--moss);color:var(--moss)}
+.int-tag.purple{border-color:var(--purple);color:var(--purple)}
+
+/* Code samples */
+.code-tabs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:0}
+.code-tab{padding:10px 18px;font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--rule);border-bottom:none;cursor:pointer;background:var(--paper-warm);color:var(--ink-soft);transition:all .2s}
+.code-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.code-block{background:var(--ink);border:1px solid var(--ink);padding:22px;font-family:var(--font-mono);font-size:12.5px;line-height:1.85;color:#B8C0CC;overflow-x:auto;display:none;white-space:pre}
+.code-block.active{display:block}
+.code-block .kw{color:#C9A0E0} .code-block .str{color:#9DC183} .code-block .num{color:#E5B838}
+.code-block .cm{color:#5A6270} .code-block .fn{color:#5BA8A8} .code-block .op{color:#5BA8A8}
+
+/* FAQ / objections */
+.faq{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--vermillion);padding:28px 32px;margin-bottom:16px;transition:background .25s}
+.faq:hover{background:var(--paper-warm)}
+.faq .q{font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--ink);margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
+.faq .q .qi{color:var(--vermillion);flex-shrink:0;font-style:italic}
+.faq .a{font-size:14px;color:var(--ink-soft);line-height:1.7;padding-left:26px}
+.faq .a strong{color:var(--ink);font-weight:600}
+</style>
+<style>svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-chart" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="10"/><line x1="10" y1="21" x2="10" y2="4"/><line x1="16" y1="21" x2="16" y2="13"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="14" y2="17"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 110-8 5 5 0 019.6-1.5A4 4 0 1118 18H7z"/></symbol><symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><line x1="9" y1="2" x2="9" y2="8"/><line x1="15" y1="2" x2="15" y2="8"/><path d="M7 8h10v3a5 5 0 01-10 0z"/><line x1="12" y1="16" x2="12" y2="22"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.5" r="0.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/><rect x="9" y="2" width="6" height="4" rx="1"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 11-2.6-6.1L20.5 8"/><path d="M20.5 3v5h-5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L20 7l-3-3L5 16z"/><line x1="14.5" y1="6.5" x2="17.5" y2="9.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></symbol><symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 2h8l4 4v16H7z"/><path d="M15 2v4h4"/></symbol></defs></svg>
+<!-- ══ MASTHEAD ══ -->
+<nav>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="index.html">Home</a>
+    <a href="assessors.html">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html" class="active">Integrations</a>
+    <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+  </div>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="container">
+    <div class="page-meta fade-up"><span class="dot"></span> Integrations</div>
+    <h1 class="fade-up fade-up-1">Not <em>another</em> tool. The engine <em>inside</em> your tool.</h1>
+    <p class="sub fade-up fade-up-2">You already have a GRC platform. Good. Keep it. SparkAE, from ONE Solution Cyber, is not a GRC platform — it is the Rev5 7-gate Examine engine. Same engine as the 3PAO UI. Export JSON, CSV, or OSCAL; you ingest. Not a certified two-way Drata/Vanta sync. ZenGRC and Splunk are not first-class connectors.</p>
+    <div class="ctas fade-up fade-up-3">
+      <button class="btn btn-primary" onclick="document.getElementById('api').scrollIntoView({behavior:'smooth'})">View the API →</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See How It Fits</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ANALOGY ══ -->
+<section class="warm" id="how">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">The Analogy</div>
+      <div class="section-title">Nobody says <em>"I have ServiceNow, I don't need Tenable."</em></div>
+    </div>
+    <div class="analogy-grid">
+      <div class="analogy-card">
+        <div class="emoji"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg></div>
+        <h3>Tenable</h3>
+        <div class="role">Vulnerability Scanner</div>
+        <p>Scans infrastructure. Finds vulnerabilities. Exports findings. Your GRC tool ingests them and tracks remediation. Nobody runs Tenable instead of their GRC platform. They run it alongside.</p>
+      </div>
+      <div class="analogy-eq">=</div>
+      <div class="analogy-card featured">
+        <div class="emoji"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
+        <h3>SparkAE</h3>
+        <div class="role">SSP Assessment Scanner</div>
+        <p>Scans authorization packages. Finds compliance gaps. Exports findings. Your GRC tool ingests them and tracks remediation. SparkAE is Tenable for SSPs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ARCHITECTURE ══ -->
+<section>
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">Architecture</div>
+      <div class="section-title">Where SparkAE sits in your stack</div>
+      <div class="section-sub" style="margin:8px auto 0">SparkAE doesn't replace any layer. It fills the gap between document upload and human review.</div>
+    </div>
+
+    <div class="arch-diagram">
+      <div class="arch-row">
+        <div class="arch-node grc" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg>&nbsp; Your GRC Platform<br><span class="meta">Drata · Vanta · ServiceNow · RegScale · Archer</span></div>
+      </div>
+      <div class="arch-arrow">↑ findings (JSON / CSV / OSCAL)</div>
+      <div class="arch-label">You export JSON / CSV / OSCAL and ingest them — not a certified two-way sync</div>
+      <div style="height:10px"></div>
+      <div class="arch-row">
+        <div class="arch-node spark" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg>&nbsp; SparkAE v0.7.0-rc1 Assessment Engine<br><span class="meta">7-Gate Deterministic · 10 Analytical Services · Optional LLM</span></div>
+      </div>
+      <div class="arch-arrow">↑ documents</div>
+      <div class="arch-label">Upload SSP, policies, scan results — or pipe from your doc store</div>
+      <div style="height:10px"></div>
+      <div class="arch-row" style="gap:16px;flex-wrap:wrap">
+        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-file"/></svg> SSP</div>
+        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-clipboard"/></svg> POA&M</div>
+        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg> Scans</div>
+        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-doc"/></svg> Policies</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ DELIVERY MODELS ══ -->
+<section class="warm">
+  <div class="container">
+    <div class="section-label">Delivery Models</div>
+    <div class="section-title">Three ways to consume. <em>Pick what fits.</em></div>
+    <div class="section-sub">The same engine, findings, and quality are available through the REST API or a batch export you import into the tool you already run. This page is not a rate card; the founder confirms terms.</div>
+
+    <div class="modes-grid">
+      <div class="mode-card">
+        <span class="mode-tag safe">API</span>
+        <h3>API</h3>
+        <div class="mode-sub">Your tool calls ours</div>
+        <p>Your GRC tool can call SparkAE's REST API (same 7-gate engine as the 3PAO UI). Findings come back as structured JSON for you to ingest. Not a certified first-class connector.</p>
+        <ul class="mode-specs">
+          <li><span>Integration</span><span>REST API</span></li>
+          <li><span>Effort</span><span>1-2 days</span></li>
+          <li><span>UI changes</span><span>None</span></li>
+        </ul>
+      </div>
+      <div class="mode-card">
+        <span class="mode-tag review">Import</span>
+        <h3>Import</h3>
+        <div class="mode-sub">Batch export → import</div>
+        <p>Run assessments in SparkAE. Export as CSV, XLSX, or OSCAL JSON. Import into your GRC tool. No API integration needed — works today.</p>
+        <ul class="mode-specs">
+          <li><span>Integration</span><span>File import</span></li>
+          <li><span>Effort</span><span>Zero</span></li>
+          <li><span>UI changes</span><span>None</span></li>
+        </ul>
+      </div>
+      <div class="mode-card">
+        <span class="mode-tag safe">Embedded</span>
+        <h3>Embedded</h3>
+        <div class="mode-sub">OEM / white-label</div>
+        <p>OEM / white-label is a custom conversation, not a shipping SKU. What ships is the Rev5 local engine and the browser demo.</p>
+        <ul class="mode-specs">
+          <li><span>Integration</span><span>SDK / iframe</span></li>
+          <li><span>Effort</span><span>1-2 weeks</span></li>
+          <li><span>UI changes</span><span>Custom</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PLATFORM INTEGRATIONS ══ -->
+<section id="integrations">
+  <div class="container">
+    <div class="section-label">Platform Integrations</div>
+    <div class="section-title">Works with <em>what you already have.</em></div>
+    <div class="section-sub">SparkAE outputs structured data. If your tool can import JSON, CSV, or OSCAL — it works.</div>
+
+    <div class="int-grid">
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#9B59B6"/></svg></div>
+          <div><h3>ServiceNow GRC</h3><div class="int-type">Federal Standard</div></div>
+        </div>
+        <p>Export JSON, CSV, or OSCAL. A generic REST path exists; auto-creating ServiceNow risk items is not a certified first-class connector.</p>
+        <div class="int-method">
+          <span class="int-tag accent">REST API</span>
+          <span class="int-tag moss">CSV Import</span>
+        </div>
+      </div>
+
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3B82C4"/></svg></div>
+          <div><h3>Drata</h3><div class="int-type">Compliance Automation</div></div>
+        </div>
+        <p>Export JSON, CSV, or OSCAL. You import into Drata if your workflow supports it. Not a certified two-way Drata sync.</p>
+        <div class="int-method">
+          <span class="int-tag accent">REST API</span>
+          <span class="int-tag moss">CSV Import</span>
+        </div>
+      </div>
+
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3D8B5F"/></svg></div>
+          <div><h3>Vanta</h3><div class="int-type">Compliance Automation</div></div>
+        </div>
+        <p>Export JSON, CSV, or OSCAL. You import into Vanta if your workflow supports it. Not a certified two-way Vanta sync.</p>
+        <div class="int-method">
+          <span class="int-tag accent">REST API</span>
+          <span class="int-tag moss">CSV Import</span>
+        </div>
+      </div>
+
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#D4843A"/></svg></div>
+          <div><h3>RegScale</h3><div class="int-type">OSCAL-Native GRC</div></div>
+        </div>
+        <p>SparkAE exports native OSCAL assessment-results JSON. Drops directly into RegScale's OSCAL Hub. Zero format translation needed.</p>
+        <div class="int-method">
+          <span class="int-tag purple">OSCAL JSON</span>
+          <span class="int-tag accent">REST API</span>
+        </div>
+      </div>
+
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#B23A1C"/></svg></div>
+          <div><h3>Archer / OneTrust</h3><div class="int-type">Enterprise GRC</div></div>
+        </div>
+        <p>Enterprise GRC platforms ingest SparkAE findings via CSV import or REST API. Maps to existing risk registers and control libraries.</p>
+        <div class="int-method">
+          <span class="int-tag moss">CSV Import</span>
+          <span class="int-tag accent">REST API</span>
+        </div>
+      </div>
+
+      <div class="int-card">
+        <div class="int-head">
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#2F7DB5"/></svg></div>
+          <div><h3>Jira / ServiceNow ITSM</h3><div class="int-type">Ticket Management</div></div>
+        </div>
+        <p>Export JSON, CSV, or OSCAL. Webhooks are opt-in configuration, not a certified Jira/ServiceNow two-way sync.</p>
+        <div class="int-method">
+          <span class="int-tag accent">REST API</span>
+          <span class="int-tag moss">Webhook</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ API REFERENCE ══ -->
+<section id="api" class="warm">
+  <div class="container">
+    <div class="section-label">API Reference</div>
+    <div class="section-title">Real endpoints. X-API-Key auth. <em>OpenAPI at /docs.</em></div>
+    <div class="section-sub">Upload documents, create an assessment job, poll for results, export deliverables. Your GRC tool does the rest.</div>
+
+    <div class="code-tabs">
+      <div class="code-tab active" onclick="showTab('upload')">Upload</div>
+      <div class="code-tab" onclick="showTab('assess')">Assess</div>
+      <div class="code-tab" onclick="showTab('results')">Results</div>
+      <div class="code-tab" onclick="showTab('export')">Export</div>
+      <div class="code-tab" onclick="showTab('webhook')">Webhook</div>
+    </div>
+
+    <div class="code-block active" id="tab-upload"><span class="cm"># Upload an SSP (multipart, 50 MB max, MIME-allowlisted, magic-byte checked)</span>
+<span class="kw">POST</span> /v1/documents
+
+<span class="fn">curl</span> -X POST http://localhost:8000/v1/documents \
+  -H <span class="str">"X-API-Key: your-key"</span> \
+  -F <span class="str">"file=@SSP_CloudVault.pdf"</span> \
+  -F <span class="str">"document_type=SSP"</span>
+
+<span class="cm"># Response</span>
+{
+  <span class="str">"id"</span>: <span class="str">"a1b2c3d4-..."</span>,
+  <span class="str">"filename"</span>: <span class="str">"SSP_CloudVault.pdf"</span>,
+  <span class="str">"document_type"</span>: <span class="str">"SSP"</span>,
+  <span class="str">"content_type"</span>: <span class="str">"application/pdf"</span>,
+  <span class="str">"size_bytes"</span>: <span class="num">2847392</span>,
+  <span class="str">"checksum"</span>: <span class="str">"e3b0c442..."</span>
+}</div>
+
+    <div class="code-block" id="tab-assess"><span class="cm"># Create assessment job — async, runs 7-gate engine in background</span>
+<span class="kw">POST</span> /v1/assessments
+
+<span class="fn">curl</span> -X POST http://localhost:8000/v1/assessments \
+  -H <span class="str">"X-API-Key: your-key"</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d '{
+    <span class="str">"controls"</span>: [<span class="str">"AC-2"</span>, <span class="str">"IA-5"</span>, <span class="str">"CM-6"</span>, <span class="str">"RA-5"</span>],
+    <span class="str">"baseline"</span>: <span class="str">"Low"</span>,
+    <span class="str">"document_refs"</span>: [<span class="str">"doc-id-1"</span>, <span class="str">"doc-id-2"</span>],
+    <span class="str">"system_name"</span>: <span class="str">"CloudApp Production"</span>,
+    <span class="str">"organization"</span>: <span class="str">"Acme Federal"</span>,
+    <span class="str">"external_id"</span>: <span class="str">"SNOW-12345"</span>,
+    <span class="str">"webhook_url"</span>: <span class="str">"https://your-grc.example.com/callback"</span>
+  }'
+
+<span class="cm"># Response — job runs async in background</span>
+{
+  <span class="str">"id"</span>: <span class="str">"f47ac10b-..."</span>,
+  <span class="str">"status"</span>: <span class="str">"queued"</span>,
+  <span class="str">"baseline"</span>: <span class="str">"Low"</span>
+}</div>
+
+    <div class="code-block" id="tab-results"><span class="cm"># Poll for results (or use webhook)</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}
+
+<span class="cm"># Each result in the response</span>
+{
+  <span class="str">"objective_id"</span>: <span class="str">"AC-2_g"</span>,
+  <span class="str">"control_id"</span>: <span class="str">"AC-2"</span>,
+  <span class="str">"determination"</span>: <span class="str">"Other Than Satisfied"</span>,
+  <span class="str">"confidence"</span>: <span class="num">0.42</span>,
+  <span class="str">"defensibility_score"</span>: <span class="num">22</span>,
+  <span class="str">"defensibility_grade"</span>: <span class="str">"D"</span>,
+  <span class="str">"evidence_strength"</span>: <span class="str">"weak"</span>,
+  <span class="str">"evidence_presence"</span>: <span class="kw">true</span>,
+  <span class="str">"finding"</span>: <span class="str">"SSP states accounts are 'monitored' without tool, frequency, or threshold."</span>,
+  <span class="str">"evidence_ref"</span>: <span class="str">"SSP §3.2 Account Mgmt (BM25 score: 0.42)"</span>,
+  <span class="str">"gap_type"</span>: <span class="str">"incomplete_policy"</span>,
+  <span class="str">"concepts_covered"</span>: [<span class="str">"account_mgmt"</span>],
+  <span class="str">"concepts_missing"</span>: [<span class="str">"monitoring_tool"</span>, <span class="str">"frequency"</span>, <span class="str">"thresholds"</span>],
+  <span class="str">"temporal_coherence"</span>: <span class="num">0.85</span>
+}</div>
+
+    <div class="code-block" id="tab-export"><span class="cm"># 14+ export formats — all from /v1/assessments/{job_id}/export?format=</span>
+
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-json    <span class="cm"># OSCAL assessment-results</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-ar      <span class="cm"># OSCAL AR</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-poam    <span class="cm"># OSCAL POA&M</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=csv           <span class="cm"># Flat CSV</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=ret-csv       <span class="cm"># Risk Exposure Table</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sar-json      <span class="cm"># FedRAMP SAR JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sar-docx      <span class="cm"># FedRAMP SAR DOCX</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sap-json      <span class="cm"># FedRAMP SAP JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sap-docx      <span class="cm"># FedRAMP SAP DOCX</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=poam-json     <span class="cm"># POA&M JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=crm-json      <span class="cm"># Customer Responsibility Matrix</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=cis-json      <span class="cm"># Control Implementation Summary</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=tcw-csv       <span class="cm"># Test Case Workbook</span>
+
+<span class="cm"># Also available as dedicated endpoints:</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/sar    <span class="cm"># SAR-structured JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/ret    <span class="cm"># Risk Exposure Table</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/poam   <span class="cm"># POA&M JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/crm    <span class="cm"># CRM JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/cis    <span class="cm"># CIS JSON</span></div>
+
+    <div class="code-block" id="tab-webhook"><span class="cm"># Webhook payload on assessment completion (requires WEBHOOKS_ENABLED=true)</span>
+{
+  <span class="str">"event"</span>: <span class="str">"assessment.completed"</span>,
+  <span class="str">"timestamp"</span>: <span class="str">"2026-04-13T14:32:00Z"</span>,
+  <span class="str">"job_id"</span>: <span class="str">"f47ac10b-..."</span>,
+  <span class="str">"external_id"</span>: <span class="str">"SNOW-12345"</span>,
+  <span class="str">"system_name"</span>: <span class="str">"CloudApp Production"</span>,
+  <span class="str">"organization"</span>: <span class="str">"Acme Federal"</span>,
+  <span class="str">"data"</span>: {
+    <span class="str">"status"</span>: <span class="str">"completed"</span>,
+    <span class="str">"baseline"</span>: <span class="str">"Low"</span>,
+    <span class="str">"summary"</span>: {
+      <span class="str">"satisfied_objectives"</span>: <span class="num">38</span>,
+      <span class="str">"other_than_satisfied_objectives"</span>: <span class="num">14</span>,
+      <span class="str">"total_objectives"</span>: <span class="num">52</span>
+    },
+    <span class="str">"export_urls"</span>: {
+      <span class="str">"oscal_json"</span>: <span class="str">"/v1/assessments/{job_id}/export?format=oscal-json"</span>,
+      <span class="str">"csv"</span>: <span class="str">"/v1/assessments/{job_id}/export?format=csv"</span>,
+      <span class="str">"sar_json"</span>: <span class="str">"/v1/assessments/{job_id}/export?format=sar-json"</span>,
+      <span class="str">"poam_json"</span>: <span class="str">"/v1/assessments/{job_id}/export?format=poam-json"</span>
+    }
+  }
+}
+
+<span class="cm"># Integration patterns:</span>
+<span class="cm"># ServiceNow — Scripted REST + Business Rules or Flow Designer</span>
+<span class="cm"># RSA Archer  — REST Data Feed connector</span>
+<span class="cm"># RegScale    — OSCAL JSON import via Integration Hub</span>
+<span class="cm"># Generic     — Upload docs → POST assessment → poll/webhook → GET export</span></div>
+  </div>
+</section>
+
+<!-- ══ OBJECTIONS / FAQ ══ -->
+<section>
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">Already Have a GRC Tool?</div>
+      <div class="section-title">Good. <em>Here's why you still need SparkAE.</em></div>
+    </div>
+
+    <div class="faq fade-up">
+      <div class="q"><span class="qi">Q.</span> "We already have Drata/Vanta for compliance."</div>
+      <div class="a"><strong>Drata monitors your controls. SparkAE assesses your SSP.</strong> They tell you if your MFA policy drifted. We tell you if your SSP's description of MFA is evidence-grounded on the Rev5 Examine pass. Different questions, different tools. Export CSV/JSON/OSCAL; you import. Not a certified two-way Drata sync.</div>
+    </div>
+
+    <div class="faq fade-up fade-up-1">
+      <div class="q"><span class="qi">Q.</span> "We have ServiceNow GRC — we don't want another dashboard."</div>
+      <div class="a"><strong>Then don't use our dashboard. Use export or the REST API.</strong> SparkAE runs the Rev5 Examine engine — the same engine as the 3PAO UI — and returns structured findings. Wiring those into ServiceNow is your integration, not a certified first-class connector.</div>
+    </div>
+
+    <div class="faq fade-up fade-up-2">
+      <div class="q"><span class="qi">Q.</span> "Our GRC tool already has FedRAMP templates."</div>
+      <div class="a"><strong>Templates help you write the SSP. They don't assess it.</strong> Your GRC tool gives you a template with 323 empty Moderate control boxes and 1,307 DIFs. SparkAE tells you whether what you wrote in those boxes will survive a 3PAO assessment. The template is the form. We're the red pen.</div>
+    </div>
+
+    <div class="faq fade-up fade-up-3">
+      <div class="q"><span class="qi">Q.</span> "We can't justify another line item in the security budget."</div>
+      <div class="a"><strong>Frame it differently:</strong> SparkAE is Examine-pass preparation on the Rev5 local engine — not a guaranteed savings number. Do not quote $40K–$80K. Hosted SaaS as a CSP SKU is not sold. Pilot the local engine; keep the gap report either way.</div>
+    </div>
+
+    <div class="faq fade-up fade-up-4">
+      <div class="q"><span class="qi">Q.</span> "What if our GRC vendor adds this feature?"</div>
+      <div class="a"><strong>They won't — and structurally can't.</strong> If Drata assesses the SSP that Drata helped you write, that's a conflict of interest. If Paramify assesses the OSCAL package that Paramify generated, same problem. SparkAE's value is independence. Your GRC vendor can't be independent from their own output. We can.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Already have a GRC stack? <em>Perfect. We plug right in.</em></h2>
+    <p>Tell us what you're running. We'll show you the integration path — API, import, or embedded. 30 minutes, no commitment.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="mailto:info@sparkae.ai?subject=Schedule%20an%20integration%20call">Schedule Integration Call →</a>
+    </div>
+    <div style="margin-top:20px"><a href="demo-standalone.html" style="font-family:var(--font-mono);font-size:13px">or try the live demo first →</a></div>
+    <div style="margin-top:12px;font-family:var(--font-mono);font-size:13px;color:var(--ink-soft)">
+      <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ COLOPHON FOOTER ══ -->
+<footer>
+  <div class="container" style="text-align:center">
+    <div class="colophon-brand">Spark<span>AE</span></div>
+    <div style="margin-bottom:8px">
+      <a href="index.html">Home</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="assessors.html">For Assessors</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="demo-standalone.html">Demo</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="integrations.html">Integrations</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="privacy.html">Privacy</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="terms.html">Terms</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+    </div>
+    <div class="foot-rule"></div>
+    <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+    <!-- OUT-080: precise external-calls footnote per externalcalls.md audit. -->
+    <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
+      <strong>Zero external calls by default.</strong> Cloud LLM, SSO,
+      webhooks, email, SIEM, and cloud storage are all opt-in via
+      explicit configuration. The deterministic assessment path runs
+      entirely inside the deployment boundary; no telemetry, no
+      auto-update, no calls home.
+    </div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for FedRAMP Rev5</div>
+  </div>
+</footer>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.code-block').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkAE for Independent Assessment Services — Rev5 Examine Engine | ONE Solution Cyber</title>
+<meta name="description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE, from ONE Solution Cyber, is the Rev5 7-gate Examine engine: default self-contained / zero outbound, an integrity gate that blocks ungrounded Satisfied, and the same engine as the GRC API. Not the assessor of record.">
+<link rel="canonical" href="https://sparkae-public.netlify.app/assessors.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/assessors.html">
+<meta property="og:title" content="SparkAE for Independent Assessment Services — Rev5 Examine Engine | ONE Solution Cyber">
+<meta property="og:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE, from ONE Solution Cyber, is the Rev5 7-gate Examine engine: default self-contained / zero outbound, an integrity gate that blocks ungrounded Satisfied, and the same engine as the GRC API. Not the assessor of record.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE for Independent Assessment Services — Rev5 Examine Engine | ONE Solution Cyber">
+<meta name="twitter:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE, from ONE Solution Cyber, is the Rev5 7-gate Examine engine: default self-contained / zero outbound, an integrity gate that blocks ungrounded Satisfied, and the same engine as the GRC API. Not the assessor of record.">
+<!-- OUT-053 → ADR-0016: full editorial re-skin. Shared editorial design system. -->
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+/* ── Assessor page-specific components (editorial tokens only) ── */
+/* auto-fit, not repeat(3,1fr) — three hard columns overflow a phone. */
+.exam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.exam-card{background:var(--paper);padding:30px 26px;transition:background .25s}
+.exam-card:hover{background:var(--paper-warm)}
+.exam-card .exam-num{font-family:var(--font-mono);font-size:11px;letter-spacing:0.16em;color:var(--vermillion);margin-bottom:12px}
+.exam-card h3{font-family:var(--font-display);font-size:17.5px;font-weight:500;color:var(--ink);margin-bottom:8px;line-height:1.35}
+.exam-card p{font-size:13.5px;color:var(--ink-soft);line-height:1.65}
+.exam-note{margin-top:26px;font-size:13.5px;line-height:1.7;color:var(--ink-soft);max-width:80ch}
+
+.ba-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch}
+.ba-col{background:var(--paper);border:1px solid var(--rule);padding:32px 28px}
+.ba-col.before{border-top:3px solid var(--vermillion)}
+.ba-col.after{border-top:3px solid var(--moss)}
+.ba-col h3{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:20px}
+.ba-col.before h3{color:var(--vermillion)}
+.ba-col.after h3{color:var(--moss)}
+.ba-col ul{list-style:none}
+.ba-col ul li{font-size:14px;color:var(--ink-soft);padding:10px 0;border-top:1px solid var(--rule);display:flex;align-items:flex-start;gap:10px;line-height:1.5}
+.ba-col ul li .icon{flex-shrink:0;font-size:14px;margin-top:2px}
+.ba-arrow{display:flex;align-items:center;justify-content:center;width:60px;font-family:var(--font-mono);font-size:24px;color:var(--vermillion)}
+
+.roi-box{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--vermillion);padding:40px}
+.roi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
+.roi-item{text-align:center}
+.roi-item .num{font-family:var(--font-display);font-size:38px;font-weight:500;color:var(--ink);letter-spacing:-0.02em;line-height:1}
+.roi-item .num span{color:var(--vermillion)}
+.roi-item .label{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);margin-top:6px;letter-spacing:0.05em}
+.roi-sub-grid{margin-top:24px;padding-top:20px;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.roi-sub-grid > div{text-align:center}
+.roi-sub-grid .k{font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)}
+.roi-sub-grid .v{font-family:var(--font-display);font-size:22px;font-weight:500;margin-top:4px}
+.roi-sub-grid .v.amber{color:var(--gold)}
+.roi-sub-grid .v.moss{color:var(--moss)}
+.roi-note{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);letter-spacing:0.04em;margin-bottom:18px}
+
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.trust-card{background:var(--paper);padding:28px 26px;transition:background .25s}
+.trust-card:hover{background:var(--paper-warm)}
+.trust-card h3{font-family:var(--font-display);font-size:17px;font-weight:500;color:var(--ink);margin-bottom:10px;line-height:1.3}
+.trust-card p{font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+.trust-card p strong{color:var(--ink);font-weight:600}
+
+.workflow{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.wf-steps{display:flex;flex-direction:column;border:1px solid var(--rule)}
+.wf-step{display:flex;gap:18px;padding:20px 24px;background:var(--paper);border-bottom:1px solid var(--rule);transition:background .2s}
+.wf-step:last-child{border-bottom:none}
+.wf-step:hover{background:var(--paper-warm)}
+.wf-num{width:36px;height:36px;flex-shrink:0;background:var(--paper-warm);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--vermillion)}
+.wf-step h4{font-family:var(--font-display);font-size:16px;font-weight:500;color:var(--ink);margin-bottom:3px}
+.wf-step p{font-size:13px;color:var(--ink-soft);line-height:1.5}
+.wf-panel{background:var(--paper);border:1px solid var(--rule);padding:30px;font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.wf-panel .panel-label{font-family:var(--font-mono);font-size:11px;color:var(--vermillion);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:18px}
+.wf-panel > div{margin-bottom:12px}
+.wf-panel > div:last-child{margin-bottom:0}
+.wf-panel strong{color:var(--ink);font-weight:600}
+
+.partner-box{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--vermillion);padding:36px;margin-top:32px}
+.partner-box .pb-title{font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.partner-box .pb-price{font-family:var(--font-mono);font-size:13px;color:var(--ink-soft);margin-bottom:24px;letter-spacing:0.04em}
+.partner-feats{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:24px}
+.partner-feats > div{font-size:13px;color:var(--ink-soft);padding:9px 0;border-top:1px solid var(--rule);display:flex;align-items:flex-start;gap:8px}
+.partner-feats .ck{color:var(--moss);flex-shrink:0}
+.partner-note{font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:20px}
+
+.minicta{display:flex;gap:24px;align-items:center;max-width:840px;margin:0 auto;background:var(--paper);border:1px solid var(--rule);padding:28px 32px}
+.minicta .mc-title{font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.minicta .mc-body{font-size:13px;color:var(--ink-soft);line-height:1.5}
+
+@media (max-width:900px){
+  .pain-grid,.trust-grid,.workflow,.ba-grid,.partner-feats{grid-template-columns:1fr}
+  .roi-grid,.roi-sub-grid{grid-template-columns:1fr}
+  .ba-arrow{width:auto;padding:12px}
+  .minicta{flex-direction:column;align-items:flex-start;gap:16px}
+}
+</style>
+<style>svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-chart" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="10"/><line x1="10" y1="21" x2="10" y2="4"/><line x1="16" y1="21" x2="16" y2="13"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="14" y2="17"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 110-8 5 5 0 019.6-1.5A4 4 0 1118 18H7z"/></symbol><symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><line x1="9" y1="2" x2="9" y2="8"/><line x1="15" y1="2" x2="15" y2="8"/><path d="M7 8h10v3a5 5 0 01-10 0z"/><line x1="12" y1="16" x2="12" y2="22"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.5" r="0.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/><rect x="9" y="2" width="6" height="4" rx="1"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 11-2.6-6.1L20.5 8"/><path d="M20.5 3v5h-5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L20 7l-3-3L5 16z"/><line x1="14.5" y1="6.5" x2="17.5" y2="9.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></symbol><symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 2h8l4 4v16H7z"/><path d="M15 2v4h4"/></symbol></defs></svg>
+<!-- ══ MASTHEAD ══ -->
+<nav>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="index.html">Home</a>
+    <a href="assessors.html" class="active">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html">Integrations</a>
+    <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+  </div>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge fade-up"><span class="dot"></span> For FedRAMP Recognized Independent Assessment Services &mdash; historically 3PAOs</div>
+    <h1 class="fade-up fade-up-1">Automate EXAMINE preparation. <em>Keep the judgment.</em></h1>
+    <p class="sub fade-up fade-up-2">SparkAE, from ONE Solution Cyber, is the Rev5 7-gate Examine engine — an independent second reader, not the assessor of record. What ships: the local engine and a browser demo. Default mode is self-contained (zero outbound when LLM_PROVIDER=none). An integrity gate blocks ungrounded Satisfied. The same engine serves this UI and the GRC API. You keep scope, testing, conclusions, overrides, and the final deliverables.</p>
+    <div class="ctas fade-up fade-up-3">
+      <button class="btn btn-primary" onclick="document.getElementById('examine').scrollIntoView({behavior:'smooth'})">What you examine →</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Schedule Partner Demo</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ WHAT YOU EXAMINE ══ -->
+<section id="examine" class="warm">
+  <div class="container">
+    <div class="section-label">HOLD · 20x · In development — not sold</div>
+    <div class="section-title">20x examination workspace <em>is not a customer SKU.</em></div>
+    <div class="section-sub">What ships is the Rev5 7-gate Examine engine and the browser demo. The seven items below describe a 20x lane in development. Do not use them in outreach.</div>
+
+    <div class="exam-grid">
+      <div class="exam-card fade-up">
+        <div class="exam-num">01</div>
+        <h3>KSI goals and pass/fail criteria</h3>
+        <p>Does the stated Key Security Indicator actually express the security outcome it is meant to, and is the pass threshold defensible — or set where the evidence happens to land?</p>
+      </div>
+      <div class="exam-card fade-up fade-up-1">
+        <div class="exam-num">02</div>
+        <h3>Provider validation code and pipelines</h3>
+        <p>Read the code that produces the verdict. What does it query, what does it skip, what does it do when a source is unavailable, and who can change it without review?</p>
+      </div>
+      <div class="exam-card fade-up fade-up-2">
+        <div class="exam-num">03</div>
+        <h3>Automated and human validation procedures</h3>
+        <p>Which determinations are machine-made, which are asserted by a person, and is the split documented where a reviewer can see it rather than inferred from output.</p>
+      </div>
+      <div class="exam-card fade-up fade-up-3">
+        <div class="exam-num">04</div>
+        <h3>Evidence completeness and coverage</h3>
+        <p>Does the evidence span the whole authorization boundary or a convenient subset — and can you tell the difference from what was submitted?</p>
+      </div>
+      <div class="exam-card fade-up fade-up-4">
+        <div class="exam-num">05</div>
+        <h3>Failure handling and significant changes</h3>
+        <p>What happens when a check fails, how quickly does a failure surface, and what rescopes assessment when the system materially changes.</p>
+      </div>
+      <div class="exam-card fade-up fade-up-5">
+        <div class="exam-num">06</div>
+        <h3>Reported results vs. actual implementation</h3>
+        <p>Run challenge tests against the same boundary and compare. A validation that passes its own pipeline and fails an independent probe is the finding.</p>
+      </div>
+      <div class="exam-card fade-up fade-up-6">
+        <div class="exam-num">07</div>
+        <h3>Independent findings and assessor conclusions</h3>
+        <p>Your conclusion is recorded as yours — attributed separately from the provider's claim, with the evidence, the method, and the reasoning attached to it.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:26px"><a class="lane-link" href="demo-20x.html">20x preview (in development — not sold) &rarr;</a></p>
+
+    <p class="exam-note">SparkAE holds the workspace, the evidence lineage, and the attribution. It is not a FedRAMP Recognized independent assessment service, it does not replace one, and it never marks work as done on your behalf. Every determination it produces is a draft until you adopt, override, or reject it.</p>
+  </div>
+</section>
+
+<!-- ══ BEFORE/AFTER ══ -->
+<section id="solution">
+  <div class="container">
+    <div class="section-label">Lane 1 · Rev5 Assessment Readiness</div>
+    <div class="section-title">Automate EXAMINE preparation. <em>Keep the judgment.</em></div>
+    <div class="section-sub">Rev5 engagements are still document-and-objective work, and they still have to be done. SparkAE prepares that pass — evidence traced to objectives, unsupported statements surfaced, draft artifacts assembled — and hands it to an assessor to adopt, override, or reject.</div>
+
+    <div class="ba-grid">
+      <div class="ba-col before">
+        <h3><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-x"/></svg> Without SparkAE</h3>
+        <ul>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-clock"/></svg></span>Senior assessor reads 400-page SSP against 1,307 DIFs manually</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-clipboard"/></svg></span>Cross-references ODPs in spreadsheets — misses undefined parameters</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg></span>Searches for evidence across 15 documents by memory and Ctrl+F</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-pen"/></svg></span>Writes finding narratives from scratch for each control</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-warn"/></svg></span>Different assessors produce inconsistent findings for the same SSP</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg></span>Manually builds RET and POA&M items in Excel</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-refresh"/></svg></span>Repeats much of the pass by hand when the provider submits an updated SSP</li>
+        </ul>
+      </div>
+      <div class="ba-arrow">→</div>
+      <div class="ba-col after">
+        <h3><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg> With SparkAE</h3>
+        <ul>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></span>7-gate engine evaluates all 1,307 Moderate DIFs against uploaded evidence in minutes</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-lock"/></svg></span>Every ODP automatically checked — undefined parameters flagged immediately</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-target"/></svg></span>BM25/semantic retrieval matches evidence to objectives with citations</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-doc"/></svg></span>Draft findings with evidence refs — nothing is final until an assessor adopts it</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check-circle"/></svg></span>Same engine, same rules, same output — every assessor, every time</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg></span>XLSX export with Results, Summary, POA&M sheets — one click</li>
+          <li><span class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-refresh"/></svg></span>Re-run against updated SSP in seconds — diff shows what changed</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ROI ══ -->
+<section id="roi" class="warm">
+  <div class="container">
+    <div class="section-label">Capacity</div>
+    <div class="section-title">Same engine. <em>Assessor keeps the judgment.</em></div>
+    <div class="section-sub">No savings figure is a customer claim. What ships is the Rev5 local engine.</div>
+
+    <div class="roi-box">
+      <div class="roi-note">HOLD — not a customer claim. Dollar-savings math is not sold. Figures below are not a quote and not for outreach.</div>
+      <div style="font-size:15px;color:var(--ink-soft);margin-bottom:8px">What you can say: the Rev5 7-gate engine prepares the Examine pass. You still own the SAR.</div>
+      <div class="roi-grid">
+        <div class="roi-item">
+          <div class="num">—</div>
+          <div class="label">Not a savings claim — HOLD</div>
+        </div>
+        <div class="roi-item">
+          <div class="num">—</div>
+          <div class="label">Not a capacity claim — HOLD</div>
+        </div>
+        <div class="roi-item">
+          <div class="num">—</div>
+          <div class="label">Not a revenue claim — HOLD</div>
+        </div>
+      </div>
+      <div class="roi-sub-grid">
+        <div>
+          <div class="k">SparkAE cost</div>
+          <div class="v amber">—</div>
+        </div>
+        <div>
+          <div class="k">Not a gain claim — HOLD</div>
+          <div class="v moss">—</div>
+        </div>
+        <div>
+          <div class="k">Not an ROI claim — HOLD</div>
+          <div class="v moss">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pullquote">
+      SparkAE is not a GRC platform and not the assessor of record. Default self-contained 7-gate Examine engine; integrity gate blocks ungrounded Satisfied; same engine for this UI and the GRC API.
+      <div style="font-family:var(--font-mono);font-style:normal;font-size:12px;color:var(--ink-soft);margin-top:14px;letter-spacing:0.04em">— Proposed copy. Not a customer quote.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 3PAO WORKFLOW ══ -->
+<section>
+  <div class="container">
+    <div class="section-label">3PAO Workflow</div>
+    <div class="section-title">Integrate in a day. <em>Not a quarter.</em></div>
+
+    <div class="workflow">
+      <div class="wf-steps">
+        <div class="wf-step fade-up">
+          <div class="wf-num">1</div>
+          <div><h4>CSP uploads authorization package</h4><p>SSP, policies, POA&M, scan exports. Or your team uploads on their behalf.</p></div>
+        </div>
+        <div class="wf-step fade-up fade-up-1">
+          <div class="wf-num">2</div>
+          <div><h4>SparkAE runs EXAMINE pre-assessment</h4><p>All selected controls assessed against evidence. Deterministic mode — no data leaves your environment.</p></div>
+        </div>
+        <div class="wf-step fade-up fade-up-2">
+          <div class="wf-num">3</div>
+          <div><h4>Assessor reviews findings</h4><p>Pre-drafted Satisfied / Other Than Satisfied verdicts with evidence citations, defensibility grades (A–F), and confidence scores. Assessor validates, overrides where needed, adds judgment.</p></div>
+        </div>
+        <div class="wf-step fade-up fade-up-3">
+          <div class="wf-num">4</div>
+          <div><h4>Focus INTERVIEW &amp; TEST on what matters</h4><p>OTS findings tell you exactly where to probe. Skip the controls that clearly pass. Spend time where risk lives.</p></div>
+        </div>
+        <div class="wf-step fade-up fade-up-4">
+          <div class="wf-num">5</div>
+          <div><h4>Export SAR-ready deliverables</h4><p>SAR (JSON + DOCX), SAP, RET CSV, POA&M, CRM, CIS, OSCAL assessment-results — 14+ formats. Drop into your workflow. Submit to PMO.</p></div>
+        </div>
+      </div>
+      <div class="wf-panel">
+        <div class="panel-label">What your assessors get — 10 analytical services</div>
+        <div><strong>Per-DIF verdicts</strong> — Satisfied / Other Than Satisfied for every "Determine if" objective, with the exact API enum values FedRAMP expects.</div>
+        <div><strong>Evidence citations</strong> — BM25/RAG retrieval with scored citations: "SSP §3.2, Account Management (BM25 score: 0.87)".</div>
+        <div><strong>Defensibility grades</strong> — 5-factor composite score (A–F): specificity, completeness, consistency, traceability, clarity. Low grade = assessor should dig deeper.</div>
+        <div><strong>ODP validation</strong> — every organization-defined parameter checked. Mismatches flagged with gate-4 failure: "90-day vs FedRAMP 60-day requirement."</div>
+        <div><strong>Gap taxonomy</strong> — 25 FedRAMP-aligned gap types (missing_evidence, incomplete_policy, odp_frequency_mismatch, insufficient_scope, stale_documentation, scan_gap...).</div>
+        <div><strong>Contradiction detection</strong> — 13 types of conflicting assertions across DIFs flagged with severity levels.</div>
+        <div><strong>14+ export formats</strong> — OSCAL JSON (assessment-results + POA&M), SAR (JSON + DOCX), SAP, RET CSV, CRM, CIS, TCW — all from one assessment run.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TRUST / OBJECTIONS ══ -->
+<section id="trust" class="warm">
+  <div class="container">
+    <div class="section-label">Objections Answered</div>
+    <div class="section-title">Everything you're <em>about to ask.</em></div>
+
+    <div class="trust-grid">
+      <div class="trust-card">
+        <h3>"Does this compromise our independence?"</h3>
+        <p>The opposite. SparkAE is a third-party tool — not built by the CSP, not built by you. Using an independent validation engine is <strong>more defensible</strong> than homegrown tooling. When the PMO questions a finding, "validated by an independent second reader" is a stronger answer than "our assessor read it." SparkAE is not the assessor of record.</p>
+      </div>
+      <div class="trust-card">
+        <h3>"What about CUI? Our clients' SSPs are sensitive."</h3>
+        <p>The default self-contained mode (LLM_PROVIDER=none) makes <strong>zero external calls — zero outbound HTTP, zero DNS lookups, zero CDN</strong>. Docker container with read-only filesystem, cap_drop ALL, non-root. No API keys needed. A local LLM via Ollama keeps the same posture. Whether a given deployment is suitable for CUI depends on how you deploy and accredit it — the software supports the boundary, it does not confer the authorization.</p>
+      </div>
+      <div class="trust-card">
+        <h3>"AI can't replace assessor judgment."</h3>
+        <p>It doesn't try to. SparkAE automates the <strong>EXAMINE method only</strong> — document review against DIFs. INTERVIEW and TEST still require your assessors. Professional judgment still drives the final SAR. The tool removes reading. Not thinking.</p>
+      </div>
+      <div class="trust-card">
+        <h3>"We'll just build our own."</h3>
+        <p>You could. Then you'll pull two engineers off billable work for 6 months. Then NIST releases an update and you spend 3 weeks patching. Then a client asks for CMMC. Then OSCAL format changes. <strong>We maintain the Rev5 Examine engine. You stay accredited.</strong></p>
+      </div>
+      <div class="trust-card">
+        <h3>"How do we explain this to the PMO?"</h3>
+        <p>SparkAE produces deterministic, reproducible findings. Same SSP + same rules = same output every time. The engine is auditable. The rules are transparent. <strong>The PMO wants consistency</strong> — that's exactly what a deterministic engine delivers.</p>
+      </div>
+      <div class="trust-card">
+        <h3>"What if the CSP also uses SparkAE?"</h3>
+        <p>That's the best case. If the CSP self-assesses with SparkAE before you arrive, you can see <strong>exactly what they found, what they remediated, and what's still open</strong>. That handoff saves your team weeks. Same findings format, same terminology, zero translation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MARKET REALITY ══ -->
+<section>
+  <div class="container" style="text-align:center;max-width:720px">
+    <div class="section-label" style="justify-content:center">Market Reality</div>
+    <div class="section-title">The OSCAL mandate is <em>rolling out.</em></div>
+    <p style="font-size:16px;color:var(--ink-soft);line-height:1.7;margin-bottom:24px">FedRAMP is moving authorization packages toward machine-readable form. RFC-0024, which first proposed the mandate, was <strong>closed</strong> — its requirements were modified and folded into the 2026 Consolidated Rules rather than adopted as drafted, so the specifics are still settling. What does not change is the direction: a Word/Excel-only workflow does not produce structured authorization data, and retrofitting it later is the expensive path. SparkAE exports native OSCAL 1.1.2 assessment-results and POA&amp;M today.</p>
+    <p style="font-size:16px;color:var(--ink-soft);line-height:1.7;margin-bottom:24px">20x / Lane 2 is HOLD / in development and is not sold. What ships is the Rev5 Examine engine. The firms that adopt it still own the assessment.</p>
+    <p style="font-family:var(--font-display);font-style:italic;font-size:20px;color:var(--vermillion);font-weight:400">SparkAE prepares the Examine pass. The recognized assessment service still signs.</p>
+  </div>
+</section>
+
+<!-- ══ 3PAO PARTNER PROGRAM ══ -->
+<section class="warm">
+  <div class="container" style="max-width:720px">
+    <div class="section-label">3PAO Partner Program</div>
+    <div class="section-title">Built for assessment firms, <em>not IT teams.</em></div>
+
+    <div class="partner-box">
+      <div class="pb-title">3PAO Partner</div>
+      <div class="pb-price">Founder confirms terms · not a published list price</div>
+      <div class="partner-feats">
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> Unlimited assessments</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> Self-contained + Cloud LLM + Local LLM modes</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> White-label reports</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> 14+ export formats (OSCAL, SAR, SAP, RET, POA&M, CRM, CIS)</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> Named support engineer</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> Custom rules engine tuning</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> On-prem deployment</div>
+        <div><span class="ck"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-check"/></svg></span> FedRAMP Rev5 / NIST SP 800-53A Examine</div>
+      </div>
+      <div class="partner-note">Priced per firm, not per assessor. Your entire team uses it. Annual contract with quarterly business reviews. First 3 months include onboarding and rules-engine calibration to your assessment methodology.</div>
+      <button class="price-btn" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Schedule Partner Demo</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MINI CTA / DEMO ══ -->
+<section>
+  <div class="container">
+    <div class="minicta">
+      <div style="flex:1">
+        <div class="mc-title">See it before you commit</div>
+        <div class="mc-body">Watch SparkAE assess a pre-loaded sample SSP entirely in your browser. No signup, no API key, no server. Takes seconds.</div>
+      </div>
+      <a href="demo-standalone.html" class="btn btn-ghost" style="white-space:nowrap">Try the Demo →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section class="cta-section" id="cta">
+  <div class="container">
+    <h2>Run a real assessment on a real SSP. <em>Today.</em></h2>
+    <p>Send us an SSP you've already assessed. We'll run SparkAE against it and show you the findings side-by-side with yours. No cost. No commitment. Just proof.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="mailto:info@sparkae.ai" target="_blank" rel="noopener">Schedule Partner Demo →</a>
+    </div>
+    <div style="margin-top:24px;font-family:var(--font-mono);font-size:13px;color:var(--ink-soft)">
+      Email: <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
+    </div>
+    <p style="margin-top:28px;font-size:12px;line-height:1.6;color:var(--ink-soft);max-width:680px;margin-left:auto;margin-right:auto">
+      SparkAE is an independent pre-assessment engine, not a 3PAO. It does not
+      issue the official Security Assessment Report or an Authorization to
+      Operate. It accelerates the EXAMINE pass your assessors still own and sign.
+    </p>
+  </div>
+</section>
+
+<!-- ══ COLOPHON FOOTER ══ -->
+<footer>
+  <div class="container" style="text-align:center">
+    <div class="colophon-brand">Spark<span>AE</span></div>
+    <div style="margin-bottom:8px">
+      <a href="index.html">Home</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="assessors.html">For Assessors</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="demo-standalone.html">Demo</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="integrations.html">Integrations</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="privacy.html">Privacy</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="terms.html">Terms</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+    </div>
+    <div class="foot-rule"></div>
+    <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+    <!-- OUT-080: precise external-calls footnote per externalcalls.md audit. -->
+    <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
+      <strong>Zero external calls by default.</strong> Cloud LLM, SSO,
+      webhooks, email, SIEM, and cloud storage are all opt-in via
+      explicit configuration. The deterministic assessment path runs
+      entirely inside the deployment boundary; no telemetry, no
+      auto-update, no calls home.
+    </div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for FedRAMP Rev5</div>
+  </div>
+</footer>
+</body>
+</html>

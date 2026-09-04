@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkAE — Service Status</title>
+<meta name="description" content="Service status for SparkAE. Component health, incident history, and scheduled maintenance, published from each deployment's live health checks.">
+<link rel="canonical" href="https://sparkae-public.netlify.app/status.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/status.html">
+<meta property="og:title" content="SparkAE — Service Status">
+<meta property="og:description" content="Component health, incident history, and scheduled maintenance, published from each deployment's live health checks.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE — Service Status">
+<meta name="twitter:description" content="Component health, incident history, and scheduled maintenance, published from each deployment's live health checks.">
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+  body { background: var(--paper); }
+  .status-wrap { max-width: 880px; margin: 0 auto; padding: 72px 24px 80px; position: relative; z-index: 2; }
+  .status-head { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 28px; }
+  .status-head h1 { font-family: var(--font-display); font-weight: 500; font-size: 40px; letter-spacing: -0.02em; color: var(--ink); }
+  .status-head h1 span { color: var(--vermillion); }
+  .status-head .subtitle { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-top: 8px; }
+  .summary { padding: 22px 24px; border: 1px solid var(--rule); border-left: 3px solid var(--moss); background: var(--paper-warm); margin-bottom: 16px; }
+  .summary h2 { font-family: var(--font-display); font-weight: 500; font-size: 20px; color: var(--ink); margin-bottom: 4px; }
+  .summary p { font-size: 14px; color: var(--ink-soft); margin: 0; }
+  .placeholder-note { font-family: var(--font-mono); font-size: 11px; line-height: 1.6; color: var(--ink-soft); border: 1px dashed var(--rule); padding: 12px 16px; margin-bottom: 36px; }
+  .status-section { margin-top: 36px; }
+  .status-section > h2 { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--vermillion); border-bottom: 1px solid var(--rule); padding-bottom: 10px; margin-bottom: 14px; }
+  .component { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border: 1px solid var(--rule); margin-bottom: 8px; background: var(--paper); }
+  .component-name { font-weight: 600; color: var(--ink); }
+  .component-detail { color: var(--ink-soft); font-size: 13px; margin-top: 3px; }
+  .badge { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; }
+  .badge.operational { background: rgba(61,82,53,0.15); color: var(--moss); }
+  .badge.degraded { background: rgba(212,160,23,0.15); color: var(--amber); }
+  .badge.outage { background: rgba(178,58,28,0.12); color: var(--vermillion); }
+  .badge.unknown { background: rgba(136,146,160,0.15); color: var(--ink-soft); }
+  .incident { padding: 16px 0; border-bottom: 1px solid var(--rule-soft); }
+  .incident-meta { color: var(--ink-soft); font-family: var(--font-mono); font-size: 12px; }
+  .status-foot { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--rule); color: var(--ink-soft); font-family: var(--font-mono); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="status-wrap">
+  <header class="status-head">
+    <h1>Spark<span>AE</span> Status</h1>
+    <p class="subtitle">Component health, incident history, and scheduled maintenance</p>
+  </header>
+
+  <div class="summary">
+    <h2 id="summary-head">No status snapshot published</h2>
+    <p>Snapshot published: <span id="last-checked">—</span></p>
+  </div>
+
+  <!--
+    This page is a static reference. In production it is populated by a
+    periodic polling agent against the deployment's ``/health/ready`` and
+    ``/metrics`` endpoints; the agent writes a generated ``status-data.json``
+    next to this file and the values below reflect that last published
+    snapshot — they are not a live, in-browser health probe. Polling cadence
+    is documented in ``docs/operations/incident-response.md``.
+  -->
+  <div class="placeholder-note">
+    Status reflects the most recent published snapshot from this deployment's
+    live <code>/health/ready</code> and <code>/metrics</code> checks. For an
+    authoritative real-time reading, query the deployment's health endpoint
+    directly.
+  </div>
+
+  <div class="status-section">
+    <h2>Components</h2>
+
+    <div class="component">
+      <div>
+        <div class="component-name">API</div>
+        <div class="component-detail">/v1/* endpoints, authentication, exports</div>
+      </div>
+      <span class="badge unknown" data-component="api">No data</span>
+    </div>
+
+    <div class="component">
+      <div>
+        <div class="component-name">Dashboard</div>
+        <div class="component-detail">Web UI at /static/</div>
+      </div>
+      <span class="badge unknown" data-component="dashboard">No data</span>
+    </div>
+
+    <div class="component">
+      <div>
+        <div class="component-name">Document storage</div>
+        <div class="component-detail">S3 / DB-backed uploads</div>
+      </div>
+      <span class="badge unknown" data-component="document-storage">No data</span>
+    </div>
+
+    <div class="component">
+      <div>
+        <div class="component-name">Background workers</div>
+        <div class="component-detail">Assessment orchestrator, ConMon report build</div>
+      </div>
+      <span class="badge unknown" data-component="background-workers">No data</span>
+    </div>
+
+    <div class="component">
+      <div>
+        <div class="component-name">SSO / IdP integrations</div>
+        <div class="component-detail">OIDC discovery, callback flow</div>
+      </div>
+      <span class="badge unknown" data-component="sso">No data</span>
+    </div>
+  </div>
+
+  <div class="status-section">
+    <h2>Incident history</h2>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:8px">Past 90 days. Older history at the SparkAE trust portal.</p>
+    <div id="incident-list">
+      <div class="incident">
+        <div class="incident-meta">— No snapshot published —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-section">
+    <h2>Scheduled maintenance</h2>
+    <div id="maintenance-list">
+      <p style="color:var(--ink-soft);font-size:14px">— No snapshot published —</p>
+    </div>
+  </div>
+
+  <div class="status-section">
+    <h2>SLAs &amp; reporting</h2>
+    <p style="color:var(--ink-soft);font-size:14px;line-height:1.7">
+      Customer-impacting incidents are notified per the published
+      <a href="https://github.com/Sprk-0/sparkae-engine/incident-response">incident-response runbook</a>:
+      SEV-1 confirmed exfiltration ≤ 4 h; suspected ≤ 24 h; SEV-1 outage
+      &gt; 1 h ≤ 1 h; SEV-2 outage &gt; 2 h ≤ 2 h; privacy bug ≤ 24 h.
+    </p>
+  </div>
+
+  <div class="status-foot">
+    <a href="index.html">Home</a> · <a href="assessors.html">For Assessors</a> · <a href="integrations.html">Integrations</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+    <div style="margin-top:8px;">© 2026 SparkAE</div>
+  </div>
+</div>
+
+<script>
+// Component state and the snapshot timestamp both come from the generated
+// status-data.json the polling agent publishes next to this page — never from
+// the viewer's clock, and never from markup. The page ships every component
+// as "No data"; a badge only turns green because a real snapshot said so.
+// A missing or malformed file therefore reads as "we don't know", which is
+// the honest default for a status page.
+const STATES = {operational: 'Operational', degraded: 'Degraded', outage: 'Outage'};
+
+fetch('status-data.json', {cache: 'no-store'})
+  .then(r => (r.ok ? r.json() : null))
+  .then(data => {
+    if (!data) return;
+
+    const ts = data.published_at || data.generated_at || data.timestamp || data.last_checked;
+    if (ts) {
+      const d = new Date(ts);
+      document.getElementById('last-checked').textContent =
+        isNaN(d.getTime()) ? String(ts) : d.toUTCString();
+      document.getElementById('summary-head').textContent = 'Status snapshot published';
+    }
+
+    const components = data.components || {};
+    document.querySelectorAll('[data-component]').forEach(el => {
+      const state = components[el.dataset.component];
+      if (!STATES[state]) return;          // unknown key or absent → leave "No data"
+      el.className = 'badge ' + state;
+      el.textContent = STATES[state];
+    });
+
+    // Incidents and maintenance come from the same snapshot. Leaving the seed
+    // markup in place would let a snapshot that DOES report an incident still
+    // render "No incidents reported" — a successful poll silently claiming a
+    // clean history is worse than publishing nothing.
+    if (ts) {
+      renderList('incident-list', data.incidents, 'No incidents reported in the last 90 days',
+        i => '<div class="incident">' +
+               '<div><strong>' + esc(i.title || 'Incident') + '</strong>' +
+               (i.status ? ' — ' + esc(i.status) : '') + '</div>' +
+               '<div class="incident-meta">' + esc(i.started_at || '') +
+               (i.resolved_at ? ' → ' + esc(i.resolved_at) : '') +
+               (i.impact ? ' · ' + esc(i.impact) : '') + '</div>' +
+               (i.summary ? '<div style="font-size:13px;margin-top:6px">' + esc(i.summary) + '</div>' : '') +
+             '</div>');
+
+      renderList('maintenance-list', data.maintenance, 'No maintenance scheduled',
+        m => '<div class="incident">' +
+               '<div><strong>' + esc(m.title || 'Scheduled maintenance') + '</strong></div>' +
+               '<div class="incident-meta">' + esc(m.scheduled_for || m.window || '') +
+               (m.expected_impact ? ' · ' + esc(m.expected_impact) : '') + '</div>' +
+             '</div>');
+    }
+  })
+  .catch(() => {});
+
+// Snapshot fields are rendered as text, never as markup: the file is written by
+// a polling agent and may carry operator-authored incident prose.
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => (
+    {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]
+  ));
+}
+
+// An empty array is a positive statement ("we looked, there were none"); a
+// missing key is not, and keeps the no-snapshot wording.
+function renderList(id, items, emptyText, render) {
+  const el = document.getElementById(id);
+  if (!el || !Array.isArray(items)) return;
+  el.innerHTML = items.length
+    ? items.map(render).join('')
+    : '<div class="incident"><div class="incident-meta">— ' + emptyText + ' —</div></div>';
+}
+</script>
+</body>
+</html>

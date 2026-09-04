@@ -1,14 +1,162 @@
-# Security headers for the hosted demo. The demo is self-contained — it loads
-# only its own scripts, stylesheet and fonts and makes no network requests —
-# so a strict same-origin policy costs it nothing. 'unsafe-inline' is needed
-# because demo-standalone.html inlines its engine and styles.
+# Netlify header rules for the published site. Netlify reads this file from the
+# publish root; build.sh copies it into dist/ via the allowlist.
+#
+# ── Why the CSP is declared per page instead of once under /* ────────────────
+#
+# Netlify COMBINES every _headers rule whose path matches the request; a more
+# specific path does not override a broader one. When the same header is set
+# twice the values are both sent (Netlify may serialize them as one
+# comma-separated value), and browsers treat multiple Content-Security-Policy
+# policies as a set to be enforced *simultaneously* — the effective policy is
+# their intersection, i.e. the most restrictive of each directive.
+#
+# That makes "strict under /*, relaxed for one page" impossible to express:
+# /demo.html matches /* too, so a sitewide `connect-src 'self'` would intersect
+# with the demo's `connect-src *` and win, blocking every visitor-supplied base
+# URL — and doing it silently, which is the worst version of this bug. (An
+# earlier revision of this file did exactly that; PR #837 review caught it.)
+#
+# So the CSP is declared once per page on non-overlapping paths, and /* carries
+# only the headers that are identical everywhere (duplicating those is
+# harmless). Every shipped page therefore receives exactly ONE CSP.
+#
+# The cost is that a new page silently gets no CSP at all if someone forgets a
+# rule. tests/test_website_csp_scope.py closes that: it reads the PUBLISH
+# allowlist out of build.sh and fails if any shipped .html page lacks a rule, or
+# if a wildcard path ever declares a CSP again.
+#
+# ── The policy itself ────────────────────────────────────────────────────────
+#
+# `default-src 'self'` is what turns the site's "no external calls" claim into
+# something a visitor's browser enforces rather than something we merely assert
+# — no third-party script, style, font, or image origin is reachable. Two
+# relaxations are deliberate:
+#
+#   'unsafe-inline'  Every page inlines its <style>, and the standalone demo
+#                    inlines its whole engine as a single ~110KB <script>.
+#                    Hashing or noncing that on a static host buys very little
+#                    on a site that loads no third-party code at all.
+#
+#   connect-src *    ONLY on /demo.html, which drives a live assessment against
+#                    whichever SparkAE instance the visitor is running. The base
+#                    URL is a free-text field — commonly http://localhost:8000
+#                    during an evaluation, but a remote deployment is just as
+#                    legitimate — so no narrower origin list covers it without
+#                    breaking real evaluations. Every other page is held to
+#                    `connect-src 'self'`.
+#
+# Audited when this was scoped: demo.html is the only page that connects
+# off-origin (10 fetches to the visitor-supplied base URL). status.html fetches
+# only the relative `status-data.json`, demo-standalone.html inlines its engine
+# and fetches nothing, and no other page makes a request at all — so 'self'
+# costs those pages nothing.
+#
+# HSTS deliberately omits includeSubDomains: it would bind every current and
+# future subdomain of the deployment domain (app., status., anything not
+# yet stood up) to
+# HTTPS-only from the first visit, which is a commitment to make on purpose
+# rather than inherit from a marketing-site config.
+#
+# VERIFY ON DEPLOY PREVIEW after changing anything above:
+#   curl -sI <preview>/demo.html | grep -i content-security-policy
+#   curl -sI <preview>/          | grep -i content-security-policy
+# Each must return exactly ONE policy — `connect-src *` for the demo,
+# `connect-src 'self'` for everything else. Two headers, or one carrying two
+# comma-separated policies, means the paths overlap again.
+
+# Identical on every response, so /* is safe here — duplicate values of these
+# headers do not intersect the way CSP does.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
   Strict-Transport-Security: max-age=31536000
 
+# ── Per-page CSP. Paths must not overlap; see the note at the top. ───────────
+#
+# BOTH route forms are listed for every page. Netlify serves `foo.html` at the
+# extensionless `/foo` as well, and header rules match the REQUESTED path — so
+# listing only `/foo.html` leaves `/foo` with no CSP at all now that `/*` no
+# longer carries one (PR #842 Codex review). The site's own links all use
+# `.html`, but external links, search-engine canonicalisation and typed URLs
+# reach the clean form.
+
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/index.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/index
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/assessors.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/assessors
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/integrations.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/integrations
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/demo-standalone.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/demo-standalone
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/demo-20x.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/demo-20x
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/status.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/status
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/privacy.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/privacy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/terms.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/terms
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+# The one page permitted to connect off-origin. Identical to the policy above in
+# every directive except connect-src.
+#
+# `/demo` gets the SAME permissive policy even though _redirects 301s it to
+# demo-standalone.html: on that path the header rides a redirect response and is
+# inert, but if Netlify's clean-URL resolution ever wins over the redirect, `/demo`
+# serves demo.html and needs `connect-src *`. Choosing the permissive value here
+# makes the ambiguous case fail towards a working demo rather than a silently
+# broken one, and the widening is bounded to a path that serves either a redirect
+# or demo.html itself.
+/demo.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+/demo
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+
+# Filenames are not content-hashed, so anything cached hard has to be something
+# that changes only when its name would. The fonts qualify; the catalog does
+# not — it is regenerated whenever the NIST data behind it moves.
 /static/fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+/demo-standalone-catalog.js
+  Cache-Control: public, max-age=3600
+
+/demo-exports.js
+  Cache-Control: public, max-age=3600

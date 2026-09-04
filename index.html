@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkAE (Spark Assessment Engine) — Independent Second Reader for FedRAMP Rev5 | ONE Solution Cyber</title>
+<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
+<link rel="canonical" href="https://sparkae-public.netlify.app/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/">
+<meta property="og:title" content="SparkAE — Independent Second Reader for FedRAMP Rev5">
+<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE — Independent Second Reader for FedRAMP Rev5">
+<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
+<!-- OUT-053 → ADR-0016: full editorial re-skin. Shared editorial design system. -->
+<link rel="stylesheet" href="ae-editorial.css">
+<style>svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-chart" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="10"/><line x1="10" y1="21" x2="10" y2="4"/><line x1="16" y1="21" x2="16" y2="13"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><line x1="9" y1="13" x2="16" y2="13"/><line x1="9" y1="17" x2="14" y2="17"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 110-8 5 5 0 019.6-1.5A4 4 0 1118 18H7z"/></symbol><symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="2.5" y1="21" x2="21.5" y2="21"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><line x1="9" y1="2" x2="9" y2="8"/><line x1="15" y1="2" x2="15" y2="8"/><path d="M7 8h10v3a5 5 0 01-10 0z"/><line x1="12" y1="16" x2="12" y2="22"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.5" r="0.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="18" rx="1"/><rect x="9" y="2" width="6" height="4" rx="1"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 11-2.6-6.1L20.5 8"/><path d="M20.5 3v5h-5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L20 7l-3-3L5 16z"/><line x1="14.5" y1="6.5" x2="17.5" y2="9.5"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></symbol><symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M7 2h8l4 4v16H7z"/><path d="M15 2v4h4"/></symbol></defs></svg>
+<!-- ══ MASTHEAD ══ -->
+<nav>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="index.html" class="active">Home</a>
+    <a href="assessors.html">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html">Integrations</a>
+    <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+  </div>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge fade-up"><span class="dot"></span> v0.7.0-rc1 · FedRAMP Rev5 · NIST SP 800-53A Rev 5 · OSCAL Native</div>
+    <h1 class="fade-up fade-up-1">Independent second reading for <em>FedRAMP Rev5.</em></h1>
+    <p class="sub fade-up fade-up-2">SparkAE, from ONE Solution Cyber, is an independent second reader — a deterministic Rev5 Examine engine, not a GRC platform. What ships today: the local 7-gate engine and a browser demo. Default mode is self-contained: zero outbound when LLM_PROVIDER=none. An integrity gate blocks ungrounded Satisfied. The same engine serves the 3PAO UI and the GRC API.</p>
+    <p class="brandline fade-up fade-up-2">Providers prove. Independent assessors verify. <em>SparkAE preserves the chain.</em></p>
+    <div class="ctas fade-up fade-up-3">
+      <a class="btn btn-primary" href="demo-standalone.html">Run Free Browser Demo →</a>
+      <button class="btn btn-ghost" onclick="document.getElementById('sample').scrollIntoView({behavior:'smooth'})">See a Real Finding</button>
+    </div>
+    <div class="chips fade-up fade-up-4">
+      <span class="chip accent">Rev5 local engine + browser demo</span>
+      <span class="chip">Default self-contained · zero outbound</span>
+      <span class="chip">Deterministic &amp; reproducible</span>
+      <span class="chip">Integrity gate blocks ungrounded Satisfied</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ POSITION ══ -->
+<section class="position">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">Market Position</div>
+      <div class="section-title">Providers prove. Independent assessors verify. <em>SparkAE preserves the chain.</em></div>
+      <div class="section-sub" style="margin:14px auto 0;max-width:760px">SparkAE is independence-preserving assessment infrastructure. It is <strong>not</strong> a FedRAMP Recognized independent assessment service, it does not replace one, and it does not make the authorization decision. The recognized assessment service controls scope, testing, conclusions, overrides, and the final deliverables.</div>
+    </div>
+    <div class="position-grid">
+      <div class="position-card">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg></div>
+        <h3>Drata / Vanta</h3>
+        <div class="label">Continuous Monitoring</div>
+        <p>Watch controls drift over time. Evidence collection. Checklist tracking. They tell you if something changed.</p>
+      </div>
+      <div class="position-card featured">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
+        <h3>SparkAE</h3>
+        <div class="label">Assurance Infrastructure</div>
+        <p>Evaluate the SSP against every "Determine if" statement, and the validation system behind the evidence: coverage, method, failure handling, and lineage. Provider and assessor conclusions stay separately attributed.</p>
+      </div>
+      <div class="position-card">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-doc"/></svg></div>
+        <h3>Paramify / RegScale</h3>
+        <div class="label">Documentation</div>
+        <p>Generate SSPs, manage OSCAL packages, GRC workflows. They help you write the documentation. They don't assess it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<section style="padding:72px 40px">
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><div class="num">410</div><div class="label">FedRAMP High Rev 5 Controls</div></div>
+      <div class="stat"><div class="num">1,429</div><div class="label">"Determine if" Objectives</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">Analytical Services (Local)</div></div>
+      <div class="stat"><div class="num">14<span>+</span></div><div class="label">Export Formats (OSCAL/SAR/RET/POA&M)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TWO LANES ══ -->
+<section id="lanes">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">What Ships</div>
+      <div class="section-title">Rev5 Examine. <em>20x is not sold.</em></div>
+      <div class="section-sub" style="margin:14px auto 0;max-width:760px">The Rev5 local engine assesses documents against control objectives. Lane 2 (20x) is HOLD / in development and is not a customer SKU. The engine that ships is the same one behind the 3PAO UI and the GRC API.</div>
+    </div>
+    <div class="lane-grid">
+      <div class="lane-card">
+        <div class="lane-tag">Lane 1 · Available now</div>
+        <h3>Rev5 Assessment Readiness</h3>
+        <p class="lane-lede">Document and control-objective assessment.</p>
+        <ul class="lane-list">
+          <li>Automate EXAMINE preparation across the baseline</li>
+          <li>Trace evidence to individual "Determine if" objectives</li>
+          <li>Identify unsupported implementation statements</li>
+          <li>Prepare assessor-owned draft artifacts (SAR, RET, POA&amp;M, TCW)</li>
+          <li>Export native OSCAL 1.1.2 assessment-results and POA&amp;M</li>
+        </ul>
+      </div>
+      <div class="lane-card featured">
+        <div class="lane-tag">Lane 2 · HOLD · In development — not sold</div>
+        <h3>20x Persistent Validation Assurance</h3>
+        <p class="lane-lede">Validation-system and security-outcome assessment.</p>
+        <ul class="lane-list">
+          <li>Define KSI validation methods, cadence, and failure criteria</li>
+          <li>Ingest continuous evidence and test its coverage</li>
+          <li>Review provider validation code and pipelines</li>
+          <li>Track significant changes and how they rescope assessment</li>
+          <li>Support independent assessment of validation effectiveness</li>
+        </ul>
+        <a class="lane-link" href="demo-20x.html">20x preview (in development — not sold) &rarr;</a>
+      </div>
+    </div>
+    <p class="lane-note">Lane 1 (Rev5) is what ships. Lane 2 (20x) is HOLD / in development and is not a customer SKU. Neither lane makes SparkAE the assessor of record.</p>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section id="how-it-works" class="warm">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <div class="section-title">Upload. Assess. Export. <em>Minutes, not weeks.</em></div>
+    <div class="section-sub">The same 7-gate evaluation pipeline a senior assessor follows — automated, deterministic, and reproducible. Ten local analytical services, zero external calls.</div>
+
+    <div class="pipeline">
+      <div class="pipe-step fade-up"><div class="pipe-num">1</div><div><h4>Upload Authorization Package</h4><p>SSP, policies, POA&M, scan results, pen-test reports — PDF, DOCX, XLSX, CSV, OSCAL JSON. Parsed, chunked, and indexed via BM25 (or ChromaDB RAG).</p></div></div>
+      <div class="pipe-step fade-up fade-up-1"><div class="pipe-num">2</div><div><h4>Select Baseline &amp; Controls</h4><p>Low (156 controls / 981 DIFs), Moderate (323 / 1,307), or High (410 / 1,429). Filter by family or pick individual controls.</p></div></div>
+      <div class="pipe-step fade-up fade-up-2"><div class="pipe-num">3</div><div><h4>7-Gate Assessment Engine</h4><p>Evidence presence → Concept coverage → Evidence strength → ODP validation → Contradiction check → Temporal coherence → Status determination with confidence + defensibility scores.</p></div></div>
+      <div class="pipe-step fade-up fade-up-3"><div class="pipe-num">4</div><div><h4>Review Findings</h4><p>Per-DIF Satisfied / Other Than Satisfied verdicts with evidence citations, confidence scores (0–1.0), defensibility grades (A–F), concept coverage, gap taxonomy (25 types), and remediation guidance.</p></div></div>
+      <div class="pipe-step fade-up fade-up-4"><div class="pipe-num">5</div><div><h4>Export Draft Deliverables</h4><p>OSCAL JSON (assessment-results, POA&M), SAR (JSON + DOCX), SAP, RET CSV, POA&M, CRM, CIS, TCW — 14+ formats for assessor review, provider remediation, or GRC re-ingest. Adoption into a submission package is the recognized assessment service's call, not the generator's.</p></div></div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="terminal fade-up fade-up-5">
+      <div class="term-bar">
+        <span class="term-dot" style="background:#B23A1C"></span>
+        <span class="term-dot" style="background:#D4A017"></span>
+        <span class="term-dot" style="background:#3D5235"></span>
+        <span style="flex:1"></span>
+        <span class="term-title">SPARKAE ENGINE</span>
+      </div>
+      <div class="term-body">
+        <div><span class="prompt">$ </span><span class="cmd">curl -X POST localhost:8000/v1/assessments -H "X-API-Key: $KEY" -d '{"baseline":"Low","controls":["AC-2","IA-5","CM-6"]}'</span></div>
+        <div><span class="info">SparkAE v0.7.0-rc1 — Deterministic 7-Gate Assessor</span></div>
+        <div><span class="info">Loading catalog: 3 controls, 42 DIFs</span></div>
+        <div><span class="info">Parsing 3 documents: SSP.pdf, AC-Policy.docx, IR-Plan.pdf</span></div>
+        <div><span class="info">Indexing 412 evidence chunks (BM25)</span></div>
+        <div><span class="out">Gate 1 · Evidence Presence: retrieving chunks...</span></div>
+        <div><span class="out">Gate 2 · Concept Coverage: decomposing DIFs into atomic concepts...</span></div>
+        <div><span class="out">Gate 3 · Evidence Strength: scoring quality signals...</span></div>
+        <div><span class="out">Gate 4 · ODP Validation: checking org-defined parameters...</span></div>
+        <div><span class="out">Assessing AC-2: Account Management (26 DIFs)</span></div>
+        <div><span class="ok">  AC-2_a.[01]: Satisfied (0.91) — account types in §3.2</span></div>
+        <div><span class="err">  AC-2_a.[02]: Other Than Satisfied (0.68) — prohibited types not listed</span></div>
+        <div><span class="ok">  AC-2_b: Satisfied (0.87) — managers designated per component</span></div>
+        <div><span class="warn">  AC-2_g: Other Than Satisfied (0.42) — vague: "monitored" without specifics</span></div>
+        <div><span class="out">...</span></div>
+        <div><span class="info">Complete: 28 Satisfied / 14 Other Than Satisfied (66.7%)</span></div>
+        <div><span class="ok">Exports ready: OSCAL-JSON, SAR, RET-CSV, POA&M, CRM, CIS</span></div>
+        <div><span class="prompt">$ </span><span class="cmd" style="border-right:2px solid var(--vermillion);animation:ae-blink 1s step-end infinite;padding-right:2px"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SAMPLE FINDING (artifact) ══ -->
+<section id="sample">
+  <div class="container">
+    <div class="section-label">What You Get Back</div>
+    <div class="section-title">A finding you could hand to a 3PAO. <em>Not a black-box verdict.</em></div>
+    <div class="section-sub">Every determination ships with the evidence it relied on, a confidence score, a defensibility grade, the specific gap, and the fix. Here is one real Other-Than-Satisfied finding from a sample assessment (synthetic data — “CloudVault Federal”).</div>
+
+    <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:20px;margin-top:36px;align-items:start">
+      <!-- Human-readable finding card -->
+      <div style="border:1px solid var(--rule);background:var(--paper);padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--rule);background:var(--paper-warm)">
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--ink)">AC-2_a.[02] · Account Management</div>
+          <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;background:rgba(178,58,28,0.12);color:var(--vermillion)">Other Than Satisfied</span>
+        </div>
+        <div style="padding:18px 20px">
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)">
+            <div><strong style="color:var(--ink)">Confidence</strong><br>0.68 / 1.0</div>
+            <div><strong style="color:var(--ink)">Defensibility</strong><br>Grade C</div>
+            <div><strong style="color:var(--ink)">Gap type</strong><br>Incomplete coverage</div>
+            <div><strong style="color:var(--ink)">Method</strong><br>EXAMINE</div>
+          </div>
+          <p style="font-size:14px;line-height:1.6;color:var(--ink-soft);margin-bottom:12px"><strong style="color:var(--ink)">Determine-if statement:</strong> “prohibited account types are defined.” The SSP enumerates permitted account types in §3.2 but never lists the account types the system <em>prohibits</em>, so the objective is only partially covered.</p>
+          <p style="font-size:14px;line-height:1.6;color:var(--ink-soft);margin-bottom:12px"><strong style="color:var(--ink)">Evidence cited:</strong> SSP §3.2 “Account Types” (BM25 score 0.74); AC-Policy.docx §4.1.</p>
+          <p style="font-size:14px;line-height:1.6;color:var(--ink-soft);margin:0"><strong style="color:var(--ink)">Remediation:</strong> Add an explicit list of prohibited account types (e.g., shared, guest, anonymous) to SSP §3.2 and cross-reference the account-management policy.</p>
+        </div>
+      </div>
+      <!-- OSCAL export snippet -->
+      <div class="terminal" style="margin:0">
+        <div class="term-bar">
+          <span class="term-dot" style="background:#B23A1C"></span>
+          <span class="term-dot" style="background:#D4A017"></span>
+          <span class="term-dot" style="background:#3D5235"></span>
+          <span style="flex:1"></span>
+          <span class="term-title">assessment-results.json (OSCAL)</span>
+        </div>
+        <div class="term-body" style="font-size:12px;line-height:1.7">
+          <div><span class="out">{</span></div>
+          <div><span class="out">&nbsp;&nbsp;"target": "AC-2_a.[02]",</span></div>
+          <div><span class="out">&nbsp;&nbsp;"props": [</span></div>
+          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "status", "value": </span><span class="err">"other-than-satisfied"</span><span class="out"> },</span></div>
+          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> },</span></div>
+          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> }</span></div>
+          <div><span class="out">&nbsp;&nbsp;],</span></div>
+          <div><span class="out">&nbsp;&nbsp;"related-observations": [</span></div>
+          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "description": </span><span class="ok">"SSP §3.2"</span><span class="out">, "method": "EXAMINE" }</span></div>
+          <div><span class="out">&nbsp;&nbsp;]</span></div>
+          <div><span class="out">}</span></div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:20px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)">Same run also exports SAR (JSON + DOCX), RET CSV, and POA&amp;M — <a href="demo-standalone.html">try it on your own package →</a></p>
+  </div>
+</section>
+
+<!-- ══ THREE MODES ══ -->
+<section id="modes">
+  <div class="container">
+    <div class="section-label">Deployment Modes</div>
+    <div class="section-title">Three deployment modes. <em>You choose what leaves your network.</em></div>
+    <div class="section-sub">Same engine for the 3PAO UI and the GRC API. LLM is always opt-in — and when a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
+
+    <div class="modes-grid">
+      <div class="mode-card">
+        <span class="mode-tag safe">Default</span>
+        <h3>Self-Contained</h3>
+        <div class="mode-sub">LLM_PROVIDER=none</div>
+        <p>Deterministic 7-gate Examine engine with 10 local analytical services. BM25 retrieval + optional ChromaDB RAG. Zero outbound HTTP, zero DNS, zero CDN when LLM_PROVIDER=none. Default self-contained / zero outbound — not sold as a cut air-gap tarball.</p>
+        <ul class="mode-specs">
+          <li><span>External calls</span><span>None</span></li>
+          <li><span>Install</span><span>pip install .</span></li>
+          <li><span>API key</span><span>Not needed</span></li>
+          <li><span>Best for</span><span>Default / zero outbound</span></li>
+        </ul>
+      </div>
+      <div class="mode-card">
+        <span class="mode-tag review">Opt-in</span>
+        <h3>Cloud LLM</h3>
+        <div class="mode-sub">LLM_PROVIDER=anthropic</div>
+        <p>Opt-in mode where the cloud LLM produces the determination directly. The 7-gate engine does not run together with a model. An integrity gate still blocks ungrounded Satisfied by default. Use LLM_PROVIDER=none for the deterministic 7-gate path.</p>
+        <ul class="mode-specs">
+          <li><span>External calls</span><span>Cloud LLM API</span></li>
+          <li><span>Install</span><span>pip install .[cloud]</span></li>
+          <li><span>API key</span><span>LLM_API_KEY</span></li>
+          <li><span>Best for</span><span>Final review</span></li>
+        </ul>
+      </div>
+      <div class="mode-card">
+        <span class="mode-tag safe">CUI Safe</span>
+        <h3>Local LLM</h3>
+        <div class="mode-sub">LLM_PROVIDER=ollama</div>
+        <p>Ollama-powered local LLM option. ChromaDB vector search for semantic retrieval. Nothing leaves the network. Not sold as SCIF-ready. When a model is on, the 7-gate engine does not run with it.</p>
+        <ul class="mode-specs">
+          <li><span>External calls</span><span>None</span></li>
+          <li><span>Install</span><span>pip install .[local]</span></li>
+          <li><span>API key</span><span>Not needed</span></li>
+          <li><span>Best for</span><span>Local LLM option</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ZERO-DATA MOAT ══ -->
+<section id="zero-data" class="warm">
+  <div class="container">
+    <div class="section-label">Why a CUI Program Can Use It At All</div>
+    <div class="section-title">Cloud-native tools can't follow you <em>inside the boundary.</em></div>
+    <div class="section-sub">Drata and Vanta are SaaS — your evidence lives in their cloud. SparkAE's default mode (LLM_PROVIDER=none) runs entirely inside your deployment: zero outbound HTTP, zero DNS, zero CDN, no telemetry, no calls home. That is the default self-contained / zero-outbound posture — not a cut air-gap tarball SKU, and not sold as SCIF-ready.</div>
+
+    <div class="feature-grid">
+      <div class="feature-card"><div class="h">Deterministic &amp; reproducible</div><div class="b">The same package yields the same findings every time — no wall-clock, no randomness, no model drift. A finding you can defend is a finding you can reproduce on demand for a 3PAO or PMO.</div></div>
+      <div class="feature-card"><div class="h">Zero data leaves your network</div><div class="b">Default mode (<code>LLM_PROVIDER=none</code>) makes no outbound calls of any kind. CUI never transits a vendor cloud because there is no vendor cloud in the path.</div></div>
+      <div class="feature-card"><div class="h">Default self-contained / zero outbound</div><div class="b">Default mode makes no outbound calls of any kind. A local LLM option (Ollama) is opt-in. Not sold as a customer air-gap tarball or as SCIF-ready.</div></div>
+      <div class="feature-card"><div class="h">Honest about the cloud mode</div><div class="b">The opt-in cloud-LLM mode is clearly flagged: the deterministic engine doesn't run there, so those verdicts aren't engine-grounded. In a market full of “AI compliance magic,” we tell you exactly when the engine is and isn't behind a verdict.</div></div>
+    </div>
+    <p class="moat" style="text-align:center;margin-top:36px">Zero data out is the second moat.</p>
+  </div>
+</section>
+
+<!-- ══ INDEPENDENCE ══ -->
+<section id="independence" class="independence">
+  <div class="container">
+    <div class="ind-grid">
+      <div class="ind-prose">
+        <div class="section-label">Why Independence Matters</div>
+        <div class="section-title">Neither side built it. Neither side controls it.</div>
+        <p>An assessment service building its own tooling creates a conflict of interest. A provider's self-assessment tool lacks credibility. SparkAE is neither party's instrument — the same engine, the same rules, applied consistently, with every determination traced to the evidence that produced it.</p>
+        <p>When the provider and the independent assessment service work in the same system, findings become comparable and attributable. The assessor sees what the provider claimed, what the evidence supports, what was remediated, and what is still open — and records their own conclusion separately from the provider's.</p>
+        <p class="moat">The independence is the moat.</p>
+      </div>
+      <div class="ind-visual">
+        <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-cloud"/></svg>&nbsp; Cloud Service Provider<br><span>Implements controls · Supplies evidence &amp; validation methods</span></div>
+        <div class="ind-arrow">↓ uploads SSP</div>
+        <div class="ind-node spark"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg>&nbsp; SparkAE<br><span>Deterministic · Auditable · Neither party's instrument</span></div>
+        <div class="ind-arrow">↓ validated findings</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg>&nbsp; Independent Assessment Service<br><span>Owns scope, testing &amp; conclusions</span></div>
+          <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bank"/></svg>&nbsp; FedRAMP PMO<br><span>Reviews SAR</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="urgency">
+      <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
+      <div>
+        <h4>Machine-readable authorization data</h4>
+        <p>FedRAMP is moving authorization packages toward machine-readable form. RFC-0024, which first proposed the mandate, was <strong>closed</strong> — its requirements were modified and folded into the 2026 Consolidated Rules rather than adopted as drafted, so treat the specifics as still settling. SparkAE exports native OSCAL 1.1.2 assessment-results and POA&amp;M today, which is the part that does not change: the data is structured from the start, whatever shape the final requirement takes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PLATFORM FEATURES ══ -->
+<section id="features" class="warm">
+  <div class="container">
+    <div class="section-label">Engine</div>
+    <div class="section-title">The Rev5 Examine engine. <em>Not a GRC platform.</em></div>
+    <div class="section-sub">Built for production. Four rounds of adversarial security review. A comprehensive automated test suite. Self-contained by default.</div>
+
+    <div class="feature-grid">
+      <div class="feature-card"><div class="h">10 Analytical Services</div><div class="b">BM25 retrieval, concept coverage, evidence strength, defensibility scoring, contradiction detection, temporal coherence, ODP lifecycle, gap engine (25 types), confidence scoring, citation builder — all local, all deterministic.</div></div>
+      <div class="feature-card"><div class="h">14+ FedRAMP Export Formats</div><div class="b">OSCAL JSON (assessment-results, POA&M), SAR (JSON + DOCX), SAP (JSON + DOCX), RET CSV, POA&M, CRM (JSON + CSV), CIS (JSON + CSV), TCW CSV — all from a single assessment run.</div></div>
+      <div class="feature-card"><div class="h">8-Role FedRAMP RBAC</div><div class="b">system_admin, threepao_admin, lead_assessor, assessor, reviewer, read_only, csp_poc, authorizing_official — with multi-tenant org isolation and permission-gated API access.</div></div>
+      <div class="feature-card"><div class="h">Hash-Chain Audit Log</div><div class="b">Append-only AU-2/AU-3 compliant audit trail with integrity verification (AU-9). SIEM-ready exports in RFC 5424 syslog and ArcSight CEF. Configurable alert rules.</div></div>
+      <div class="feature-card"><div class="h">Scan Import &amp; Compliance Mapping</div><div class="b">Import Nessus, ZAP, and generic CSV vulnerability scans. Pen-test report ingestion. Automatic mapping of vulnerabilities to NIST controls for POA&M generation.</div></div>
+      <div class="feature-card"><div class="h">Production-Hardened Docker</div><div class="b">Multi-stage build, non-root (uid 1000), tini PID 1, read-only filesystem, cap_drop ALL, health checks, graceful shutdown drain, orphan job reaper on startup.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRICING ══ -->
+<section id="pricing">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="section-label" style="justify-content:center">Next step</div>
+      <div class="section-title">Priced against the assessment, <em>not per seat.</em></div>
+      <div class="section-sub" style="margin:12px auto 0">What ships is the Rev5 local engine and the browser demo. Hosted SaaS as a CSP SKU, GovCloud install, and air-gap tarball are not sold. Terms are confirmed by the founder — this page is not a rate card.</div>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card featured" style="grid-column:1/-1;max-width:420px;margin:0 auto">
+        <h3>30-day paid pilot</h3>
+        <div class="price-sub">Your package, the Rev5 local engine. Gap report you keep either way.</div>
+        <ul>
+          <li>No list, add-on, or OEM figures on this page</li>
+          <li>Founder confirms terms</li>
+        </ul>
+        <a class="price-btn" href="mailto:info@sparkae.ai?subject=Paid%20pilot%20request">Ask about a paid pilot</a>
+      </div>
+    </div>
+    <p style="margin-top:20px;text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)">Licensed, not sold. Federal buyers: FAR 12.212 / DFARS 227.7202 commercial-software terms.</p>
+  </div>
+</section>
+
+<!-- ══ CROSS-PAGE LINKS ══ -->
+<section class="warm" style="padding:64px 40px">
+  <div class="container">
+    <div class="linkcards">
+      <a href="assessors.html" class="linkcard">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg></div>
+        <div class="h">For Assessors</div>
+        <div class="b">For FedRAMP Recognized independent assessment services — historically 3PAOs. The Rev5 Examine engine: same 7-gate pipeline the GRC API runs. →</div>
+      </a>
+      <a href="demo-standalone.html" class="linkcard featured">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
+        <div class="h">Live Demo</div>
+        <div class="b">Load the pre-loaded sample SSP (or bring your own) and watch the deterministic 7-gate engine assess it against the FedRAMP Low baseline — entirely in your browser. No signup, no API key. →</div>
+      </a>
+      <a href="integrations.html" class="linkcard">
+        <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-plug"/></svg></div>
+        <div class="h">Already Have a GRC Tool?</div>
+        <div class="b">Export JSON, CSV, or OSCAL for the GRC tool you already run. Not a certified two-way Drata/Vanta sync. →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section class="cta-section" id="cta">
+  <div class="container">
+    <h2>See a real assessment run <em>in under a minute.</em></h2>
+    <p>The browser demo assesses a sample SSP against the full Low baseline — 156 controls, 981 objectives — entirely on your machine, with no signup and no upload. When you are ready to run your own package, ask us about a 30-day paid pilot.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="demo-standalone.html">Run Free Browser Demo →</a>
+      <a class="btn btn-ghost" style="font-size:15px;padding:18px 40px" href="mailto:info@sparkae.ai?subject=Paid%20pilot%20request" target="_blank" rel="noopener">Ask about a paid pilot</a>
+    </div>
+    <div style="margin-top:24px;font-family:var(--font-mono);font-size:13px;color:var(--ink-soft)">
+      Or email us: <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
+    </div>
+    <p style="margin-top:28px;font-size:12px;line-height:1.6;color:var(--ink-soft);max-width:680px;margin-left:auto;margin-right:auto">
+      SparkAE is independence-preserving assessment infrastructure. It is not a
+      FedRAMP Recognized independent assessment service (historically, a 3PAO),
+      it does not replace one, and it does not issue the official Security
+      Assessment Report or an Authorization to Operate. The recognized
+      assessment service controls scope, testing, conclusions, overrides, and
+      the final deliverables; the authorizing official makes the authorization
+      decision.
+    </p>
+  </div>
+</section>
+
+<!-- ══ COLOPHON FOOTER ══ -->
+<footer>
+  <div class="container" style="text-align:center">
+    <div class="colophon-brand">Spark<span>AE</span></div>
+    <div style="margin-bottom:8px">
+      <a href="index.html">Home</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="assessors.html">For Assessors</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="demo-standalone.html">Demo</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="integrations.html">Integrations</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="privacy.html">Privacy</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="terms.html">Terms</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+    </div>
+    <div class="foot-rule"></div>
+    <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+    <!-- OUT-080: precise external-calls footnote per externalcalls.md audit. -->
+    <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
+      <strong>Zero external calls by default.</strong> Cloud LLM, SSO,
+      webhooks, email, SIEM, and cloud storage are all opt-in via
+      explicit configuration. The deterministic assessment path runs
+      entirely inside the deployment boundary; no telemetry, no
+      auto-update, no calls home.
+    </div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for FedRAMP Rev5</div>
+  </div>
+</footer>
+</body>
+</html>

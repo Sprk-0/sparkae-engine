@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SparkAE — 20x Persistent Validation Assurance Walkthrough</title>
 <meta name="description" content="A six-step walkthrough of FedRAMP 20x validation assurance: a provider defines a KSI and its validation method, SparkAE tests coverage, and an independent assessment service runs challenge tests — with provider and assessor conclusions separately attributed.">
-<link rel="canonical" href="https://deploy-preview-954--sparkae.netlify.app/demo-20x.html">
+<link rel="canonical" href="https://sparkae-public.netlify.app/demo-20x.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SparkAE">
-<meta property="og:url" content="https://deploy-preview-954--sparkae.netlify.app/demo-20x.html">
+<meta property="og:url" content="https://sparkae-public.netlify.app/demo-20x.html">
 <meta property="og:title" content="SparkAE — 20x Persistent Validation Assurance Walkthrough">
 <meta property="og:description" content="Providers prove. Independent assessors verify. A six-step walkthrough of how a KSI validation method is defined, coverage-tested, independently challenged, and signed.">
 <meta name="twitter:card" content="summary">
@@ -100,12 +100,15 @@
 
 <!-- ══ MASTHEAD ══ -->
 <nav>
-  <a href="demo-standalone.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
   <div class="links">
+    <a href="index.html">Home</a>
+    <a href="assessors.html">For Assessors</a>
     <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html">Integrations</a>
     <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
   </div>
-  <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener" class="nav-cta">View on GitHub</a>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
 </nav>
 
 <!-- ══ HERO ══ -->
@@ -318,7 +321,7 @@ CT-3  Strip the actor field from one record in <span class="str">prod-1</span>.
         This walkthrough is illustrative. The KSI identifier, theme, pass criteria, and Rev5 control
         mappings are the real entries from the CR26 KSI catalog; the provider system, validation code,
         challenge tests, and signatures are constructed to show the shape of the flow. Lane 2 is in
-        development &mdash; the Rev5 lane is what ships today.
+        development &mdash; see the <a href="index.html#lanes">two lanes</a> for what ships today.
       </p>
     </div>
 
@@ -345,7 +348,7 @@ CT-3  Strip the actor field from one record in <span class="str">prod-1</span>.
     <p>The browser demo assesses a sample SSP against the full FedRAMP Low baseline — 156 controls, 981 objectives — entirely on your machine. No signup, no upload, no network calls.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
       <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="demo-standalone.html">Run the Rev5 Demo &rarr;</a>
-      <a class="btn btn-ghost" style="font-size:15px;padding:18px 40px" href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Read the Source &rarr;</a>
+      <a class="btn btn-ghost" style="font-size:15px;padding:18px 40px" href="assessors.html">For Assessors &rarr;</a>
     </div>
   </div>
 </section>
@@ -354,7 +357,13 @@ CT-3  Strip the actor field from one record in <span class="str">prod-1</span>.
 <footer class="colophon">
   <div class="container">
     <div class="colophon-links">
+      <a href="index.html">Home</a>
+      <a href="assessors.html">For Assessors</a>
       <a href="demo-standalone.html">Live Demo</a>
+      <a href="integrations.html">Integrations</a>
+      <a href="status.html">Status</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
     </div>

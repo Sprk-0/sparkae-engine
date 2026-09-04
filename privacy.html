@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — SparkAE</title>
+<meta name="description" content="How SparkAE handles data. In the default deterministic mode the engine makes zero outbound calls and no assessment data leaves your deployment boundary.">
+<link rel="canonical" href="https://sparkae-public.netlify.app/privacy.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/privacy.html">
+<meta property="og:title" content="Privacy Policy — SparkAE">
+<meta property="og:description" content="How SparkAE handles data. In the default deterministic mode the engine makes zero outbound calls and no assessment data leaves your deployment boundary.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Privacy Policy — SparkAE">
+<meta name="twitter:description" content="How SparkAE handles data. In the default deterministic mode the engine makes zero outbound calls and no assessment data leaves your deployment boundary.">
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+  .legal-wrap{max-width:780px;margin:0 auto;padding:64px 24px 80px;position:relative;z-index:2}
+  .legal-wrap h1{font-family:var(--font-display);font-size:40px;font-weight:500;letter-spacing:-0.02em;margin-bottom:8px}
+  .legal-wrap .updated{font-family:var(--font-mono);font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:36px}
+  .legal-wrap h2{font-family:var(--font-mono);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--vermillion);border-bottom:1px solid var(--rule);padding-bottom:10px;margin:40px 0 14px}
+  .legal-wrap p,.legal-wrap li{font-size:15px;line-height:1.7;color:var(--ink-soft)}
+  .legal-wrap ul{padding-left:20px;margin:8px 0}
+  .legal-wrap strong{color:var(--ink)}
+  .legal-note{font-family:var(--font-mono);font-size:11px;line-height:1.6;color:var(--ink-soft);border:1px dashed var(--rule);padding:12px 16px;margin-bottom:36px}
+</style>
+</head>
+<body>
+
+<!-- ══ MASTHEAD ══ -->
+<nav>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="index.html">Home</a>
+    <a href="assessors.html">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html">Integrations</a>
+    <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+  </div>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
+</nav>
+
+<div class="legal-wrap">
+  <h1>Privacy Policy</h1>
+  <div class="updated">Last updated: 26 June 2026</div>
+
+  <div class="legal-note">
+    This policy describes how the SparkAE marketing site and the SparkAE
+    software handle data. It is provided as a clear-language summary and
+    should be reviewed by your counsel before it governs a commercial
+    agreement.
+  </div>
+
+  <h2>The short version</h2>
+  <p>
+    SparkAE is designed so that <strong>your assessment data stays inside your
+    deployment boundary</strong>. In the default deterministic mode
+    (<code>LLM_PROVIDER=none</code>) the engine makes zero outbound network
+    calls — no telemetry, no auto-update, no calls home. Authorization
+    packages, SSPs, evidence, and findings are processed entirely within the
+    container you run. We never see them.
+  </p>
+
+  <h2>What this site collects</h2>
+  <p>
+    The marketing site is static and loads no third-party CDNs, fonts,
+    analytics, or trackers. We do not set advertising or analytics cookies.
+    The only personal data we receive is what you choose to send us by email
+    (for example, when you click “Start a Pilot” or “Contact Sales,” which
+    open a pre-addressed message to one of our <code>@sparkae.ai</code>
+    inboxes).
+  </p>
+
+  <h2>Information you send us</h2>
+  <p>When you email us about a pilot, a partnership, or an integration we receive:</p>
+  <ul>
+    <li>Your name, email address, and anything you include in the message.</li>
+    <li>Your organization and role, if you provide them.</li>
+  </ul>
+  <p>
+    We use this solely to respond to you and to administer a pilot or
+    commercial relationship. We do not sell it or share it with advertisers.
+  </p>
+
+  <h2>Assessment data inside the software</h2>
+  <p>
+    When you run the SparkAE software, the data you assess lives in
+    <strong>your</strong> database within <strong>your</strong> infrastructure
+    under multi-tenant isolation. Optional integrations — cloud LLM, SSO,
+    webhooks, email, SIEM, and cloud storage — are off by default and only
+    transmit data once you explicitly configure them. Choosing the cloud LLM
+    mode sends content you submit to the configured provider; the default and
+    local-LLM modes do not.
+  </p>
+
+  <h2>Retention</h2>
+  <p>
+    We retain pilot and sales correspondence for as long as needed to support
+    the relationship and to meet legal obligations, then delete it. Data inside
+    your SparkAE deployment is retained according to your own configuration and
+    policies, not ours.
+  </p>
+
+  <h2>Your choices</h2>
+  <p>
+    You can ask us to access or delete the correspondence you’ve sent by
+    emailing <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this policy? Email
+    <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>.
+  </p>
+</div>
+
+<!-- ══ COLOPHON FOOTER ══ -->
+<footer>
+  <div class="container" style="text-align:center">
+    <div class="colophon-brand">Spark<span>AE</span></div>
+    <div style="margin-bottom:8px">
+      <a href="index.html">Home</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="assessors.html">For Assessors</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="demo-standalone.html">Demo</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="integrations.html">Integrations</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="privacy.html">Privacy</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="terms.html">Terms</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
+    </div>
+    <div class="foot-rule"></div>
+    <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE — The Independent Validation Layer for FedRAMP</div>
+  </div>
+</footer>
+</body>
+</html>

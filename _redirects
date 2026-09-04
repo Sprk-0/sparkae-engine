@@ -1,7 +1,23 @@
-# The repository root has no index page; the demo lives under demo/. Send the
-# root there with a 302 (not a 301, so the root can become a real page later
-# without fighting browser caches). A rewrite (200) would break the demo's
-# relative script and stylesheet URLs, which resolve against demo/.
-/        /demo/demo-standalone.html   302
-/demo    /demo/demo-standalone.html   302
-/20x     /demo/demo-20x.html          302
+# Netlify redirect rules for the published site. build.sh copies this into dist/.
+#
+# Short link for outreach: the standalone demo is the primary "Live Demo" target
+# (see README.md), and <your-domain>/demo is what fits in an email. A 301 rather
+# than a rewrite so the address bar ends on the canonical URL that the page's
+# own <link rel="canonical"> already declares — a rewrite would serve the same
+# content at two addresses and split the signal.
+/demo    /demo-standalone.html    301
+
+# www -> apex is NOT set here on purpose. Netlify does that itself once a
+# primary domain is chosen in Domain settings, and hardcoding one direction
+# would fight that setting (and loop) if the other is picked.
+
+# The assessor page was /3pao.html until the buyer-facing rename to
+# "Independent Assessment Services". Anything already linking the old path —
+# outreach emails, a partner's site, a search result — has to keep landing.
+/3pao.html    /assessors.html    301
+
+# The first public deploy served the demo from a demo/ folder; keep those
+# links alive now that the whole site lives at the root.
+/demo/demo-standalone.html   /demo-standalone.html   301
+/demo/demo-20x.html          /demo-20x.html          301
+/demo/*                      /:splat                 301

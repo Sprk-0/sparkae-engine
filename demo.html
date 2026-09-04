@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive live demo of SparkAE — upload your own FedRAMP package, run a real deterministic 7-gate assessment, and export deliverables. Zero external API calls.">
+<title>Demo · SparkAE</title>
+<link rel="canonical" href="https://sparkae-public.netlify.app/demo.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://sparkae-public.netlify.app/demo.html">
+<meta property="og:title" content="SparkAE Live Demo — Run a Real 7-Gate Assessment">
+<meta property="og:description" content="Upload a FedRAMP package, run a real deterministic 7-gate assessment, and export deliverables. Zero external API calls.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE Live Demo — Run a Real 7-Gate Assessment">
+<meta name="twitter:description" content="Upload a FedRAMP package, run a real deterministic 7-gate assessment, and export deliverables. Zero external API calls.">
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+/* ── Design tokens (supplement ae-editorial.css) ── */
+:root{
+  --vermillion-soft:#D4634B;
+  --console-bg:#0F1419;
+  --console-border:#2C3540;
+  --console-surface:#1A2028;
+  --console-text:#B8C0CC;
+  --console-dim:#7A8290;
+  --sat-color:#5A8B4A;
+  --sat-text:#A8C39A;
+  --ots-color:#E14D2A;
+  --ots-text:#FF8A6B;
+  --nr-color:#D4A017;
+  --nr-text:#E8C572;
+}
+
+/* ── Masthead override (editorial header for demo) ── */
+.masthead{
+  background:var(--paper-warm);
+  border-bottom:1px solid var(--rule);
+  padding:18px 32px;
+}
+.masthead-inner{
+  max-width:1280px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+}
+.masthead-left{display:flex;align-items:baseline;gap:16px}
+.masthead-sub{font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft)}
+.masthead-right{display:flex;gap:8px;flex-wrap:wrap}
+.fw-chip{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);padding:5px 10px;border:1px solid var(--rule);background:var(--paper);border-radius:3px}
+.fw-chip+.fw-chip{border-color:var(--vermillion);color:var(--vermillion)}
+
+/* ── Page hero ── */
+.page-hero{padding:64px 32px 48px;background:var(--paper);border-bottom:1px solid var(--rule-soft)}
+.page-hero-inner{max-width:1280px;margin:0 auto}
+.page-meta{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:16px}
+.page-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--vermillion)}
+.page-hero h1{font-family:var(--font-display);font-size:44px;line-height:1.1;font-weight:600;letter-spacing:-0.02em;color:var(--ink);margin:0 0 16px;max-width:880px}
+.page-hero h1 em{font-style:italic;font-weight:400;color:var(--vermillion)}
+.page-hero-sub{font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:760px;margin:0}
+@media(max-width:768px){.page-hero h1{font-size:32px}.page-hero{padding:40px 20px 32px}}
+
+/* ── Console section ── */
+.console-section{padding:56px 32px 96px;position:relative;z-index:2}
+.console-inner{max-width:1280px;margin:0 auto}
+.console-grid{display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start}
+@media(max-width:900px){.console-grid{grid-template-columns:1fr}}
+
+/* ── Left rail ── */
+.rail{background:var(--paper-warm);border:1px solid var(--rule);padding:28px;position:sticky;top:80px}
+/* Below 900px .console-grid collapses to one column: a sticky rail stays pinned while the
+   position:relative .console scrolls over it, and the console then paints above the rail
+   (positioned beats static/sticky-at-auto-z), swallowing taps on #run-btn. Unstick it —
+   sticky has no purpose in a single-column stack. Must come after the .rail rule above. */
+@media(max-width:900px){.rail{position:static}
+  /* Grid items default to min-width:auto, so an intrinsically wide child forces the
+     1fr track past the phone viewport; body{overflow-x:hidden} then clips the excess
+     with no way to scroll to it. Let the track shrink to the screen. */
+  .console-grid>*{min-width:0}}
+.rail-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--vermillion);margin-bottom:8px}
+.rail-title{font-family:var(--font-display);font-size:22px;font-weight:500;letter-spacing:-0.01em;margin-bottom:24px}
+.rail-divider{height:1px;background:var(--rule);margin:24px 0}
+.rail-stat{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px;padding:8px 0}
+.rail-stat-label{color:var(--ink-soft)}
+.rail-stat-value{color:var(--ink);font-weight:600}
+
+.ssp-list{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.ssp-option{background:var(--paper);border:1px solid var(--rule);padding:14px 16px;cursor:pointer;transition:all .2s;text-align:left;font-family:var(--font-body)}
+.ssp-option:hover{border-color:var(--ink)}
+.ssp-option.selected{border-color:var(--vermillion);background:#FBF0EC}
+.ssp-name{font-size:14px;font-weight:500;margin-bottom:4px}
+.ssp-meta{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);letter-spacing:0.04em}
+.ssp-option.selected .ssp-meta{color:var(--vermillion)}
+
+.ssp-option.ssp-upload{border-style:dashed;background:transparent}
+.ssp-option.ssp-upload:hover{border-color:var(--vermillion);background:#FBF0EC}
+.ssp-option.ssp-upload .ssp-name{color:var(--vermillion);font-weight:500}
+.ssp-option.ssp-upload.has-files .ssp-name::before{content:'\2713 ';color:var(--moss)}
+.ssp-option.ssp-upload.has-files{border-style:solid;background:#FBF0EC}
+
+.ssp-upload-status{margin-bottom:16px;padding:10px 12px;background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--moss);font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;line-height:1.6;color:var(--ink-soft)}
+.ssp-upload-status .upload-row{display:flex;justify-content:space-between;gap:8px}
+.ssp-upload-status .upload-label{color:var(--ink-soft)}
+.ssp-upload-status .upload-value{color:var(--ink);font-weight:500}
+.ssp-upload-status .upload-files{margin-top:6px;padding-top:6px;border-top:1px solid var(--rule-soft);max-height:120px;overflow:auto}
+.ssp-upload-status .upload-file{padding:2px 0;font-size:9px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ssp-upload-status .upload-file .file-tag{display:inline-block;width:36px;color:var(--moss);font-weight:600}
+.ssp-upload-status .upload-clear{display:inline-block;margin-top:8px;padding:4px 10px;background:transparent;border:1px solid var(--rule);color:var(--ink-soft);cursor:pointer;font-family:inherit;font-size:9px;letter-spacing:0.06em;text-transform:uppercase}
+.ssp-upload-status .upload-clear:hover{border-color:var(--vermillion);color:var(--vermillion)}
+
+/* Config inputs in rail */
+.rail-input{width:100%;padding:8px 10px;border:1px solid var(--rule);background:var(--paper);font-family:var(--font-mono);font-size:11px;color:var(--ink);outline:none;margin-bottom:8px}
+.rail-input:focus{border-color:var(--vermillion)}
+.rail-input-label{display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+select.rail-input{appearance:auto}
+
+/* Run button */
+.run-btn{width:100%;margin-top:24px;padding:14px 24px;font-family:var(--font-mono);font-size:13px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;border:1px solid var(--vermillion);cursor:pointer;background:var(--vermillion);color:var(--paper);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.run-btn:hover{background:var(--vermillion-dark,#8E2D14);transform:translateY(-1px)}
+.run-btn:disabled{background:var(--rule);border-color:var(--rule);cursor:not-allowed;transform:none;color:var(--ink-soft)}
+.run-btn:disabled:hover{background:var(--rule);transform:none}
+.run-btn .arrow{font-size:16px}
+
+/* ── Right: console ── */
+.console{background:var(--console-bg);color:var(--paper);min-height:600px;position:relative}
+.console-header{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid var(--console-border);font-family:var(--font-mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase}
+.console-title{color:var(--vermillion)}
+.console-time{color:var(--console-dim)}
+.console-time .timer{color:var(--paper);font-weight:600}
+.console-body{padding:28px}
+
+/* Idle state */
+.idle-state{text-align:center;padding:80px 32px;color:var(--console-dim)}
+.idle-state h3{font-family:var(--font-display);font-size:28px;font-weight:500;color:var(--paper);margin-bottom:16px;letter-spacing:-0.01em}
+.idle-state p{font-size:15px;line-height:1.6;max-width:480px;margin:0 auto}
+.idle-glyph{font-family:var(--font-display);font-size:96px;font-weight:600;color:var(--vermillion);line-height:1;margin-bottom:24px;opacity:.4}
+
+/* Stage progression */
+.stages{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-bottom:32px}
+.stage{border-right:1px solid var(--console-border);padding:14px 12px;position:relative;transition:all .3s}
+.stage:last-child{border-right:none}
+.stage-num{font-family:var(--font-mono);font-size:10px;color:var(--console-dim);letter-spacing:0.1em;margin-bottom:6px}
+.stage-name{font-family:var(--font-body);font-size:12px;color:var(--console-text);font-weight:500}
+.stage.active{background:rgba(178,58,28,.15);border-bottom:2px solid var(--vermillion)}
+.stage.active .stage-num{color:var(--vermillion)}
+.stage.active .stage-name{color:var(--paper)}
+.stage.done{border-bottom:2px solid var(--moss)}
+.stage.done .stage-num{color:var(--moss)}
+.stage.done .stage-name{color:var(--paper)}
+
+/* 7-gate progress */
+.gates-running{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:24px}
+.gate-pill{background:var(--console-surface);border:1px solid var(--console-border);padding:10px 8px;text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--console-dim);letter-spacing:0.05em;text-transform:uppercase;transition:all .3s}
+.gate-pill .gate-num{display:block;font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--console-dim);margin-bottom:2px}
+.gate-pill.active{background:rgba(178,58,28,.2);border-color:var(--vermillion)}
+.gate-pill.active .gate-num{color:var(--vermillion)}
+.gate-pill.pass{background:rgba(61,82,53,.2);border-color:var(--moss)}
+.gate-pill.pass .gate-num{color:var(--moss)}
+
+/* Live log */
+.log{background:#0A0F14;border:1px solid var(--console-border);padding:20px;font-family:var(--font-mono);font-size:12px;line-height:1.7;height:280px;overflow-y:auto;margin-bottom:24px}
+.log-line{display:grid;grid-template-columns:60px 80px 1fr;gap:14px;padding:2px 0;animation:logEnter .25s ease-out}
+@keyframes logEnter{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.log-time{color:var(--console-dim)}
+.log-tag{color:var(--vermillion);text-transform:uppercase;font-size:10px;letter-spacing:0.1em;padding-top:1px}
+.log-tag.ok{color:var(--moss)}
+.log-tag.warn{color:var(--amber)}
+.log-tag.fail{color:var(--ots-color)}
+.log-msg{color:var(--console-text);min-width:0;overflow-wrap:anywhere}
+/* On a phone the 60px/80px/1fr log grid leaves ~80px for the message, and a
+   grid item's min-width:auto pushes the rest outside the panel where nothing
+   can scroll to it. Break the line in two: time + tag on top, message under. */
+@media(max-width:560px){
+  .log{padding:14px;font-size:11px}
+  .log-line{grid-template-columns:auto 1fr;gap:2px 10px}
+  .log-msg{grid-column:1 / -1}
+}
+.log-msg .key{color:var(--paper);font-weight:600}
+
+/* Results */
+.results{display:none;margin-top:24px}
+.results.show{display:block;animation:fadeIn .5s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Verdict summary */
+.verdict-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--console-border);margin-bottom:18px}
+.verdict-cell{padding:18px 16px 14px;border-right:1px solid var(--console-border);text-align:center}
+.verdict-cell:last-child{border-right:none}
+.verdict-cell .num{font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.02em;line-height:1;margin-bottom:5px}
+.verdict-cell .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--console-dim);margin-bottom:3px}
+.verdict-cell .sub{font-family:var(--font-mono);font-size:8.5px;letter-spacing:0.08em;color:#5A6270;text-transform:uppercase}
+.verdict-cell.sat .num{color:var(--sat-color)}
+.verdict-cell.ots .num{color:var(--ots-color)}
+.verdict-cell.nr .num{color:var(--nr-color)}
+.verdict-cell.def .num{color:var(--paper)}
+
+/* Below ~560px a 4/6/7-across grid forces each track past its share of the
+   viewport (grid items default to min-width:auto), and body{overflow-x:hidden}
+   then clips the excess with no way to scroll to it — the right-hand verdict
+   cell and the last gate pills were unreachable on a phone. Reflow instead. */
+@media(max-width:900px){
+  .stages{grid-template-columns:repeat(3,1fr)}
+  .stage{border-bottom:1px solid var(--console-border)}
+  .gates-running{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:560px){
+  .stages{grid-template-columns:repeat(2,1fr)}
+  .gates-running{grid-template-columns:repeat(3,1fr)}
+  .verdict-summary{grid-template-columns:repeat(2,1fr)}
+  .verdict-cell:nth-child(2n){border-right:none}
+  .verdict-cell:nth-child(-n+2){border-bottom:1px solid var(--console-border)}
+  .verdict-cell .num{font-size:30px}
+}
+.stage,.gate-pill,.verdict-cell{min-width:0}
+
+/* Defensibility strip */
+.def-strip{display:flex;align-items:baseline;gap:10px;padding:12px 16px;background:var(--console-surface);border:1px solid var(--console-border);margin-bottom:24px}
+.def-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--console-dim);flex:1}
+.def-num{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--paper);letter-spacing:-0.02em;line-height:1}
+.def-max{font-family:var(--font-mono);font-size:11px;color:var(--console-dim);letter-spacing:0.06em}
+
+/* Coverage strip — the raw satisfied-rate, stated as a property of the package
+   under test rather than as a headline "compliance score". A deliberately thin
+   package produces a low rate because the engine fails closed on absent
+   evidence; presenting that number bare invites exactly the wrong reading. */
+.cov-strip{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--console-surface);border:1px solid var(--console-border);margin-bottom:24px}
+.cov-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--console-dim)}
+.cov-num{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--paper);letter-spacing:-0.02em;line-height:1}
+.cov-note{font-family:var(--font-body);font-size:11.5px;font-style:italic;color:var(--console-dim);line-height:1.5;flex:1 1 260px;min-width:0}
+
+/* Findings table.
+   The table is intrinsically wider than a phone viewport, and the grid track it
+   sits in is capped at the screen width (.console-grid>*{min-width:0} above), so
+   without this scroller the Finding column is simply unreachable —
+   body{overflow-x:hidden} clips it with no way to scroll. Wrap ONLY the table:
+   making the whole results panel a scroll container is what previously stalled it. */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:24px}
+.findings-table{width:100%;border-collapse:collapse;margin-bottom:24px}
+.findings-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--vermillion);text-align:left;padding:10px 12px;border-bottom:1px solid var(--console-border);font-weight:500}
+.findings-table td{padding:12px;font-size:13px;color:var(--console-text);border-bottom:1px solid var(--console-surface);vertical-align:top}
+.findings-table .ctrl{font-family:var(--font-mono);color:var(--paper);font-weight:600;white-space:nowrap}
+/* Below 900px let the table keep a legible intrinsic width and scroll inside
+   .table-scroll instead of crushing three columns into ~350px. */
+@media(max-width:900px){.findings-table{min-width:560px;margin-bottom:0}}
+
+/* Show-all control — the findings list runs to ~1,000 rows on a Moderate
+   baseline. Rendering all of them up front is a multi-hundred-thousand-pixel
+   DOM that janks phones, so the first page is capped and the rest is opt-in. */
+.show-all-bar{margin:-8px 0 24px}
+.show-all-btn{width:100%;background:transparent;border:1px solid var(--console-border);color:var(--console-dim);padding:11px 14px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.show-all-btn:hover{border-color:var(--vermillion);color:var(--paper)}
+.verdict-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;padding:2px 8px;display:inline-block}
+.verdict-tag.sat{background:rgba(61,82,53,.3);color:var(--sat-text)}
+.verdict-tag.ots{background:rgba(225,77,42,.2);color:var(--ots-text)}
+.verdict-tag.nr{background:rgba(212,160,23,.2);color:var(--nr-text)}
+.risk-tag{display:inline-block;font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;padding:2px 7px;margin-left:6px;border:1px solid;font-weight:600}
+.risk-tag.high{color:var(--ots-text);border-color:rgba(225,77,42,.55);background:rgba(225,77,42,.08)}
+.risk-tag.moderate{color:var(--nr-text);border-color:rgba(212,160,23,.45);background:rgba(212,160,23,.06)}
+.risk-tag.low{color:var(--sat-text);border-color:rgba(61,82,53,.5);background:rgba(61,82,53,.08)}
+
+/* Recommendation block */
+.rec-block{margin-top:10px;padding:9px 12px 9px 14px;border-left:2px solid var(--vermillion);background:rgba(178,58,28,.04)}
+.rec-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--vermillion);margin-bottom:4px;display:block}
+.rec-text{font-family:var(--font-body);font-size:12.5px;font-style:italic;color:var(--console-text);line-height:1.55;letter-spacing:-0.005em}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.filter-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--console-dim)}
+.filter-chip{background:transparent;border:1px solid var(--console-border);color:var(--console-dim);padding:4px 10px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.filter-chip:hover{border-color:var(--vermillion);color:var(--paper)}
+.filter-chip.active{border-color:var(--vermillion);color:var(--vermillion);background:rgba(178,58,28,.12)}
+.filter-count{font-family:var(--font-mono);font-size:10px;color:var(--console-dim);margin-left:auto}
+
+/* Download bar */
+.dl-bar{margin-top:24px;padding:18px 20px;background:rgba(178,58,28,.06);border:1px solid rgba(178,58,28,.35);border-radius:6px}
+.dl-bar-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.dl-bar-title{font-family:var(--font-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--vermillion-soft);font-weight:600}
+.dl-bar-sub{font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;color:#8892A0}
+.dl-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.dl-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.dl-cards{grid-template-columns:1fr}}
+.dl-card{background:#13171F;border:1px solid var(--console-border);border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.dl-card-head{display:flex;flex-direction:column;gap:2px}
+.dl-card-name{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-0.01em;color:var(--paper)}
+.dl-card-desc{font-family:var(--font-mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:#8892A0}
+.dl-card-formats{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+.dl-fmt-btn{flex:1 1 auto;background:transparent;border:1px solid var(--vermillion);color:var(--paper);padding:7px 10px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;border-radius:3px;white-space:nowrap}
+.dl-fmt-btn:hover{background:var(--vermillion)}
+.dl-fmt-btn:disabled{opacity:.4;cursor:not-allowed;border-color:var(--console-border)}
+.dl-fmt-btn:disabled:hover{background:transparent}
+
+/* Toast */
+.dl-toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--paper);padding:14px 20px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;border-left:3px solid var(--moss);box-shadow:0 8px 32px rgba(0,0,0,.35);border-radius:3px;z-index:9999;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;max-width:380px}
+.dl-toast.show{opacity:1;transform:translateY(0)}
+.dl-toast.err{border-left-color:var(--vermillion)}
+
+/* Disclaimer */
+.demo-disclaimer{max-width:1280px;margin:32px auto 0;padding:0 32px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:var(--ink-soft);line-height:1.6}
+.demo-disclaimer-inner{padding-left:14px;border-left:2px solid var(--rule)}
+
+/* Post-demo CTA */
+.post-demo-cta{background:var(--vermillion);color:var(--paper);padding:64px 32px;position:relative;z-index:2}
+.post-demo-cta-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center}
+.post-demo-cta h3{font-family:var(--font-display);font-size:36px;font-weight:500;line-height:1.15;letter-spacing:-0.015em;max-width:760px}
+.post-demo-cta h3 em{font-style:italic;font-weight:400}
+.post-demo-actions{display:flex;gap:14px;flex-wrap:wrap}
+.post-demo-cta .btn-ghost{border:1px solid var(--paper);color:var(--paper);padding:14px 28px;font-family:var(--font-mono);font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all .2s}
+.post-demo-cta .btn-ghost:hover{background:var(--paper);color:var(--vermillion)}
+.post-demo-cta .btn-primary-dark{background:var(--ink);border:1px solid var(--ink);color:var(--paper);padding:14px 28px;font-family:var(--font-mono);font-size:13px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all .2s}
+.post-demo-cta .btn-primary-dark:hover{background:var(--paper);color:var(--vermillion);border-color:var(--paper)}
+
+/* Colophon override */
+.colophon{background:var(--paper-warm);border-top:1px solid var(--rule);padding:48px 32px 32px;margin-top:0}
+.colophon-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end}
+.colophon-tagline{font-family:var(--font-display);font-style:italic;font-size:14px;line-height:1.55;color:var(--ink-soft);max-width:560px;margin-top:8px}
+.colophon-refs{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);text-align:right;line-height:1.8}
+.colophon-refs span{display:inline-block;padding:4px 8px;border:1px solid var(--rule);background:var(--paper);margin-left:6px;margin-bottom:4px}
+.colophon-bottom{max-width:1280px;margin:32px auto 0;padding-top:20px;border-top:1px solid var(--rule-soft);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;letter-spacing:0.06em;color:var(--ink-soft)}
+@media(max-width:768px){.colophon-inner{grid-template-columns:1fr}.colophon-refs{text-align:left}.post-demo-cta-inner{grid-template-columns:1fr}.post-demo-cta h3{font-size:28px}}
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-left">
+      <a href="index.html" style="text-decoration:none"><span class="wordmark">SPARK<span>AE</span></span></a>
+      <span class="masthead-sub">SPARK Assessment Engine</span>
+    </div>
+    <div class="masthead-right">
+      <span class="fw-chip">NIST 800-53 Rev5</span>
+      <span class="fw-chip">FedRAMP Rev5</span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-meta">
+      <span class="dot"></span>
+      <span>Live Demo &middot; Deterministic Engine</span>
+    </div>
+    <h1>Upload your package. <em>Watch the gates evaluate.</em></h1>
+    <p class="page-hero-sub">
+      Point this console at your running SparkAE instance and upload a FedRAMP package. The deterministic 7-gate engine ingests, retrieves, adjudicates, and exports real deliverables &mdash; zero data leaves your instance. No instance handy? The <a href="demo-standalone.html">in-browser standalone demo</a> runs a pre-loaded sample with no server.
+    </p>
+  </div>
+</section>
+
+<!-- CONSOLE -->
+<section class="console-section">
+  <div class="console-inner">
+    <div class="console-grid">
+
+      <!-- LEFT RAIL -->
+      <aside class="rail" id="rail">
+        <div class="rail-tag">Configuration</div>
+        <div class="rail-title">Connect &amp; Run</div>
+
+        <label class="rail-input-label" for="cfgBaseUrl">SparkAE Base URL</label>
+        <input type="text" class="rail-input" id="cfgBaseUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+
+        <label class="rail-input-label" for="cfgApiKey">API Key</label>
+        <input type="password" class="rail-input" id="cfgApiKey" value="test-key" placeholder="API key">
+
+        <label class="rail-input-label" for="cfgBaseline">Baseline</label>
+        <select class="rail-input" id="cfgBaseline">
+          <option value="Low">FedRAMP Low &middot; 156 controls</option>
+          <option value="Moderate">FedRAMP Moderate &middot; 323 controls</option>
+          <option value="High">FedRAMP High &middot; 410 controls</option>
+        </select>
+
+        <div class="rail-divider"></div>
+
+        <div class="rail-tag">Evidence</div>
+        <div class="rail-title">Choose your package</div>
+
+        <div class="ssp-list">
+          <button class="ssp-option ssp-upload selected" id="ssp-upload-btn" type="button">
+            <div class="ssp-name">Upload package &middot; .zip preferred</div>
+            <div class="ssp-meta">.zip &middot; SSP &middot; scans &middot; POA&amp;M &middot; policies</div>
+          </button>
+          <input type="file" id="ssp-upload-input" aria-label="Upload your own assessment package (.zip, SSP, scans, POA&amp;M, or policy documents)" multiple accept=".zip,.docx,.pdf,.xlsx,.csv,.json,.xml,.txt,.md,.nessus,.xls,.doc" style="display:none">
+          <div class="ssp-upload-status" id="ssp-upload-status" style="display:none"></div>
+        </div>
+
+        <div class="rail-divider"></div>
+
+        <div class="rail-stat"><span class="rail-stat-label">Engine</span><span class="rail-stat-value" id="stat-engine">Deterministic</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value">EXAMINE &middot; 7-gate</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Output</span><span class="rail-stat-value">SAR + POA&amp;M + OSCAL</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Status</span><span class="rail-stat-value" id="stat-status" role="status" aria-live="polite" style="color:var(--console-dim)">Idle</span></div>
+
+        <button class="run-btn" id="run-btn" onclick="runPipeline()">
+          Run assessment
+          <span class="arrow">&rarr;</span>
+        </button>
+      </aside>
+
+      <!-- CONSOLE -->
+      <div class="console">
+        <div class="console-header">
+          <span class="console-title" id="console-status" role="status" aria-live="polite">&#9670; READY &middot; Awaiting input</span>
+          <span class="console-time">Elapsed <span class="timer" id="timer">00:00</span></span>
+        </div>
+
+        <div class="console-body">
+          <!-- Idle state -->
+          <div id="idle-state" class="idle-state">
+            <div class="idle-glyph">&#9654;</div>
+            <h3>Engine is idle</h3>
+            <p>Upload your FedRAMP package in the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The engine will upload, index, assess, and export.</p>
+          </div>
+
+          <!-- Running / done state -->
+          <div id="run-state" style="display:none">
+            <div class="stages" id="stages"></div>
+            <div class="gates-running" id="gates" style="display:none"></div>
+            <div class="log" id="log" role="log" aria-live="polite"></div>
+            <div class="results" id="results">
+              <div id="results-summary"></div>
+              <div class="filter-bar" id="filter-bar" style="display:none">
+                <span class="filter-label">Filter</span>
+                <button class="filter-chip active" data-value="all" onclick="filterFindings('all')">All</button>
+                <button class="filter-chip" data-value="SAT" onclick="filterFindings('SAT')">SAT</button>
+                <button class="filter-chip" data-value="OTS" onclick="filterFindings('OTS')">OTS</button>
+                <button class="filter-chip" data-value="NR" onclick="filterFindings('NR')">NR</button>
+                <span class="filter-count" id="filter-count"></span>
+              </div>
+              <div class="table-scroll">
+                <table class="findings-table" id="findings-table" style="display:none">
+                  <thead><tr><th>Control</th><th>Verdict &middot; Risk</th><th>Finding &middot; Evidence</th></tr></thead>
+                  <tbody id="findings-body"></tbody>
+                </table>
+              </div>
+              <div class="show-all-bar" id="show-all-bar" style="display:none"></div>
+              <div class="dl-bar" id="dl-bar" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="demo-disclaimer">
+  <div class="demo-disclaimer-inner">
+    Demo connects to your running SparkAE instance. All processing is local &mdash; zero data leaves your network. Verdicts are intended for assessor review and do not substitute for formal 3PAO assessment.
+  </div>
+</div>
+
+<div class="dl-toast" id="dl-toast"></div>
+
+<!-- POST-DEMO CTA -->
+<section class="post-demo-cta">
+  <div class="post-demo-cta-inner">
+    <h3>That was your real data. <em>Now scale it.</em></h3>
+    <div class="post-demo-actions">
+      <a href="index.html#pricing" class="btn-primary-dark">See Pilot Pricing <span class="arrow">&rarr;</span></a>
+      <a href="assessors.html" class="btn-ghost">For Assessors <span class="arrow">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- COLOPHON -->
+<footer class="colophon">
+  <div class="colophon-inner">
+    <div>
+      <div class="colophon-brand">SPARK<span>AE</span></div>
+      <div class="colophon-tagline">Neither side built it. Neither side controls it. The same engine, the same rules, the same standard &mdash; applied consistently across every assessment.</div>
+    </div>
+    <div class="colophon-refs">
+      Built on
+      <span>NIST SP 800-53 Rev5</span>
+      <span>NIST SP 800-53A Rev5</span>
+      <br>Conformant with
+      <span>FedRAMP SAR Template Rev5</span>
+      <span>FedRAMP POA&amp;M Template</span>
+    </div>
+  </div>
+  <div class="colophon-bottom">
+    <span>&copy; 2026 SparkAE &middot; Spark Assessment Engine &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
+    <span>Set in Fraunces &amp; IBM Plex &middot; v0.7.0-rc1</span>
+  </div>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════
+// SPARKAE Live Demo — real API pipeline
+// ════════════════════════════════════════════════════════
+
+const STATE = {
+  baseUrl: '', apiKey: '', baseline: 'Low',
+  files: [], documentIds: [], jobId: null,
+  timerStart: null, timerInterval: null,
+};
+
+const STAGES = [
+  {name:'Connect'},
+  {name:'Upload'},
+  {name:'Index'},
+  {name:'Assess'},
+  {name:'Verify'},
+  {name:'Export'},
+];
+
+const GATES = [
+  {name:'Presence'},
+  {name:'Concepts'},
+  {name:'Strength'},
+  {name:'ODP'},
+  {name:'Contra.'},
+  {name:'Temporal'},
+  {name:'Status'},
+];
+
+const EXPORTS = [
+  {format:'sar-docx', name:'SAR', desc:'Security Assessment Report', fmts:[{ext:'.docx',label:'.docx'},{ext:'.json',fmt:'sar-json',label:'.json'}]},
+  {format:'sap-docx', name:'SAP', desc:'Security Assessment Plan', fmts:[{ext:'.docx',label:'.docx'}]},
+  {format:'tcw-csv', name:'TCW', desc:'Test Case Workbook', fmts:[{ext:'.csv',label:'.csv'}]},
+  {format:'srtm-xlsx', name:'SRTM', desc:'Requirements Traceability', fmts:[{ext:'.xlsx',label:'.xlsx'}]},
+  {format:'poam-xlsx', name:'POA&M', desc:'Plan of Action & Milestones', fmts:[{ext:'.xlsx',label:'.xlsx'},{ext:'.json',fmt:'poam-json',label:'.json'}]},
+  {format:'ret-xlsx', name:'RET', desc:'Risk Exposure Table', fmts:[{ext:'.xlsx',label:'.xlsx'},{ext:'.csv',fmt:'ret-csv',label:'.csv'}]},
+  {format:'oscal-ar', name:'OSCAL AR', desc:'Assessment Results', fmts:[{ext:'.json',label:'.json'}]},
+  {format:'oscal-poam', name:'OSCAL POA&M', desc:'OSCAL Plan of Action', fmts:[{ext:'.json',label:'.json'}]},
+  {format:'rar-docx', name:'RAR', desc:'Risk Assessment Report', fmts:[{ext:'.docx',label:'.docx'}]},
+  {format:'bundle-zip', name:'Bundle', desc:'All deliverables', fmts:[{ext:'.zip',label:'.zip'}]},
+];
+
+function headers() { return {'X-API-Key': STATE.apiKey, 'Accept': 'application/json'}; }
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtBytes(b) { return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+function grade(d) { return d>=80?'A':d>=60?'B':d>=40?'C':d>=20?'D':'F'; }
+
+// ── Timer ──
+function startTimer() {
+  STATE.timerStart = Date.now();
+  STATE.timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now()-STATE.timerStart)/1000);
+    document.getElementById('timer').textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  }, 500);
+}
+function stopTimer() { clearInterval(STATE.timerInterval); }
+
+// ── Stage UI ──
+function renderStages() {
+  document.getElementById('stages').innerHTML = STAGES.map((s,i) =>
+    `<div class="stage" id="stage-${i}"><div class="stage-num">${String(i+1).padStart(2,'0')}</div><div class="stage-name">${s.name}</div></div>`
+  ).join('');
+}
+function setStage(n) {
+  STAGES.forEach((_,i) => {
+    const el = document.getElementById('stage-'+i);
+    el.classList.remove('active','done');
+    if (i<n) el.classList.add('done');
+    else if (i===n) el.classList.add('active');
+  });
+}
+
+// ── Gate UI ──
+function renderGates() {
+  const el = document.getElementById('gates');
+  el.innerHTML = GATES.map((g,i) =>
+    `<div class="gate-pill" id="gate-${i}"><span class="gate-num">${i+1}</span>${g.name}</div>`
+  ).join('');
+  el.style.display = 'grid';
+}
+function setGate(n, pass) {
+  for (let i=0;i<GATES.length;i++) {
+    const el = document.getElementById('gate-'+i);
+    el.classList.remove('active','pass');
+    if (i<n) el.classList.add('pass');
+    else if (i===n) el.classList.add(pass?'pass':'active');
+  }
+}
+
+// ── Log ──
+function logLine(tag, msg, cls) {
+  const log = document.getElementById('log');
+  const s = Math.floor((Date.now()-(STATE.timerStart||Date.now()))/1000);
+  const ts = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')+'.'+String(Math.floor((Date.now()%1000)/100));
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-time">${ts}</span><span class="log-tag ${cls||''}">${esc(tag)}</span><span class="log-msg">${msg}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Toast ──
+function toast(msg, err) {
+  const el = document.getElementById('dl-toast');
+  el.textContent = msg;
+  el.classList.toggle('err', !!err);
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ── File upload handling ──
+const uploadBtn = document.getElementById('ssp-upload-btn');
+const uploadInput = document.getElementById('ssp-upload-input');
+uploadBtn.addEventListener('click', () => uploadInput.click());
+uploadInput.addEventListener('change', e => {
+  for (const f of e.target.files) {
+    if (!STATE.files.some(x=>x.name===f.name&&x.size===f.size)) STATE.files.push(f);
+  }
+  renderUploadStatus();
+});
+
+// Drag-and-drop on the upload button
+uploadBtn.addEventListener('dragover', e => { e.preventDefault(); uploadBtn.style.borderColor='var(--vermillion)'; });
+uploadBtn.addEventListener('dragleave', () => { uploadBtn.style.borderColor=''; });
+uploadBtn.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadBtn.style.borderColor='';
+  for (const f of e.dataTransfer.files) {
+    if (!STATE.files.some(x=>x.name===f.name&&x.size===f.size)) STATE.files.push(f);
+  }
+  renderUploadStatus();
+});
+
+const CLASSIFY = [
+  {tag:'SSP', re:/(ssp|system[_-]?security[_-]?plan)/i},
+  {tag:'POAM', re:/(poa[_-]?m|plan[_-]?of[_-]?action)/i},
+  {tag:'SCAN', re:/(nessus|tenable|qualys|scan|vuln)/i},
+  {tag:'PT', re:/(pen[_-]?test|penetration)/i},
+  {tag:'POLICY', re:/(policy|policies)/i},
+  {tag:'PLAN', re:/(plan|procedure|sop)/i},
+  {tag:'INV', re:/(inventory|iiw|asset)/i},
+  {tag:'ZIP', re:/\.zip$/i},
+  {tag:'EVID', re:/.*/},
+];
+
+function classifyFile(name) {
+  const base = name.split('/').pop();
+  for (const p of CLASSIFY) { if (p.re.test(base)) return p.tag; }
+  return 'EVID';
+}
+
+function renderUploadStatus() {
+  const status = document.getElementById('ssp-upload-status');
+  if (!STATE.files.length) {
+    status.style.display = 'none';
+    uploadBtn.classList.remove('has-files');
+    return;
+  }
+  uploadBtn.classList.add('has-files');
+  const totalSize = STATE.files.reduce((s,f)=>s+f.size,0);
+  const zips = STATE.files.filter(f=>/\.zip$/i.test(f.name));
+  status.style.display = 'block';
+  status.innerHTML = `
+    <div class="upload-row"><span class="upload-label">Files</span><span class="upload-value">${STATE.files.length}</span></div>
+    <div class="upload-row"><span class="upload-label">Total size</span><span class="upload-value">${fmtBytes(totalSize)}</span></div>
+    ${zips.length?`<div class="upload-row"><span class="upload-label">Package ZIP</span><span class="upload-value">${zips.length} archive(s)</span></div>`:''}
+    <div class="upload-files">
+      ${STATE.files.map(f=>`<div class="upload-file"><span class="file-tag">${classifyFile(f.name)}</span>${esc(f.name)}</div>`).join('')}
+    </div>
+    <button class="upload-clear" onclick="clearFiles()">Clear files</button>
+  `;
+}
+
+function clearFiles() {
+  STATE.files = [];
+  uploadInput.value = '';
+  renderUploadStatus();
+}
+
+// ── Guess document type for upload ──
+function guessDocType(name) {
+  const n = name.toLowerCase();
+  if (/ssp/i.test(n)) return 'SSP';
+  if (/polic/i.test(n)) return 'Policy';
+  if (/procedure|sop/i.test(n)) return 'Procedure';
+  if (/plan/i.test(n)) return 'Plan';
+  if (/scan|nessus|tenable/i.test(n)) return 'Vulnerability Scan';
+  if (/pen.?test|penetration/i.test(n)) return 'Pen Test Report';
+  if (/inventory|iiw/i.test(n)) return 'Inventory';
+  return null;
+}
+
+// ════════════════════════════════════════════════════════
+// MAIN PIPELINE
+// ════════════════════════════════════════════════════════
+
+async function runPipeline() {
+  if (!STATE.files.length) { toast('Upload files first', true); return; }
+
+  STATE.baseUrl = document.getElementById('cfgBaseUrl').value.replace(/\/+$/,'');
+  STATE.apiKey = document.getElementById('cfgApiKey').value;
+  STATE.baseline = document.getElementById('cfgBaseline').value;
+  STATE.documentIds = [];
+  STATE.jobId = null;
+
+  const runBtn = document.getElementById('run-btn');
+  runBtn.disabled = true;
+  document.getElementById('idle-state').style.display = 'none';
+  document.getElementById('run-state').style.display = 'block';
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('findings-table').style.display = 'none';
+  document.getElementById('filter-bar').style.display = 'none';
+  document.getElementById('show-all-bar').style.display = 'none';
+  document.getElementById('dl-bar').style.display = 'none';
+  document.getElementById('log').innerHTML = '';
+  ALL_FINDINGS = [];
+  RENDERED = 0;
+
+  renderStages();
+  startTimer();
+
+  // ── Stage 1: Connect ──
+  setStage(0);
+  document.getElementById('console-status').innerHTML = '&#9670; CONNECTING';
+  document.getElementById('stat-status').textContent = 'Connecting...';
+  document.getElementById('stat-status').style.color = 'var(--vermillion)';
+  logLine('init', 'SparkAE Live Demo &mdash; connecting to <span class="key">'+esc(STATE.baseUrl)+'</span>', '');
+
+  try {
+    const r = await fetch(STATE.baseUrl+'/health', {signal:AbortSignal.timeout(8000)});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const h = await r.json();
+    logLine('init', '&#10003; Connected &mdash; '+esc(h.version||'SparkAE'), 'ok');
+  } catch(e) {
+    logLine('init', '&#10007; Connection failed: '+esc(e.message), 'fail');
+    toast('Cannot reach '+STATE.baseUrl, true);
+    runBtn.disabled = false;
+    stopTimer();
+    return;
+  }
+
+  // ── Stage 2: Upload ──
+  setStage(1);
+  document.getElementById('console-status').innerHTML = '&#9670; UPLOADING';
+  document.getElementById('stat-status').textContent = 'Uploading...';
+
+  let packageFile = null;
+
+  for (const f of STATE.files) {
+    const ext = (f.name.split('.').pop()||'').toLowerCase();
+    if (ext === 'zip') {
+      packageFile = f;
+      logLine('upload', esc(f.name)+' &mdash; <span class="key">package ZIP</span> (will import after job creation)', '');
+      continue;
+    }
+
+    logLine('upload', 'Uploading '+esc(f.name)+' ('+fmtBytes(f.size)+')', '');
+    try {
+      const fd = new FormData();
+      fd.append('file', f);
+      const dt = guessDocType(f.name);
+      if (dt) fd.append('document_type', dt);
+      const r = await fetch(STATE.baseUrl+'/v1/documents', {method:'POST', headers:{'X-API-Key':STATE.apiKey}, body:fd});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const doc = await r.json();
+      STATE.documentIds.push(doc.id);
+      logLine('upload', '&#10003; '+esc(f.name)+' &rarr; <span class="key">'+esc(String(doc.id).slice(0,8))+'</span>', 'ok');
+    } catch(e) {
+      logLine('upload', '&#10007; '+esc(f.name)+': '+esc(e.message), 'fail');
+    }
+  }
+
+  if (!STATE.documentIds.length && !packageFile) {
+    logLine('upload', '&#10007; No documents uploaded', 'fail');
+    toast('Upload failed', true);
+    runBtn.disabled = false;
+    stopTimer();
+    return;
+  }
+
+  logLine('upload', STATE.documentIds.length+' document(s) uploaded'+(packageFile?' + 1 package ZIP':''), 'ok');
+
+  // ── Stage 3: Index (wait for RAG) ──
+  setStage(2);
+  document.getElementById('console-status').innerHTML = '&#9670; INDEXING';
+  document.getElementById('stat-status').textContent = 'Indexing...';
+  logLine('index', 'Waiting for RAG indexing...', '');
+
+  let indexTimedOut = false;
+  if (STATE.documentIds.length > 0) {
+    let maxWait = 90;
+    let delay = 1000;
+    let elapsed = 0;
+    for (let i=0; i<maxWait; i++) {
+      let allReady = true;
+      for (const docId of STATE.documentIds) {
+        try {
+          const r = await fetch(STATE.baseUrl+'/v1/documents/'+docId, {headers:headers()});
+          if (r.ok) {
+            const doc = await r.json();
+            if (doc.rag_status && doc.rag_status!=='indexed' && doc.rag_status!=='skipped') allReady = false;
+          }
+        } catch(_){}
+      }
+      if (allReady) break;
+      if (i === maxWait - 1) { indexTimedOut = true; break; }
+      if (i%10===0 && i>0) logLine('index', 'Still indexing... ('+Math.round(elapsed/1000)+'s)', '');
+      await new Promise(r=>setTimeout(r,delay));
+      elapsed += delay;
+      delay = Math.min(delay * 2, 10000);
+    }
+    if (indexTimedOut) {
+      logLine('index', '&#10007; Indexing timed out — some documents may not be indexed', 'warn');
+    }
+  }
+  if (!indexTimedOut) logLine('index', '&#10003; Documents indexed', 'ok');
+
+  // ── Stage 4: Assess ──
+  setStage(3);
+  document.getElementById('console-status').innerHTML = '&#9670; ASSESSING';
+  document.getElementById('stat-status').textContent = 'Assessing...';
+  document.getElementById('stat-status').style.color = 'var(--vermillion)';
+
+  logLine('assess', 'Creating assessment job &mdash; baseline: <span class="key">'+STATE.baseline+'</span>', '');
+
+  try {
+    const payload = {baseline:STATE.baseline, document_refs:STATE.documentIds};
+    const r = await fetch(STATE.baseUrl+'/v1/assessments', {
+      method:'POST', headers:{...headers(),'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    if (!r.ok) { const t=await r.text(); throw new Error('HTTP '+r.status+': '+t.slice(0,200)); }
+    const job = await r.json();
+    STATE.jobId = job.id || job.job_id;
+    logLine('assess', '&#10003; Job created: <span class="key">'+esc(String(STATE.jobId).slice(0,12))+'</span>', 'ok');
+  } catch(e) {
+    logLine('assess', '&#10007; '+esc(e.message), 'fail');
+    toast('Assessment creation failed', true);
+    runBtn.disabled = false;
+    stopTimer();
+    return;
+  }
+
+  // Import package ZIP if present
+  if (packageFile) {
+    logLine('assess', 'Importing package ZIP: '+esc(packageFile.name), '');
+    try {
+      const fd = new FormData();
+      fd.append('file', packageFile);
+      const r = await fetch(STATE.baseUrl+'/v1/assessments/'+STATE.jobId+'/import/package', {
+        method:'POST', headers:{'X-API-Key':STATE.apiKey}, body:fd
+      });
+      if (r.ok) {
+        const m = await r.json();
+        logLine('assess', '&#10003; Package: '+esc(String(m.total_entries||0))+' entries &mdash; '+esc(Object.entries(m.loaded||{}).map(([k,v])=>k+':'+v).join(' ')), 'ok');
+      } else {
+        logLine('assess', 'Package import: HTTP '+r.status, 'warn');
+      }
+    } catch(e) { logLine('assess', 'Package import error: '+esc(e.message), 'warn'); }
+  }
+
+  // Show gate progression
+  renderGates();
+
+  // Poll for completion
+  logLine('assess', 'Engine running &mdash; polling...', '');
+  let lastProgress = '';
+  let assessCompleted = false;
+  for (let i=0; i<300; i++) {
+    try {
+      const r = await fetch(STATE.baseUrl+'/v1/assessments/'+STATE.jobId, {headers:headers()});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const job = await r.json();
+      const completed = job.controls_completed||0;
+      const total = job.controls_total||0;
+      const pct = total>0?Math.round(completed/total*100):0;
+      const progress = completed+'/'+total;
+
+      // Animate gates based on progress
+      if (total > 0) {
+        const gateProgress = Math.min(6, Math.floor(pct/14));
+        for (let g=0; g<=gateProgress; g++) setGate(g, g<gateProgress);
+      }
+
+      if (progress !== lastProgress && total>0) {
+        logLine('assess', 'Progress: <span class="key">'+esc(progress)+'</span> controls ('+pct+'%)', '');
+        lastProgress = progress;
+      }
+
+      if (job.status === 'completed') {
+        for (let g=0;g<7;g++) setGate(g, true);
+        logLine('assess', '&#10003; <span class="key">Assessment complete</span>', 'ok');
+        assessCompleted = true;
+        break;
+      }
+      if (job.status === 'failed') {
+        logLine('assess', '&#10007; Assessment failed: '+esc(job.error||'unknown'), 'fail');
+        toast('Assessment failed', true);
+        runBtn.disabled = false;
+        stopTimer();
+        return;
+      }
+    } catch(e) {
+      if (i%10===0) logLine('assess', 'Poll error: '+esc(e.message), 'warn');
+    }
+    await new Promise(r=>setTimeout(r,2000));
+  }
+
+  if (!assessCompleted) {
+    logLine('assess', '&#10007; Assessment timed out after 10 minutes', 'fail');
+    toast('Assessment timed out — check the dashboard for status', true);
+    runBtn.disabled = false;
+    stopTimer();
+    return;
+  }
+
+  // ── Stage 5: Verify ──
+  setStage(4);
+  document.getElementById('console-status').innerHTML = '&#9670; VERIFYING';
+  logLine('verify', 'Fetching results...', '');
+
+  let findings = [];
+  try {
+    const r = await fetch(STATE.baseUrl+'/v1/assessments/'+STATE.jobId+'/export?format=sar-json', {headers:headers()});
+    if (r.ok) {
+      const sar = await r.json();
+      findings = sar.findings || sar.results || [];
+    }
+  } catch(_){}
+
+  // CSV fallback
+  if (!findings.length) {
+    try {
+      const r = await fetch(STATE.baseUrl+'/v1/assessments/'+STATE.jobId+'/export?format=csv', {headers:headers()});
+      if (r.ok) {
+        const text = await r.text();
+        const lines = text.trim().split('\n');
+        if (lines.length>1) {
+          const hdr = lines[0].split(',');
+          const ci = (p)=>hdr.findIndex(h=>p.test(h));
+          const sI=ci(/status/i), cI=ci(/control/i), dI=ci(/dif|objective/i), confI=ci(/confidence/i), fI=ci(/finding|desc/i), eI=ci(/evidence/i), defI=ci(/defensib/i), gI=ci(/gap/i);
+          for (let i=1;i<lines.length;i++) {
+            const c=parseCSV(lines[i]);
+            if(!c||c.length<3) continue;
+            findings.push({dif_id:c[dI]||c[cI]||'Row-'+i, control_id:c[cI]||'', status:c[sI]||'unknown', confidence:parseFloat(c[confI])||0, finding:c[fI]||'', evidence_text:c[eI]||'', defensibility_score:parseInt(c[defI])||0, gap_description:c[gI]||''});
+          }
+        }
+      }
+    } catch(_){}
+  }
+
+  logLine('verify', '&#10003; '+findings.length+' findings loaded', 'ok');
+
+  // ── Stage 6: Export ready ──
+  setStage(5);
+  document.getElementById('console-status').innerHTML = '&#9670; COMPLETE';
+  document.getElementById('stat-status').textContent = 'Complete';
+  document.getElementById('stat-status').style.color = 'var(--moss)';
+  stopTimer();
+
+  // ── Render results ──
+  renderResults(findings);
+  renderDownloads();
+  runBtn.disabled = false;
+  runBtn.onclick = () => { location.reload(); };
+  runBtn.innerHTML = 'Reset demo <span class="arrow">&rarr;</span>';
+}
+
+// ════════════════════════════════════════════════════════
+// RESULTS RENDERING
+// ════════════════════════════════════════════════════════
+
+// Findings are capped on first paint (see .show-all-bar CSS): a Moderate
+// baseline yields ~1,000 rows, and every row carries several nested blocks —
+// rendering the lot up front builds a DOM hundreds of thousands of pixels tall
+// and stalls scrolling on a phone. Keep the full set here and page it in.
+const ROW_CAP = 100;
+let ALL_FINDINGS = [];
+let RENDERED = 0;
+
+function verdictLabel(f) {
+  if (/other/i.test(f.status)) return 'OTS';
+  return /sat/i.test(f.status) ? 'SAT' : 'NR';
+}
+
+function renderResults(findings) {
+  const sat = findings.filter(f=>/sat/i.test(f.status)&&!/other/i.test(f.status)).length;
+  const ots = findings.filter(f=>/other/i.test(f.status)).length;
+  const nr = findings.length - sat - ots;
+  const total = findings.length;
+  const rate = total>0?Math.round(sat/total*100):0;
+  const avgDef = total>0?Math.round(findings.reduce((s,f)=>s+(f.defensibility_score||0),0)/total):0;
+
+  logLine('export', 'Results: <span class="key">'+sat+' SAT</span> / <span class="key" style="color:var(--ots-text)">'+ots+' OTS</span> / '+nr+' other &mdash; avg defensibility '+avgDef+'/100 (Grade '+grade(avgDef)+')', 'ok');
+
+  // Headline is defensibility, not a satisfied-rate. The rate is a fact about
+  // the package that was uploaded, not a grade for the engine or the CSP —
+  // it belongs below, with the sentence that makes it readable correctly.
+  document.getElementById('results-summary').innerHTML = `
+    <div class="verdict-summary">
+      <div class="verdict-cell sat"><div class="num">${sat}</div><div class="lbl">Satisfied</div></div>
+      <div class="verdict-cell ots"><div class="num">${ots}</div><div class="lbl">Other Than Satisfied</div></div>
+      <div class="verdict-cell nr"><div class="num">${nr}</div><div class="lbl">Not Reviewed</div></div>
+      <div class="verdict-cell def"><div class="num">${avgDef}</div><div class="lbl">Avg Defensibility</div><div class="sub">Grade ${grade(avgDef)} &middot; ${total} objectives</div></div>
+    </div>
+    <div class="cov-strip">
+      <span class="cov-label">Evidence coverage</span>
+      <span class="cov-num">${rate}%</span>
+      <span class="cov-note">of ${total} determination statements were satisfied by the evidence in this package.
+        Objectives with no locatable evidence fail closed as Other Than Satisfied &mdash; each one below names what is
+        missing and where it was looked for.</span>
+    </div>
+  `;
+
+  ALL_FINDINGS = findings;
+  RENDERED = 0;
+  document.getElementById('findings-body').innerHTML = '';
+  renderRows(Math.min(ROW_CAP, total));
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('findings-table').style.display = 'table';
+  document.getElementById('filter-bar').style.display = 'flex';
+  document.getElementById('filter-count').textContent = total+' findings';
+}
+
+// Append rows [RENDERED, to) into the table body.
+function renderRows(to) {
+  const tbody = document.getElementById('findings-body');
+  const frag = document.createDocumentFragment();
+  for (let i = RENDERED; i < to; i++) {
+    const f = ALL_FINDINGS[i];
+    const isOts = /other/i.test(f.status);
+    const isSat = /sat/i.test(f.status)&&!isOts;
+    const vClass = isSat?'sat':isOts?'ots':'nr';
+    const vLabel = isSat?'SAT':isOts?'OTS':'NR';
+    const d = f.defensibility_score||0;
+    const risk = d>=70?'low':d>=40?'moderate':'high';
+    const conf = typeof f.confidence==='number'?(f.confidence>1?f.confidence+'%':Math.round(f.confidence*100)+'%'):'';
+    const findingText = f.finding||f.description||'';
+    const evidText = f.evidence_text||f.evidence||'';
+    const gapText = f.gap_description||f.gap||'';
+
+    const tr = document.createElement('tr');
+    tr.dataset.verdict = vLabel;
+    tr.innerHTML = `
+      <td class="ctrl">${esc(f.dif_id||f.control_id||'')}</td>
+      <td>
+        <span class="verdict-tag ${vClass}">${vLabel}</span>
+        <span class="risk-tag ${risk}">${risk}</span>
+        <div style="font-size:10px;color:var(--console-dim);margin-top:4px">${conf} conf &middot; ${grade(d)} (${d}/100)</div>
+      </td>
+      <td>
+        <div style="margin-bottom:6px">${esc(findingText)}</div>
+        ${evidText?'<div style="font-size:11px;color:var(--console-dim);border-left:2px solid var(--moss);padding-left:10px;margin-bottom:6px">'+esc(evidText)+'</div>':''}
+        ${gapText?'<div class="rec-block"><span class="rec-label">Gap</span><span class="rec-text">'+esc(gapText)+'</span></div>':''}
+      </td>
+    `;
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+  RENDERED = to;
+  updateShowAll();
+}
+
+function updateShowAll() {
+  const bar = document.getElementById('show-all-bar');
+  const remaining = ALL_FINDINGS.length - RENDERED;
+  if (remaining <= 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  bar.style.display = 'block';
+  bar.innerHTML = '<button class="show-all-btn" onclick="showAllFindings()">Show all '+
+    ALL_FINDINGS.length+' findings &middot; '+remaining+' more</button>';
+}
+
+function showAllFindings() {
+  renderRows(ALL_FINDINGS.length);
+  const active = document.querySelector('.filter-chip.active');
+  filterFindings(active ? active.dataset.value : 'all');
+}
+
+function filterFindings(value) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.value===value));
+  // A filter has to search the whole result set, not just the first page —
+  // otherwise a verdict whose matches all sit past the cap reads as "none".
+  if (value !== 'all' && RENDERED < ALL_FINDINGS.length) renderRows(ALL_FINDINGS.length);
+  const rows = document.querySelectorAll('#findings-body tr');
+  let count = 0;
+  rows.forEach(tr => {
+    const show = value==='all'||tr.dataset.verdict===value;
+    tr.style.display = show?'':'none';
+    if (show) count++;
+  });
+  const matching = value === 'all'
+    ? ALL_FINDINGS.length
+    : ALL_FINDINGS.filter(f => verdictLabel(f) === value).length;
+  document.getElementById('filter-count').textContent =
+    count < matching ? ('showing '+count+' of '+matching+' findings') : (matching+' findings');
+}
+
+function renderDownloads() {
+  const bar = document.getElementById('dl-bar');
+  bar.style.display = 'block';
+  bar.innerHTML = `
+    <div class="dl-bar-head">
+      <span class="dl-bar-title">&#9670; Preview exports</span>
+      <span class="dl-bar-sub">NIST 800-53 Rev5 &middot; FedRAMP Rev5 templates</span>
+    </div>
+    <div class="dl-cards">
+      ${EXPORTS.map(e => `
+        <div class="dl-card">
+          <div class="dl-card-head">
+            <span class="dl-card-name">${e.name}</span>
+            <span class="dl-card-desc">${e.desc}</span>
+          </div>
+          <div class="dl-card-formats">
+            ${e.fmts.map(f => `<button class="dl-fmt-btn" onclick="downloadExport('${f.fmt||e.format}','${e.name}','${f.ext}')">&#11015; ${f.label}</button>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function downloadExport(format, name, ext) {
+  toast('Generating '+name+'...', false);
+  try {
+    const url = STATE.baseUrl+'/v1/assessments/'+STATE.jobId+'/export?format='+format;
+    const r = await fetch(url, {headers:headers(), signal:AbortSignal.timeout(120000)});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const ct = r.headers.get('content-type')||'';
+    const blob = ct.includes('json')
+      ? new Blob([JSON.stringify(await r.json(),null,2)],{type:'application/json'})
+      : await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (STATE.jobId||'demo').slice(0,8)+'-'+format+ext;
+    a.click();
+    // Defer revocation: revoking too soon can cancel the download in some browsers.
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    toast('&#10003; '+name+' downloaded');
+  } catch(e) {
+    toast('Export failed: '+e.message.slice(0,60), true);
+  }
+}
+
+function parseCSV(line) {
+  const r=[];let c='',q=false;
+  for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){c+='"';i++}else q=!q}else if(ch===','&&!q){r.push(c.trim());c=''}else c+=ch}
+  r.push(c.trim());return r;
+}
+
+// ── Auto-detect server origin + URL param pre-fill ──
+// Note: the API key is deliberately NOT accepted via query string — secrets in
+// URLs end up in browser history and server logs. Use the API Key field instead.
+(function(){
+  const baseInput=document.getElementById('cfgBaseUrl');
+  const defaultBase=baseInput.value;
+  const p=new URLSearchParams(location.search);
+  if(p.get('base_url'))baseInput.value=p.get('base_url');
+  if(p.get('baseline'))document.getElementById('cfgBaseline').value=p.get('baseline');
+  // Only adopt the page's own origin as the API base after verifying it actually
+  // serves the SparkAE API. When this page is hosted on the static marketing
+  // site, blindly using location.origin would clobber the working localhost
+  // default with an origin that has no API.
+  if(!p.get('base_url')&&(location.protocol==='http:'||location.protocol==='https:')){
+    const origin=location.origin;
+    if(origin&&origin!=='null'&&origin!==defaultBase){
+      fetch(origin+'/health',{signal:AbortSignal.timeout(3000)})
+        .then(r=>{if(r.ok&&baseInput.value===defaultBase)baseInput.value=origin;})
+        .catch(()=>{});
+    }
+  }
+})();
+</script>
+</body>
+</html>

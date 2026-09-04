@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Seed snapshot for status.html. In production a periodic polling agent",
+    "overwrites this file next to the published page from the deployment's",
+    "/health/ready and /metrics endpoints (cadence in",
+    "docs/operations/incident-response.md). The committed copy declares no",
+    "state on purpose: the page used to hardcode five green 'Operational'",
+    "badges and a clean incident history while telling visitors they",
+    "reflected a published snapshot that did not exist.",
+    "",
+    "published_at  RFC 3339. Until it is set, the page shows 'No snapshot",
+    "              published' and renders none of the sections below.",
+    "components    {key: state}. Keys must match the data-component",
+    "              attributes in status.html: api, dashboard,",
+    "              document-storage, background-workers, sso.",
+    "              state is one of: operational, degraded, outage.",
+    "              A key that is absent or unrecognised stays 'No data'.",
+    "incidents     [{title, status, started_at, resolved_at, impact,",
+    "              summary}]. An empty array renders 'No incidents",
+    "              reported'; omitting the key leaves the no-snapshot",
+    "              wording, because 'we published nothing' and 'we looked",
+    "              and found none' are different claims.",
+    "maintenance   [{title, scheduled_for, expected_impact}]. Same",
+    "              empty-vs-absent distinction.",
+    "",
+    "All values render as text, never as markup."
+  ],
+  "published_at": null,
+  "components": {},
+  "incidents": [],
+  "maintenance": []
+}
