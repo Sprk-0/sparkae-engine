@@ -33,7 +33,12 @@ const golden = JSON.parse(fs.readFileSync(path.join(here, 'golden', 'sample-ssp.
 
 const require = createRequire(import.meta.url);
 const pwPath = process.env.PLAYWRIGHT_MODULE || require.resolve('playwright');
-const { chromium } = await import(pwPath);
+// `require.resolve` yields Playwright's CommonJS entry, and a dynamic import of
+// a CommonJS module exposes its exports under `default`; the ESM entry
+// (index.mjs) exposes them by name. Accept either.
+const pw = await import(pwPath);
+const chromium = pw.chromium || (pw.default && pw.default.chromium);
+if (!chromium) throw new Error('playwright: chromium export not found at ' + pwPath);
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM || undefined,
