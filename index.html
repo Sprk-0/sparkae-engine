@@ -49,6 +49,25 @@
 .hx-three code{font-family:var(--font-mono);font-size:12.5px;color:var(--ink)}
 .hx-boundary{margin-top:18px;padding:14px 18px;border-left:3px solid var(--vermillion);background:var(--paper-warm);font-size:14px;line-height:1.55;color:var(--ink-soft)}
 .hx-boundary strong{color:var(--ink)}
+.hx-do{display:grid;grid-template-columns:3fr 2fr 3fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.hx-do .grp{background:var(--paper);padding:0}
+.hx-do .grp-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 16px;background:var(--paper-warm);border-bottom:1px solid var(--rule)}
+.hx-do .grp-h b{font-family:var(--font-display);font-size:16px;font-weight:500;color:var(--vermillion)}
+.hx-do .grp-h span{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
+.hx-do .items{display:grid}
+.hx-do .grp:first-child .items,.hx-do .grp:nth-child(3) .items{grid-template-columns:repeat(3,1fr)}
+.hx-do .grp:nth-child(2) .items{grid-template-columns:repeat(2,1fr)}
+.hx-do a.it{display:block;padding:16px 16px 18px;border-left:1px solid var(--rule-soft);color:var(--ink);text-decoration:none;transition:background .2s}
+.hx-do a.it:first-child{border-left:none}
+.hx-do a.it:hover{background:var(--paper-warm)}
+.hx-do .n{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;color:var(--vermillion);display:block;margin-bottom:6px}
+.hx-do .t{font-family:var(--font-display);font-size:17px;font-weight:500;line-height:1.15;display:block;margin-bottom:6px}
+.hx-do .s{font-size:12.5px;color:var(--ink-soft);line-height:1.45;display:block}
+.hx-do .badge{display:inline-block;margin-top:8px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--rule)}
+.hx-do .badge.live{color:var(--vermillion);border-color:var(--vermillion)}
+.hx-do .badge.walk{color:var(--ink-soft)}
+@media (max-width:1100px){.hx-do{grid-template-columns:1fr 1fr}.hx-do .items,.hx-do .grp:first-child .items,.hx-do .grp:nth-child(2) .items,.hx-do .grp:nth-child(3) .items{grid-template-columns:1fr}.hx-do a.it{border-left:none;border-top:1px solid var(--rule-soft)}}
+@media (max-width:640px){.hx-do{grid-template-columns:1fr}}
 .hx-rail{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);counter-reset:step}
 .hx-rail > div{background:var(--paper);padding:22px 20px 24px;position:relative}
 .hx-rail > div::before{counter-increment:step;content:"0" counter(step);font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--vermillion);display:block;margin-bottom:12px}
@@ -162,7 +181,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <div><span class="prompt">$ </span><span class="cmd" style="border-right:2px solid var(--vermillion);animation:ae-blink 1s step-end infinite;padding-right:2px"></span></div>
         </div>
       </div>
-      <div class="hx-cap"><span>Sample package · synthetic data</span><span>Same input → same verdicts, every run</span></div>
+      <div class="hx-cap"><span>Run it yourself: 981 objectives, 7 gates, SAR + POA&amp;M + OSCAL out</span><span>Same input → same verdicts, every run</span></div>
     </div>
   </div>
 </section>
@@ -205,6 +224,47 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       </div>
     </div>
     <p class="hx-boundary">SparkAE is independence-preserving assessment infrastructure. It is <strong>not</strong> a FedRAMP Recognized independent assessment service, it does not replace one, and it does not make the authorization decision. The recognized assessment service controls scope, testing, conclusions, overrides, and the final deliverables.</p>
+  </div>
+</section>
+
+<!-- ══ WHAT YOU CAN DO ══ -->
+<section class="hx-sec" id="workflows" style="padding-top:0">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">Nine workflows. <em>Try each one in the browser.</em></div>
+      <div class="section-sub">The demo follows the FedRAMP lifecycle. Initial assessment runs the real engine on your machine; the rest are guided walkthroughs, labelled as such.</div>
+    </div>
+    <div class="hx-do">
+      <div class="grp">
+        <div class="grp-h"><b>Authorization</b><span>Authorization process</span></div>
+        <div class="items">
+          <a class="it" href="demo-standalone.html"><span class="n">§01</span><span class="t">Initial assessment</span><span class="s">SSP → SAR. Seven gates over every objective in the baseline, each verdict citing its evidence.</span><span class="badge live">Live engine</span></a>
+          <a class="it" href="demo-standalone.html"><span class="n">§02</span><span class="t">Annual reassessment</span><span class="s">One-third of controls re-tested; carry-forward for the rest with the prior evidence trace.</span><span class="badge walk">Walkthrough</span></a>
+          <a class="it" href="demo-standalone.html"><span class="n">§03</span><span class="t">Significant change</span><span class="s">Change request → impact assessment → the delta of objectives that need re-examining.</span><span class="badge walk">Walkthrough</span></a>
+        </div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><b>Operations</b><span>ConMon playbook</span></div>
+        <div class="items">
+          <a class="it" href="demo-standalone.html"><span class="n">§04</span><span class="t">Monthly ConMon</span><span class="s">Vulnerability scans → POA&amp;M rows with FedRAMP remediation SLAs and deviation requests.</span><span class="badge walk">Walkthrough</span></a>
+          <a class="it" href="demo-standalone.html"><span class="n">§05</span><span class="t">KSI validation</span><span class="s">FedRAMP 20x Key Security Indicators: validation method, cadence, and failure criteria per KSI.</span><span class="badge walk">Walkthrough</span></a>
+        </div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><b>Quality</b><span>SAR quality review</span></div>
+        <div class="items">
+          <a class="it" href="demo-standalone.html"><span class="n">§06</span><span class="t">QA audit</span><span class="s">Eleven cross-portfolio consistency rules run over every finding before a SAR leaves the shop.</span><span class="badge walk">Walkthrough</span></a>
+          <a class="it" href="demo-standalone.html"><span class="n">§07</span><span class="t">Package validator</span><span class="s">OSCAL structure and FedRAMP constraints checked on the package before submission.</span><span class="badge walk">Walkthrough</span></a>
+          <a class="it" href="demo-standalone.html"><span class="n">§08</span><span class="t">Portfolio</span><span class="s">Cross-system rollup: status, open findings, and defensibility across every engagement.</span><span class="badge walk">Walkthrough</span></a>
+        </div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><b>Foundation</b><span>Templates</span></div>
+        <div class="items">
+          <a class="it" href="demo-standalone.html"><span class="n">§09</span><span class="t">Data sources</span><span class="s">Nine evidence and eight GRC connectors normalised to one canonical, OSCAL-aligned record.</span><span class="badge walk">Walkthrough</span></a>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
