@@ -3,20 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SparkAE (Spark Assessment Engine) — Independent Second Reader for FedRAMP Rev5 | ONE Solution Cyber</title>
-<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
+<title>SparkAE (Spark Assessment Engine) — Independent Second Reader for Control Assessments | ONE Solution Cyber</title>
+<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo, from ONE Solution Cyber. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <link rel="canonical" href="https://sparkae-public.netlify.app/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SparkAE">
 <meta property="og:url" content="https://sparkae-public.netlify.app/">
-<meta property="og:title" content="SparkAE — Independent Second Reader for FedRAMP Rev5">
-<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
+<meta property="og:title" content="SparkAE — Independent Second Reader for Control Assessments">
+<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SparkAE — Independent Second Reader for FedRAMP Rev5">
-<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. Rev5 local Examine engine plus a browser demo, from ONE Solution Cyber. Deterministic 7-gate engine, self-contained by default — zero outbound when LLM_PROVIDER=none.">
-<!-- OUT-053 → ADR-0016: full editorial re-skin. Shared editorial design system. -->
+<meta name="twitter:title" content="SparkAE — Independent Second Reader for Control Assessments">
+<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <link rel="stylesheet" href="ae-editorial.css">
 <style>svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
 </head>
@@ -40,16 +39,16 @@
 <!-- ══ HERO ══ -->
 <section class="hero">
   <div class="container">
-    <div class="hero-badge fade-up"><span class="dot"></span> v0.7.0-rc1 · FedRAMP Rev5 · NIST SP 800-53A Rev 5 · OSCAL Native</div>
-    <h1 class="fade-up fade-up-1">Independent second reading for <em>FedRAMP Rev5.</em></h1>
-    <p class="sub fade-up fade-up-2">SparkAE, from ONE Solution Cyber, is an independent second reader — a deterministic Rev5 Examine engine, not a GRC platform. What ships today: the local 7-gate engine and a browser demo. Default mode is self-contained: zero outbound when LLM_PROVIDER=none. An integrity gate blocks ungrounded Satisfied. The same engine serves the 3PAO UI and the GRC API.</p>
+    <div class="hero-badge fade-up"><span class="dot"></span> v0.7.0-rc1 · Deterministic assessment engine · NIST SP 800-53A Rev 5 · OSCAL Native</div>
+    <h1 class="fade-up fade-up-1">Independent second reading for <em>any control assessment.</em></h1>
+    <p class="sub fade-up fade-up-2">SparkAE, from ONE Solution Cyber, is an independent second reader — a deterministic engine that reads your evidence against each control objective and tells you what it does and does not support. Not a GRC platform. The framework is a profile: today the engine assesses against NIST SP 800-53A Rev 5 determination statements, as plain NIST 800-53 or as FedRAMP Rev5 with its baselines and deliverables. What ships: the local 7-gate engine and a browser demo. Default mode is self-contained: zero outbound when LLM_PROVIDER=none. An integrity gate blocks ungrounded Satisfied. The same engine serves the assessor UI and the GRC API.</p>
     <p class="brandline fade-up fade-up-2">Providers prove. Independent assessors verify. <em>SparkAE preserves the chain.</em></p>
     <div class="ctas fade-up fade-up-3">
       <a class="btn btn-primary" href="demo-standalone.html">Run Free Browser Demo →</a>
       <button class="btn btn-ghost" onclick="document.getElementById('sample').scrollIntoView({behavior:'smooth'})">See a Real Finding</button>
     </div>
     <div class="chips fade-up fade-up-4">
-      <span class="chip accent">Rev5 local engine + browser demo</span>
+      <span class="chip accent">Local engine + browser demo</span>
       <span class="chip">Default self-contained · zero outbound</span>
       <span class="chip">Deterministic &amp; reproducible</span>
       <span class="chip">Integrity gate blocks ungrounded Satisfied</span>
@@ -92,7 +91,7 @@
 <section style="padding:72px 40px">
   <div class="container">
     <div class="stats">
-      <div class="stat"><div class="num">410</div><div class="label">FedRAMP High Rev 5 Controls</div></div>
+      <div class="stat"><div class="num">410</div><div class="label">NIST SP 800-53 Rev 5 Controls (High profile)</div></div>
       <div class="stat"><div class="num">1,429</div><div class="label">"Determine if" Objectives</div></div>
       <div class="stat"><div class="num">10</div><div class="label">Analytical Services (Local)</div></div>
       <div class="stat"><div class="num">14<span>+</span></div><div class="label">Export Formats (OSCAL/SAR/RET/POA&M)</div></div>
@@ -105,19 +104,19 @@
   <div class="container">
     <div style="text-align:center;margin-bottom:48px">
       <div class="section-label" style="justify-content:center">What Ships</div>
-      <div class="section-title">Rev5 Examine. <em>20x is not sold.</em></div>
-      <div class="section-sub" style="margin:14px auto 0;max-width:760px">The Rev5 local engine assesses documents against control objectives. Lane 2 (20x) is HOLD / in development and is not a customer SKU. The engine that ships is the same one behind the 3PAO UI and the GRC API.</div>
+      <div class="section-title">Assessment against objectives. <em>The framework is a profile.</em></div>
+      <div class="section-sub" style="margin:14px auto 0;max-width:760px">The local engine assesses documents against control objectives — the “Determine if” statements a framework publishes — and every finding carries the evidence it rests on. Today the catalog is NIST SP 800-53A Rev 5, selectable as a plain NIST 800-53 profile or a FedRAMP Rev5 profile that adds the Low / Moderate / High baselines, the CORE controls, and the FedRAMP deliverables. Lane 2 (FedRAMP 20x) is HOLD / in development and is not a customer SKU. The engine that ships is the same one behind the assessor UI and the GRC API.</div>
     </div>
     <div class="lane-grid">
       <div class="lane-card">
         <div class="lane-tag">Lane 1 · Available now</div>
-        <h3>Rev5 Assessment Readiness</h3>
-        <p class="lane-lede">Document and control-objective assessment.</p>
+        <h3>Control-Objective Assessment</h3>
+        <p class="lane-lede">Document and control-objective assessment. Profiles: NIST 800-53 Rev 5 · FedRAMP Rev5.</p>
         <ul class="lane-list">
-          <li>Automate EXAMINE preparation across the baseline</li>
+          <li>Automate EXAMINE preparation across the selected baseline or control set</li>
           <li>Trace evidence to individual "Determine if" objectives</li>
           <li>Identify unsupported implementation statements</li>
-          <li>Prepare assessor-owned draft artifacts (SAR, RET, POA&amp;M, TCW)</li>
+          <li>Prepare assessor-owned draft artifacts (SAR, RET, POA&amp;M, TCW in the FedRAMP profile)</li>
           <li>Export native OSCAL 1.1.2 assessment-results and POA&amp;M</li>
         </ul>
       </div>
@@ -135,7 +134,7 @@
         <a class="lane-link" href="demo-20x.html">20x preview (in development — not sold) &rarr;</a>
       </div>
     </div>
-    <p class="lane-note">Lane 1 (Rev5) is what ships. Lane 2 (20x) is HOLD / in development and is not a customer SKU. Neither lane makes SparkAE the assessor of record.</p>
+    <p class="lane-note">Lane 1 is what ships. Lane 2 (FedRAMP 20x) is HOLD / in development and is not a customer SKU. Neither lane makes SparkAE the assessor of record.</p>
   </div>
 </section>
 
@@ -147,11 +146,11 @@
     <div class="section-sub">The same 7-gate evaluation pipeline a senior assessor follows — automated, deterministic, and reproducible. Ten local analytical services, zero external calls.</div>
 
     <div class="pipeline">
-      <div class="pipe-step fade-up"><div class="pipe-num">1</div><div><h4>Upload Authorization Package</h4><p>SSP, policies, POA&M, scan results, pen-test reports — PDF, DOCX, XLSX, CSV, OSCAL JSON. Parsed, chunked, and indexed via BM25 (or ChromaDB RAG).</p></div></div>
-      <div class="pipe-step fade-up fade-up-1"><div class="pipe-num">2</div><div><h4>Select Baseline &amp; Controls</h4><p>Low (156 controls / 981 DIFs), Moderate (323 / 1,307), or High (410 / 1,429). Filter by family or pick individual controls.</p></div></div>
+      <div class="pipe-step fade-up"><div class="pipe-num">1</div><div><h4>Upload the Evidence Package</h4><p>System security plan, policies, POA&M, scan results, pen-test reports — PDF, DOCX, XLSX, CSV, OSCAL JSON. Parsed, chunked, and indexed via BM25 (or ChromaDB RAG).</p></div></div>
+      <div class="pipe-step fade-up fade-up-1"><div class="pipe-num">2</div><div><h4>Select Profile, Baseline &amp; Controls</h4><p>Plain NIST 800-53 Rev 5, or FedRAMP Rev5 at Low (156 controls / 981 DIFs), Moderate (323 / 1,307), or High (410 / 1,429). Filter by family or pick individual controls.</p></div></div>
       <div class="pipe-step fade-up fade-up-2"><div class="pipe-num">3</div><div><h4>7-Gate Assessment Engine</h4><p>Evidence presence → Concept coverage → Evidence strength → ODP validation → Contradiction check → Temporal coherence → Status determination with confidence + defensibility scores.</p></div></div>
       <div class="pipe-step fade-up fade-up-3"><div class="pipe-num">4</div><div><h4>Review Findings</h4><p>Per-DIF Satisfied / Other Than Satisfied verdicts with evidence citations, confidence scores (0–1.0), defensibility grades (A–F), concept coverage, gap taxonomy (25 types), and remediation guidance.</p></div></div>
-      <div class="pipe-step fade-up fade-up-4"><div class="pipe-num">5</div><div><h4>Export Draft Deliverables</h4><p>OSCAL JSON (assessment-results, POA&M), SAR (JSON + DOCX), SAP, RET CSV, POA&M, CRM, CIS, TCW — 14+ formats for assessor review, provider remediation, or GRC re-ingest. Adoption into a submission package is the recognized assessment service's call, not the generator's.</p></div></div>
+      <div class="pipe-step fade-up fade-up-4"><div class="pipe-num">5</div><div><h4>Export Draft Deliverables</h4><p>OSCAL JSON (assessment-results, POA&M), SAR (JSON + DOCX), SAP, RET CSV, POA&M, CRM, CIS, TCW — 14+ formats for assessor review, provider remediation, or GRC re-ingest. OSCAL and CSV in every profile; the FedRAMP deliverables in the FedRAMP profile. Adoption into a submission package is the recognized assessment service's call, not the generator's.</p></div></div>
     </div>
 
     <!-- Terminal -->
@@ -191,7 +190,7 @@
 <section id="sample">
   <div class="container">
     <div class="section-label">What You Get Back</div>
-    <div class="section-title">A finding you could hand to a 3PAO. <em>Not a black-box verdict.</em></div>
+    <div class="section-title">A finding you could hand to an assessor. <em>Not a black-box verdict.</em></div>
     <div class="section-sub">Every determination ships with the evidence it relied on, a confidence score, a defensibility grade, the specific gap, and the fix. Here is one real Other-Than-Satisfied finding from a sample assessment (synthetic data — “CloudVault Federal”).</div>
 
     <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:20px;margin-top:36px;align-items:start">
@@ -246,7 +245,7 @@
   <div class="container">
     <div class="section-label">Deployment Modes</div>
     <div class="section-title">Three deployment modes. <em>You choose what leaves your network.</em></div>
-    <div class="section-sub">Same engine for the 3PAO UI and the GRC API. LLM is always opt-in — and when a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
+    <div class="section-sub">Same engine for the assessor UI and the GRC API. LLM is always opt-in — and when a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
 
     <div class="modes-grid">
       <div class="mode-card">
@@ -297,7 +296,7 @@
     <div class="section-sub">Drata and Vanta are SaaS — your evidence lives in their cloud. SparkAE's default mode (LLM_PROVIDER=none) runs entirely inside your deployment: zero outbound HTTP, zero DNS, zero CDN, no telemetry, no calls home. That is the default self-contained / zero-outbound posture — not a cut air-gap tarball SKU, and not sold as SCIF-ready.</div>
 
     <div class="feature-grid">
-      <div class="feature-card"><div class="h">Deterministic &amp; reproducible</div><div class="b">The same package yields the same findings every time — no wall-clock, no randomness, no model drift. A finding you can defend is a finding you can reproduce on demand for a 3PAO or PMO.</div></div>
+      <div class="feature-card"><div class="h">Deterministic &amp; reproducible</div><div class="b">The same package yields the same findings every time — no wall-clock, no randomness, no model drift. A finding you can defend is a finding you can reproduce on demand for an assessor or an authorizing body.</div></div>
       <div class="feature-card"><div class="h">Zero data leaves your network</div><div class="b">Default mode (<code>LLM_PROVIDER=none</code>) makes no outbound calls of any kind. CUI never transits a vendor cloud because there is no vendor cloud in the path.</div></div>
       <div class="feature-card"><div class="h">Default self-contained / zero outbound</div><div class="b">Default mode makes no outbound calls of any kind. A local LLM option (Ollama) is opt-in. Not sold as a customer air-gap tarball or as SCIF-ready.</div></div>
       <div class="feature-card"><div class="h">Honest about the cloud mode</div><div class="b">The opt-in cloud-LLM mode is clearly flagged: the deterministic engine doesn't run there, so those verdicts aren't engine-grounded. In a market full of “AI compliance magic,” we tell you exactly when the engine is and isn't behind a verdict.</div></div>
@@ -318,13 +317,13 @@
         <p class="moat">The independence is the moat.</p>
       </div>
       <div class="ind-visual">
-        <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-cloud"/></svg>&nbsp; Cloud Service Provider<br><span>Implements controls · Supplies evidence &amp; validation methods</span></div>
+        <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-cloud"/></svg>&nbsp; System Owner / Provider<br><span>Implements controls · Supplies evidence &amp; validation methods</span></div>
         <div class="ind-arrow">↓ uploads SSP</div>
         <div class="ind-node spark"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg>&nbsp; SparkAE<br><span>Deterministic · Auditable · Neither party's instrument</span></div>
         <div class="ind-arrow">↓ validated findings</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg>&nbsp; Independent Assessment Service<br><span>Owns scope, testing &amp; conclusions</span></div>
-          <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bank"/></svg>&nbsp; FedRAMP PMO<br><span>Reviews SAR</span></div>
+          <div class="ind-node"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bank"/></svg>&nbsp; Authorizing Body<br><span>Reviews the assessment report (e.g. FedRAMP PMO)</span></div>
         </div>
       </div>
     </div>
@@ -332,7 +331,7 @@
     <div class="urgency">
       <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-warn"/></svg></div>
       <div>
-        <h4>Machine-readable authorization data</h4>
+        <h4>Machine-readable authorization data (FedRAMP profile)</h4>
         <p>FedRAMP is moving authorization packages toward machine-readable form. RFC-0024, which first proposed the mandate, was <strong>closed</strong> — its requirements were modified and folded into the 2026 Consolidated Rules rather than adopted as drafted, so treat the specifics as still settling. SparkAE exports native OSCAL 1.1.2 assessment-results and POA&amp;M today, which is the part that does not change: the data is structured from the start, whatever shape the final requirement takes.</p>
       </div>
     </div>
@@ -343,13 +342,13 @@
 <section id="features" class="warm">
   <div class="container">
     <div class="section-label">Engine</div>
-    <div class="section-title">The Rev5 Examine engine. <em>Not a GRC platform.</em></div>
+    <div class="section-title">The assessment engine. <em>Not a GRC platform.</em></div>
     <div class="section-sub">Built for production. Four rounds of adversarial security review. A comprehensive automated test suite. Self-contained by default.</div>
 
     <div class="feature-grid">
       <div class="feature-card"><div class="h">10 Analytical Services</div><div class="b">BM25 retrieval, concept coverage, evidence strength, defensibility scoring, contradiction detection, temporal coherence, ODP lifecycle, gap engine (25 types), confidence scoring, citation builder — all local, all deterministic.</div></div>
-      <div class="feature-card"><div class="h">14+ FedRAMP Export Formats</div><div class="b">OSCAL JSON (assessment-results, POA&M), SAR (JSON + DOCX), SAP (JSON + DOCX), RET CSV, POA&M, CRM (JSON + CSV), CIS (JSON + CSV), TCW CSV — all from a single assessment run.</div></div>
-      <div class="feature-card"><div class="h">8-Role FedRAMP RBAC</div><div class="b">system_admin, threepao_admin, lead_assessor, assessor, reviewer, read_only, csp_poc, authorizing_official — with multi-tenant org isolation and permission-gated API access.</div></div>
+      <div class="feature-card"><div class="h">14+ Export Formats</div><div class="b">OSCAL JSON (assessment-results, POA&M) and CSV in every profile; the FedRAMP profile adds SAR (JSON + DOCX), SAP (JSON + DOCX), RET CSV, POA&M, CRM (JSON + CSV), CIS (JSON + CSV), TCW CSV — all from a single assessment run.</div></div>
+      <div class="feature-card"><div class="h">8-Role Assessment RBAC</div><div class="b">system_admin, threepao_admin, lead_assessor, assessor, reviewer, read_only, csp_poc, authorizing_official — with multi-tenant org isolation and permission-gated API access.</div></div>
       <div class="feature-card"><div class="h">Hash-Chain Audit Log</div><div class="b">Append-only AU-2/AU-3 compliant audit trail with integrity verification (AU-9). SIEM-ready exports in RFC 5424 syslog and ArcSight CEF. Configurable alert rules.</div></div>
       <div class="feature-card"><div class="h">Scan Import &amp; Compliance Mapping</div><div class="b">Import Nessus, ZAP, and generic CSV vulnerability scans. Pen-test report ingestion. Automatic mapping of vulnerabilities to NIST controls for POA&M generation.</div></div>
       <div class="feature-card"><div class="h">Production-Hardened Docker</div><div class="b">Multi-stage build, non-root (uid 1000), tini PID 1, read-only filesystem, cap_drop ALL, health checks, graceful shutdown drain, orphan job reaper on startup.</div></div>
@@ -363,12 +362,12 @@
     <div style="text-align:center;margin-bottom:48px">
       <div class="section-label" style="justify-content:center">Next step</div>
       <div class="section-title">Priced against the assessment, <em>not per seat.</em></div>
-      <div class="section-sub" style="margin:12px auto 0">What ships is the Rev5 local engine and the browser demo. Hosted SaaS as a CSP SKU, GovCloud install, and air-gap tarball are not sold. Terms are confirmed by the founder — this page is not a rate card.</div>
+      <div class="section-sub" style="margin:12px auto 0">What ships is the local engine and the browser demo. Hosted SaaS as a CSP SKU, GovCloud install, and air-gap tarball are not sold. Terms are confirmed by the founder — this page is not a rate card.</div>
     </div>
     <div class="pricing-grid">
       <div class="price-card featured" style="grid-column:1/-1;max-width:420px;margin:0 auto">
         <h3>30-day paid pilot</h3>
-        <div class="price-sub">Your package, the Rev5 local engine. Gap report you keep either way.</div>
+        <div class="price-sub">Your package, the local engine, in the profile you assess against. Gap report you keep either way.</div>
         <ul>
           <li>No list, add-on, or OEM figures on this page</li>
           <li>Founder confirms terms</li>
@@ -387,7 +386,7 @@
       <a href="assessors.html" class="linkcard">
         <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg></div>
         <div class="h">For Assessors</div>
-        <div class="b">For FedRAMP Recognized independent assessment services — historically 3PAOs. The Rev5 Examine engine: same 7-gate pipeline the GRC API runs. →</div>
+        <div class="b">For independent assessment services, including FedRAMP Recognized ones (historically 3PAOs). The same 7-gate pipeline the GRC API runs. →</div>
       </a>
       <a href="demo-standalone.html" class="linkcard featured">
         <div class="icon"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
@@ -416,7 +415,8 @@
       Or email us: <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
     </div>
     <p style="margin-top:28px;font-size:12px;line-height:1.6;color:var(--ink-soft);max-width:680px;margin-left:auto;margin-right:auto">
-      SparkAE is independence-preserving assessment infrastructure. It is not a
+      SparkAE is independence-preserving assessment infrastructure for control
+      frameworks. Where the target is FedRAMP: it is not a
       FedRAMP Recognized independent assessment service (historically, a 3PAO),
       it does not replace one, and it does not issue the official Security
       Assessment Report or an Authorization to Operate. The recognized
@@ -448,7 +448,6 @@
     </div>
     <div class="foot-rule"></div>
     <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
-    <!-- OUT-080: precise external-calls footnote per externalcalls.md audit. -->
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO,
       webhooks, email, SIEM, and cloud storage are all opt-in via
@@ -456,7 +455,7 @@
       entirely inside the deployment boundary; no telemetry, no
       auto-update, no calls home.
     </div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for FedRAMP Rev5</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for control assessments</div>
   </div>
 </footer>
 </body>

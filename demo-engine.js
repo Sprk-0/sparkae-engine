@@ -604,7 +604,7 @@ function checkOpenFindingSla(evidenceText, assessmentDate) {
   return null;
 }
 
-// ── Homoglyph Folding (W3-05 defense) ──
+// ── Homoglyph Folding (homoglyph defense) ──
 
 const HOMOGLYPHS = {'а':'a','е':'e','о':'o','р':'p','с':'c','х':'x','у':'y','к':'k','м':'m','т':'t','н':'h','в':'b','і':'i','ј':'j','ѕ':'s','ԁ':'d','ο':'o','α':'a','ε':'e','ρ':'p','ν':'v','τ':'t','κ':'k','ι':'i','χ':'x'};
 
@@ -791,7 +791,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   }
   gates.push({gate:1, name:'Presence', pass:true});
 
-  // Homoglyph folding (W3-05 defense) — before any pattern matching
+  // Homoglyph folding (homoglyph defense) — before any pattern matching
   evidenceText = foldHomoglyphs(evidenceText);
 
   // Scope subsequent gates to chunks tagged with this control ID where possible.
@@ -803,7 +803,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   // Folded too. `evidenceText` was folded above but `ownEvidence` was built
   // from the raw chunk text, and every gate below reads it first through the
   // `ownEvidence || evidenceText` pattern — so whenever the corpus HAD a chunk
-  // tagged with this control (the normal case) the W3-05 defense was reading
+  // tagged with this control (the normal case) the homoglyph defense was reading
   // the unfolded string and a homoglyph-obfuscated draft marker, stuffing
   // pattern or refutation walked straight through. Confirmed end to end: the
   // same evidence with `placeholder` spelled in Cyrillic homoglyphs took the

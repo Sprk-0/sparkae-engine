@@ -15,9 +15,3 @@
 # "Independent Assessment Services". Anything already linking the old path —
 # outreach emails, a partner's site, a search result — has to keep landing.
 /3pao.html    /assessors.html    301
-
-# The first public deploy served the demo from a demo/ folder; keep those
-# links alive now that the whole site lives at the root.
-/demo/demo-standalone.html   /demo-standalone.html   301
-/demo/demo-20x.html          /demo-20x.html          301
-/demo/*                      /:splat                 301

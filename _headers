@@ -14,7 +14,7 @@
 # /demo.html matches /* too, so a sitewide `connect-src 'self'` would intersect
 # with the demo's `connect-src *` and win, blocking every visitor-supplied base
 # URL — and doing it silently, which is the worst version of this bug. (An
-# earlier revision of this file did exactly that; PR #837 review caught it.)
+# earlier revision of this file did exactly that; review caught it.)
 #
 # So the CSP is declared once per page on non-overlapping paths, and /* carries
 # only the headers that are identical everywhere (duplicating those is
@@ -78,7 +78,7 @@
 # BOTH route forms are listed for every page. Netlify serves `foo.html` at the
 # extensionless `/foo` as well, and header rules match the REQUESTED path — so
 # listing only `/foo.html` leaves `/foo` with no CSP at all now that `/*` no
-# longer carries one (PR #842 Codex review). The site's own links all use
+# longer carries one (caught in review). The site's own links all use
 # `.html`, but external links, search-engine canonicalisation and typed URLs
 # reach the clean form.
 

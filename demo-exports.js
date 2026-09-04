@@ -17,7 +17,7 @@
 //
 // The shapes below mirror src/services/oscal_exporter.py
 // (generate_assessment_results / generate_poam) — the server-side exporter
-// that IMP-199 already brought to official-schema conformance. Keep the two
+// that the server exporter already brought to official-schema conformance. Keep the two
 // in step: tests/test_website_demo_exports.py validates this file's output
 // against the vendored NIST schema in data/oscal-schemas/v1.1.2/ using the
 // same validator the backend uses.
