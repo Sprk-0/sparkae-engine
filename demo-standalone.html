@@ -119,6 +119,31 @@ html,body{
   gap:8px;
   flex-wrap:wrap;
 }
+.masthead-nav{
+  display:flex;
+  align-items:center;
+  gap:22px;
+  flex-wrap:wrap;
+  margin-left:8px;
+}
+.masthead-nav a{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  text-decoration:none;
+  border-bottom:none;
+}
+.masthead-nav a:hover,.masthead-nav a.active{color:var(--vermillion)}
+.masthead-nav a.masthead-cta{
+  color:var(--paper);
+  background:var(--ink);
+  padding:8px 14px;
+  border-radius:3px;
+}
+.masthead-nav a.masthead-cta:hover{background:var(--vermillion);color:var(--paper)}
+@media (max-width:760px){.masthead-nav{gap:14px;margin-left:0;width:100%;order:3}}
 .fw-chip{
   font-family:'IBM Plex Mono',monospace;
   font-size:10px;
@@ -2340,9 +2365,19 @@ html,body{
 <header class="masthead">
   <div class="masthead-inner">
     <div class="masthead-left">
-      <span class="wordmark">SPARK<span>AE</span></span>
+      <a class="wordmark" href="index.html">SPARK<span>AE</span></a>
       <span class="masthead-sub">SPARK Assessment Engine</span>
     </div>
+    <!-- The same site navigation every other page carries. This page is the
+         homepage's primary destination and used to be a dead end: a wordmark
+         that linked nowhere and no way back to the rest of the site. -->
+    <nav class="masthead-nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="assessors.html">For Assessors</a>
+      <a href="demo-standalone.html" class="active" aria-current="page">Live Demo</a>
+      <a href="integrations.html">Integrations</a>
+      <a href="index.html#cta" class="masthead-cta">Request Pilot</a>
+    </nav>
     <div class="masthead-right">
       <span class="fw-chip">NIST 800-53 Rev5</span>
       <span class="fw-chip">FedRAMP Rev5</span>
@@ -2649,7 +2684,8 @@ html,body{
     </div>
   </div>
   <div class="colophon-bottom">
-    <span>© 2026 SPARKAE · SPARK Assessment Engine · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
+    <span><a href="index.html">Home</a> · <a href="assessors.html">For Assessors</a> · <a href="integrations.html">Integrations</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
+    <span>SparkAE is made by ONE Solution Cyber · © 2026</span>
     <span>Set in Fraunces &amp; IBM Plex · Reference build</span>
   </div>
 </footer>

@@ -20,6 +20,8 @@
 <style>
   body { background: var(--paper); }
   .status-wrap { max-width: 880px; margin: 0 auto; padding: 72px 24px 80px; position: relative; z-index: 2; }
+  /* The fixed nav is two rows on a phone (see ae-editorial.css); clear it. */
+  @media (max-width:900px) { .status-wrap { padding-top: 120px; } }
   .status-head { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 28px; }
   .status-head h1 { font-family: var(--font-display); font-weight: 500; font-size: 40px; letter-spacing: -0.02em; color: var(--ink); }
   .status-head h1 span { color: var(--vermillion); }
@@ -44,6 +46,16 @@
 </style>
 </head>
 <body>
+<nav>
+  <a href="index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="index.html">Home</a>
+    <a href="assessors.html">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="integrations.html">Integrations</a>
+  </div>
+  <a href="index.html#cta" class="nav-cta">Request Pilot</a>
+</nav>
 
 <div class="status-wrap">
   <header class="status-head">
