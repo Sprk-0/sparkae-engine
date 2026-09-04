@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkAE — 20x Persistent Validation Assurance Walkthrough</title>
+<meta name="description" content="A six-step walkthrough of FedRAMP 20x validation assurance: a provider defines a KSI and its validation method, SparkAE tests coverage, and an independent assessment service runs challenge tests — with provider and assessor conclusions separately attributed.">
+<link rel="canonical" href="https://example.com/demo-20x.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
+<!-- Open Graph / social cards -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SparkAE">
+<meta property="og:url" content="https://example.com/demo-20x.html">
+<meta property="og:title" content="SparkAE — 20x Persistent Validation Assurance Walkthrough">
+<meta property="og:description" content="Providers prove. Independent assessors verify. A six-step walkthrough of how a KSI validation method is defined, coverage-tested, independently challenged, and signed.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SparkAE — 20x Persistent Validation Assurance Walkthrough">
+<meta name="twitter:description" content="Providers prove. Independent assessors verify. A six-step walkthrough of KSI validation assurance.">
+<link rel="stylesheet" href="ae-editorial.css">
+<style>
+/* ── 20x walkthrough page-specific components (editorial tokens only) ── */
+.wt-wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+.wt-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:28px;align-items:start}
+.wt-layout > *{min-width:0}
+
+/* Stage list */
+.stage{min-width:0;border:1px solid var(--rule);background:var(--paper);margin-bottom:14px;transition:border-color .25s,background .25s}
+.stage.active{border-color:var(--vermillion);border-left:3px solid var(--vermillion)}
+.stage.done{background:var(--paper-warm)}
+.stage-head{min-width:0;display:flex;align-items:flex-start;gap:16px;padding:22px 26px;cursor:pointer;width:100%;text-align:left;background:none;border:none;font:inherit;color:inherit}
+.stage-num{font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;color:var(--ink-soft);flex-shrink:0;padding-top:5px;min-width:26px}
+.stage.active .stage-num,.stage.done .stage-num{color:var(--vermillion)}
+.stage-titles{flex:1;min-width:0}
+.stage-titles h3{font-family:var(--font-display);font-size:19px;font-weight:500;color:var(--ink);margin-bottom:3px;line-height:1.35}
+.stage-actor{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft)}
+.stage-actor.provider{color:var(--moss)}
+.stage-actor.assessor{color:var(--purple)}
+.stage-actor.sparkae{color:var(--vermillion)}
+.stage-state{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-soft);flex-shrink:0;padding-top:6px}
+.stage-body{min-width:0;display:none;padding:0 26px 26px 68px}
+.stage.active .stage-body,.stage.done .stage-body{display:block}
+.stage-body > p{font-size:14px;line-height:1.7;color:var(--ink-soft);margin-bottom:16px}
+
+/* Data blocks */
+.datablock{background:var(--ink);border:1px solid var(--ink);padding:18px 20px;font-family:var(--font-mono);font-size:12px;line-height:1.8;color:#B8C0CC;overflow-x:auto;white-space:pre;margin-bottom:16px}
+.datablock .kw{color:#C9A0E0} .datablock .str{color:#9DC183} .datablock .num{color:#E5B838}
+.datablock .cm{color:#5A6270} .datablock .fn{color:#5BA8A8}
+.datablock .bad{color:#E08A70} .datablock .good{color:#7CA672}
+
+.factlist{list-style:none;padding:0;margin:0 0 16px}
+.factlist li{position:relative;padding-left:22px;font-size:13.5px;line-height:1.7;color:var(--ink);margin-bottom:8px}
+.factlist li::before{content:"";position:absolute;left:0;top:10px;width:8px;height:1px;background:var(--vermillion)}
+.factlist li strong{font-weight:600}
+
+/* Verdict cards — the separate-attribution moment */
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}
+.verdict{border:1px solid var(--rule);padding:20px 22px;background:var(--paper)}
+.verdict.provider{border-left:3px solid var(--moss)}
+.verdict.assessor{border-left:3px solid var(--purple)}
+.verdict .v-who{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.verdict .v-call{font-family:var(--font-display);font-size:26px;font-weight:500;letter-spacing:-0.01em;margin-bottom:8px}
+.verdict.provider .v-call{color:var(--moss)}
+.verdict.assessor .v-call{color:var(--vermillion)}
+.verdict .v-why{font-size:13px;line-height:1.65;color:var(--ink-soft)}
+
+.callout{border:1px solid var(--rule);border-left:3px solid var(--amber);background:var(--paper-warm);padding:18px 22px;font-size:13.5px;line-height:1.7;color:var(--ink);margin-bottom:16px}
+.callout strong{font-weight:600}
+
+.stage-btn{font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:12px 22px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:background .2s,color .2s}
+.stage-btn:hover{background:var(--vermillion);border-color:var(--vermillion)}
+.stage-btn[disabled]{background:var(--paper);color:var(--ink-soft);border-color:var(--rule);cursor:default}
+
+/* Right rail — the accumulating record */
+.rail-panel{border:1px solid var(--rule);background:var(--paper);position:sticky;top:24px}
+.rail-panel-head{padding:18px 22px;border-bottom:1px solid var(--rule)}
+.rail-panel-head .t{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--vermillion);margin-bottom:5px}
+.rail-panel-head .s{font-size:12.5px;color:var(--ink-soft);line-height:1.55}
+.record{padding:18px 22px;font-family:var(--font-mono);font-size:11.5px;line-height:1.75;color:var(--ink-soft);max-height:460px;overflow:auto}
+.record-empty{color:var(--ink-soft);font-style:italic}
+.record-row{padding:9px 0;border-bottom:1px solid var(--rule-soft)}
+.record-row:last-child{border-bottom:none}
+.record-row .rk{color:var(--ink-soft);display:block;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px}
+.record-row .rv{color:var(--ink);word-break:break-word}
+.record-row .rv.sig{color:var(--moss)}
+.record-row .rv.warn{color:var(--vermillion)}
+
+.wt-reset{font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
+.wt-reset:hover{color:var(--vermillion)}
+
+@media (max-width:900px){
+  .wt-wrap{padding:0 20px}
+  .wt-layout{grid-template-columns:minmax(0,1fr)}
+  .rail-panel{position:static}
+  .stage-body{padding-left:26px}
+}
+</style>
+<style>svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
+</head>
+<body>
+
+<!-- ══ MASTHEAD ══ -->
+<nav>
+  <a href="https://example.com/index.html" style="text-decoration:none"><div class="logo"><div class="mark">S</div> Spark<span>AE</span></div></a>
+  <div class="links">
+    <a href="https://example.com/index.html">Home</a>
+    <a href="https://example.com/assessors.html">For Assessors</a>
+    <a href="demo-standalone.html">Live Demo</a>
+    <a href="https://example.com/integrations.html">Integrations</a>
+    <a href="https://github.com/Sprk-0" rel="noopener">Source</a>
+  </div>
+  <a href="https://example.com/#cta" class="nav-cta">Request Pilot</a>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero" style="padding-bottom:40px">
+  <div class="container">
+    <div class="hero-badge fade-up"><span class="dot"></span> Lane 2 &middot; 20x Persistent Validation Assurance &middot; Walkthrough</div>
+    <h1 class="fade-up fade-up-1">The provider automates the check. <em>Who checks the check?</em></h1>
+    <p class="sub fade-up fade-up-2">Under FedRAMP 20x a provider validates its own Key Security Indicators continuously, in code. That moves the independent assessment question: not "does the SSP say the right thing", but "does this validation actually test what it claims, over the whole boundary, and fail closed when it should". This walkthrough follows one real KSI through all six steps — and ends where it matters, with the provider and the independent assessor recording <em>different</em> conclusions, separately attributed.</p>
+  </div>
+</section>
+
+<section style="padding-top:0;padding-bottom:80px">
+<div class="wt-wrap">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+    <div class="section-label">Walkthrough &middot; KSI-CMT-LMC</div>
+    <button class="wt-reset" id="resetBtn" type="button">Reset walkthrough</button>
+  </div>
+
+  <div class="wt-layout">
+    <div>
+
+      <!-- ── 1 ── -->
+      <div class="stage active" id="s1">
+        <button class="stage-head" type="button" data-stage="1">
+          <span class="stage-num">01</span>
+          <span class="stage-titles">
+            <h3>Define the KSI goal</h3>
+            <span class="stage-actor provider">Cloud Service Provider</span>
+          </span>
+          <span class="stage-state" data-state="1">Ready</span>
+        </button>
+        <div class="stage-body">
+          <p>A KSI is a security outcome, not a control citation. The provider states the outcome, the pass criteria that would demonstrate it, and the Rev5 controls it stands in for — so the claim stays traceable to the catalog an assessor already knows.</p>
+          <div class="datablock"><span class="cm"># From the CR26 KSI catalog (cr26.10theme.2026-07-10)</span>
+<span class="kw">ksi</span>:            KSI-CMT-LMC
+<span class="kw">theme</span>:          CMT &mdash; Change Management
+<span class="kw">title</span>:          Logging Changes
+<span class="kw">outcome</span>:        Modifications to the cloud service offering are
+               logged and monitored.
+<span class="kw">validation</span>:     automated
+<span class="kw">pass_criteria</span>:  every modification to the offering appears in the
+               change log with actor and timestamp, and the log is
+               actively monitored
+<span class="kw">controls</span>:       AU-2, CM-3, CM-3(2), CM-4(2), CM-6, CM-8(3), MA-2</div>
+          <button class="stage-btn" type="button" data-run="1">Record the goal &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ── 2 ── -->
+      <div class="stage" id="s2">
+        <button class="stage-head" type="button" data-stage="2">
+          <span class="stage-num">02</span>
+          <span class="stage-titles">
+            <h3>Supply the validation method</h3>
+            <span class="stage-actor provider">Cloud Service Provider</span>
+          </span>
+          <span class="stage-state" data-state="2">Locked</span>
+        </button>
+        <div class="stage-body">
+          <p>The provider submits the machinery, not just the answer: the query that produces the verdict, the evidence sources it reads, how often it runs, and what counts as a failure. This is the artifact an assessor examines — and the one a document review never sees.</p>
+          <div class="datablock"><span class="cm"># validation/ksi_cmt_lmc.py &mdash; runs on the provider's schedule</span>
+<span class="kw">def</span> <span class="fn">validate</span>():
+    changes = cloudtrail.<span class="fn">query</span>(
+        accounts=[<span class="str">"prod-1"</span>, <span class="str">"prod-2"</span>],
+        regions=[<span class="str">"us-gov-west-1"</span>],
+        window_days=<span class="num">30</span>,
+    )
+    logged = [c <span class="kw">for</span> c <span class="kw">in</span> changes <span class="kw">if</span> c.actor <span class="kw">and</span> c.timestamp]
+    <span class="kw">return</span> <span class="fn">len</span>(logged) == <span class="fn">len</span>(changes)
+
+<span class="cm"># declared alongside it</span>
+<span class="kw">evidence_sources</span>: CloudTrail export (JSON), change-management log
+<span class="kw">cadence</span>:          every 24h
+<span class="kw">failure_criteria</span>: any modification missing actor or timestamp
+<span class="kw">on_source_error</span>:  return last known result</div>
+          <button class="stage-btn" type="button" data-run="2">Submit the method &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ── 3 ── -->
+      <div class="stage" id="s3">
+        <button class="stage-head" type="button" data-stage="3">
+          <span class="stage-num">03</span>
+          <span class="stage-titles">
+            <h3>Test coverage and identify gaps</h3>
+            <span class="stage-actor sparkae">SparkAE</span>
+          </span>
+          <span class="stage-state" data-state="3">Locked</span>
+        </button>
+        <div class="stage-body">
+          <p>SparkAE compares what the validation <em>reads</em> against what the authorization boundary <em>contains</em>, and reads the method for the failure modes that quietly turn a check into a rubber stamp. It reports findings. It does not decide.</p>
+          <div class="datablock"><span class="cm"># Coverage analysis vs. the declared boundary</span>
+boundary accounts:   prod-1, prod-2, <span class="bad">prod-3</span>, <span class="bad">shared-services</span>
+validation reads:    prod-1, prod-2
+                     <span class="bad">&rarr; 2 of 4 accounts &mdash; 51% of change volume uncovered</span>
+
+boundary regions:    us-gov-west-1, <span class="bad">us-gov-east-1</span>
+validation reads:    us-gov-west-1
+                     <span class="bad">&rarr; 1 of 2 regions</span>
+
+<span class="cm"># Method analysis</span>
+<span class="bad">FAIL-OPEN</span>  on_source_error returns the last known result, so an
+           unreachable CloudTrail export reports PASS indefinitely.
+<span class="bad">UNTESTED</span>   pass_criteria says the log is "actively monitored";
+           the code tests only that fields are present.
+<span class="good">OK</span>         cadence (24h) is within the KSI's stated tolerance.</div>
+          <ul class="factlist">
+            <li><strong>3 gaps</strong> — 2 coverage, 1 fail-open, 1 unverified criterion</li>
+            <li>Every gap is traced to the line of the method that produced it</li>
+            <li>No verdict is issued here — findings go to both parties</li>
+          </ul>
+          <button class="stage-btn" type="button" data-run="3">Run coverage analysis &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ── 4 ── -->
+      <div class="stage" id="s4">
+        <button class="stage-head" type="button" data-stage="4">
+          <span class="stage-num">04</span>
+          <span class="stage-titles">
+            <h3>Inspect the method and run challenge tests</h3>
+            <span class="stage-actor assessor">Independent Assessment Service</span>
+          </span>
+          <span class="stage-state" data-state="4">Locked</span>
+        </button>
+        <div class="stage-body">
+          <p>The assessor reads the method themselves and designs probes against the same boundary. A validation that passes its own pipeline and fails an independent probe is the finding — and only an independent party can produce it.</p>
+          <div class="datablock"><span class="cm"># Assessor-authored challenge tests (not provider code)</span>
+CT-1  Make a tracked config change in <span class="str">prod-3</span>.
+      provider validation &rarr; <span class="good">PASS</span>   independent probe &rarr; <span class="bad">NOT LOGGED</span>
+      <span class="bad">&rarr; the change never entered the evaluated set</span>
+
+CT-2  Sever the CloudTrail export for 48h.
+      provider validation &rarr; <span class="good">PASS</span>   independent probe &rarr; <span class="bad">STALE</span>
+      <span class="bad">&rarr; confirms the fail-open path; PASS survived a dead source</span>
+
+CT-3  Strip the actor field from one record in <span class="str">prod-1</span>.
+      provider validation &rarr; <span class="bad">FAIL</span>   independent probe &rarr; <span class="bad">FAIL</span>
+      <span class="good">&rarr; in-scope detection works as designed</span></div>
+          <div class="callout"><strong>CT-3 matters as much as CT-1.</strong> The validation is not broken — inside the slice it actually reads, it works. The finding is that the slice is not the boundary, and that the check cannot tell the difference between "nothing wrong" and "nothing seen".</div>
+          <button class="stage-btn" type="button" data-run="4">Run challenge tests &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ── 5 ── -->
+      <div class="stage" id="s5">
+        <button class="stage-head" type="button" data-stage="5">
+          <span class="stage-num">05</span>
+          <span class="stage-titles">
+            <h3>Record both conclusions, separately attributed</h3>
+            <span class="stage-actor assessor">Provider + Independent Assessment Service</span>
+          </span>
+          <span class="stage-state" data-state="5">Locked</span>
+        </button>
+        <div class="stage-body">
+          <p>This is the step the architecture exists for. The provider's conclusion is not overwritten, corrected, or merged. It is recorded as the provider's, beside the assessor's, each with its own evidence and reasoning — so a reviewer can see exactly where the two parties diverged and why.</p>
+          <div class="verdicts">
+            <div class="verdict provider">
+              <div class="v-who">Provider conclusion</div>
+              <div class="v-call">PASS</div>
+              <div class="v-why">All 1,204 modifications observed in the evaluated set carried an actor and a timestamp. Validation ran on cadence for 30 consecutive days.</div>
+            </div>
+            <div class="verdict assessor">
+              <div class="v-who">Independent assessor conclusion</div>
+              <div class="v-call">NOT SATISFIED</div>
+              <div class="v-why">The evaluated set excludes 2 of 4 in-boundary accounts and 1 of 2 regions, and the method reports PASS when its evidence source is unavailable. CT-1 and CT-2 reproduce both. The provider's result is accurate about what it measured and does not support the KSI.</div>
+            </div>
+          </div>
+          <div class="callout"><strong>SparkAE does not adjudicate between these.</strong> It is not a FedRAMP Recognized independent assessment service and it does not resolve the disagreement. It preserves both conclusions, both evidence trails, and the fact that they differ.</div>
+          <button class="stage-btn" type="button" data-run="5">Record both conclusions &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ── 6 ── -->
+      <div class="stage" id="s6">
+        <button class="stage-head" type="button" data-stage="6">
+          <span class="stage-num">06</span>
+          <span class="stage-titles">
+            <h3>Sign the authorization data</h3>
+            <span class="stage-actor sparkae">SparkAE</span>
+          </span>
+          <span class="stage-state" data-state="6">Locked</span>
+        </button>
+        <div class="stage-body">
+          <p>The record that leaves the system carries the evidence, the method that produced it, the result, and the independent conclusion — each signed by the party that authored it. A reviewer downstream can verify who said what without trusting the system that stored it.</p>
+          <div class="datablock"><span class="cm"># Signed authorization data record (illustrative shape)</span>
+{
+  <span class="kw">"ksi"</span>: <span class="str">"KSI-CMT-LMC"</span>,
+  <span class="kw">"evidence"</span>:   { <span class="str">"sources"</span>: [<span class="str">"cloudtrail-export"</span>, <span class="str">"cm-log"</span>],
+                  <span class="str">"digest"</span>: <span class="str">"sha256:4f1c…a903"</span> },
+  <span class="kw">"method"</span>:     { <span class="str">"ref"</span>: <span class="str">"validation/ksi_cmt_lmc.py@9e2b1d4"</span>,
+                  <span class="str">"cadence"</span>: <span class="str">"P1D"</span>, <span class="str">"fails_closed"</span>: <span class="bad">false</span> },
+  <span class="kw">"provider_result"</span>: { <span class="str">"call"</span>: <span class="str">"pass"</span>,
+                       <span class="str">"signed_by"</span>: <span class="str">"csp:cloudvault"</span> },
+  <span class="kw">"assessor_conclusion"</span>: { <span class="str">"call"</span>: <span class="str">"not-satisfied"</span>,
+                          <span class="str">"basis"</span>: [<span class="str">"CT-1"</span>, <span class="str">"CT-2"</span>],
+                          <span class="str">"signed_by"</span>: <span class="str">"ias:example-assessor"</span> },
+  <span class="kw">"divergence"</span>: <span class="bad">true</span>
+}</div>
+          <ul class="factlist">
+            <li>Separate signatures — neither party can restate the other's conclusion</li>
+            <li><code>fails_closed: false</code> travels with the record, not just the verdict</li>
+            <li><code>divergence: true</code> is a first-class field, not an exception</li>
+          </ul>
+          <button class="stage-btn" type="button" data-run="6">Seal the record &rarr;</button>
+        </div>
+      </div>
+
+      <p style="margin-top:26px;font-size:12.5px;line-height:1.7;color:var(--ink-soft);max-width:80ch">
+        This walkthrough is illustrative. The KSI identifier, theme, pass criteria, and Rev5 control
+        mappings are the real entries from the CR26 KSI catalog; the provider system, validation code,
+        challenge tests, and signatures are constructed to show the shape of the flow. Lane 2 is in
+        development &mdash; see the <a href="https://example.com/#lanes">two lanes</a> for what ships today.
+      </p>
+    </div>
+
+    <!-- ── Accumulating record ── -->
+    <aside>
+      <div class="rail-panel">
+        <div class="rail-panel-head">
+          <div class="t">&#9670; Authorization data record</div>
+          <div class="s">Built as you advance. Every entry names the party that authored it.</div>
+        </div>
+        <div class="record" id="record">
+          <div class="record-empty">Nothing recorded yet. Start with step 01.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section class="cta-section">
+  <div class="container">
+    <h2>See the Rev5 lane run <em>on real data.</em></h2>
+    <p>The browser demo assesses a sample SSP against the full FedRAMP Low baseline — 156 controls, 981 objectives — entirely on your machine. No signup, no upload, no network calls.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="demo-standalone.html">Run the Rev5 Demo &rarr;</a>
+      <a class="btn btn-ghost" style="font-size:15px;padding:18px 40px" href="https://example.com/assessors.html">For Assessors &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ COLOPHON FOOTER ══ -->
+<footer class="colophon">
+  <div class="container">
+    <div class="colophon-links">
+      <a href="https://example.com/index.html">Home</a>
+      <a href="https://example.com/assessors.html">For Assessors</a>
+      <a href="demo-standalone.html">Live Demo</a>
+      <a href="https://example.com/integrations.html">Integrations</a>
+      <a href="status.html">Status</a>
+      <a href="https://example.com/privacy.html">Privacy</a>
+      <a href="https://example.com/terms.html">Terms</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="https://github.com/Sprk-0" rel="noopener">Source</a>
+    </div>
+    <div>v0.7.0-rc1 · NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+  </div>
+</footer>
+
+<script>
+// Deterministic, in-page only: no fetch, no storage, no timers beyond the
+// reveal. The record below is built from these literals, in this order.
+var ENTRIES = {
+  1: [{k: 'KSI', v: 'KSI-CMT-LMC — Logging Changes'},
+      {k: 'Authored by', v: 'csp:cloudvault'},
+      {k: 'Pass criteria', v: 'Every modification logged with actor + timestamp, log actively monitored'}],
+  2: [{k: 'Validation method', v: 'validation/ksi_cmt_lmc.py@9e2b1d4'},
+      {k: 'Cadence', v: 'every 24h (P1D)'},
+      {k: 'On source error', v: 'returns last known result', cls: 'warn'}],
+  3: [{k: 'Coverage', v: '2 of 4 accounts · 1 of 2 regions', cls: 'warn'},
+      {k: 'Method findings', v: 'fail-open path; "actively monitored" untested', cls: 'warn'},
+      {k: 'Analysed by', v: 'sparkae (no verdict issued)'}],
+  4: [{k: 'Challenge tests', v: 'CT-1 not logged · CT-2 stale · CT-3 detected', cls: 'warn'},
+      {k: 'Run by', v: 'ias:example-assessor'}],
+  5: [{k: 'Provider conclusion', v: 'PASS — signed csp:cloudvault'},
+      {k: 'Assessor conclusion', v: 'NOT SATISFIED — signed ias:example-assessor', cls: 'warn'},
+      {k: 'Divergence', v: 'true — both retained', cls: 'warn'}],
+  6: [{k: 'Evidence digest', v: 'sha256:4f1c…a903'},
+      {k: 'Record', v: 'sealed — two signatures, neither overwrites the other', cls: 'sig'}]
+};
+
+var MAX = 6;
+var reached = 1;   // highest stage unlocked
+var recorded = []; // stage numbers already written to the record
+
+function setState(n, text) {
+  var el = document.querySelector('[data-state="' + n + '"]');
+  if (el) el.textContent = text;
+}
+
+function render() {
+  for (var n = 1; n <= MAX; n++) {
+    var stage = document.getElementById('s' + n);
+    var done = recorded.indexOf(n) !== -1;
+    stage.classList.toggle('done', done);
+    stage.classList.toggle('active', !done && n === reached);
+    setState(n, done ? 'Recorded' : n === reached ? 'Ready' : 'Locked');
+    var btn = stage.querySelector('[data-run]');
+    if (btn) btn.disabled = done || n !== reached;
+  }
+
+  var rec = document.getElementById('record');
+  if (!recorded.length) {
+    rec.innerHTML = '<div class="record-empty">Nothing recorded yet. Start with step 01.</div>';
+    return;
+  }
+  var html = '';
+  recorded.forEach(function (n) {
+    ENTRIES[n].forEach(function (e) {
+      html += '<div class="record-row"><span class="rk">' + e.k + '</span>' +
+              '<span class="rv ' + (e.cls || '') + '">' + e.v + '</span></div>';
+    });
+  });
+  rec.innerHTML = html;
+}
+
+document.querySelectorAll('[data-run]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var n = parseInt(btn.dataset.run, 10);
+    if (n !== reached || recorded.indexOf(n) !== -1) return;
+    recorded.push(n);
+    if (reached < MAX) reached = n + 1;
+    render();
+    var next = document.getElementById('s' + Math.min(n + 1, MAX));
+    if (next) next.scrollIntoView({behavior: 'smooth', block: 'center'});
+  });
+});
+
+// Headers stay clickable so a reader can re-open an earlier step's detail.
+document.querySelectorAll('[data-stage]').forEach(function (head) {
+  head.addEventListener('click', function () {
+    var n = parseInt(head.dataset.stage, 10);
+    if (n > reached) return;
+    document.getElementById('s' + n).classList.add('active');
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', function () {
+  reached = 1;
+  recorded = [];
+  render();
+  document.getElementById('s1').scrollIntoView({behavior: 'smooth', block: 'center'});
+});
+
+render();
+</script>
+</body>
+</html>
