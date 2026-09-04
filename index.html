@@ -145,9 +145,9 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <span class="term-title">SPARKAE ENGINE</span>
         </div>
         <div class="term-body">
-          <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s http://localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
           <div><span class="out"># same for AC-Policy.docx → $POLICY and IR-Plan.pdf → $IRPLAN</span></div>
-          <div><span class="prompt">$ </span><span class="cmd">curl localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">curl http://localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
           <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
           <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage</span></div>
           <div><span class="out">Gate 3 · Evidence strength &nbsp;Gate 4 · ODP validation</span></div>
