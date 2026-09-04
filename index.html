@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SparkAE (Spark Assessment Engine) — Automated Examine for Control Assessments | ONE Solution Cyber</title>
-<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo, from ONE Solution Cyber. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<title>SparkAE — Every determination traced to evidence</title>
+<meta name="description" content="SparkAE reads an assessment package, evaluates every &quot;Determine if&quot; objective through seven deterministic gates, and shows exactly what the evidence supports, contradicts, or fails to prove. Interview and Test stay with the assessor. Runs inside your environment; nothing leaves your network. Try it on a sample package in the browser.">
 <link rel="canonical" href="https://sparkae-public.netlify.app/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SparkAE">
 <meta property="og:url" content="https://sparkae-public.netlify.app/">
-<meta property="og:title" content="SparkAE — Automated Examine for Control Assessments">
-<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<meta property="og:title" content="SparkAE — Every determination traced to evidence">
+<meta property="og:description" content="SparkAE reads an assessment package, evaluates every &quot;Determine if&quot; objective through seven deterministic gates, and shows exactly what the evidence supports, contradicts, or fails to prove. Interview and Test stay with the assessor. Runs inside your environment; nothing leaves your network. Try it on a sample package in the browser.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SparkAE — Automated Examine for Control Assessments">
-<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<meta name="twitter:title" content="SparkAE — Every determination traced to evidence">
+<meta name="twitter:description" content="SparkAE reads an assessment package, evaluates every &quot;Determine if&quot; objective through seven deterministic gates, and shows exactly what the evidence supports, contradicts, or fails to prove. Interview and Test stay with the assessor. Runs inside your environment; nothing leaves your network. Try it on a sample package in the browser.">
 <link rel="stylesheet" href="ae-editorial.css">
 <style>
 
@@ -116,6 +116,54 @@
   .hx-stats .stats{grid-template-columns:repeat(2,1fr)}
   .hx-spec div{grid-template-columns:1fr;gap:4px}
 }
+.hx-hero .fine{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-top:16px}
+.hx-card{border:1px solid var(--rule);background:var(--paper);box-shadow:0 30px 60px -30px rgba(15,20,25,.35)}
+.hx-card .hd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--paper-warm)}
+.hx-card .hd .id{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--ink)}
+.hx-card .hd .tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;background:rgba(178,58,28,.12);color:var(--vermillion)}
+.hx-card .meta{display:flex;gap:22px;flex-wrap:wrap;padding:14px 18px 6px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)}
+.hx-card .meta strong{color:var(--ink);display:block}
+.hx-card .row{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:10px 18px;border-top:1px solid var(--rule-soft,var(--rule));font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+.hx-card .row .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--vermillion);padding-top:3px}
+.hx-card .row em{font-style:normal;background:rgba(178,58,28,.10);color:var(--ink);padding:0 3px}
+.hx-card .row strong{color:var(--ink);font-weight:500}
+.hx-card details{border-top:1px solid var(--rule)}
+.hx-card summary{cursor:pointer;padding:10px 18px;font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);list-style:none}
+.hx-card summary::-webkit-details-marker{display:none}
+.hx-card summary:hover{color:var(--ink)}
+.hx-card .terminal{margin:0;border:none;border-top:1px solid var(--rule)}
+.hx-doors{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.hx-doors a{display:block;background:var(--paper);padding:30px 30px 32px;text-decoration:none;color:inherit}
+.hx-doors a:hover{background:var(--paper-warm)}
+.hx-doors .eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--vermillion);display:block;margin-bottom:10px}
+.hx-doors h3{font-family:var(--font-display);font-size:26px;font-weight:500;line-height:1.15;margin-bottom:10px;color:var(--ink)}
+.hx-doors h3 em{font-style:italic;color:var(--vermillion);font-weight:400}
+.hx-doors p{font-size:15px;color:var(--ink-soft);line-height:1.55;margin:0 0 14px}
+.hx-doors .go{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.hx-crit{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.hx-crit > div{background:var(--paper);padding:22px 22px 24px}
+.hx-crit .h{font-family:var(--font-display);font-size:19px;font-weight:500;margin-bottom:8px;color:var(--ink)}
+.hx-crit .b{font-size:14px;line-height:1.55;color:var(--ink-soft)}
+.hx-crit .b strong{color:var(--ink);font-weight:500}
+.hx-trust{margin-top:22px;font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;line-height:1.7;color:var(--ink-soft);padding:14px 18px;border:1px dashed var(--rule)}
+.hx-trust strong{color:var(--ink);font-weight:600}
+.hx-more{border:1px solid var(--rule);background:var(--paper)}
+.hx-more > summary{cursor:pointer;padding:18px 24px;font-family:var(--font-display);font-size:20px;font-weight:500;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.hx-more > summary::-webkit-details-marker{display:none}
+.hx-more > summary span{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+.hx-more[open] > summary{border-bottom:1px solid var(--rule)}
+.hx-more .inner{padding:28px 24px 32px}
+.hx-more .inner .hx-head{margin-bottom:22px}
+.hx-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin-top:22px}
+.hx-form label{display:block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#B8C0CC;margin-bottom:6px}
+.hx-form input,.hx-form select,.hx-form textarea{width:100%;box-sizing:border-box;background:#0F1419;border:1px solid #3A4250;color:var(--paper);padding:11px 12px;font-family:var(--font-body,inherit);font-size:14px}
+.hx-form input:focus,.hx-form select:focus,.hx-form textarea:focus{outline:none;border-color:var(--vermillion)}
+.hx-form .full{grid-column:1 / -1}
+.hx-form .actions{grid-column:1 / -1;display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.hx-form .actions .alt{font-size:13px;color:#B8C0CC}
+.hx-form .actions .alt a{color:var(--paper);border-bottom:1px solid #5A6270}
+@media (max-width:1000px){.hx-doors{grid-template-columns:1fr}.hx-crit{grid-template-columns:1fr}}
+@media (max-width:640px){.hx-card .row{grid-template-columns:1fr;gap:3px}.hx-form{grid-template-columns:1fr}}
 svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}svg.ico-dot{stroke:none}</style>
 </head>
 <body>
@@ -131,7 +179,6 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
     <a href="assessors.html">For Assessors</a>
     <a href="demo-standalone.html">Live Demo</a>
     <a href="integrations.html">Integrations</a>
-    <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
   </div>
   <a href="index.html#cta" class="nav-cta">Request Pilot</a>
 </nav>
@@ -140,48 +187,52 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
 <section class="hx-hero">
   <div class="container">
     <div>
-      <div class="hero-badge fade-up"><span class="dot"></span> Deterministic assessment engine · OSCAL native</div>
-      <h1 class="fade-up fade-up-1">The Examine method, automated, for <em>any control assessment.</em></h1>
-      <p class="lede fade-up fade-up-2">SparkAE performs the Examine portion of the assessment test methods: it reads your evidence against every control objective and shows exactly what it does and does not support. Interview and Test stay with the assessor. <strong>Deterministic. Nothing leaves your network.</strong> Not a GRC platform.</p>
+      <div class="hero-badge fade-up"><span class="dot"></span> Deterministic Examine engine · runs inside your boundary</div>
+      <h1 class="fade-up fade-up-1">Every determination, traced to evidence. <em>Minutes, not weeks.</em></h1>
+      <p class="lede fade-up fade-up-2">SparkAE reads an assessment package, evaluates every &ldquo;Determine if&rdquo; objective through seven deterministic gates, and shows precisely what the evidence supports, contradicts, or fails to prove. Interview and Test stay with the assessor. <strong>Runs entirely inside your environment. No black box. No evidence leaves your network.</strong></p>
       <div class="ctas fade-up fade-up-3">
-        <a class="btn btn-primary" href="demo-standalone.html">Run the browser demo →</a>
-        <a class="btn btn-ghost" href="#sample">See a real finding</a>
+        <a class="btn btn-primary" href="demo-standalone.html">Watch SparkAE find a hidden blocker →</a>
+        <a class="btn btn-ghost" href="#cta">Start a 30-day pilot</a>
       </div>
+      <p class="fine fade-up fade-up-3">Sample package · no signup · nothing uploaded · result in about 15 seconds</p>
       <div class="chips fade-up fade-up-4">
         <span class="chip accent">NIST SP 800-53A Rev 5</span>
         <span class="chip">FedRAMP Rev5 profile</span>
         <span class="chip">OSCAL 1.1.2 exports</span>
         <span class="chip">Zero outbound by default</span>
+        <span class="chip">Not a GRC platform</span>
       </div>
     </div>
     <div class="fade-up fade-up-2">
-      <div class="terminal">
-        <div class="term-bar">
-          <span class="term-dot" style="background:#B23A1C"></span>
-          <span class="term-dot" style="background:#D4A017"></span>
-          <span class="term-dot" style="background:#3D5235"></span>
-          <span style="flex:1"></span>
-          <span class="term-title">SPARKAE ENGINE</span>
+      <div class="hx-card">
+        <div class="hd">
+          <div class="id">AC-2_a.[02] · Account Management</div>
+          <span class="tag">Other Than Satisfied</span>
         </div>
-        <div class="term-body">
-          <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s http://localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
-          <div><span class="out"># same for AC-Policy.docx → $POLICY and IR-Plan.pdf → $IRPLAN</span></div>
-          <div><span class="prompt">$ </span><span class="cmd">curl http://localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
-          <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
-          <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage</span></div>
-          <div><span class="out">Gate 3 · Evidence strength &nbsp;Gate 4 · ODP validation</span></div>
-          <div><span class="out">Gate 5 · Contradictions &nbsp;&nbsp;&nbsp;Gate 6 · Temporal coherence</span></div>
-          <div><span class="info">AC-2 Account Management · 26 objectives</span></div>
-          <div><span class="ok">  AC-2_a.[01]  Satisfied            0.91  SSP §3.2</span></div>
-          <div><span class="err">  AC-2_a.[02]  Other Than Satisfied 0.68  prohibited types not listed</span></div>
-          <div><span class="ok">  AC-2_b       Satisfied            0.87  managers designated</span></div>
-          <div><span class="warn">  AC-2_g       Other Than Satisfied 0.42  “monitored” — no specifics</span></div>
-          <div><span class="info">Complete: 28 Satisfied / 14 Other Than Satisfied</span></div>
-          <div><span class="ok">Exports: OSCAL AR · SAR · RET · POA&amp;M · CRM · CIS</span></div>
-          <div><span class="prompt">$ </span><span class="cmd" style="border-right:2px solid var(--vermillion);animation:ae-blink 1s step-end infinite;padding-right:2px"></span></div>
+        <div class="meta">
+          <div><strong>Confidence</strong>0.68 / 1.0</div>
+          <div><strong>Defensibility</strong>Grade C</div>
+          <div><strong>Gap type</strong>Incomplete coverage</div>
+          <div><strong>Method</strong>EXAMINE</div>
         </div>
+        <div class="row"><span class="k">Objective</span><span><strong>Determine if</strong> prohibited account types are defined.</span></div>
+        <div class="row"><span class="k">Evidence</span><span>SSP §3.2 &ldquo;Account Types&rdquo; (BM25 0.74): &ldquo;<em>Permitted account types include</em> individual, service, and emergency accounts&hellip;&rdquo; AC-Policy.docx §4.1.</span></div>
+        <div class="row"><span class="k">Failed gate</span><span>Gate 2 · Concept coverage — the passage enumerates permitted types and never names a prohibited one, so the objective is only partially covered.</span></div>
+        <div class="row"><span class="k">Finding</span><span>The SSP lists permitted account types but never the prohibited ones. Other Than Satisfied.</span></div>
+        <div class="row"><span class="k">Correction</span><span>Add an explicit list of prohibited account types (shared, guest, anonymous) to SSP §3.2 and cross-reference the account-management policy. Draft until an assessor adopts it.</span></div>
+        <details>
+          <summary>OSCAL assessment-results record ▾</summary>
+          <div class="terminal">
+            <div class="term-body" style="font-size:12px;line-height:1.7">
+              <div><span class="out">{ "target": "AC-2_a.[02]",</span></div>
+              <div><span class="out">&nbsp;&nbsp;"props": [ { "name": "status", "value": </span><span class="err">"other-than-satisfied"</span><span class="out"> },</span></div>
+              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> }, { "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> } ],</span></div>
+              <div><span class="out">&nbsp;&nbsp;"related-observations": [ { "description": </span><span class="ok">"SSP §3.2"</span><span class="out">, "method": "EXAMINE" } ] }</span></div>
+            </div>
+          </div>
+        </details>
       </div>
-      <div class="hx-cap"><span>Run it yourself: 981 objectives, 7 gates, SAR + POA&amp;M + OSCAL out</span><span>Same input → same verdicts, every run</span></div>
+      <div class="hx-cap"><span>One finding from the sample run · synthetic data</span><span>Same evidence → same result, every time</span></div>
     </div>
   </div>
 </section>
@@ -190,10 +241,86 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
 <section class="hx-stats">
   <div class="container">
     <div class="stats">
-      <div class="stat"><div class="num">410</div><div class="label">Controls · High profile</div></div>
-      <div class="stat"><div class="num">1,429</div><div class="label">"Determine if" objectives</div></div>
-      <div class="stat"><div class="num">7</div><div class="label">Deterministic gates</div></div>
-      <div class="stat"><div class="num">14<span>+</span></div><div class="label">Export formats</div></div>
+      <div class="stat"><div class="num">410</div><div class="label">Controls · FedRAMP High profile</div></div>
+      <div class="stat"><div class="num">1,429</div><div class="label">"Determine if" objectives · FedRAMP High baseline (410 controls)</div></div>
+      <div class="stat"><div class="num">981</div><div class="label">Objectives the browser demo assesses · FedRAMP Low</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">Deterministic gates per objective</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TWO DOORS ══ -->
+<section class="hx-sec" id="doors">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">Drop the package. See the gaps. <em>Keep the judgment.</em></div>
+      <div class="section-sub">Two jobs, one engine. The same rules on every run, provider and assessor conclusions kept separately attributed.</div>
+    </div>
+    <div class="hx-doors">
+      <a href="assessors.html">
+        <span class="eyebrow">For independent assessors</span>
+        <h3>Automate Examine. <em>Keep the judgment.</em></h3>
+        <p>Cut the Examine pass from days to minutes. Every ODP checked, every draft finding cited to its passage, the same rules for every assessor on the team. Interview, Test, overrides, and the signature stay with you.</p>
+        <span class="go">For Assessors →</span>
+      </a>
+      <a href="demo-standalone.html">
+        <span class="eyebrow">For cloud service providers</span>
+        <h3>See which objectives fail <em>before the assessor does.</em></h3>
+        <p>Run your package against the same rules the assessor will use, before you pay for the assessor. Fix what the evidence cannot prove, then submit once.</p>
+        <span class="go">Run it on the sample package →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="hx-sec warm" id="how-it-works">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">Upload. Assess. Export. <em>Minutes, not weeks.</em></div>
+      <div class="section-sub">The evaluation a senior assessor performs, automated and reproducible. Examine only.</div>
+    </div>
+    <div class="hx-rail">
+      <div><h4>Upload</h4><p>SSP, policies, POA&amp;M, scan results, pen-test reports. PDF, DOCX, XLSX, CSV, OSCAL JSON.</p></div>
+      <div><h4>Select</h4><p>FedRAMP Rev5: Low (156 controls / 981 DIFs), Moderate (323 / 1,307), High (410 / 1,429). NIST mode adds the PM family: 172 / 339 / 426 controls. Or pick controls.</p></div>
+      <div><h4>Assess</h4><p>Evidence presence → concept coverage → evidence strength → ODP validation → contradictions → temporal coherence → status.</p></div>
+      <div><h4>Review</h4><p>Per-objective verdicts with the passage cited, confidence (0–1.0), defensibility (A–F), gap type, and the correction — ranked by what blocks authorization first.</p></div>
+      <div><h4>Export</h4><p>OSCAL assessment-results and POA&amp;M in every profile; SAR, SAP, RET, CRM, CIS and TCW in the FedRAMP profile. Into the GRC tool you already run.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ WHY IT HOLDS UP ══ -->
+<section class="hx-sec" id="why">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">Why deterministic matters. <em>Why a CUI program can use it at all.</em></div>
+      <div class="section-sub">Cloud-native tools cannot follow you inside the boundary. This one does not need to.</div>
+    </div>
+    <div class="hx-why">
+      <div><div class="h">Deterministic</div><div class="b">No wall-clock, no randomness, no model drift. The same package yields the same findings — reproducible on demand for an assessor or an authorizing body, checkable by hash.</div></div>
+      <div><div class="h">Zero data out</div><div class="b">The default install makes no outbound calls: no HTTP, no DNS, no CDN, no telemetry. CUI never transits a vendor cloud because there is none in the path. Nothing leaves the network unless you turn that on.</div></div>
+      <div><div class="h">Satisfied cannot be ungrounded</div><div class="b">A verdict of Satisfied must be grounded in cited evidence or the engine refuses it. That holds in every mode, including the opt-in LLM ones.</div></div>
+      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results and POA&amp;M, validated against the NIST schema. Structured from the start, whatever shape the mandate takes.</div></div>
+    </div>
+    <p class="hx-trust"><strong>This site loads no trackers, no analytics, and no third-party scripts or fonts.</strong> The engine, by default, makes no outbound calls. The browser demo assesses the package on your machine and uploads nothing.</p>
+  </div>
+</section>
+
+<!-- ══ PILOT SUCCESS CRITERIA ══ -->
+<section class="hx-sec warm" id="criteria">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">What a pilot has to prove. <em>Success criteria, not benchmarks.</em></div>
+      <div class="section-sub">We do not publish customer results yet. These are the measures a 30-day pilot is scored against — on your package, in your environment, with your reviewers keeping the numbers.</div>
+    </div>
+    <div class="hx-crit">
+      <div><div class="h">Coverage</div><div class="b">Every objective in the baseline receives a verdict with a citation: <strong>981</strong> at Low, <strong>1,307</strong> at Moderate, <strong>1,429</strong> at High. Nothing sampled, nothing skipped.</div></div>
+      <div><div class="h">Blockers surfaced before submission</div><div class="b">Other-Than-Satisfied objectives ranked by gap type, each with the passage and the correction — compared against what your reviewers find by hand.</div></div>
+      <div><div class="h">Rerun after a document change</div><div class="b">A full rerun on the revised package, and a diff of what changed, measured in <strong>minutes</strong> on your hardware.</div></div>
+      <div><div class="h">First-pass Examine labor</div><div class="b">Senior-reviewer hours on the Examine pass, before and during the pilot. You keep the timesheet; the pilot report states the delta you measured.</div></div>
+      <div><div class="h">Reproducibility</div><div class="b">The same package produces the same verdicts on a second machine on a different day, checked by hashing the assessment-results export.</div></div>
+      <div><div class="h">Fit with your stack</div><div class="b">Findings land in the tool you already run (ServiceNow, RegScale, Archer, Jira) as JSON, CSV, or OSCAL, without a second system of record.</div></div>
     </div>
   </div>
 </section>
@@ -215,188 +342,129 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div>
         <span class="eyebrow">Profiles today</span>
         <h3>NIST SP 800-53A Rev 5</h3>
-        <p>As plain NIST 800-53 (<code>framework=nist</code>) or as FedRAMP Rev5 (<code>framework=fedramp</code>) with the Low / Moderate / High baselines, CORE controls and FedRAMP deliverables. FedRAMP 20x is in development and is not sold.</p>
+        <p>As plain NIST 800-53 (install with <code>FRAMEWORK=nist</code>: the Low / Moderate / High sets plus the PM family, OSCAL and POA&amp;M exports) or as FedRAMP Rev5 (<code>FRAMEWORK=fedramp</code>, the default) with the FedRAMP-tailored baselines, CORE controls and FedRAMP deliverables. FedRAMP 20x support is in development and is not sold.</p>
       </div>
       <div>
         <span class="eyebrow">Whose tool it is</span>
         <h3>Neither side’s instrument</h3>
-        <p>Not the provider’s self-assessment tool, not the assessor’s in-house one. The same rules on every run, provider and assessor conclusions kept separately attributed.</p>
-      </div>
-    </div>
-    <p class="hx-boundary">SparkAE is independence-preserving assessment infrastructure. It is <strong>not</strong> a FedRAMP Recognized independent assessment service, it does not replace one, and it does not make the authorization decision. The recognized assessment service controls scope, testing, conclusions, overrides, and the final deliverables.</p>
-  </div>
-</section>
-
-<!-- ══ WHAT YOU CAN DO ══ -->
-<section class="hx-sec" id="workflows" style="padding-top:0">
-  <div class="container">
-    <div class="hx-head">
-      <div class="section-title">Nine workflows. <em>Try each one in the browser.</em></div>
-      <div class="section-sub">The demo follows the FedRAMP lifecycle. Initial assessment runs the real engine on your machine; the rest are guided walkthroughs, labelled as such.</div>
-    </div>
-    <div class="hx-do">
-      <div class="grp">
-        <div class="grp-h"><b>Authorization</b><span>Authorization process</span></div>
-        <div class="items">
-          <a class="it" href="demo-standalone.html"><span class="n">§01</span><span class="t">Initial assessment</span><span class="s">SSP → SAR. Seven gates over every objective in the baseline, each verdict citing its evidence.</span><span class="badge live">Live engine</span></a>
-          <a class="it" href="demo-standalone.html"><span class="n">§02</span><span class="t">Annual reassessment</span><span class="s">One-third of controls re-tested; carry-forward for the rest with the prior evidence trace.</span><span class="badge walk">Walkthrough</span></a>
-          <a class="it" href="demo-standalone.html"><span class="n">§03</span><span class="t">Significant change</span><span class="s">Change request → impact assessment → the delta of objectives that need re-examining.</span><span class="badge walk">Walkthrough</span></a>
-        </div>
-      </div>
-      <div class="grp">
-        <div class="grp-h"><b>Operations</b><span>ConMon playbook</span></div>
-        <div class="items">
-          <a class="it" href="demo-standalone.html"><span class="n">§04</span><span class="t">Monthly ConMon</span><span class="s">Vulnerability scans → POA&amp;M rows with FedRAMP remediation SLAs and deviation requests.</span><span class="badge walk">Walkthrough</span></a>
-          <a class="it" href="demo-standalone.html"><span class="n">§05</span><span class="t">KSI validation</span><span class="s">FedRAMP 20x Key Security Indicators: validation method, cadence, and failure criteria per KSI.</span><span class="badge walk">Walkthrough</span></a>
-        </div>
-      </div>
-      <div class="grp">
-        <div class="grp-h"><b>Quality</b><span>SAR quality review</span></div>
-        <div class="items">
-          <a class="it" href="demo-standalone.html"><span class="n">§06</span><span class="t">QA audit</span><span class="s">Eleven cross-portfolio consistency rules run over every finding before a SAR leaves the shop.</span><span class="badge walk">Walkthrough</span></a>
-          <a class="it" href="demo-standalone.html"><span class="n">§07</span><span class="t">Package validator</span><span class="s">OSCAL structure and FedRAMP constraints checked on the package before submission.</span><span class="badge walk">Walkthrough</span></a>
-          <a class="it" href="demo-standalone.html"><span class="n">§08</span><span class="t">Portfolio</span><span class="s">Cross-system rollup: status, open findings, and defensibility across every engagement.</span><span class="badge walk">Walkthrough</span></a>
-        </div>
-      </div>
-      <div class="grp">
-        <div class="grp-h"><b>Foundation</b><span>Templates</span></div>
-        <div class="items">
-          <a class="it" href="demo-standalone.html"><span class="n">§09</span><span class="t">Data sources</span><span class="s">Nine evidence and eight GRC connectors normalised to one canonical, OSCAL-aligned record.</span><span class="badge walk">Walkthrough</span></a>
-        </div>
+        <p>Not the provider’s self-assessment tool, not the assessor’s in-house one. Think of it as Tenable for the package itself: it scans, finds, exports; your GRC tool tracks.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ HOW IT WORKS ══ -->
-<section class="hx-sec warm" id="how-it-works">
+<!-- ══ UNDER THE HOOD (engineering detail, collapsed) ══ -->
+<section class="hx-sec warm" id="workflows" style="padding-top:0">
   <div class="container">
-    <div class="hx-head">
-      <div class="section-title">Upload. Assess. Export. <em>Minutes, not weeks.</em></div>
-      <div class="section-sub">The evaluation a senior assessor performs, automated and reproducible.</div>
-    </div>
-    <div class="hx-rail">
-      <div><h4>Upload</h4><p>SSP, policies, POA&amp;M, scan results, pen-test reports. PDF, DOCX, XLSX, CSV, OSCAL JSON.</p></div>
-      <div><h4>Select</h4><p>NIST 800-53 or FedRAMP Rev5: Low (156 controls / 981 DIFs), Moderate (323 / 1,307), High (410 / 1,429). Or pick controls.</p></div>
-      <div><h4>Assess</h4><p>Evidence presence → concept coverage → evidence strength → ODP validation → contradictions → temporal coherence → status.</p></div>
-      <div><h4>Review</h4><p>Per-objective verdicts with citations, confidence (0–1.0), defensibility (A–F), gap type, and the fix.</p></div>
-      <div><h4>Export</h4><p>OSCAL assessment-results and POA&amp;M in every profile; SAR, SAP, RET, CRM, CIS and TCW in the FedRAMP profile.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ SAMPLE FINDING ══ -->
-<section class="hx-sec" id="sample">
-  <div class="container">
-    <div class="hx-head">
-      <div class="section-title">A finding you could hand to an assessor. <em>Not a black-box verdict.</em></div>
-      <div class="section-sub">One real Other-Than-Satisfied finding from a sample run (synthetic data, “CloudVault Federal”).</div>
-    </div>
-    <div class="hx-finding">
-      <div style="border:1px solid var(--rule);background:var(--paper)">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--paper-warm)">
-          <div style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--ink)">AC-2_a.[02] · Account Management</div>
-          <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;background:rgba(178,58,28,0.12);color:var(--vermillion)">Other Than Satisfied</span>
+    <details class="hx-more" id="engineering">
+      <summary>Under the hood <span>for engineers · deployment modes · lifecycle workflows · API · spec ▾</span></summary>
+      <div class="inner">
+        <div class="hx-head" id="modes">
+          <div class="section-title">Three deployment modes. <em>You choose what leaves your network.</em></div>
+          <div class="section-sub">LLM is always opt-in. When a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
         </div>
-        <div style="padding:16px 18px">
-          <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px;font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)">
-            <div><strong style="color:var(--ink)">Confidence</strong><br>0.68 / 1.0</div>
-            <div><strong style="color:var(--ink)">Defensibility</strong><br>Grade C</div>
-            <div><strong style="color:var(--ink)">Gap type</strong><br>Incomplete coverage</div>
-            <div><strong style="color:var(--ink)">Method</strong><br>EXAMINE</div>
+        <div class="modes-grid hx-modes">
+          <div class="mode-card">
+            <span class="mode-tag safe">Default</span>
+            <h3>Self-contained</h3>
+            <div class="mode-sub">LLM_PROVIDER=none</div>
+            <p>The deterministic 7-gate engine with ten local analytical services. BM25 retrieval, optional local ChromaDB.</p>
+            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install .</span></li></ul>
           </div>
-          <p style="font-size:14px;line-height:1.55;color:var(--ink-soft);margin-bottom:10px"><strong style="color:var(--ink)">Determine if:</strong> “prohibited account types are defined.” The SSP enumerates permitted account types in §3.2 but never lists the types the system <em>prohibits</em>, so the objective is only partially covered.</p>
-          <p style="font-size:14px;line-height:1.55;color:var(--ink-soft);margin-bottom:10px"><strong style="color:var(--ink)">Evidence cited:</strong> SSP §3.2 “Account Types” (BM25 0.74); AC-Policy.docx §4.1.</p>
-          <p style="font-size:14px;line-height:1.55;color:var(--ink-soft);margin:0"><strong style="color:var(--ink)">Remediation:</strong> Add an explicit list of prohibited account types (shared, guest, anonymous) to SSP §3.2 and cross-reference the account-management policy.</p>
+          <div class="mode-card">
+            <span class="mode-tag safe">Opt-in · stays local</span>
+            <h3>Local LLM</h3>
+            <div class="mode-sub">LLM_PROVIDER=ollama</div>
+            <p>An Ollama-served model produces the determination; nothing leaves the network. Not sold as SCIF-ready.</p>
+            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install '.[local]'</span></li></ul>
+          </div>
+          <div class="mode-card">
+            <span class="mode-tag review">Opt-in</span>
+            <h3>Cloud LLM</h3>
+            <div class="mode-sub">LLM_PROVIDER=anthropic</div>
+            <p>A cloud model produces the determination directly. Clearly flagged: those verdicts are not engine-grounded. The integrity gate still applies.</p>
+            <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>pip install '.[cloud]'</span></li></ul>
+          </div>
         </div>
-      </div>
-      <div class="terminal">
-        <div class="term-bar">
-          <span class="term-dot" style="background:#B23A1C"></span>
-          <span class="term-dot" style="background:#D4A017"></span>
-          <span class="term-dot" style="background:#3D5235"></span>
-          <span style="flex:1"></span>
-          <span class="term-title">assessment-results.json (OSCAL)</span>
+
+        <div class="hx-head" style="margin-top:44px">
+          <div class="section-title">Nine workflows. <em>Try each one in the browser.</em></div>
+          <div class="section-sub">The demo follows the FedRAMP lifecycle. Initial assessment runs the real engine on your machine; the rest are guided walkthroughs, labelled as such.</div>
         </div>
-        <div class="term-body" style="font-size:12px;line-height:1.7">
-          <div><span class="out">{</span></div>
-          <div><span class="out">&nbsp;&nbsp;"target": "AC-2_a.[02]",</span></div>
-          <div><span class="out">&nbsp;&nbsp;"props": [</span></div>
-          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "status", "value": </span><span class="err">"other-than-satisfied"</span><span class="out"> },</span></div>
-          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> },</span></div>
-          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> }</span></div>
-          <div><span class="out">&nbsp;&nbsp;],</span></div>
-          <div><span class="out">&nbsp;&nbsp;"related-observations": [</span></div>
-          <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "description": </span><span class="ok">"SSP §3.2"</span><span class="out">, "method": "EXAMINE" }</span></div>
-          <div><span class="out">&nbsp;&nbsp;]</span></div>
-          <div><span class="out">}</span></div>
+        <div class="hx-do">
+          <div class="grp">
+            <div class="grp-h"><b>Authorization</b><span>Authorization process</span></div>
+            <div class="items">
+              <a class="it" href="demo-standalone.html"><span class="n">§01</span><span class="t">Initial assessment</span><span class="s">SSP → SAR. Seven gates over every objective in the baseline, each verdict citing its evidence.</span><span class="badge live">Live engine</span></a>
+              <a class="it" href="demo-standalone.html"><span class="n">§02</span><span class="t">Annual reassessment</span><span class="s">One-third of controls re-tested; carry-forward for the rest with the prior evidence trace.</span><span class="badge walk">Walkthrough</span></a>
+              <a class="it" href="demo-standalone.html"><span class="n">§03</span><span class="t">Significant change</span><span class="s">Change request → impact assessment → the delta of objectives that need re-examining.</span><span class="badge walk">Walkthrough</span></a>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp-h"><b>Operations</b><span>ConMon playbook</span></div>
+            <div class="items">
+              <a class="it" href="demo-standalone.html"><span class="n">§04</span><span class="t">Monthly ConMon</span><span class="s">Vulnerability scans → POA&amp;M rows with FedRAMP remediation SLAs and deviation requests.</span><span class="badge walk">Walkthrough</span></a>
+              <a class="it" href="demo-standalone.html"><span class="n">§05</span><span class="t">KSI validation</span><span class="s">FedRAMP 20x Key Security Indicators: validation method, cadence, and failure criteria per KSI.</span><span class="badge walk">Walkthrough</span></a>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp-h"><b>Quality</b><span>SAR quality review</span></div>
+            <div class="items">
+              <a class="it" href="demo-standalone.html"><span class="n">§06</span><span class="t">QA audit</span><span class="s">Eleven cross-portfolio consistency rules run over every finding before a SAR leaves the shop.</span><span class="badge walk">Walkthrough</span></a>
+              <a class="it" href="demo-standalone.html"><span class="n">§07</span><span class="t">Package validator</span><span class="s">OSCAL 1.1.2 structure and FedRAMP constraints checked on the package before submission.</span><span class="badge walk">Walkthrough</span></a>
+              <a class="it" href="demo-standalone.html"><span class="n">§08</span><span class="t">Portfolio</span><span class="s">Cross-system rollup: status, open findings, and defensibility across every engagement.</span><span class="badge walk">Walkthrough</span></a>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp-h"><b>Foundation</b><span>Templates</span></div>
+            <div class="items">
+              <a class="it" href="demo-standalone.html"><span class="n">§09</span><span class="t">Data sources</span><span class="s">Nine evidence and eight GRC connectors normalised to one canonical, OSCAL-aligned record.</span><span class="badge walk">Walkthrough</span></a>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ══ WHY IT HOLDS UP ══ -->
-<section class="hx-sec warm" id="why">
-  <div class="container">
-    <div class="hx-head">
-      <div class="section-title">Why a CUI program can use it <em>at all.</em></div>
-      <div class="section-sub">Cloud-native tools cannot follow you inside the boundary. This one does not need to.</div>
-    </div>
-    <div class="hx-why">
-      <div><div class="h">Deterministic</div><div class="b">No wall-clock, no randomness, no model drift. The same package yields the same findings — reproducible on demand for an assessor or an authorizing body.</div></div>
-      <div><div class="h">Zero data out</div><div class="b">Default mode (<code>LLM_PROVIDER=none</code>) makes no outbound calls: no HTTP, no DNS, no CDN, no telemetry. CUI never transits a vendor cloud because there is none in the path.</div></div>
-      <div><div class="h">Integrity gate</div><div class="b">A verdict of Satisfied must be grounded in cited evidence or it is blocked. That holds in every mode, including the opt-in LLM ones.</div></div>
-      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results and POA&amp;M, validated against the NIST schema. Structured from the start, whatever shape the mandate takes.</div></div>
-    </div>
-  </div>
-</section>
+        <div class="hx-head" style="margin-top:44px">
+          <div class="section-title">The engine. <em>Not a GRC platform.</em></div>
+          <div class="section-sub">Built for production: four rounds of adversarial security review, a comprehensive automated test suite.</div>
+        </div>
+        <dl class="hx-spec">
+          <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives (447 controls, 1,513 objectives in the full catalog); FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>
+          <div><dt>Analysis</dt><dd>Ten local services: BM25 retrieval, concept coverage, evidence strength, defensibility, contradiction detection, temporal coherence, ODP lifecycle, gap engine (25 types), confidence, citations.</dd></div>
+          <div><dt>Exports</dt><dd>OSCAL JSON (assessment-results, POA&amp;M), CSV; SAR and SAP (JSON + DOCX), RET, CRM, CIS, TCW in the FedRAMP profile — 14+ formats.</dd></div>
+          <div><dt>Intake</dt><dd>Nessus, ZAP and generic CSV scans; pen-test reports; vulnerabilities mapped to controls for POA&amp;M generation.</dd></div>
+          <div><dt>Access control</dt><dd>Eight assessment roles from system admin to authorizing official, multi-tenant org isolation, permission-gated API.</dd></div>
+          <div><dt>Audit</dt><dd>Hash-chained append-only log (AU-2 / AU-3, integrity per AU-9); syslog RFC 5424 and ArcSight CEF exports.</dd></div>
+          <div><dt>Interfaces</dt><dd>The same engine behind the assessor UI and the GRC API; JSON, CSV or OSCAL into the GRC tool you already run.</dd></div>
+          <div><dt>Deployment</dt><dd>Production-hardened Docker: non-root, read-only filesystem, cap_drop ALL, health checks, graceful drain.</dd></div>
+        </dl>
 
-<!-- ══ MODES + SPEC ══ -->
-<section class="hx-sec" id="modes">
-  <div class="container">
-    <div class="hx-head">
-      <div class="section-title">Three deployment modes. <em>You choose what leaves your network.</em></div>
-      <div class="section-sub">LLM is always opt-in. When a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
-    </div>
-    <div class="modes-grid hx-modes">
-      <div class="mode-card">
-        <span class="mode-tag safe">Default</span>
-        <h3>Self-contained</h3>
-        <div class="mode-sub">LLM_PROVIDER=none</div>
-        <p>The deterministic 7-gate engine with ten local analytical services. BM25 retrieval, optional local ChromaDB.</p>
-        <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install .</span></li></ul>
+        <div class="terminal" style="margin-top:32px;max-width:none">
+          <div class="term-bar">
+            <span class="term-dot" style="background:#B23A1C"></span>
+            <span class="term-dot" style="background:#D4A017"></span>
+            <span class="term-dot" style="background:#3D5235"></span>
+            <span style="flex:1"></span>
+            <span class="term-title">SPARKAE ENGINE · REST API</span>
+          </div>
+          <div class="term-body">
+            <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s http://localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
+            <div><span class="out"># same for AC-Policy.docx → $POLICY and IR-Plan.pdf → $IRPLAN</span></div>
+            <div><span class="prompt">$ </span><span class="cmd">curl http://localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
+            <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
+            <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage &nbsp;Gate 3 · Evidence strength</span></div>
+            <div><span class="out">Gate 4 · ODP validation &nbsp;&nbsp;&nbsp;&nbsp;Gate 5 · Contradictions &nbsp;&nbsp;&nbsp;Gate 6 · Temporal coherence &nbsp;Gate 7 · Status</span></div>
+            <div><span class="info">AC-2 Account Management · 26 objectives</span></div>
+            <div><span class="ok">  AC-2_a.[01]  Satisfied            0.91  SSP §3.2</span></div>
+            <div><span class="err">  AC-2_a.[02]  Other Than Satisfied 0.68  prohibited types not listed</span></div>
+            <div><span class="ok">  AC-2_b       Satisfied            0.87  managers designated</span></div>
+            <div><span class="warn">  AC-2_g       Other Than Satisfied 0.42  “monitored” — no specifics</span></div>
+            <div><span class="info">Complete: 28 Satisfied / 14 Other Than Satisfied</span></div>
+            <div><span class="ok">Exports: OSCAL AR · SAR · RET · POA&amp;M · CRM · CIS</span></div>
+          </div>
+        </div>
+        <p style="margin-top:14px;font-size:13px;color:var(--ink-soft)">The in-browser reference engine behind the live demo is published as source — see <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a> in the footer.</p>
       </div>
-      <div class="mode-card">
-        <span class="mode-tag safe">Opt-in · CUI safe</span>
-        <h3>Local LLM</h3>
-        <div class="mode-sub">LLM_PROVIDER=ollama</div>
-        <p>An Ollama-served model produces the determination; nothing leaves the network. Not sold as SCIF-ready.</p>
-        <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install '.[local]'</span></li></ul>
-      </div>
-      <div class="mode-card">
-        <span class="mode-tag review">Opt-in</span>
-        <h3>Cloud LLM</h3>
-        <div class="mode-sub">LLM_PROVIDER=anthropic</div>
-        <p>A cloud model produces the determination directly. Clearly flagged: those verdicts are not engine-grounded. The integrity gate still applies.</p>
-        <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>pip install '.[cloud]'</span></li></ul>
-      </div>
-    </div>
-
-    <div class="hx-head" style="margin-top:56px">
-      <div class="section-title">The engine. <em>Not a GRC platform.</em></div>
-      <div class="section-sub">Built for production: four rounds of adversarial security review, a comprehensive automated test suite.</div>
-    </div>
-    <dl class="hx-spec">
-      <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives; FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>
-      <div><dt>Analysis</dt><dd>Ten local services: BM25 retrieval, concept coverage, evidence strength, defensibility, contradiction detection, temporal coherence, ODP lifecycle, gap engine (25 types), confidence, citations.</dd></div>
-      <div><dt>Exports</dt><dd>OSCAL JSON (assessment-results, POA&amp;M), CSV; SAR and SAP (JSON + DOCX), RET, CRM, CIS, TCW in the FedRAMP profile.</dd></div>
-      <div><dt>Intake</dt><dd>Nessus, ZAP and generic CSV scans; pen-test reports; vulnerabilities mapped to controls for POA&amp;M generation.</dd></div>
-      <div><dt>Access control</dt><dd>Eight assessment roles from system admin to authorizing official, multi-tenant org isolation, permission-gated API.</dd></div>
-      <div><dt>Audit</dt><dd>Hash-chained append-only log (AU-2 / AU-3, integrity per AU-9); syslog RFC 5424 and ArcSight CEF exports.</dd></div>
-      <div><dt>Interfaces</dt><dd>The same engine behind the assessor UI and the GRC API; JSON, CSV or OSCAL into the GRC tool you already run.</dd></div>
-      <div><dt>Deployment</dt><dd>Production-hardened Docker: non-root, read-only filesystem, cap_drop ALL, health checks, graceful drain.</dd></div>
-    </dl>
+    </details>
   </div>
 </section>
 
@@ -405,25 +473,41 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
   <span id="pricing"></span>
   <div class="container">
     <div>
-      <h2>See a real assessment run <em>in under a minute.</em></h2>
-      <p>The browser demo assesses a sample SSP against the full FedRAMP Low baseline — 156 controls, 981 objectives — entirely on your machine. No signup, no upload, no network.</p>
-      <div class="ctas" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
-        <a class="btn btn-vermillion" href="demo-standalone.html">Run the browser demo →</a>
-        <a class="btn btn-ghost" href="mailto:info@sparkae.ai?subject=Paid%20pilot%20request">Ask about a paid pilot</a>
-      </div>
-      <div class="hx-links">
-        <a href="assessors.html">For Assessors →</a>
-        <a href="integrations.html">Integrations →</a>
-        <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source →</a>
-      </div>
+      <h2>Start a 30-day paid pilot. <em>Your package. Your environment.</em></h2>
+      <p>Your package, the local engine, in the profile you assess against. A gap report you keep either way. Priced to the assessment, not per seat. A founder call within 48 hours of your request.</p>
+      <form class="hx-form" name="pilot-request" method="POST" data-netlify="true" netlify-honeypot="website">
+        <input type="hidden" name="form-name" value="pilot-request">
+        <p hidden><label for="pr-website">Leave this field empty</label><input id="pr-website" name="website" tabindex="-1" autocomplete="off"></p>
+        <div><label for="pr-name">Name</label><input id="pr-name" name="name" type="text" required autocomplete="name"></div>
+        <div><label for="pr-org">Organization</label><input id="pr-org" name="organization" type="text" required autocomplete="organization"></div>
+        <div><label for="pr-email">Work email</label><input id="pr-email" name="email" type="email" required autocomplete="email"></div>
+        <div><label for="pr-role">You are</label>
+          <select id="pr-role" name="role" required>
+            <option value="">Choose one</option>
+            <option value="assessor">An independent assessment service (3PAO)</option>
+            <option value="provider">A cloud service provider</option>
+            <option value="agency">An agency or authorizing official</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="full"><label for="pr-note">What are you assessing? (optional)</label><textarea id="pr-note" name="message" rows="3" placeholder="Baseline, package size, timeline, the GRC tool you run"></textarea></div>
+        <div class="actions">
+          <button type="submit" class="btn btn-vermillion">Request a pilot →</button>
+          <span class="alt">Prefer email? <a href="mailto:info@sparkae.ai?subject=Paid%20pilot%20request">info@sparkae.ai</a></span>
+        </div>
+      </form>
     </div>
     <div class="side">
-      <strong>30-day paid pilot</strong>
-      Your package, the local engine, in the profile you assess against. Gap report you keep either way. Priced against the assessment, not per seat; terms confirmed by the founder — this page is not a rate card.<br><br>
-      <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
+      <strong>Or run it first</strong>
+      The browser demo assesses a sample package against the full FedRAMP Low baseline — 156 controls, 981 objectives — entirely on your machine. No signup, no upload, no network. Drop your own package into it if you want; it never leaves the browser.<br><br>
+      <a href="demo-standalone.html">Run the browser demo →</a>
+      <div class="hx-links" style="margin-top:22px">
+        <a href="assessors.html">For Assessors →</a>
+        <a href="integrations.html">Integrations →</a>
+      </div>
     </div>
   </div>
-  <p class="hx-fine">Where the target is FedRAMP: SparkAE is not a FedRAMP Recognized independent assessment service (historically, a 3PAO), it does not replace one, and it does not issue the official Security Assessment Report or an Authorization to Operate. The recognized assessment service controls scope, testing, conclusions, overrides, and the final deliverables; the authorizing official makes the authorization decision. Licensed, not sold — federal buyers: FAR 12.212 / DFARS 227.7202 commercial-software terms.</p>
+  <p class="hx-fine">SparkAE is independence-preserving assessment infrastructure. Where the target is FedRAMP it is <strong>not</strong> a FedRAMP Recognized independent assessment service (historically, a 3PAO), it does not replace one, and it does not make the authorization decision or issue the official Security Assessment Report or an Authorization to Operate. The recognized assessment service controls scope, testing, conclusions, overrides, and the final deliverables; the authorizing official makes the authorization decision. FedRAMP 20x support is in development and is not sold. Licensing: the in-browser reference engine published at the Source link is Apache-2.0; the SparkAE server product is commercial software, licensed, not sold — federal buyers: FAR 12.212 / DFARS 227.7202 commercial-software terms.</p>
 </section>
 
 <!-- ══ FOOTER ══ -->
@@ -446,11 +530,11 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
     </div>
     <div class="foot-rule"></div>
-    <div>NIST SP 800-53A Rev 5 · 447 Controls · 1,513 DIFs · Self-Contained by Default</div>
+    <div>NIST SP 800-53A Rev 5 · full catalog 447 controls · 1,513 objectives · FedRAMP High baseline 410 / 1,429 · Self-contained by default</div>
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO, webhooks, email, SIEM, and cloud storage are all opt-in via explicit configuration. The deterministic assessment path runs entirely inside the deployment boundary; no telemetry, no auto-update, no calls home.
     </div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — the Examine method, automated, for control assessments</div>
+    <div style="margin-top:12px;color:#7A8290">SparkAE is made by ONE Solution Cyber · © 2026</div>
   </div>
 </footer>
 </body>

@@ -16,14 +16,18 @@
    `const` redeclaration across two classic scripts is a hard SyntaxError that
    would take the whole page down.
 
-   Pure logic — no DOM access, no network. The verdict path reads the clock at
-   most once, in assessDif, and only when the caller supplies no assessment
-   date; the four temporal gates receive that resolved date rather than
-   reaching for `new Date()` themselves, and the result reports it as
-   `assessment_date`. Pass a date and the assessment is reproducible.
-   Determinism is a product guarantee (repo rule 6): same corpus in, same
-   verdicts out. Do not introduce Date.now(), Math.random(), or iteration that
-   depends on object key order below.
+   Pure logic — no DOM access, no network, and no clock. The assessment date
+   is run context the caller supplies; the four temporal gates receive it and
+   the result reports it as `assessment_date` with `assessment_date_source`
+   ('supplied' or 'none'). With no date the temporal gate cannot verify
+   currency and fails closed ('indeterminate') rather than borrowing a date
+   from the evidence under test — a package whose newest scan is years old
+   must not pass the cadence gate by being assessed "as of" that scan. The
+   same corpus and date therefore give the same verdicts on any machine on
+   any day. Determinism is a product guarantee (repo rule 6): same corpus in,
+   same verdicts out. Do not introduce new Date() with no arguments,
+   Date.now(), Math.random(), or iteration that depends on object key order
+   below.
    ═══════════════════════════════════════════════════════════════════ */
 (function (global) {
 'use strict';
@@ -518,9 +522,29 @@ function extractDates(text) {
     .sort((a, b) => b.dateObj - a.dateObj);
 }
 
+// Find the passage carrying a phrase: first in the evidence already
+// retrieved for this objective, else anywhere in the corpus (the refutation
+// index is corpus-wide). Returns a window around it and the file it sits in.
+function locatePhrase(retriever, evidenceText, phrase) {
+  const needle = String(phrase || '').toLowerCase();
+  if (needle.length < 6) return { excerpt: '', filename: '' };
+  const window = (text, at) => {
+    const start = Math.max(0, at - 220), end = Math.min(text.length, at + needle.length + 220);
+    return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+  };
+  let at = evidenceText.toLowerCase().indexOf(needle);
+  if (at >= 0) return { excerpt: window(evidenceText, at), filename: '' };
+  for (const c of (retriever && retriever.chunks || [])) {
+    const text = foldHomoglyphs(c && c.text || '');
+    at = text.toLowerCase().indexOf(needle);
+    if (at >= 0) return { excerpt: window(text, at), filename: c.filename || '' };
+  }
+  return { excerpt: '', filename: '' };
+}
+
 function checkCurrency(dates, assessmentDate) {
   if (!dates.length) return {isCurrent:true, staleDays:0, concerns:[]};
-  const ad = assessmentDate || new Date();
+  const ad = assessmentDate;
   const most = dates[0];
   const daysOld = Math.round((ad - most.dateObj) / 86400000);
   const thresh = STALENESS[most.ctxType] || 365;
@@ -540,7 +564,7 @@ const SCAN_CADENCE_DAYS = 30;
 const SCAN_CONTEXT_RE = /\b(?:vulnerability scan|vuln scan|authenticated scan|credentialed scan|web application scan|database scan|container scan|nessus|qualys|tenable|rapid7|openvas|scanned|last scan|most recent scan|scan(?:s)?\s+(?:was|were|is|are)?\s*(?:performed|completed|run|conducted|executed))\b/i;
 
 function checkScanCadence(dates, assessmentDate) {
-  const ad = assessmentDate || new Date();
+  const ad = assessmentDate;
   const scanDates = dates.filter(d => SCAN_CONTEXT_RE.test(d.surrounding || ''));
   if (!scanDates.length) return null;
   const most = scanDates[0];
@@ -557,7 +581,7 @@ const PAST_ACTION_RE = /\b(?:completed|performed|conducted|executed|tested|revie
 const FUTURE_PLAN_RE = /\b(?:scheduled|planned|due|target|upcoming|expir|valid until|renew|will be|to be completed|to be performed|to be done|forecast|projected|anticipat|next)\b/i;
 
 function checkFutureDates(dates, assessmentDate) {
-  const ad = assessmentDate || new Date();
+  const ad = assessmentDate;
   for (const d of dates) {
     const age = Math.round((ad - d.dateObj) / 86400000);
     if (age >= 0) break; // past date, stop
@@ -581,7 +605,7 @@ const SLA_DAYS = {critical:30, high:30, moderate:90, medium:90, low:180};
 
 function checkOpenFindingSla(evidenceText, assessmentDate) {
   if (!evidenceText) return null;
-  const ad = assessmentDate || new Date();
+  const ad = assessmentDate;
   const sentences = evidenceText.split(/(?<=[.;!?])\s+/);
   for (const sent of sentences) {
     if (!FINDING_NOUN_RE.test(sent)) continue;
@@ -745,23 +769,50 @@ function classifyGapType(finding) {
   return 'other_gap';
 }
 
+
+// The remediation a reviewer reads under the finding. One generic sentence
+// ("review the listed gaps and supply evidence") told an assessor nothing they
+// did not already know from the verdict; this names the specific thing the
+// evidence is missing, per gap type, using what the gates actually measured.
+function recommendationFor(gapType, controlId, coverage, odp, temporalConcerns, refutations, contradictions) {
+  const uncovered = (coverage && coverage.uncovered || []).slice(0, 4);
+  const missingOdps = (odp && odp.missing || []).slice(0, 3);
+  switch (gapType) {
+    case 'missing_implementation':
+      return 'The evidence states or implies that ' + controlId + ' is not (yet) implemented. Implement the control, then replace the statement with a description of the implemented mechanism and the date it took effect.';
+    case 'contradictory_evidence':
+      return 'The evidence for ' + controlId + ' contradicts itself' + (refutations && refutations.length ? ' (' + refutations.length + ' refuting statement' + (refutations.length === 1 ? '' : 's') + ')' : '') + '. Reconcile the conflicting statements so one implementation description stands, and cite the document that is authoritative.';
+    case 'incomplete_policy':
+      if (missingOdps.length) {
+        return 'Define the organization-defined parameter' + (missingOdps.length === 1 ? '' : 's') + ' the objective depends on — ' + missingOdps.join('; ') + ' — with a concrete value in the SSP, then cite the policy that sets it.';
+      }
+      return 'The evidence for ' + controlId + ' still carries draft or placeholder language. Replace it with the final, approved text and record the approval date.';
+    case 'temporal_gap':
+      return 'Refresh the dated evidence for ' + controlId + (temporalConcerns && temporalConcerns.length ? ' (' + temporalConcerns[0] + ')' : '') + ': supply the most recent review, scan, or exercise record with its date, or document the cadence that keeps it current.';
+    case 'missing_evidence':
+    default:
+      if (uncovered.length) {
+        return 'Add to the ' + controlId + ' implementation statement an explicit description of: ' + uncovered.join(', ') + '. Cite the section or document where each is defined.';
+      }
+      return 'Supply evidence that addresses the objective text for ' + controlId + ' directly, with a traceable reference (document, section, date).';
+  }
+}
+
 // ════════════════════════════════════════════════════════
 // SINGLE DIF ASSESSMENT (7-gate pipeline)
 // ════════════════════════════════════════════════════════
 
 function assessDif(dif, retriever, controlId, controlTitle, familyName, refutationIdx, assessmentDate) {
-  // The four temporal gates each defaulted to `new Date()` internally and
-  // nothing passed them a date, so identical evidence produced different
-  // verdicts on different days — against this module's own header claim of no
-  // wall-clock in the verdict path, and against the page's "same SSP + same
-  // rules = same output every time". The clock is now read at most once, here,
-  // and the date actually used is reported on the result: given that value the
-  // assessment is reproducible. Callers that want determinism (the bundled
-  // sample corpus, whose evidence is fixed) pass their own date.
-  const asOf = assessmentDate || new Date();
-  // Reported on every return so a verdict can be reproduced from its own
-  // output; '' rather than a throw if a caller hands in an unparseable date.
-  const asOfDay = isNaN(asOf) ? '' : asOf.toISOString().slice(0, 10);
+  // The four temporal gates each used to default to `new Date()`, so identical
+  // evidence produced different verdicts on different days. The date is run
+  // context: the caller's, or none — never the clock, and never a date read
+  // out of the evidence being tested (that would let a stale package pass
+  // its own cadence gate). Reported on every result so a verdict can be
+  // reproduced from its own output.
+  const asOf = assessmentDate || null;
+  const asOfSource = asOf ? 'supplied' : 'none';
+  // '' rather than a throw if a caller hands in an unparseable date.
+  const asOfDay = (asOf && !isNaN(asOf)) ? asOf.toISOString().slice(0, 10) : '';
   const query = dif.t + ' ' + controlTitle + ' ' + familyName;
   const hits = retriever.query(query, 8, controlId);
   const strongHits = hits.filter(h => h.score >= MIN_EVIDENCE_SCORE);
@@ -784,9 +835,12 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       proposed_remediation: 'Provide documentation that addresses the DIF objective text.',
       assessment_method: 'EXAMINE',
       assessment_date: asOfDay,
+      assessment_date_source: asOfSource,
       confidence: 0, defensibility_score: 0, concept_coverage: 0,
       gap_description: 'No evidence above the relevance threshold for this objective',
-      gates: [{gate:1, name:'Presence', pass:false}]
+      // The status gate is recorded even when adjudication stops at gate 1, so
+      // every result carries its determination gate.
+      gates: [{gate:1, name:'Presence', pass:false}, {gate:7, name:'Status', pass:false}]
     };
   }
   gates.push({gate:1, name:'Presence', pass:true});
@@ -855,20 +909,28 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     const lk = likelihoodFor(coverageResult.ratio, strength.tier);
     const imp = impactFor([gapType]);
     gates.push({gate:5, name:'Refutation', pass:false});
+    gates.push({gate:7, name:'Status', pass:false});
+    // Quote the passage that carries the refuting statement — a reader
+    // checking the finding should see the sentence the gate reacted to, not
+    // the first 500 characters of whatever ranked highest.
+    const where = locatePhrase(retriever, evidenceText, allRefutations[0]);
+    const refRefs = strongHits.slice(0,3).map(h => h.filename);
+    if (where.filename && !refRefs.includes(where.filename)) refRefs.unshift(where.filename);
     return {
       dif_id: dif.i, control_id: controlId, objective_id: dif.i,
       status: 'Other Than Satisfied', determination: 'Other Than Satisfied',
       finding: 'Refuting evidence found: ' + allRefutations[0],
-      evidence_description: evidenceText.slice(0, 500), evidence_references: strongHits.slice(0,3).map(h => h.filename),
+      evidence_description: where.excerpt || evidenceText.slice(0, 500), evidence_references: refRefs,
       weakness_name: 'Control Not Implemented — ' + controlId,
       weakness_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
       weakness_type: 'Significant Deficiency',
       likelihood_before: lk, impact_before: imp, risk_exposure_before: calcRiskExposure(lk, imp),
       risk_statement: 'Control objective ' + dif.i + ' is explicitly marked as not implemented in the evidence.',
-      recommendation: 'Complete implementation of ' + controlId + ' and provide updated documentation.',
+      recommendation: 'The evidence for ' + controlId + ' states "' + allRefutations[0] + '". Implement the control, then replace that statement with a description of the implemented mechanism and the date it took effect.',
       proposed_remediation: 'Address the implementation gap: ' + allRefutations[0],
       assessment_method: 'EXAMINE',
       assessment_date: asOfDay,
+      assessment_date_source: asOfSource,
       confidence: computeConfidence('Other Than Satisfied', evidenceText, strength, coverageResult.ratio, defScore, 1),
       defensibility_score: defScore, concept_coverage: coverageResult.ratio,
       gap_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
@@ -886,28 +948,40 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   // Gate 6: Temporal — use own-control evidence to avoid cross-control date bleed
   const temporalText = ownEvidence || evidenceText;
   const dates = extractDates(temporalText);
-  const currency = checkCurrency(dates, asOf);
-  let g6pass = currency.isCurrent;
+  let g6pass = false;
   const g6concerns = [];
-  if (!currency.isCurrent) g6concerns.push(currency.concerns[0] || 'no current dates');
+  if (!asOf) {
+    // Indeterminate, and fail closed: currency, cadence, future-dating and
+    // SLA age are all relative to an assessment date nobody supplied.
+    g6concerns.push('no assessment date supplied — evidence currency cannot be verified');
+  } else {
+    const currency = checkCurrency(dates, asOf);
+    g6pass = currency.isCurrent;
+    if (!currency.isCurrent) g6concerns.push(currency.concerns[0] || 'no current dates');
 
-  // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
-  const cadenceIssue = checkScanCadence(dates, asOf);
-  if (cadenceIssue) { g6pass = false; g6concerns.push(cadenceIssue); }
+    // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
+    const cadenceIssue = checkScanCadence(dates, asOf);
+    if (cadenceIssue) { g6pass = false; g6concerns.push(cadenceIssue); }
 
-  // Gate 6c: Future Date Fabrication
-  const futureDateIssue = checkFutureDates(dates, asOf);
-  if (futureDateIssue) { g6pass = false; g6concerns.push(futureDateIssue); }
+    // Gate 6c: Future Date Fabrication
+    const futureDateIssue = checkFutureDates(dates, asOf);
+    if (futureDateIssue) { g6pass = false; g6concerns.push(futureDateIssue); }
 
-  // Gate 6d: Open Finding SLA
-  const slaIssue = checkOpenFindingSla(temporalText, asOf);
-  if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
+    // Gate 6d: Open Finding SLA
+    const slaIssue = checkOpenFindingSla(temporalText, asOf);
+    if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
+  }
 
   gates.push({gate:6, name:'Temporal', pass:g6pass});
   if (!g6pass) gaps.push(...g6concerns.map(c => 'Temporal: ' + c));
 
-  // Gate 7: Determination
+  // Gate 7: Determination. The status gate is a gate like the other six — it
+  // is recorded on the result so a consumer counting `gates` sees the same
+  // seven the finding text names ("All 7 gates passed"), and a per-gate
+  // tally has a real denominator for gate 7 (every objective that reached
+  // it) instead of zero. It passes exactly when every prior gate passed.
   const allPassed = gates.every(g => g.pass);
+  gates.push({gate:7, name:'Status', pass:allPassed});
   const defScore = scoreDefensibility(evidenceText, coverageResult.ratio, strength, dates.length > 0, contradictions.length > 0);
   const determination = allPassed ? 'Satisfied' : 'Other Than Satisfied';
   const conf = computeConfidence(determination, evidenceText, strength, coverageResult.ratio, defScore, contradictions.length);
@@ -921,11 +995,12 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     evidence_references: evRefs,
     assessment_method: 'EXAMINE',
     assessment_date: asOfDay,
+    assessment_date_source: asOfSource,
     confidence: conf,
     defensibility_score: defScore,
     concept_coverage: coverageResult.ratio,
     evidence_strength: strength.tier,
-    temporal_status: g6pass ? 'current' : 'stale',
+    temporal_status: !asOf ? 'indeterminate' : g6pass ? 'current' : 'stale',
     gap_description: gaps.join('; ') || '',
     gates
   };
@@ -945,7 +1020,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     result.risk_exposure_before = calcRiskExposure(lk, imp);
     result.risk_statement = 'Control objective ' + dif.i + ' is not fully verified; ' + (coverageResult.uncovered || []).length + ' concept(s) missing from evidence.';
     result.mitigating_factors = coverageResult.covered && coverageResult.covered.length ? 'Partial evidence present; review surfaced chunks manually to confirm.' : '';
-    result.recommendation = 'Review the listed gaps and either supply additional evidence or implement the missing controls.';
+    result.recommendation = recommendationFor(gapType, controlId, coverageResult, odp, g6concerns, allRefutations, contradictions);
     result.proposed_remediation = (coverageResult.uncovered || []).length ? 'Provide documentation covering: ' + (coverageResult.uncovered || []).slice(0,5).join(', ') + '.' : 'Provide stronger evidence or resolve ODP parameters.';
     result.assessor_notes = 'Deterministic mode — gates failed: ' + gates.filter(g => !g.pass).length + '; coverage: ' + Math.round(coverageResult.ratio*100) + '%; strength: ' + strength.tier + '.';
   }
@@ -965,6 +1040,9 @@ global.SparkAEEngine = {
   tokenize: tokenize,
   extractControlIds: extractControlIds,
   grade: grade,
+  extractDates: extractDates,
+  classifyGapType: classifyGapType,
+  recommendationFor: recommendationFor,
   scoreDefensibility: scoreDefensibility,
   computeConfidence: computeConfidence,
   calcRiskExposure: calcRiskExposure,

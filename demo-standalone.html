@@ -137,6 +137,8 @@ html,body{
   border-color:var(--vermillion);
   color:var(--vermillion);
 }
+.fw-chip-btn{cursor:pointer;border-color:var(--rule) !important;color:var(--ink) !important}
+.fw-chip-btn:hover{border-color:var(--vermillion) !important;color:var(--vermillion) !important}
 
 /* ── Page hero ── */
 .page-hero{
@@ -332,6 +334,10 @@ html,body{
   border-style:solid;
   background:#FBF0EC;
 }
+.assess-date{margin-top:10px;padding:10px 12px;border:1px dashed var(--rule);background:var(--paper)}
+.assess-date label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.assess-date input{width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px;border:1px solid var(--rule);background:var(--paper-warm);color:var(--ink)}
+.assess-date-note{display:block;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.5;color:var(--ink-soft)}
 .ssp-upload-status{
   margin-bottom:16px;
   padding:10px 12px;
@@ -682,6 +688,24 @@ html,body{
   letter-spacing:0.04em;
   margin-left:auto;
 }
+
+/* ── Live-run headline: ranked blockers + the finding to open first ── */
+.lead-panel{margin-bottom:26px}
+.lead-line{font-family:'Fraunces',serif;font-size:19px;line-height:1.4;color:var(--paper);margin:6px 0 12px;letter-spacing:-0.005em}
+.lead-line strong{color:var(--vermillion-soft,#E8836A);font-weight:600}
+.lead-rank{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:4px}
+.lead-rank li{display:flex;gap:12px;align-items:baseline;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#B8C0CC;letter-spacing:0.02em}
+.lead-n{min-width:34px;text-align:right;color:var(--paper);font-weight:600}
+.lead-finding{border:1px solid #3A4250;background:#1A2028;padding:14px 16px;margin-bottom:12px}
+.lead-finding-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.lead-finding-id{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--paper)}
+.lead-finding-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A8290;letter-spacing:0.04em;margin-left:auto}
+.lead-row{display:grid;grid-template-columns:96px 1fr;gap:12px;font-size:13px;line-height:1.55;color:#D6DBE3;padding:5px 0;border-top:1px solid #2C3540}
+.lead-k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#7A8290;padding-top:3px}
+.after-run{font-size:13px;line-height:1.6;color:#B8C0CC;padding:10px 0 2px}
+.after-run a{color:var(--vermillion-soft,#E8836A);border-bottom:1px solid #5A6270}
+.after-run strong{color:var(--paper)}
+@media (max-width:640px){.lead-row{grid-template-columns:1fr;gap:2px}.lead-finding-meta{margin-left:0}}
 
 /* ── Defensibility score strip ── */
 .def-strip{
@@ -2329,7 +2353,6 @@ html,body{
         <div class="onb-check">✓ References block citing fedramp.gov authoritative sources</div>
         <div class="onb-check">✓ Print-optimized for letter size · save as PDF from print dialog</div>
       </div>
-      <p class="onb-note">All four pilots receive the same demo data set. Pilot deepening (per-client SSP tailoring) happens during scoping.</p>
     </div>
 
     <div class="onb-footer">
@@ -2350,6 +2373,7 @@ html,body{
     <div class="masthead-right">
       <span class="fw-chip">NIST 800-53 Rev5</span>
       <span class="fw-chip">FedRAMP Rev5</span>
+      <button type="button" class="fw-chip fw-chip-btn" onclick="showOnboarding()">How this works</button>
     </div>
   </div>
 </header>
@@ -2359,9 +2383,9 @@ html,body{
   <div class="page-hero-inner">
     <div class="page-meta">
       <span class="dot"></span>
-      <span>§04 · Live Demo · Deterministic Engine</span>
+      <span>Live Demo · Deterministic Engine · runs in your browser</span>
     </div>
-    <h1>Run a <em>real assessment</em>. Watch the gates evaluate.</h1>
+    <h1>Watch SparkAE find the <em>hidden blockers</em> in a package.</h1>
     <p class="page-hero-sub">
       Pick a sample SSP, or upload your own package. <strong>&sect;01 runs the real deterministic engine in your browser</strong> — it indexes what you give it, walks every determination statement in the baseline through seven gates, and reports verdicts it computed, each citing the document it came from. Nothing is uploaded anywhere. The other eight sections are guided walkthroughs of the rest of the FedRAMP lifecycle, and are labelled as such.
     </p>
@@ -2429,7 +2453,7 @@ html,body{
           <button class="uc-tab" data-uc="pkg">
             <span class="uc-num">§07</span>
             <span class="uc-name">Package Validator</span>
-            <span class="uc-sub">OSCAL 1.0.4 · FedRAMP constraints <span class="uc-badge walk">walkthrough</span></span>
+            <span class="uc-sub">OSCAL 1.1.2 · FedRAMP constraints <span class="uc-badge walk">walkthrough</span></span>
           </button>
           <button class="uc-tab" data-uc="portfolio">
             <span class="uc-num">§08</span>
@@ -2463,7 +2487,7 @@ html,body{
         <div class="ssp-list" id="ssp-list">
           <button class="ssp-option selected" data-id="cloudvault">
             <div class="ssp-name">CloudVault Storage Platform <span class="uc-badge live">§01 live engine</span></div>
-            <div class="ssp-meta" id="cv-meta">FedRAMP High · 421 controls · v2.4</div>
+            <div class="ssp-meta" id="cv-meta">FedRAMP Low · 156 controls · 981 objectives · v2.4</div>
             <div class="ssp-meta" id="cv-engine-meta" style="display:none"></div>
           </button>
           <button class="ssp-option" data-id="meshgate">
@@ -2476,13 +2500,18 @@ html,body{
           </button>
           <input type="file" id="ssp-upload-input" aria-label="Upload your own assessment package (.zip, SSP, scans, POA&amp;M, or policy documents)" multiple="" accept=".zip,.docx,.pdf,.xlsx,.csv,.json,.xml,.txt,.md,.yaml,.yml" style="display:none">
           <div class="ssp-upload-status" id="ssp-upload-status" style="display:none"></div>
+          <div class="assess-date">
+            <label for="assess-date">Assess uploads as of</label>
+            <input type="date" id="assess-date" name="assess-date">
+            <span class="assess-date-note">Run context, not read from the package. Same package + same date = same verdicts.</span>
+          </div>
         </div>
 
         <div class="rail-divider"></div>
 
         <div class="rail-stat"><span class="rail-stat-label">Engine</span><span class="rail-stat-value" id="stat-engine">Deterministic</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Verifier</span><span class="rail-stat-value">Adversarial · ON</span></div>
-        <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value" id="stat-mode">EXAMINE · INTERVIEW · TEST</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value" id="stat-mode">EXAMINE</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Output</span><span class="rail-stat-value" id="stat-output">SAR + POA&amp;M + OSCAL</span></div>
 
         <button class="btn-primary vermillion run-btn" id="run-btn">
@@ -2853,12 +2882,22 @@ function onbNext() {
 function onbBack() {
   setOnbStep(onbStep - 1);
 }
-// Show on first load (skip if previously dismissed)
-window.addEventListener('DOMContentLoaded', function() {
-  try {
-    if (window.localStorage && localStorage.getItem(ONB_STORAGE_KEY)) return;
-  } catch(e) {}
-  setTimeout(showOnboarding, 200);
+// The tour is opt-in ("How this works" in the masthead). It used to open on
+// first load, in front of the engine the visitor had just clicked through to
+// see; skipping it left an idle engine and a second click. The engine running
+// is the tour, so the page now runs the sample instead (see the auto-run
+// below runDemo) and keeps the walkthrough one click away.
+// The upload assessment date is run context the visitor sees and can change.
+// The page prefills it once from the wall clock (a page-level default, not
+// something the verdict path reads); the engine only ever receives the value
+// in this field, and the run reports which date it used.
+window.addEventListener('DOMContentLoaded', function () {
+  const el = document.getElementById('assess-date');
+  if (el && !el.value) {
+    const d = new Date();
+    const z = n => String(n).padStart(2, '0');
+    el.value = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+  }
 });
 // Re-trigger via console for demos
 window.showOnboarding = showOnboarding;
@@ -2977,12 +3016,13 @@ const ASSET_LOOKUP = {
 const SAMPLES = {
   cloudvault: {
     name: 'CloudVault Storage Platform',
-    controls: 421,
-    // liveEngine: §01 assesses this sample with the real engine over the SSP
-    // text bundled below, and reports the corpus it actually ran (Low
-    // baseline, 156 controls) in its own narration and summary. `name` and
-    // `controls` stay as-is because INVENTORY_WORKBOOK, SCAN_PROFILE and
-    // ASSET_LOOKUP are all keyed by this exact name for the other use cases.
+    // The bundled SSP is a FedRAMP Low package ("CloudVault Federal — FedRAMP
+    // Low Baseline", below) and §01 assesses it with the real engine at that
+    // baseline: 156 controls, 981 objectives. Every count this sample reports,
+    // in the rail card and in the walkthrough use cases, is that number — the
+    // card used to say "High · 421" and the live run then said "Low · 156",
+    // which was the first thing a knowledgeable visitor noticed.
+    controls: 156,
     liveEngine: CV_LIVE_ENGINE,
 
     initial: {
@@ -3157,9 +3197,9 @@ const SAMPLES = {
         leveragedSystem:  { status: 'complete', label: 'Leveraged-system Rev4→Rev5 gap analysis · AWS GovCloud current' },
       },
       cohorts: [
-        { label: 'Year 1 (FY24)', controls: 140, status: 'closed' },
-        { label: 'Year 2 (FY25)', controls: 140, status: 'current' },
-        { label: 'Year 3 (FY26)', controls: 141, status: 'pending' },
+        { label: 'Year 1 (FY24)', controls: 52, status: 'closed' },
+        { label: 'Year 2 (FY25)', controls: 52, status: 'current' },
+        { label: 'Year 3 (FY26)', controls: 52, status: 'pending' },
       ],
       carryForward: 8, newFindings: 10, closedThisCycle: 14, significantChanges: 3, penTest: { conducted: true, vectors: 6 },
       findings: [
@@ -3505,9 +3545,9 @@ const USE_CASES = {
     stages: ['SSP & Appendices', 'Plans (CP/IR)', 'Policies & Procedures', 'Inventory & Boundary', 'Scans & Pen Test', 'SAR Output'],
     runBtnLabel: 'Run assessment',
     idleTitle: 'Engine is idle',
-    idleCopy: 'Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The 3PAO engine walks the complete end-to-end deliverable inventory per <strong style="color:var(--vermillion)">fedramp.gov</strong> CSP Authorization Playbook (Rev5): SSP review with all 17 appendices (A–Q · per SSP Template Rev5), Information System Contingency Plan + Incident Response Plan functional tests, Security Policies and Procedures across all 17 control families (Appendix C), Integrated Inventory Workbook validated against Authorization Boundary Diagram (Appendix M · CM-8), full scan suite (RA-5 OS · web app · database · container per NIST SP 800-70 · authenticated coverage check · DFR threshold), and CA-8 penetration test with 6 mandatory attack vectors per FedRAMP PT Guidance v3.0. Produces SAR with full SRTM + RET.',
+    idleCopy: 'Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The Examine engine indexes the package, walks every &ldquo;Determine if&rdquo; objective in the FedRAMP Low baseline (156 controls · 981 objectives) through seven deterministic gates, and reports each verdict with the passage it came from, a confidence score, and a defensibility grade. Examine only &mdash; Interview and Test stay with the assessor. Nothing leaves this browser.',
     railOutput: 'SAR + POA&M + OSCAL',
-    railMode: 'EXAMINE · INTERVIEW · TEST',
+    railMode: 'EXAMINE',
     exports: ['OSCAL SAR', 'POA&amp;M', 'Evidence map', 'Defensibility report'],
   },
   conmon: {
@@ -3559,9 +3599,9 @@ const USE_CASES = {
     stages: ['Assemble', 'Schema', 'Constraints', 'Cross-ref', 'Severity', 'Output'],
     runBtnLabel: 'Validate OSCAL package',
     idleTitle: 'Package validator is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. The validator will assemble the OSCAL 1.0.4 SAR + POA&amp;M output from the prior assessment data, run NIST OSCAL schema checks on every required field, and apply FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators. Surfaces schema errors and constraint violations as findings. This is the gate before submission.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. The validator will assemble the OSCAL 1.1.2 SAR + POA&amp;M output from the prior assessment data, run NIST OSCAL schema checks on every required field, and apply FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators. Surfaces schema errors and constraint violations as findings. This is the gate before submission.',
     railOutput: 'Validated OSCAL Package + SVRL Report',
-    railMode: 'PKG · OSCAL 1.0.4',
+    railMode: 'PKG · OSCAL 1.1.2',
     exports: ['OSCAL SAR (JSON)', 'OSCAL POA&M (JSON)', 'SVRL Validation Report', 'Submission Readiness Report'],
   },
   src: {
@@ -3634,6 +3674,10 @@ document.querySelectorAll('.uc-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     if (running) return;
     activeUC = tab.dataset.uc;
+    // The displayed run changes with the workflow: the live §01 result (and
+    // its assessment date, which artifacts are stamped with) is no longer
+    // what the console shows.
+    window.__lastRunWasReal = false;
     document.querySelectorAll('.uc-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     syncUCToUI();
@@ -3664,6 +3708,7 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
     document.querySelectorAll('.ssp-option').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     selected = btn.dataset.id;
+    window.__lastRunWasReal = false;
   });
 });
 
@@ -4137,16 +4182,20 @@ function mergeSignals(acc, sig, ctrlSet, perFileFn) {
   if (perFileFn) perFileFn();
 }
 
-function inferControlsCount(totalBytes) {
-  // Larger packages tend to be High baseline; smaller ones Moderate.
-  return totalBytes > 50 * 1024 * 1024 ? 421 : 325;
+// The browser engine assesses every package at the FedRAMP Low baseline (156
+// controls / 981 objectives — see ENGINE_BASELINE). A byte-size guess used to
+// label large uploads "FedRAMP High · 421 controls" and the run then reported
+// Low · 156; the card now states the baseline the engine will actually use.
+const ENGINE_BASELINE_CONTROLS = 156;
+function inferControlsCount() {
+  return ENGINE_BASELINE_CONTROLS;
 }
 
 function synthesizeCustomSample(pkg) {
   // Build a SAMPLES.custom entry shaped exactly like cloudvault/meshgate, seeded by the upload.
   const cspName = 'Custom Upload (' + pkg.inventory.length + ' files · ' + fmtBytes(pkg.totalBytes) + ')';
-  const controls = inferControlsCount(pkg.totalBytes);
-  const baseline = controls === 421 ? 'FedRAMP High' : 'FedRAMP Moderate';
+  const controls = inferControlsCount();
+  const baseline = 'FedRAMP Low';
   window.CUSTOM_BASELINE = baseline;
 
   const seed = deterministicHash(pkg.inventory.map(i => i.name + i.size).join('|'));
@@ -4368,7 +4417,7 @@ function renderUploadStatus(pkg) {
   const present = (tag) => (pkg.tagCounts[tag] || 0) > 0;
   const status = document.getElementById('ssp-upload-status');
   const sample = SAMPLES['custom'];
-  const baseline = window.CUSTOM_BASELINE || 'FedRAMP Moderate';
+  const baseline = window.CUSTOM_BASELINE || 'FedRAMP Low';
   const ts = pkg.textSig || {};
   const oscal = pkg.oscal || {};
 
@@ -4426,7 +4475,7 @@ function renderUploadStatus(pkg) {
 
   status.innerHTML =
     '<div class="upload-row"><span class="upload-label">Files received</span><span class="upload-value">' + pkg.inventory.length + ' · ' + fmtBytes(pkg.totalBytes) + '</span></div>' +
-    '<div class="upload-row"><span class="upload-label">Inferred baseline</span><span class="upload-value">' + baseline + ' · ' + sample.controls + ' controls</span></div>' +
+    '<div class="upload-row"><span class="upload-label">Assessed at</span><span class="upload-value">' + baseline + ' · ' + sample.controls + ' controls</span></div>' +
     scanLine + cveLine + hostLine + poamLine + oscalLine + ctrlLine + cryptoLine +
     '<div style="height:6px"></div>' +
     checkRows +
@@ -4508,7 +4557,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
   btn.classList.add('has-files');
   btn.dataset.id = 'custom';
   nameEl.textContent = sample.name;
-  metaEl.textContent = (window.CUSTOM_BASELINE || 'FedRAMP Moderate') + ' · ' + sample.controls + ' controls · live';
+  metaEl.textContent = (window.CUSTOM_BASELINE || 'FedRAMP Low') + ' · ' + sample.controls + ' controls · live engine';
 
   // Auto-select custom on upload
   document.querySelectorAll('.ssp-option').forEach(b => b.classList.remove('selected'));
@@ -4664,7 +4713,10 @@ function setStage(n) {
 }
 
 function renderGates() {
-  const names = ['Evidence', 'Concept', 'ODP', 'Approval', 'Strength', 'Contradict', 'Temporal'];
+  // Same order and names as the engine's gates (demo-engine.js assessDif),
+  // because setGate(n) is driven by the engine's gate number. The pills used
+  // to list a different order and an "Approval" gate the engine does not have.
+  const names = ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Status'];
   document.getElementById('matrix-container').innerHTML =
     `<div class="gates-running" id="gates-running">${names.map((n, i) =>
       `<div class="gate-pill" data-gate="${i + 1}"><span class="gate-num">${String(i + 1).padStart(2, '0')}</span>${n}</div>`
@@ -5216,9 +5268,21 @@ async function runInitial(sample) {
   // there is no real corpus to assess (no upload, and a sample with no bundled
   // document set), in which case this falls back to the guided walkthrough —
   // which the UI badges as such, so the two are never confused.
+  // Show something while the engine indexes and adjudicates (a few seconds
+  // for 981 objectives); the console was blank until narration began.
+  renderStages(LIVE_STAGES);
+  renderGates();
+  setStage(1);
+  setStatus('◆ INDEX · reading the package');
+  log('00:00.0', 'init', 'reading the package · building the BM25 index · assessing every objective in the baseline');
   const _realRun = await runRealEngineForInitial(sample);
-  const d = _realRun ? _realRun.summary : sample.initial;
   window.__lastRunWasReal = !!_realRun;
+  if (_realRun) { await narrateLiveRun(_realRun); return; }
+
+  // Walkthrough path (a sample with no bundled document set): the scripted
+  // stage narration below, badged as a walkthrough in the UI.
+  const d = sample.initial;
+  document.getElementById('log').innerHTML = '';
   renderStages(USE_CASES.initial.stages);
   renderGates();
 
@@ -5228,12 +5292,7 @@ async function runInitial(sample) {
   // ── Stage 1 · SSP & Appendices · 17 mandatory appendices A–Q ──
   setStage(1);
   setStatus('◆ SSP REVIEW · 17 mandatory appendices A through Q · per fedramp.gov SSP Template Rev5');
-  if (_realRun) {
-    log('00:00.0', 'init', `<span class="key">live engine</span> · ${_realRun.corpusLabel} · ${_realRun.fileCount} file(s) · ${_realRun.chunkCount} chunks indexed`);
-    log('00:00.2', 'init', `BM25 index built · ${_realRun.controlCount} controls / ${_realRun.summary.findings.length} determination statements at ${ENGINE_BASELINE} baseline`, 'ok');
-  } else {
-    log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Moderate'} baseline`);
-  }
+  log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Moderate'} baseline`);
   await wait(300);
   // For custom uploads, reflect the actually-detected materials. Otherwise use baked-in CSP narrative.
   const isCustom = sample === SAMPLES['custom'];
@@ -5471,23 +5530,10 @@ async function runInitial(sample) {
   setStatus('◆ SAR OUTPUT · OSCAL SAR · POA&M · Evidence map · Defensibility');
   log('00:57.0', 'out', 'aggregating findings across all 6 review stages · per-DIF verdicts assembled');
   await wait(400);
-  log('00:58.4', 'out', 'running 7 deterministic adjudication gates · evidence presence · concept coverage · ODP resolution · approval validation · evidence strength · contradiction detection · temporal coherence');
+  log('00:58.4', 'out', 'running 7 deterministic adjudication gates · evidence presence · concept coverage · evidence strength · ODP resolution · contradiction detection · temporal coherence · status');
   await wait(500);
-  // Animate gates. On a live-engine run these are real tallies: a gate is
-  // marked pass only if a majority of the objectives that reached it passed.
-  // A thin package legitimately fails gate 2 across most objectives, and the
-  // demo should show that rather than a reassuring row of green.
-  const GATE_NAMES = ['Presence','Concepts','Strength','ODP','Contradiction','Temporal','Status'];
   for (let g = 1; g <= 7; g++) {
-    if (_realRun) {
-      const reached = _realRun.gateReached[g - 1], passed = _realRun.gatePassed[g - 1];
-      const ok = reached > 0 && passed / reached >= 0.5;
-      setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
-      log('01:0' + g + '.0', 'gate', 'gate ' + g + ' · ' + GATE_NAMES[g - 1] + ' · ' +
-          passed + '/' + reached + ' objectives passed', ok ? 'ok' : 'warn');
-    } else {
-      setGate(g, 'pass');
-    }
+    setGate(g, 'pass');
     await wait(140);
   }
   log('01:01.0', 'out', 'OSCAL SAR schema validation · ✓ valid', 'ok');
@@ -5514,8 +5560,8 @@ async function runConMon(sample) {
   setStatus('◆ INTAKE · Reading scan output · ' + d.period);
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.period} cycle · ${d.assets} in-scope assets`);
   await wait(400);
-  for (const f of d.files) {
-    log(fmt(0) + '.' + Math.floor(Math.random() * 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const [fi, f] of d.files.entries()) {
+    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', `${d.total} open vulnerabilities ingested · ${d.authenticated}/${d.assets} authenticated`, 'ok');
@@ -5587,8 +5633,8 @@ async function runAnnual(sample) {
   setStatus('◆ INTAKE · Prior SAR · POA&M · ConMon history · ' + d.cycle);
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.cycle} · ${sample.controls} total controls`);
   await wait(400);
-  for (const f of d.files) {
-    log(fmt(0) + '.' + Math.floor(Math.random() * 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const [fi, f] of d.files.entries()) {
+    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'prior cycle artifacts ingested · POA&M state loaded', 'ok');
@@ -5688,8 +5734,8 @@ async function runSCR(sample) {
   setStatus('◆ INTAKE · SCR submission · current SSP · POA&M state');
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · SCR review · ${d.classification.toLowerCase()} change`);
   await wait(400);
-  for (const f of d.files) {
-    log(fmt(0) + '.' + Math.floor(Math.random() * 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const [fi, f] of d.files.entries()) {
+    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'SCR package ingested · prior cycle context loaded', 'ok');
@@ -6146,8 +6192,8 @@ async function runQA() {
   setStatus('◆ INTAKE · loading portfolio · 4 SSPs · 4 use cases');
   log('00:00.0', 'init', `<span class="key">portfolio scan</span> · ${report.totalFindings} findings · ${report.totalCites} citations`);
   await wait(400);
-  for (const k of Object.keys(SAMPLES)) {
-    log(fmt(0) + '.' + Math.floor(Math.random() * 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · 4 use cases`, 'ok');
+  for (const [ki, k] of Object.keys(SAMPLES).entries()) {
+    log(fmt(0) + '.' + (ki % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · 4 use cases`, 'ok');
     await wait(250);
   }
   log('00:05.0', 'init', `${report.totalChecks.toLocaleString()} rule checks queued`, 'ok');
@@ -6235,18 +6281,35 @@ async function runQA() {
 }
 
 // ── OSCAL package builder + constraint validator ──
-// Reference: NIST OSCAL 1.0.4 SAR/POA&M schema + GSA/fedramp-automation constraints
+// Reference: NIST OSCAL 1.1.2 SAR/POA&M schema + GSA/fedramp-automation constraints
 
+// RFC 4122 v4-shaped identifiers derived from content, not from Math.random:
+// the same run produces the same artifact bytes, so two exports of the same
+// package diff clean. Each call hashes the seed plus a counter (FNV-1a, four
+// lanes) and stamps the version and variant bits.
+let _uuidSeed = 'sparkae-demo';
+let _uuidCounter = 0;
+function seedUuids(seed) { _uuidSeed = String(seed || 'sparkae-demo'); _uuidCounter = 0; }
+function fnv1a(str, basis) {
+  let h = basis >>> 0;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h;
+}
 function uuid() {
-  // RFC 4122 v4 (deterministic-looking but random — fine for demo)
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  const key = _uuidSeed + '|' + (_uuidCounter++);
+  const b = [];
+  [0x811c9dc5, 0x050c5d1f, 0x9e3779b9, 0x7f4a7c15].forEach((basis, lane) => {
+    const h = fnv1a(key + '|' + lane, basis);
+    b.push((h >>> 24) & 0xff, (h >>> 16) & 0xff, (h >>> 8) & 0xff, h & 0xff);
   });
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const hex = b.map(x => x.toString(16).padStart(2, '0')).join('');
+  return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
 }
 
 function isoDateTime(d) {
-  return d ? (d.includes('T') ? d : d + 'T00:00:00Z') : new Date().toISOString().split('.')[0] + 'Z';
+  return d ? (d.includes('T') ? d : d + 'T00:00:00Z') : _today() + 'T00:00:00Z';
 }
 
 // Map verdict → OSCAL prop value for objective-status
@@ -6295,6 +6358,7 @@ function buildOSCALSAR(sample, useCase) {
 
   // The walkthrough models a named assessing organization, so it supplies the
   // metadata parties the on-screen constraint panel checks (C-004, F-101).
+  seedUuids(sample.name + '|' + (sample.baseline || 'Moderate') + '|' + findings.length);
   const partyId = uuid();
   return DEMO_EXPORTS.buildAssessmentResults(
     { findings: findings, baseline: sample.baseline || 'Moderate' },
@@ -6411,10 +6475,10 @@ function buildKSIPackage(sample) {
 // github.com/GSA/fedramp-automation/tree/master/src/validations/rules
 // (archived 2025-07-01; constraints migrating to NIST metaschema, structure unchanged)
 const OSCAL_CONSTRAINTS = [
-  // Schema-level (NIST OSCAL 1.0.4)
+  // Schema-level (NIST OSCAL 1.1.2)
   { id: 'C-001', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.title is REQUIRED' },
   { id: 'C-002', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.last-modified is REQUIRED and ISO-8601' },
-  { id: 'C-003', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.oscal-version is REQUIRED (≥1.0.4)' },
+  { id: 'C-003', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.oscal-version is REQUIRED (1.1.2)' },
   { id: 'C-004', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.parties uuid is RFC 4122 v4 format' },
   { id: 'C-005', sev: 'error',   ref: 'OSCAL §results',            desc: 'results array is non-empty (SAR)' },
   { id: 'C-006', sev: 'error',   ref: 'OSCAL §observations',       desc: 'every observation has methods[] and subjects[]' },
@@ -6466,7 +6530,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
       text: text,
       cites: [
         docCite,
-        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.0.4', date: '2025-01-15', section: c.desc },
+        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.1.2', date: '2025-01-15', section: c.desc },
         { kind: 'POLICY', title: 'fedramp.gov · OSCAL Registry (FedRAMP extensions)', version: 'rev5-latest', date: '2024-09-10', section: c.id + ' constraint reference' },
       ]
     });
@@ -6490,7 +6554,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
       text: text,
       cites: [
         docCite,
-        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.0.4', date: '2025-01-15', section: c.desc },
+        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.1.2', date: '2025-01-15', section: c.desc },
       ]
     });
   };
@@ -6501,7 +6565,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   if (sar) {
     // C-001
     sar.metadata && sar.metadata.title
-      ? pass('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that it is populated with the system title required by the OSCAL 1.0.4 schema.')
+      ? pass('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that it is populated with the system title required by the OSCAL 1.1.2 schema.')
       : fail('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that the required title element is missing.');
 
     // C-002
@@ -6511,7 +6575,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
 
     // C-003
     sar.metadata && sar.metadata['oscal-version']
-      ? pass('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that it declares ' + sar.metadata['oscal-version'] + ' meeting the FedRAMP minimum of 1.0.4.')
+      ? pass('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that it declares ' + sar.metadata['oscal-version'] + ' matching the NIST OSCAL 1.1.2 schema the package is validated against.')
       : fail('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that the version declaration is missing.');
 
     // C-004 (UUID format)
@@ -6662,7 +6726,7 @@ async function runPackageValidator(sample) {
   // Stage 1 — Assemble
   setStage(1);
   setStatus('◆ ASSEMBLE · building OSCAL output from assessment data');
-  log('00:00.0', 'init', '<span class="key">' + sample.name + '</span> · assembling OSCAL 1.0.4 SAR + POA&M + KSI package');
+  log('00:00.0', 'init', '<span class="key">' + sample.name + '</span> · assembling OSCAL 1.1.2 SAR + POA&M + KSI package');
   await wait(400);
   log('00:01.4', 'build', 'building Security Assessment Report (SAR) from initial + conmon + annual + scr findings');
   await wait(400);
@@ -6684,8 +6748,8 @@ async function runPackageValidator(sample) {
 
   // Stage 2 — Schema validation
   setStage(2);
-  setStatus('◆ SCHEMA · NIST OSCAL 1.0.4 schema check');
-  log('00:06.4', 'sch', 'running NIST OSCAL 1.0.4 metaschema validation against SAR + POA&M structure');
+  setStatus('◆ SCHEMA · NIST OSCAL 1.1.2 schema check');
+  log('00:06.4', 'sch', 'running NIST OSCAL 1.1.2 metaschema validation against SAR + POA&M structure');
   await wait(500);
 
   // Stage 3 — Constraint validation
@@ -6751,7 +6815,7 @@ async function runPackageValidator(sample) {
     <div class="ret-section-label">
       <span class="sar-section-num">§2</span>
       <span class="sar-section-title">Package Components · Schema Conformity</span>
-      <span class="sar-section-ref">per fedramp.gov OSCAL Registry · NIST OSCAL 1.0.4</span>
+      <span class="sar-section-ref">per fedramp.gov OSCAL Registry · NIST OSCAL 1.1.2</span>
     </div>
     <div class="def-strip">
       <span class="def-label">SAR · ${(JSON.stringify(sarObj).length / 1024).toFixed(1)} KB · POA&amp;M · ${(JSON.stringify(poamObj).length / 1024).toFixed(1)} KB${ksiObj ? ' · KSI · ' + (JSON.stringify(ksiObj).length / 1024).toFixed(1) + ' KB' : ''}</span>
@@ -6769,12 +6833,12 @@ async function runPackageValidator(sample) {
 
 // ── Canonical Evidence Record schema ──
 // Internal normalized representation that all connectors map INTO.
-// Aligns to NIST OSCAL 1.0.4 primitives (subject, observation, finding, risk, evidence)
+// Aligns to NIST OSCAL 1.1.2 primitives (subject, observation, finding, risk, evidence)
 // so the round-trip from connector → canonical → OSCAL output preserves structure.
 // Reference: automate.fedramp.gov SAR-to-OSCAL mapping
 const CANONICAL_EVIDENCE_SCHEMA = {
   description: 'SPARKAE internal normalized evidence record · OSCAL-aligned with namespaced extension support',
-  oscalAlignment: 'NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
+  oscalAlignment: 'NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
   extensionNamespace: 'https://sparkae.dev/ns/oscal',
   extensionPattern: 'OSCAL prop assembly with ns flag · per fedramp.gov · standards-conformant vendor extensions',
   fields: [
@@ -6846,7 +6910,7 @@ const CUSTOM_CONNECTOR_TEMPLATE = {
 // Per fedramp.gov SAR Quality Review · validation failures become QA findings, not silent drops
 const RUNTIME_VALIDATORS = [
   { id: 'V-001', sev: 'error', name: 'Required field present',     desc: 'All 11 required canonical fields populated', fedrampRef: 'fedramp.gov · OSCAL Schema · required fields' },
-  { id: 'V-002', sev: 'error', name: 'UUID v4 format',              desc: 'evidence_id and subject_uuid match RFC 4122 v4', fedrampRef: 'NIST OSCAL 1.0.4 · uuid datatype' },
+  { id: 'V-002', sev: 'error', name: 'UUID v4 format',              desc: 'evidence_id and subject_uuid match RFC 4122 v4', fedrampRef: 'NIST OSCAL 1.1.2 · uuid datatype' },
   { id: 'V-003', sev: 'error', name: 'ISO-8601 timestamp',          desc: 'collected_at parses as ISO-8601 with timezone', fedrampRef: 'NIST OSCAL · dateTime-with-timezone' },
   { id: 'V-004', sev: 'error', name: 'Control ID resolves',          desc: 'control_or_ksi resolves to a real NIST 800-53 Rev 5 control or KSI ID', fedrampRef: 'fedramp.gov · FedRAMP Moderate Baseline + KSI 25.11C' },
   { id: 'V-005', sev: 'error', name: 'evidence_kind enum valid',     desc: 'Value is one of SSP|POLICY|PROC|CONFIG|EVIDENCE|LOG|SCAN|TEST|INTERVIEW|CHANGE|CONMON|POAM|SAR', fedrampRef: 'fedramp.gov OSCAL Registry · accepted values' },
@@ -7592,7 +7656,7 @@ function openSchemaDetail(tier, connectorId) {
     + '  "payload": { /* preserved native payload */ }'
     + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.dev/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
     + '\n}</pre>'
-    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
+    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
     + '<a class="cta" onclick="window.close()">Close</a>'
     + '</body></html>';
@@ -8443,6 +8507,10 @@ async function runPortfolio() {
 // ─────────────────────────────────────────────────────────────────────
 
 function _today() {
+  // Artifacts from a live-engine run are dated with the run's own assessment
+  // date, so exporting the same package twice gives the same bytes. The
+  // walkthrough documents carry no assessment date and use the wall clock.
+  if (activeUC === 'initial' && window.__lastRunWasReal && typeof ENGINE_LAST_RUN !== 'undefined' && ENGINE_LAST_RUN && ENGINE_LAST_RUN.assessmentDate) return ENGINE_LAST_RUN.assessmentDate;
   const d = new Date();
   const z = n => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
@@ -8453,9 +8521,9 @@ function _fileSafe(s) {
 function _cspName(s)     { return s && s.name ? s.name : 'Unknown CSP'; }
 function _cspShort(s)    { return _cspName(s).split(' ')[0] || 'CSP'; }
 function _baselineFor(id) {
-  if (id === 'cloudvault')  return 'FedRAMP High';
+  if (id === 'cloudvault')  return 'FedRAMP Low';
   if (id === 'meshgate')    return 'FedRAMP Moderate';
-  if (id === 'custom')      return (window.CUSTOM_BASELINE || 'FedRAMP Moderate');
+  if (id === 'custom')      return (window.CUSTOM_BASELINE || 'FedRAMP Low');
   return 'FedRAMP Moderate';
 }
 function _flattenCites(cites) {
@@ -9503,6 +9571,18 @@ async function runDemo() {
 
 document.getElementById('run-btn').addEventListener('click', runDemo);
 
+// First screen is a finished assessment, not an idle engine: run the bundled
+// sample as soon as the page is ready. ?autorun=0 keeps the engine idle for
+// anyone who wants to upload first; the run button works either way.
+window.addEventListener('DOMContentLoaded', function () {
+  let wanted = true;
+  try { wanted = new URLSearchParams(window.location.search).get('autorun') !== '0'; } catch (e) {}
+  if (!wanted) return;
+  setTimeout(function () {
+    if (!running && activeUC === 'initial' && selected === 'cloudvault') runDemo();
+  }, 500);
+});
+
 // Initialize UI to default state
 syncUCToUI();
 
@@ -9578,7 +9658,7 @@ function engineFindingToShell(f, corpusLabel) {
                ' · defensibility ' + (f.defensibility_score || 0) +
                '/100 (' + SparkAEEngine.grade(f.defensibility_score || 0) + ')' +
                ' · concept coverage ' + Math.round((f.concept_coverage || 0) * 100) + '%' +
-               ' · gates ' + (f.gates || []).filter(g => g.pass).length + '/' + (f.gates || []).length +
+               ' · gates ' + (f.gates || []).filter(g => g.pass && typeof g.gate === 'number').length + '/7' +
                '</div>';
 
   return {
@@ -9624,6 +9704,16 @@ async function engineCorpus(sample) {
   return chunks.length ? { chunks, label, files, bundled } : null;
 }
 
+// The rail's assessment date as a Date, or undefined when the field is empty
+// or unparseable.
+function uploadAssessmentDate() {
+  const el = document.getElementById('assess-date');
+  const v = el && /^\d{4}-\d{2}-\d{2}$/.test(el.value) ? el.value : '';
+  if (!v) return undefined;
+  const d = new Date(v + 'T00:00:00Z');
+  return isNaN(d) ? undefined : d;
+}
+
 // Run the real assessor and project the result into the shell's summary shape.
 async function runRealEngineForInitial(sample) {
   const E = window.SparkAEEngine;
@@ -9633,8 +9723,12 @@ async function runRealEngineForInitial(sample) {
   const retriever = new E.BM25Retriever(corpus.chunks);
   const refutationIdx = E.buildRefutationIndex(retriever);
   const controls = Object.entries(CATALOG).filter(([, c]) => c.b.includes(ENGINE_BASELINE));
-  // Pinned for the bundled fixture, wall clock for an uploaded package.
-  const asOf = corpus.bundled ? new Date(SAMPLE_ASSESSMENT_DATE + 'T00:00:00Z') : undefined;
+  // Pinned for the bundled fixture; for an uploaded package the date comes
+  // from the rail's "Assess uploads as of" field — run context the visitor
+  // sees and can change, never a date read out of the package. An empty
+  // field leaves the temporal gate indeterminate (fail closed).
+  const uploadDate = uploadAssessmentDate();
+  const asOf = corpus.bundled ? new Date(SAMPLE_ASSESSMENT_DATE + 'T00:00:00Z') : uploadDate;
 
   const findings = [];
   const gateReached = [0, 0, 0, 0, 0, 0, 0];
@@ -9663,11 +9757,20 @@ async function runRealEngineForInitial(sample) {
     ? Math.round(findings.reduce((s, f) => s + (f.defensibility_score || 0), 0) / findings.length)
     : 0;
 
+  const first = findings[0] || {};
+  const ranked = rankLiveRun(findings);
   ENGINE_LAST_RUN = {
     corpusLabel: corpus.label,
+    bundled: corpus.bundled,
     fileCount: corpus.files.length,
+    fileNames: corpus.files.map(f => f.name),
     chunkCount: corpus.chunks.length,
     controlCount: controls.length,
+    assessmentDate: corpus.bundled ? SAMPLE_ASSESSMENT_DATE : (first.assessment_date || ''),
+    assessmentDateSource: corpus.bundled ? 'pinned' : (first.assessment_date_source === 'supplied' ? 'rail' : 'none'),
+    families: familyTallies(findings),
+    gapRank: ranked.gapRank,
+    topFinding: ranked.topFinding,
     gateReached, gatePassed,
     raw: findings,
     // na/nt/ra/or_/fp stay 0: the engine emits SAT / OTS / NR only. Showing a
@@ -9680,9 +9783,210 @@ async function runRealEngineForInitial(sample) {
   if (meta && sample && sample.liveEngine) {
     meta.style.display = '';
     meta.textContent = 'live engine · FedRAMP ' + ENGINE_BASELINE + ' · ' +
-      controls.length + ' controls · ' + findings.length + ' determination statements';
+      controls.length + ' controls · ' + findings.length + ' objectives · assessed as of ' + ENGINE_LAST_RUN.assessmentDate;
   }
   return ENGINE_LAST_RUN;
+}
+
+// ── Live-run narration ───────────────────────────────────────────────────
+// The scripted §01 narration walks seventeen appendices, seventeen policy
+// families, an inventory workbook and a scan profile — none of which the
+// engine has seen when the corpus is one SSP text file. On a live run the
+// console reports what the engine actually did, in the time it actually
+// took: corpus indexed, baseline scoped, every family's tally, seven gates
+// with real denominators, then what blocks authorization first.
+const LIVE_STAGES = ['Index', 'Scope', 'Examine', 'Gates', 'Findings', 'Output'];
+const GATE_NAMES = ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Status'];
+const GAP_LABELS = {
+  missing_evidence: 'missing evidence — the objective\'s concepts are not covered by any passage',
+  incomplete_policy: 'incomplete policy — undefined parameters or draft language',
+  contradictory_evidence: 'contradictory evidence — the package disagrees with itself',
+  temporal_gap: 'stale or out-of-cadence evidence',
+  missing_implementation: 'implementation stated as missing',
+  other_gap: 'other gap',
+};
+const GAP_ORDER = ['missing_implementation', 'contradictory_evidence', 'incomplete_policy', 'temporal_gap', 'missing_evidence', 'other_gap'];
+
+function tstamp(sec) {
+  const deci = Math.round(sec * 10);
+  return fmt(Math.floor(deci / 10)) + '.' + (deci % 10);
+}
+
+async function narrateLiveRun(R) {
+  document.getElementById('log').innerHTML = '';
+  let t = 0;
+  const step = async (tag, msg, cls, ms) => { log(tstamp(t), tag, msg, cls || ''); t += (ms || 300) / 1000; await wait(ms || 300); };
+
+  setStage(1);
+  setStatus('◆ INDEX · reading the package');
+  await step('init', `<span class="key">live engine</span> · ${engEsc(R.corpusLabel)} · ${R.fileCount} file(s) · ${R.chunkCount} chunks indexed (BM25)`, '', 350);
+  if (R.bundled) {
+    await step('init', 'sample package is the SSP body only · no appendices, scan exports, or interview records are bundled · every verdict below comes from that text', 'ok', 350);
+  } else {
+    const names = R.fileNames.slice(0, 6).map(engEsc).join(' · ') + (R.fileCount > 6 ? ' · +' + (R.fileCount - 6) + ' more' : '');
+    await step('init', names, '', 350);
+  }
+  const dateNote = R.assessmentDateSource === 'pinned' ? 'pinned for the bundled sample'
+                 : R.assessmentDateSource === 'rail' ? 'set in the rail (change it and run again to assess as of another date)'
+                 : 'none set in the rail — the temporal gate is indeterminate and fails closed';
+  await step('init', `assessment date ${R.assessmentDate || '—'} · ${dateNote} · same package, same date, same verdicts, on any machine`, '', 400);
+
+  setStage(2);
+  setStatus('◆ SCOPE · FedRAMP ' + ENGINE_BASELINE + ' baseline');
+  await step('scope', `NIST SP 800-53A Rev 5 · FedRAMP ${ENGINE_BASELINE} baseline · ${R.controlCount} controls · ${R.raw.length} &ldquo;Determine if&rdquo; objectives · EXAMINE only (Interview and Test stay with the assessor)`, 'ok', 450);
+
+  setStage(3);
+  setStatus('◆ EXAMINE · evidence retrieved and adjudicated per objective');
+  for (const fam of R.families) {
+    await step('exam', `${fam.id} · ${engEsc(fam.name)} · ${fam.total} objectives · ${fam.sat} SAT · ${fam.ots} OTS${fam.nr ? ' · ' + fam.nr + ' NR' : ''}`, fam.ots + fam.nr > fam.sat ? 'warn' : 'ok', 210);
+  }
+
+  setStage(4);
+  setStatus('◆ GATES · 7 deterministic gates');
+  await step('gate', 'seven deterministic gates per objective · presence · concept coverage · evidence strength · ODP resolution · contradiction · temporal coherence · status', '', 300);
+  // Real tallies: a gate pill is marked pass only if a majority of the
+  // objectives that reached it passed. A thin package legitimately fails
+  // gate 2 across most objectives, and the demo shows that rather than a
+  // reassuring row of green.
+  for (let g = 1; g <= 7; g++) {
+    const reached = R.gateReached[g - 1], passed = R.gatePassed[g - 1];
+    const ok = reached > 0 && passed / reached >= 0.5;
+    setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
+    await step('gate', `gate ${g} · ${GATE_NAMES[g - 1]} · ${passed}/${reached} objectives passed`, ok ? 'ok' : 'warn', 140);
+  }
+
+  setStage(5);
+  setStatus('◆ FINDINGS · ranking what blocks authorization');
+  const S = R.summary;
+  await step('find', `${S.ots} Other Than Satisfied · ${S.sat} Satisfied · ${S.nr} Not Reviewed (no passage cleared the relevance threshold)`, S.ots ? 'warn' : 'ok', 350);
+  for (const row of R.gapRank) {
+    await step('find', `${row.count} × ${GAP_LABELS[row.type]}`, 'warn', 180);
+  }
+  if (R.topFinding) {
+    await step('find', `most consequential · <span class="key">${engEsc(R.topFinding.dif_id)}</span> · ${engEsc(R.topFinding.finding)}`, 'warn', 350);
+  }
+
+  setStage(6);
+  setStatus('◆ OUTPUT · draft findings, citations, exports');
+  await step('out', `defensibility scored · <span class="key">${S.def}/100</span> · every verdict carries its passage, confidence, and grade`, 'ok', 350);
+  await step('done', 'complete · draft findings ready for assessor review · nothing left this browser', 'ok', 200);
+
+  document.querySelectorAll('.stage').forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+  setStatus('◆ COMPLETE · draft findings ready for assessor review');
+  document.getElementById('results').classList.add('show');
+  renderInitialSummary(S);
+  renderLiveHeadline(R);
+  renderExportBar();
+  renderFindings(S.findings);
+}
+
+// Ranked gap categories over the Other-Than-Satisfied findings, and the one
+// finding to open first: highest risk, then lowest defensibility, then
+// objective id — a fixed order, so the same run names the same finding.
+function rankLiveRun(findings) {
+  const E = window.SparkAEEngine;
+  const counts = {};
+  const ots = findings.filter(f => f.status === 'Other Than Satisfied');
+  ots.forEach(f => { const g = E.classifyGapType(f.finding || ''); counts[g] = (counts[g] || 0) + 1; });
+  const gapRank = GAP_ORDER.filter(g => counts[g]).map(g => ({ type: g, count: counts[g] }))
+    .sort((a, b) => b.count - a.count || GAP_ORDER.indexOf(a.type) - GAP_ORDER.indexOf(b.type));
+  const riskRank = { High: 0, Moderate: 1, Low: 2 };
+  const topFinding = ots.slice().sort((a, b) =>
+    (riskRank[a.risk_exposure_before] ?? 3) - (riskRank[b.risk_exposure_before] ?? 3) ||
+    (a.defensibility_score || 0) - (b.defensibility_score || 0) ||
+    String(a.dif_id).localeCompare(String(b.dif_id)))[0] || null;
+  return { gapRank, topFinding };
+}
+
+function familyTallies(findings) {
+  const fams = new Map();
+  for (const f of findings) {
+    const id = String(f.control_id).split('-')[0];
+    if (!fams.has(id)) {
+      const c = typeof CATALOG !== 'undefined' && CATALOG[f.control_id];
+      fams.set(id, { id, name: (c && c.F) || id, total: 0, sat: 0, ots: 0, nr: 0 });
+    }
+    const fam = fams.get(id);
+    fam.total++;
+    if (f.status === 'Satisfied') fam.sat++;
+    else if (f.status === 'Other Than Satisfied') fam.ots++;
+    else fam.nr++;
+  }
+  return Array.from(fams.values()).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// The passage to quote under the finding: the window around the phrase the
+// gate reacted to (a refuting statement, a draft marker, an unresolved
+// parameter) when the finding names one, else the start of the evidence.
+function evidenceExcerpt(f) {
+  const text = (f.evidence_description || '').replace(/\s+/g, ' ');
+  const m = /:\s*(.+)$/.exec(f.finding || '');
+  let at = -1;
+  if (m) {
+    const needle = m[1].replace(/;.*$/, '').trim().toLowerCase();
+    if (needle.length >= 6) at = text.toLowerCase().indexOf(needle);
+  }
+  if (at < 0) return { text: text.slice(0, 260), more: text.length > 260, from: 0 };
+  const start = Math.max(0, at - 110);
+  const end = Math.min(text.length, at + 150);
+  return { text: (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : ''), more: false, from: start };
+}
+
+function difText(difId) {
+  if (typeof CATALOG === 'undefined') return '';
+  for (const c of Object.values(CATALOG)) {
+    for (const d of c.d) if (d.i === difId) return d.t;
+  }
+  return '';
+}
+
+// The first thing a visitor reads after a run: not 981 rows, but what blocks
+// authorization, ranked, and the single most consequential finding opened
+// with its passage, its failed gate, and its correction.
+function renderLiveHeadline(R) {
+  const host = document.getElementById('results-summary');
+  if (!host) return;
+  const S = R.summary;
+  const total = R.raw.length;
+  const rank = R.gapRank.map(r => `<li><span class="lead-n">${r.count}</span><span>${GAP_LABELS[r.type]}</span></li>`).join('');
+  const f = R.topFinding;
+  let card = '';
+  if (f) {
+    const ctrl = typeof CATALOG !== 'undefined' && CATALOG[f.control_id];
+    const failed = [];
+    (f.gates || []).forEach(g => { if (!g.pass && typeof g.gate === 'number' && !failed.some(x => x.startsWith('gate ' + g.gate + ' '))) failed.push('gate ' + g.gate + ' · ' + g.name); });
+    const refs = (f.evidence_references || []).length ? f.evidence_references.map(engEsc).join(', ') : R.corpusLabel;
+    const excerpt = evidenceExcerpt(f);
+    card = `
+      <div class="lead-finding">
+        <div class="lead-finding-head">
+          <span class="lead-finding-id">${engEsc(f.dif_id)} · ${engEsc((ctrl && ctrl.T) || f.control_id)}</span>
+          <span class="verdict-tag ots">OTS</span>
+          <span class="lead-finding-meta">confidence ${Math.round((f.confidence || 0) * 100)}% · defensibility ${f.defensibility_score || 0}/100 (${SparkAEEngine.grade(f.defensibility_score || 0)}) · risk ${engEsc(f.risk_exposure_before || 'Low')}</span>
+        </div>
+        <div class="lead-row"><span class="lead-k">Determine if</span><span>${engEsc(difText(f.dif_id) || '—')}</span></div>
+        <div class="lead-row"><span class="lead-k">Evidence</span><span>${engEsc(refs)}${excerpt.text ? ' — &ldquo;' + engEsc(excerpt.text) + (excerpt.more ? '…' : '') + '&rdquo;' : ''}</span></div>
+        <div class="lead-row"><span class="lead-k">Failed</span><span>${failed.length ? engEsc(failed.join(' · ')) : '—'}</span></div>
+        <div class="lead-row"><span class="lead-k">Finding</span><span>${engEsc(f.finding || '')}</span></div>
+        <div class="lead-row"><span class="lead-k">Correction</span><span>${engEsc(f.recommendation || '')}</span></div>
+      </div>`;
+  }
+  const upload = R.bundled
+    ? `This was <strong>CloudVault Federal</strong>, a synthetic sample. <a href="#" onclick="document.getElementById('ssp-upload-input').click();return false;">Drop your own package</a> — it never leaves this browser. Or <a href="index.html#cta">start a 30-day pilot on the local engine →</a>`
+    : `Your package was assessed in this browser and nothing was uploaded. <a href="index.html#cta">Start a 30-day pilot on the local engine →</a>`;
+  const panel = document.createElement('div');
+  panel.className = 'lead-panel';
+  panel.innerHTML = `
+    <div class="sar-section-label">
+      <span class="sar-section-num">◆</span>
+      <span class="sar-section-title">What blocks authorization first</span>
+      <span class="sar-section-ref">ranked from this run · every row traceable to a passage · draft until an assessor adopts it</span>
+    </div>
+    <p class="lead-line">SparkAE found <strong>${S.ots}</strong> Other-Than-Satisfied objective${S.ots === 1 ? '' : 's'} across <strong>${total}</strong>${S.nr ? `, and <strong>${S.nr}</strong> it could not review because no passage cleared the relevance threshold` : ''}.</p>
+    ${rank ? `<ul class="lead-rank">${rank}</ul>` : ''}
+    ${card}
+    <div class="after-run">${upload}</div>`;
+  host.insertBefore(panel, host.firstChild);
 }
 
 // Capture the raw File objects for the engine. The shell's own change handler

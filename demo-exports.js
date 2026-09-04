@@ -56,26 +56,52 @@ var DEMO_EXPORTS = (function () {
   }
 
   // ── UUIDs ──────────────────────────────────────────────────────────────
-  // crypto.randomUUID() is unavailable in older Safari/WebViews and in
-  // non-secure contexts; fall back to getRandomValues, then to Math.random
-  // (demo-only identifiers, never security material) so exports never break.
-  function randomUuid() {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
-    }
-    var b = new Uint8Array(16);
-    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-      crypto.getRandomValues(b);
-    } else {
-      for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
-    }
-    b[6] = (b[6] & 0x0f) | 0x40; // version 4
-    b[8] = (b[8] & 0x3f) | 0x80; // variant 10
-    var h = Array.prototype.map.call(b, function (x) {
-      return x.toString(16).padStart(2, '0');
-    }).join('');
-    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' +
-      h.slice(16, 20) + '-' + h.slice(20);
+  // Identifiers are derived from content, never from a random source: the
+  // same findings exported twice give byte-identical artifacts, which is the
+  // property the site claims ("same input, same output") and the one an
+  // assessor can check with a hash. Each id hashes a seed (the caller's, or
+  // one built from the findings themselves) plus a counter through four
+  // FNV-1a lanes, then stamps the RFC 4122 version and variant bits.
+  function fnv1a(str, basis) {
+    var h = basis >>> 0;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h;
+  }
+  function seededUuid(seed) {
+    var n = 0;
+    return function () {
+      var key = seed + '|' + (n++);
+      var b = [];
+      [0x811c9dc5, 0x050c5d1f, 0x9e3779b9, 0x7f4a7c15].forEach(function (basis, lane) {
+        var h = fnv1a(key + '|' + lane, basis);
+        b.push((h >>> 24) & 0xff, (h >>> 16) & 0xff, (h >>> 8) & 0xff, h & 0xff);
+      });
+      b[6] = (b[6] & 0x0f) | 0x40; // version 4
+      b[8] = (b[8] & 0x3f) | 0x80; // variant 10
+      var hex = b.map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+      return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' +
+        hex.slice(16, 20) + '-' + hex.slice(20);
+    };
+  }
+  // The document timestamp when the caller supplies none: the newest
+  // assessment date the findings carry, never the wall clock — so the same
+  // findings produce the same artifact on any day. A run with no dated
+  // finding gets a fixed epoch rather than an invented time.
+  function stateNow(state) {
+    var newest = '';
+    (state && state.findings || []).forEach(function (f) {
+      var d = f && f.assessment_date;
+      if (d && d > newest) newest = d;
+    });
+    return newest ? newest + 'T00:00:00+00:00' : '1970-01-01T00:00:00+00:00';
+  }
+  // The default factory for a state: seeded by what is being exported.
+  function stateUuid(state, opts) {
+    var ids = (state && state.findings || []).map(function (f) { return f.dif_id || f.objective_id || ''; }).join(',');
+    // Digest the (long) id list once; the per-id hash then works on a short
+    // seed rather than re-walking every objective id for every identifier.
+    var digest = fnv1a(ids, 0x811c9dc5).toString(16) + fnv1a(ids, 0x9e3779b9).toString(16);
+    return seededUuid((state && state.baseline || '') + '|' + (opts && opts.now || '') + '|' + digest);
   }
 
   // ── CSV ────────────────────────────────────────────────────────────────
@@ -100,7 +126,7 @@ var DEMO_EXPORTS = (function () {
   // ── OSCAL Assessment Results ───────────────────────────────────────────
   //
   // opts.now       ISO-8601 timestamp to stamp the document with.
-  // opts.uuid      UUID factory (injected by tests for reproducibility).
+  // opts.uuid      UUID factory (default: content-seeded, reproducible).
   //
   // Structure follows oscal_exporter.generate_assessment_results:
   //   * control linkage rides as a FedRAMP-namespaced prop on the finding,
@@ -115,8 +141,8 @@ var DEMO_EXPORTS = (function () {
   //     entirely when there is nothing to say.
   function buildAssessmentResults(state, opts) {
     opts = opts || {};
-    var now = opts.now || new Date().toISOString();
-    var uuid = opts.uuid || randomUuid;
+    var now = opts.now || stateNow(state);
+    var uuid = opts.uuid || stateUuid(state, opts);
     var findings = state.findings || [];
     var baseline = state.baseline || 'Low';
 
@@ -299,7 +325,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildFindingsCSV(state, opts) {
     opts = opts || {};
-    var today = (opts.now || new Date().toISOString()).slice(0, 10);
+    var today = (opts.now || stateNow(state)).slice(0, 10);
     var rows = (state.findings || []).map(function (f) {
       return csvRow([
         f.control_id, f.objective_id || f.dif_id, f.status,
@@ -325,7 +351,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildRET(state, opts) {
     opts = opts || {};
-    var today = (opts.now || new Date().toISOString()).slice(0, 10);
+    var today = (opts.now || stateNow(state)).slice(0, 10);
     var rows = (state.findings || [])
       .filter(function (f) { return f.status === 'Other Than Satisfied'; })
       .map(function (f, i) {
@@ -350,7 +376,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildPOAM(state, opts) {
     opts = opts || {};
-    var today = (opts.now || new Date().toISOString()).slice(0, 10);
+    var today = (opts.now || stateNow(state)).slice(0, 10);
     var rows = (state.findings || [])
       .filter(function (f) { return f.status !== 'Satisfied'; })
       .map(function (f, i) {
@@ -388,7 +414,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildSummary(state, opts) {
     opts = opts || {};
-    var now = opts.now || new Date().toISOString();
+    var now = opts.now || stateNow(state);
     var gradeFn = opts.grade || function () { return '—'; };
     var findings = state.findings || [];
     var total = findings.length;
@@ -463,7 +489,7 @@ var DEMO_EXPORTS = (function () {
   return {
     toOscalControlId: toOscalControlId,
     toOscalToken: toOscalToken,
-    randomUuid: randomUuid,
+    seededUuid: seededUuid,
     csvSafe: csvSafe,
     csvRow: csvRow,
     buildAssessmentResults: buildAssessmentResults,
