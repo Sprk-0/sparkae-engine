@@ -26,14 +26,11 @@
 @font-face{font-family:'Fraunces';font-style:italic;font-weight:400 500;font-display:swap;src:url('static/fonts/Fraunces-Italic-VariableFont.woff2') format('woff2-variations')}
 </style>
 
-<script>
-  if (window.pdfjsLib) {
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-      (window.__resources && window.__resources.pdfWorker)
-        ? window.__resources.pdfWorker
-        : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
+<!-- No third-party script, worker, font or fetch anywhere on this page: the
+     three <script src> tags below are same-origin, and the CSP the site ships
+     (connect-src 'self') is what a visitor's browser enforces. PDF text
+     extraction is a server-product feature; the browser build refuses PDFs
+     with a reason rather than loading a worker from a CDN. -->
 <style>
 /* ── Design tokens ── */
 :root{
@@ -137,8 +134,6 @@ html,body{
   border-color:var(--vermillion);
   color:var(--vermillion);
 }
-.fw-chip-btn{cursor:pointer;border-color:var(--rule) !important;color:var(--ink) !important}
-.fw-chip-btn:hover{border-color:var(--vermillion) !important;color:var(--vermillion) !important}
 
 /* ── Page hero ── */
 .page-hero{
@@ -334,10 +329,6 @@ html,body{
   border-style:solid;
   background:#FBF0EC;
 }
-.assess-date{margin-top:10px;padding:10px 12px;border:1px dashed var(--rule);background:var(--paper)}
-.assess-date label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.assess-date input{width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px;border:1px solid var(--rule);background:var(--paper-warm);color:var(--ink)}
-.assess-date-note{display:block;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.5;color:var(--ink-soft)}
 .ssp-upload-status{
   margin-bottom:16px;
   padding:10px 12px;
@@ -688,24 +679,6 @@ html,body{
   letter-spacing:0.04em;
   margin-left:auto;
 }
-
-/* ── Live-run headline: ranked blockers + the finding to open first ── */
-.lead-panel{margin-bottom:26px}
-.lead-line{font-family:'Fraunces',serif;font-size:19px;line-height:1.4;color:var(--paper);margin:6px 0 12px;letter-spacing:-0.005em}
-.lead-line strong{color:var(--vermillion-soft,#E8836A);font-weight:600}
-.lead-rank{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:4px}
-.lead-rank li{display:flex;gap:12px;align-items:baseline;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#B8C0CC;letter-spacing:0.02em}
-.lead-n{min-width:34px;text-align:right;color:var(--paper);font-weight:600}
-.lead-finding{border:1px solid #3A4250;background:#1A2028;padding:14px 16px;margin-bottom:12px}
-.lead-finding-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.lead-finding-id{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--paper)}
-.lead-finding-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A8290;letter-spacing:0.04em;margin-left:auto}
-.lead-row{display:grid;grid-template-columns:96px 1fr;gap:12px;font-size:13px;line-height:1.55;color:#D6DBE3;padding:5px 0;border-top:1px solid #2C3540}
-.lead-k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#7A8290;padding-top:3px}
-.after-run{font-size:13px;line-height:1.6;color:#B8C0CC;padding:10px 0 2px}
-.after-run a{color:var(--vermillion-soft,#E8836A);border-bottom:1px solid #5A6270}
-.after-run strong{color:var(--paper)}
-@media (max-width:640px){.lead-row{grid-template-columns:1fr;gap:2px}.lead-finding-meta{margin-left:0}}
 
 /* ── Defensibility score strip ── */
 .def-strip{
@@ -2453,7 +2426,7 @@ html,body{
           <button class="uc-tab" data-uc="pkg">
             <span class="uc-num">§07</span>
             <span class="uc-name">Package Validator</span>
-            <span class="uc-sub">OSCAL 1.1.2 · FedRAMP constraints <span class="uc-badge walk">walkthrough</span></span>
+            <span class="uc-sub">OSCAL 1.1.2 output · FedRAMP constraints (min 1.0.4) <span class="uc-badge walk">walkthrough</span></span>
           </button>
           <button class="uc-tab" data-uc="portfolio">
             <span class="uc-num">§08</span>
@@ -2495,23 +2468,20 @@ html,body{
             <div class="ssp-meta">FedRAMP Moderate · 325 controls · v3.1</div>
           </button>
           <button class="ssp-option ssp-upload" id="ssp-upload-btn" type="button">
-            <div class="ssp-name">⬆ Upload package · .zip preferred</div>
-            <div class="ssp-meta">.zip · SSP · scans · POA&amp;M · OSCAL · live engine</div>
+            <div class="ssp-name">⬆ Upload package · .zip, .docx or text</div>
+            <div class="ssp-meta">.zip · .docx · .txt · .md · .csv · .json · .xml · .nessus — live engine · PDF and XLSX text extraction are server-product features and are refused here, not guessed</div>
           </button>
-          <input type="file" id="ssp-upload-input" aria-label="Upload your own assessment package (.zip, SSP, scans, POA&amp;M, or policy documents)" multiple="" accept=".zip,.docx,.pdf,.xlsx,.csv,.json,.xml,.txt,.md,.yaml,.yml" style="display:none">
+          <input type="file" id="ssp-upload-input" aria-label="Upload your own assessment package (.zip, .docx, .txt, .md, .csv, .json, .xml or .nessus files)" multiple="" accept=".zip,.docx,.csv,.json,.xml,.txt,.md,.nessus" style="display:none">
           <div class="ssp-upload-status" id="ssp-upload-status" style="display:none"></div>
-          <div class="assess-date">
-            <label for="assess-date">Assess uploads as of</label>
-            <input type="date" id="assess-date" name="assess-date">
-            <span class="assess-date-note">Run context, not read from the package. Same package + same date = same verdicts.</span>
-          </div>
         </div>
 
         <div class="rail-divider"></div>
 
+        <div class="rail-stat"><span class="rail-stat-label"><label for="engine-profile">Profile</label></span><span class="rail-stat-value"><select id="engine-profile" class="rail-input" aria-label="FedRAMP profile the live engine assesses against"><option value="Low" selected>FedRAMP Low</option><option value="Moderate">FedRAMP Moderate</option><option value="High">FedRAMP High</option></select></span></div>
+        <div class="rail-stat"><span class="rail-stat-label"><label for="assessment-date">Assessed as of</label></span><span class="rail-stat-value"><input type="date" id="assessment-date" class="rail-input" value="2026-06-01" aria-label="Assessment date the temporal gates use — a declared input, never the clock"></span></div>
         <div class="rail-stat"><span class="rail-stat-label">Engine</span><span class="rail-stat-value" id="stat-engine">Deterministic</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Verifier</span><span class="rail-stat-value">Adversarial · ON</span></div>
-        <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value" id="stat-mode">EXAMINE</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value" id="stat-mode">EXAMINE · automated</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Output</span><span class="rail-stat-value" id="stat-output">SAR + POA&amp;M + OSCAL</span></div>
 
         <button class="btn-primary vermillion run-btn" id="run-btn">
@@ -2578,46 +2548,55 @@ html,body{
               <!-- ── Preview exports · real FedRAMP-shaped artifacts, not adopted deliverables ── -->
               <div class="dl-bar" id="dl-bar">
                 <div class="dl-bar-head">
-                  <span class="dl-bar-title">◆ Preview exports</span>
-                  <span class="dl-bar-sub">NIST 800-53 Rev5 · FedRAMP Rev5 template shapes · assessor work aids, not submission deliverables</span>
+                  <span class="dl-bar-title">◆ Exports from this run</span>
+                  <span class="dl-bar-sub">Built in your browser from the §01 live-engine run · deterministic: the same run yields byte-identical files · automated EXAMINE preparation, not submission deliverables · INTERVIEW and TEST not performed</span>
                 </div>
                 <div class="dl-cards">
                   <div class="dl-card">
                     <div class="dl-card-head">
-                      <span class="dl-card-name">SAR</span>
-                      <span class="dl-card-desc">Security Assessment Report</span>
+                      <span class="dl-card-name">OSCAL AR</span>
+                      <span class="dl-card-desc">Assessment Results · OSCAL 1.1.2</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download SAR (Security Assessment Report) preview as .xlsx" onclick="downloadSAR()">⬇ .xlsx</button>
-                      <button class="dl-fmt-btn" aria-label="Download SAR (Security Assessment Report) preview as .docx" onclick="downloadSARdocx()">⬇ .docx</button>
+                      <button class="dl-fmt-btn" aria-label="Download OSCAL 1.1.2 assessment results as .json" onclick="downloadLive('ar')">⬇ .json</button>
                     </div>
                   </div>
                   <div class="dl-card">
                     <div class="dl-card-head">
-                      <span class="dl-card-name">TCW · SRTM</span>
-                      <span class="dl-card-desc">Test Case Workbook · OSCAL Rev5</span>
+                      <span class="dl-card-name">Findings</span>
+                      <span class="dl-card-desc">Per-objective determinations</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download TCW / SRTM (Test Case Workbook) preview as .xlsx" onclick="downloadSRTM()">⬇ .xlsx</button>
+                      <button class="dl-fmt-btn" aria-label="Download findings as .csv" onclick="downloadLive('findings')">⬇ .csv</button>
                     </div>
                   </div>
                   <div class="dl-card">
                     <div class="dl-card-head">
-                      <span class="dl-card-name">ConMon</span>
-                      <span class="dl-card-desc">Continuous Monitoring · Monthly</span>
+                      <span class="dl-card-name">RET · POA&amp;M</span>
+                      <span class="dl-card-desc">Risk Exposure Table · Plan of Action</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download ConMon (Continuous Monitoring) preview as .xlsx" onclick="downloadConMon()">⬇ .xlsx</button>
-                      <button class="dl-fmt-btn" aria-label="Download ConMon (Continuous Monitoring) preview as .docx" onclick="downloadConMondocx()">⬇ .docx</button>
+                      <button class="dl-fmt-btn" aria-label="Download risk exposure table as .csv" onclick="downloadLive('ret')">⬇ RET .csv</button>
+                      <button class="dl-fmt-btn" aria-label="Download plan of action and milestones as .csv" onclick="downloadLive('poam')">⬇ POA&amp;M .csv</button>
                     </div>
                   </div>
                   <div class="dl-card">
                     <div class="dl-card-head">
-                      <span class="dl-card-name">POA&amp;M</span>
-                      <span class="dl-card-desc">FedRAMP Template · V-NNN</span>
+                      <span class="dl-card-name">TCW</span>
+                      <span class="dl-card-desc">Test Case Workbook · EXAMINE rows</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download POA&amp;M (Plan of Action and Milestones) preview as .xlsx" onclick="downloadPOAM()">⬇ .xlsx</button>
+                      <button class="dl-fmt-btn" aria-label="Download test case workbook as .csv" onclick="downloadLive('tcw')">⬇ .csv</button>
+                    </div>
+                  </div>
+                  <div class="dl-card">
+                    <div class="dl-card-head">
+                      <span class="dl-card-name">Summary · Receipt</span>
+                      <span class="dl-card-desc">Executive summary · reproducibility receipt</span>
+                    </div>
+                    <div class="dl-card-formats">
+                      <button class="dl-fmt-btn" aria-label="Download executive summary as .txt" onclick="downloadLive('summary')">⬇ .txt</button>
+                      <button class="dl-fmt-btn" aria-label="Download reproducibility receipt as .json" onclick="downloadLive('receipt')">⬇ receipt .json</button>
                     </div>
                   </div>
                 </div>
@@ -2635,7 +2614,7 @@ html,body{
 
 <div class="demo-disclaimer">
   <div class="demo-disclaimer-inner">
-    <strong>&sect;01 Initial Assessment</strong> runs the real deterministic engine in your browser: its verdicts, gate tallies and defensibility scores are computed from the document set you select or upload, and every finding cites the file it came from. <strong>The other eight sections are guided walkthroughs</strong> built on an internal reference portfolio &mdash; they illustrate the workflow, and their figures are illustrative rather than computed. Nothing here is a FedRAMP PMO endorsement, and no output substitutes for a formal 3PAO assessment.
+    <strong>&sect;01 Initial Assessment</strong> runs the real deterministic engine in your browser: its verdicts, gate tallies, defensibility scores and reproducibility receipt are computed from the document set you select or upload, every finding cites the file it came from, and its console reports only what was computed &mdash; files parsed or refused, objectives adjudicated, gate tallies. It is automated EXAMINE preparation; INTERVIEW and TEST are not performed. <strong>The other eight sections are guided walkthroughs</strong> built on an internal reference portfolio &mdash; they illustrate the workflow, and their figures are illustrative rather than computed. Nothing here is a FedRAMP PMO endorsement, and no output substitutes for a formal 3PAO assessment.
   </div>
 </div>
 
@@ -2833,6 +2812,37 @@ The organization identifies, reports, and corrects information system flaws.
 Patches are tested in a staging environment before production deployment.
 Critical patches are applied within 30 days per FedRAMP ConMon.
 </script>
+<style>
+.rail-input{font:inherit;font-size:11px;color:var(--ink);background:transparent;border:1px solid #3A4250;border-radius:3px;padding:2px 4px;max-width:150px}
+.rail-input:focus{outline:2px solid var(--vermillion);outline-offset:1px}
+.eng-review{display:inline-block;margin-left:8px;padding:1px 6px;border:1px solid var(--vermillion);color:var(--vermillion);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase}
+.receipt-strip{margin-top:14px;padding:12px 14px;border:1px solid #2C3540;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#B8C0CC}
+.receipt-title{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#7A8290;margin-bottom:6px}
+.receipt-grid{display:grid;grid-template-columns:max-content 1fr;gap:2px 14px}
+.receipt-grid span{color:#7A8290}
+.receipt-grid code{font:inherit;word-break:break-all;color:#E6EAF0}
+.receipt-note{margin-top:8px;color:#7A8290}
+.live-refused{margin-top:8px;color:#E0A458}
+.fw-chip-btn{cursor:pointer;border-color:var(--rule) !important;color:var(--ink) !important}
+.fw-chip-btn:hover{border-color:var(--vermillion) !important;color:var(--vermillion) !important}
+/* Live-run headline: ranked blockers + the finding to open first */
+.lead-panel{margin-bottom:26px}
+.lead-line{font-family:'Fraunces',serif;font-size:19px;line-height:1.4;color:var(--paper);margin:6px 0 12px;letter-spacing:-0.005em}
+.lead-line strong{color:var(--vermillion-soft,#E8836A);font-weight:600}
+.lead-rank{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:4px}
+.lead-rank li{display:flex;gap:12px;align-items:baseline;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#B8C0CC;letter-spacing:0.02em}
+.lead-n{min-width:34px;text-align:right;color:var(--paper);font-weight:600}
+.lead-finding{border:1px solid #3A4250;background:#1A2028;padding:14px 16px;margin-bottom:12px}
+.lead-finding-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.lead-finding-id{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--paper)}
+.lead-finding-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A8290;letter-spacing:0.04em;margin-left:auto}
+.lead-row{display:grid;grid-template-columns:96px 1fr;gap:12px;font-size:13px;line-height:1.55;color:#D6DBE3;padding:5px 0;border-top:1px solid #2C3540}
+.lead-k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#7A8290;padding-top:3px}
+.after-run{font-size:13px;line-height:1.6;color:#B8C0CC;padding:10px 0 2px}
+.after-run a{color:var(--vermillion-soft,#E8836A);border-bottom:1px solid #5A6270}
+.after-run strong{color:var(--paper)}
+@media (max-width:640px){.lead-row{grid-template-columns:1fr;gap:2px}.lead-finding-meta{margin-left:0}}
+</style>
 <script src="demo-standalone-catalog.js"></script>
 <script src="demo-engine.js"></script>
 <script src="demo-exports.js"></script>
@@ -2882,22 +2892,14 @@ function onbNext() {
 function onbBack() {
   setOnbStep(onbStep - 1);
 }
-// The tour is opt-in ("How this works" in the masthead). It used to open on
-// first load, in front of the engine the visitor had just clicked through to
-// see; skipping it left an idle engine and a second click. The engine running
-// is the tour, so the page now runs the sample instead (see the auto-run
-// below runDemo) and keeps the walkthrough one click away.
-// The upload assessment date is run context the visitor sees and can change.
-// The page prefills it once from the wall clock (a page-level default, not
-// something the verdict path reads); the engine only ever receives the value
-// in this field, and the run reports which date it used.
-window.addEventListener('DOMContentLoaded', function () {
-  const el = document.getElementById('assess-date');
-  if (el && !el.value) {
-    const d = new Date();
-    const z = n => String(n).padStart(2, '0');
-    el.value = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
-  }
+// Show on first load (skip if previously dismissed)
+window.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (window.localStorage && localStorage.getItem(ONB_STORAGE_KEY)) return;
+  } catch(e) {}
+  // The tour is opt-in ("How this works" in the masthead). Opening it on
+  // first load put a modal in front of the engine the visitor had just come to
+  // see; the sample now auto-runs instead (see runDemo below).
 });
 // Re-trigger via console for demos
 window.showOnboarding = showOnboarding;
@@ -2959,7 +2961,7 @@ const CONTROL_FAMILIES = [
 // Per fedramp.gov · Appendix M · Integrated Inventory Workbook · validated against ABD during 3PAO assessment
 const INVENTORY_WORKBOOK = {
   'CloudVault Storage Platform': {
-    fips199: { confidentiality: 'Moderate', integrity: 'Moderate', availability: 'Moderate', overall: 'Moderate' },
+    fips199: { confidentiality: 'Low', integrity: 'Low', availability: 'Low', overall: 'Low' },
     components: { servers: 84, databases: 6, networkDevices: 14, virtualAssets: 142, total: 246 },
     abdAlignment: 'aligned', abdLastReview: '2026-02-08',
     cryptoModules: 12, cryptoFips140Validated: 12,
@@ -3016,12 +3018,11 @@ const ASSET_LOOKUP = {
 const SAMPLES = {
   cloudvault: {
     name: 'CloudVault Storage Platform',
-    // The bundled SSP is a FedRAMP Low package ("CloudVault Federal — FedRAMP
-    // Low Baseline", below) and §01 assesses it with the real engine at that
-    // baseline: 156 controls, 981 objectives. Every count this sample reports,
-    // in the rail card and in the walkthrough use cases, is that number — the
-    // card used to say "High · 421" and the live run then said "Low · 156",
-    // which was the first thing a knowledgeable visitor noticed.
+    // The bundled SSP is a FedRAMP Low package: 156 controls / 981
+    // determination statements, which is what §01 actually assesses and what
+    // the sample card says. The walkthrough sections describe the same system
+    // at the same baseline. (`name` is the key INVENTORY_WORKBOOK, SCAN_PROFILE
+    // and ASSET_LOOKUP use for the walkthroughs.)
     controls: 156,
     liveEngine: CV_LIVE_ENGINE,
 
@@ -3197,9 +3198,9 @@ const SAMPLES = {
         leveragedSystem:  { status: 'complete', label: 'Leveraged-system Rev4→Rev5 gap analysis · AWS GovCloud current' },
       },
       cohorts: [
-        { label: 'Year 1 (FY24)', controls: 52, status: 'closed' },
-        { label: 'Year 2 (FY25)', controls: 52, status: 'current' },
-        { label: 'Year 3 (FY26)', controls: 52, status: 'pending' },
+        { label: 'Year 1 (FY24)', controls: 140, status: 'closed' },
+        { label: 'Year 2 (FY25)', controls: 140, status: 'current' },
+        { label: 'Year 3 (FY26)', controls: 141, status: 'pending' },
       ],
       carryForward: 8, newFindings: 10, closedThisCycle: 14, significantChanges: 3, penTest: { conducted: true, vectors: 6 },
       findings: [
@@ -3542,13 +3543,16 @@ const SAMPLES = {
 // ── Use case configuration ──
 const USE_CASES = {
   initial: {
+    // The walkthrough stage list is only used when the engine script failed to
+    // load; a real run renders liveStages and narrates nothing it did not compute.
     stages: ['SSP & Appendices', 'Plans (CP/IR)', 'Policies & Procedures', 'Inventory & Boundary', 'Scans & Pen Test', 'SAR Output'],
+    liveStages: ['Parse package', 'Index evidence', 'Adjudicate objectives', 'Gate tallies', 'Report & receipt'],
     runBtnLabel: 'Run assessment',
     idleTitle: 'Engine is idle',
-    idleCopy: 'Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The Examine engine indexes the package, walks every &ldquo;Determine if&rdquo; objective in the FedRAMP Low baseline (156 controls · 981 objectives) through seven deterministic gates, and reports each verdict with the passage it came from, a confidence score, and a defensibility grade. Examine only &mdash; Interview and Test stay with the assessor. Nothing leaves this browser.',
-    railOutput: 'SAR + POA&M + OSCAL',
-    railMode: 'EXAMINE',
-    exports: ['OSCAL SAR', 'POA&amp;M', 'Evidence map', 'Defensibility report'],
+    idleCopy: 'Select the sample SSP or upload a package, choose the profile and the assessment date, and press <strong style="color:var(--vermillion)">Run assessment</strong>. The deterministic engine parses the files in your browser, indexes the evidence, and adjudicates every <strong style="color:var(--vermillion)">Determine if</strong> objective in the profile through seven recorded gates. The console shows only what was computed: files parsed and refused, objectives adjudicated, gate tallies, verdicts, and the reproducibility receipt. It is automated EXAMINE preparation — INTERVIEW and TEST are not performed and stay with the assessor. Nothing leaves this page.',
+    railOutput: 'OSCAL AR · CSV · receipt',
+    railMode: 'EXAMINE · automated',
+    exports: ['OSCAL AR', 'Findings CSV', 'RET CSV', 'POA&amp;M CSV', 'TCW CSV', 'Receipt'],
   },
   conmon: {
     stages: ['Intake', 'Classification', 'SLA mapping', 'Aging', 'Reconciliation', 'Output'],
@@ -3599,7 +3603,7 @@ const USE_CASES = {
     stages: ['Assemble', 'Schema', 'Constraints', 'Cross-ref', 'Severity', 'Output'],
     runBtnLabel: 'Validate OSCAL package',
     idleTitle: 'Package validator is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. The validator will assemble the OSCAL 1.1.2 SAR + POA&amp;M output from the prior assessment data, run NIST OSCAL schema checks on every required field, and apply FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators. Surfaces schema errors and constraint violations as findings. This is the gate before submission.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. The validator will assemble the OSCAL 1.1.2 SAR + POA&amp;M output from the prior assessment data, run NIST OSCAL schema checks on every required field, apply the FedRAMP constraints (which accept OSCAL 1.0.4 or later), and apply FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators. Surfaces schema errors and constraint violations as findings. This is the gate before submission.',
     railOutput: 'Validated OSCAL Package + SVRL Report',
     railMode: 'PKG · OSCAL 1.1.2',
     exports: ['OSCAL SAR (JSON)', 'OSCAL POA&M (JSON)', 'SVRL Validation Report', 'Submission Readiness Report'],
@@ -3674,9 +3678,7 @@ document.querySelectorAll('.uc-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     if (running) return;
     activeUC = tab.dataset.uc;
-    // The displayed run changes with the workflow: the live §01 result (and
-    // its assessment date, which artifacts are stamped with) is no longer
-    // what the console shows.
+    // The live §01 result is no longer what the console shows.
     window.__lastRunWasReal = false;
     document.querySelectorAll('.uc-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -3709,6 +3711,12 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
     btn.classList.add('selected');
     selected = btn.dataset.id;
     window.__lastRunWasReal = false;
+    // The bundled sample is a fixed document: restore its pinned assessment
+    // date (an upload may have moved the field to the visitor's own date).
+    if (btn.dataset.id === 'cloudvault') {
+      const el = document.getElementById('assessment-date');
+      if (el) el.value = SAMPLE_ASSESSMENT_DATE;
+    }
   });
 });
 
@@ -3904,7 +3912,7 @@ async function parsePoamXlsx(blob) {
     const sevCounts = { critical: 0, high: 0, moderate: 0, low: 0 };
     const statusCounts = { open: 0, closed: 0, ongoing: 0 };
     let pastSLA = 0, hasVNNN = 0;
-    const today = new Date();
+    const today = new Date(displayDate() + 'T00:00:00Z');
     wb.SheetNames.forEach(s => {
       const ws = wb.Sheets[s];
       if (!ws['!ref']) return;
@@ -4182,25 +4190,18 @@ function mergeSignals(acc, sig, ctrlSet, perFileFn) {
   if (perFileFn) perFileFn();
 }
 
-// The browser engine assesses every package at the FedRAMP Low baseline (156
-// controls / 981 objectives — see ENGINE_BASELINE). A byte-size guess used to
-// label large uploads "FedRAMP High · 421 controls" and the run then reported
-// Low · 156; the card now states the baseline the engine will actually use.
-const ENGINE_BASELINE_CONTROLS = 156;
-function inferControlsCount() {
-  return ENGINE_BASELINE_CONTROLS;
-}
-
 function synthesizeCustomSample(pkg) {
   // Build a SAMPLES.custom entry shaped exactly like cloudvault/meshgate, seeded by the upload.
   const cspName = 'Custom Upload (' + pkg.inventory.length + ' files · ' + fmtBytes(pkg.totalBytes) + ')';
-  const controls = inferControlsCount();
-  const baseline = 'FedRAMP Low';
+  // The profile is the visitor's declared choice in the rail — never inferred
+  // from package size — and it is the profile the engine actually runs.
+  const controls = profileCounts(engineBaseline()).controls;
+  const baseline = 'FedRAMP ' + engineBaseline();
   window.CUSTOM_BASELINE = baseline;
 
   const seed = deterministicHash(pkg.inventory.map(i => i.name + i.size).join('|'));
   const fileNames = pkg.inventory.slice(0, 8).map(i => i.name);
-  const today = _today();
+  const today = displayDate();
   const customSSP = { kind: 'SSP', title: 'Customer-uploaded System Security Plan', version: '', date: today };
 
   // Presence
@@ -4367,7 +4368,7 @@ function synthesizeCustomSample(pkg) {
   const totalSc = sf.critical + sf.high + sf.moderate + sf.low;
   const aging = (n) => Math.floor(n * 0.08 + (seed % 3));
   const conmon = {
-    period: new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+    period: new Date(displayDate() + 'T00:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
     files: fileNames,
     assets: 50 + (seed % 100),
     authenticated: 50 + (seed % 100) - (hasScans ? 0 : 5),
@@ -4417,7 +4418,7 @@ function renderUploadStatus(pkg) {
   const present = (tag) => (pkg.tagCounts[tag] || 0) > 0;
   const status = document.getElementById('ssp-upload-status');
   const sample = SAMPLES['custom'];
-  const baseline = window.CUSTOM_BASELINE || 'FedRAMP Low';
+  const baseline = window.CUSTOM_BASELINE || 'FedRAMP Moderate';
   const ts = pkg.textSig || {};
   const oscal = pkg.oscal || {};
 
@@ -4475,7 +4476,7 @@ function renderUploadStatus(pkg) {
 
   status.innerHTML =
     '<div class="upload-row"><span class="upload-label">Files received</span><span class="upload-value">' + pkg.inventory.length + ' · ' + fmtBytes(pkg.totalBytes) + '</span></div>' +
-    '<div class="upload-row"><span class="upload-label">Assessed at</span><span class="upload-value">' + baseline + ' · ' + sample.controls + ' controls</span></div>' +
+    '<div class="upload-row"><span class="upload-label">Profile (from the rail)</span><span class="upload-value">' + baseline + ' · ' + sample.controls + ' controls</span></div>' +
     scanLine + cveLine + hostLine + poamLine + oscalLine + ctrlLine + cryptoLine +
     '<div style="height:6px"></div>' +
     checkRows +
@@ -4687,6 +4688,10 @@ async function processUploadsWithProgress(files) {
 }
 
 // ── Helpers ──
+// Walkthrough narration used a random tenth-of-a-second digit for decoration.
+// The page carries no randomness now — this counter does the same job.
+let _tick = 0;
+
 function log(time, tag, msg, cls = '') {
   const el = document.getElementById('log');
   const line = document.createElement('div');
@@ -4713,10 +4718,9 @@ function setStage(n) {
 }
 
 function renderGates() {
-  // Same order and names as the engine's gates (demo-engine.js assessDif),
-  // because setGate(n) is driven by the engine's gate number. The pills used
-  // to list a different order and an "Approval" gate the engine does not have.
-  const names = ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Status'];
+  // One pill per recorded gate, in the engine's own order and names.
+  const names = (window.SparkAEEngine && SparkAEEngine.GATE_NAMES) ||
+    ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Determination'];
   document.getElementById('matrix-container').innerHTML =
     `<div class="gates-running" id="gates-running">${names.map((n, i) =>
       `<div class="gate-pill" data-gate="${i + 1}"><span class="gate-num">${String(i + 1).padStart(2, '0')}</span>${n}</div>`
@@ -5264,27 +5268,24 @@ function pkgPresentApxCount(sample) {
 
 // ── Initial Assessment runner ──
 async function runInitial(sample) {
-  // §01 is the live-engine case. runRealEngineForInitial() returns null when
-  // there is no real corpus to assess (no upload, and a sample with no bundled
-  // document set), in which case this falls back to the guided walkthrough —
-  // which the UI badges as such, so the two are never confused.
-  // Show something while the engine indexes and adjudicates (a few seconds
-  // for 981 objectives); the console was blank until narration began.
-  renderStages(LIVE_STAGES);
-  renderGates();
-  setStage(1);
-  setStatus('◆ INDEX · reading the package');
-  log('00:00.0', 'init', 'reading the package · building the BM25 index · assessing every objective in the baseline');
-  const _realRun = await runRealEngineForInitial(sample);
-  window.__lastRunWasReal = !!_realRun;
-  if (_realRun) { await narrateLiveRun(_realRun); return; }
+  // §01 is the live-engine case: runInitialLive() (defined with the engine
+  // bridge below) parses, indexes, adjudicates and reports, and narrates
+  // nothing it did not compute. The scripted walkthrough below is reached only
+  // if the engine or catalog script failed to load — and then the UI says so.
+  if (window.SparkAEEngine && typeof CATALOG !== 'undefined') {
+    window.__lastRunWasReal = true;
+    return runInitialLive(sample);
+  }
+  window.__lastRunWasReal = false;
+  return runInitialWalkthrough(sample);
+}
 
-  // Walkthrough path (a sample with no bundled document set): the scripted
-  // stage narration below, badged as a walkthrough in the UI.
+async function runInitialWalkthrough(sample) {
+  const _realRun = null;
   const d = sample.initial;
-  document.getElementById('log').innerHTML = '';
   renderStages(USE_CASES.initial.stages);
   renderGates();
+  log('00:00.0', 'init', '<span class="key">walkthrough</span> · the engine script did not load, so this run is the guided walkthrough: its figures are illustrative, not computed', 'warn');
 
   const inventory = INVENTORY_WORKBOOK[sample.name] || {};
   const scans = SCAN_PROFILE[sample.name] || {};
@@ -5292,7 +5293,12 @@ async function runInitial(sample) {
   // ── Stage 1 · SSP & Appendices · 17 mandatory appendices A–Q ──
   setStage(1);
   setStatus('◆ SSP REVIEW · 17 mandatory appendices A through Q · per fedramp.gov SSP Template Rev5');
-  log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Moderate'} baseline`);
+  if (_realRun) {
+    log('00:00.0', 'init', `<span class="key">live engine</span> · ${_realRun.corpusLabel} · ${_realRun.fileCount} file(s) · ${_realRun.chunkCount} chunks indexed`);
+    log('00:00.2', 'init', `BM25 index built · ${_realRun.controlCount} controls / ${_realRun.summary.findings.length} determination statements at ${engineBaseline()} baseline`, 'ok');
+  } else {
+    log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Low'} baseline`);
+  }
   await wait(300);
   // For custom uploads, reflect the actually-detected materials. Otherwise use baked-in CSP narrative.
   const isCustom = sample === SAMPLES['custom'];
@@ -5530,20 +5536,33 @@ async function runInitial(sample) {
   setStatus('◆ SAR OUTPUT · OSCAL SAR · POA&M · Evidence map · Defensibility');
   log('00:57.0', 'out', 'aggregating findings across all 6 review stages · per-DIF verdicts assembled');
   await wait(400);
-  log('00:58.4', 'out', 'running 7 deterministic adjudication gates · evidence presence · concept coverage · evidence strength · ODP resolution · contradiction detection · temporal coherence · status');
+  log('00:58.4', 'out', 'running 7 deterministic adjudication gates · evidence presence · concept coverage · ODP resolution · approval validation · evidence strength · contradiction detection · temporal coherence');
   await wait(500);
+  // Animate gates. On a live-engine run these are real tallies: a gate is
+  // marked pass only if a majority of the objectives that reached it passed.
+  // A thin package legitimately fails gate 2 across most objectives, and the
+  // demo should show that rather than a reassuring row of green.
+  const GATE_NAMES = ['Presence','Concepts','Strength','ODP','Contradiction','Temporal','Determination'];
   for (let g = 1; g <= 7; g++) {
-    setGate(g, 'pass');
+    if (_realRun) {
+      const reached = _realRun.gateReached[g - 1], passed = _realRun.gatePassed[g - 1];
+      const ok = reached > 0 && passed / reached >= 0.5;
+      setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
+      log('01:0' + g + '.0', 'gate', 'gate ' + g + ' · ' + GATE_NAMES[g - 1] + ' · ' +
+          passed + '/' + reached + ' objectives passed', ok ? 'ok' : 'warn');
+    } else {
+      setGate(g, 'pass');
+    }
     await wait(140);
   }
   log('01:01.0', 'out', 'OSCAL SAR schema validation · ✓ valid', 'ok');
   await wait(400);
   log('01:02.4', 'out', `defensibility scored · <span class="key">${d.def}/100</span>`, 'ok');
   await wait(400);
-  log('01:04.8', 'done', 'end-to-end assessment complete · SAR ready for AO review', 'ok');
+  log('01:04.8', 'done', 'walkthrough complete · illustrative results · not an engine run', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · SAR ready for assessor review');
+  setStatus('◆ WALKTHROUGH COMPLETE · illustrative · assessor review required');
   document.getElementById('results').classList.add('show');
   renderInitialSummary(d);
   renderExportBar();
@@ -5560,8 +5579,8 @@ async function runConMon(sample) {
   setStatus('◆ INTAKE · Reading scan output · ' + d.period);
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.period} cycle · ${d.assets} in-scope assets`);
   await wait(400);
-  for (const [fi, f] of d.files.entries()) {
-    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const f of d.files) {
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', `${d.total} open vulnerabilities ingested · ${d.authenticated}/${d.assets} authenticated`, 'ok');
@@ -5633,8 +5652,8 @@ async function runAnnual(sample) {
   setStatus('◆ INTAKE · Prior SAR · POA&M · ConMon history · ' + d.cycle);
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.cycle} · ${sample.controls} total controls`);
   await wait(400);
-  for (const [fi, f] of d.files.entries()) {
-    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const f of d.files) {
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'prior cycle artifacts ingested · POA&M state loaded', 'ok');
@@ -5734,8 +5753,8 @@ async function runSCR(sample) {
   setStatus('◆ INTAKE · SCR submission · current SSP · POA&M state');
   log('00:00.0', 'init', `<span class="key">${sample.name}</span> · SCR review · ${d.classification.toLowerCase()} change`);
   await wait(400);
-  for (const [fi, f] of d.files.entries()) {
-    log(fmt(0) + '.' + (fi % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+  for (const f of d.files) {
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'SCR package ingested · prior cycle context loaded', 'ok');
@@ -6192,8 +6211,8 @@ async function runQA() {
   setStatus('◆ INTAKE · loading portfolio · 4 SSPs · 4 use cases');
   log('00:00.0', 'init', `<span class="key">portfolio scan</span> · ${report.totalFindings} findings · ${report.totalCites} citations`);
   await wait(400);
-  for (const [ki, k] of Object.keys(SAMPLES).entries()) {
-    log(fmt(0) + '.' + (ki % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · 4 use cases`, 'ok');
+  for (const k of Object.keys(SAMPLES)) {
+    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · 4 use cases`, 'ok');
     await wait(250);
   }
   log('00:05.0', 'init', `${report.totalChecks.toLocaleString()} rule checks queued`, 'ok');
@@ -6281,35 +6300,20 @@ async function runQA() {
 }
 
 // ── OSCAL package builder + constraint validator ──
-// Reference: NIST OSCAL 1.1.2 SAR/POA&M schema + GSA/fedramp-automation constraints
+// Emits OSCAL 1.1.2 (via demo-exports.js); the walkthrough's FedRAMP constraint
+// checks reference 1.0.4 as the FedRAMP minimum they accept.
 
-// RFC 4122 v4-shaped identifiers derived from content, not from Math.random:
-// the same run produces the same artifact bytes, so two exports of the same
-// package diff clean. Each call hashes the seed plus a counter (FNV-1a, four
-// lanes) and stamps the version and variant bits.
-let _uuidSeed = 'sparkae-demo';
-let _uuidCounter = 0;
-function seedUuids(seed) { _uuidSeed = String(seed || 'sparkae-demo'); _uuidCounter = 0; }
-function fnv1a(str, basis) {
-  let h = basis >>> 0;
-  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-  return h;
-}
-function uuid() {
-  const key = _uuidSeed + '|' + (_uuidCounter++);
-  const b = [];
-  [0x811c9dc5, 0x050c5d1f, 0x9e3779b9, 0x7f4a7c15].forEach((basis, lane) => {
-    const h = fnv1a(key + '|' + lane, basis);
-    b.push((h >>> 24) & 0xff, (h >>> 16) & 0xff, (h >>> 8) & 0xff, h & 0xff);
-  });
-  b[6] = (b[6] & 0x0f) | 0x40;
-  b[8] = (b[8] & 0x3f) | 0x80;
-  const hex = b.map(x => x.toString(16).padStart(2, '0')).join('');
-  return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
-}
+// Identifiers are RFC 4122 v5, derived from the walkthrough fixture's name —
+// the same fixture always yields the same document. Each builder resets the
+// factory so its ids do not depend on what was built before it.
+let _walkUuid = DEMO_EXPORTS.uuidFactory('walkthrough');
+function uuid() { return _walkUuid(); }
+function resetWalkUuid(seed) { _walkUuid = DEMO_EXPORTS.uuidFactory('walkthrough:' + seed); }
 
 function isoDateTime(d) {
-  return d ? (d.includes('T') ? d : d + 'T00:00:00Z') : _today() + 'T00:00:00Z';
+  // Fixture dates only — there is no wall-clock fallback on this page.
+  if (!d) throw new Error('isoDateTime: a fixture date is required');
+  return d.includes('T') ? d : d + 'T00:00:00Z';
 }
 
 // Map verdict → OSCAL prop value for objective-status
@@ -6334,6 +6338,7 @@ function buildOSCALSAR(sample, useCase) {
   // `f.ctrl + '_obj'`. That document is rendered on-screen beside a panel that
   // tells the visitor it passes FedRAMP constraint checks — so an invalid
   // document was being presented as a conformant one.
+  resetWalkUuid(sample.name + ':' + useCase + ':ar');
   const raw = sample[useCase] && sample[useCase].findings ? sample[useCase].findings : [];
   const findings = raw.map(f => ({
     control_id: f.ctrl,
@@ -6358,7 +6363,6 @@ function buildOSCALSAR(sample, useCase) {
 
   // The walkthrough models a named assessing organization, so it supplies the
   // metadata parties the on-screen constraint panel checks (C-004, F-101).
-  seedUuids(sample.name + '|' + (sample.baseline || 'Moderate') + '|' + findings.length);
   const partyId = uuid();
   return DEMO_EXPORTS.buildAssessmentResults(
     { findings: findings, baseline: sample.baseline || 'Moderate' },
@@ -6386,6 +6390,7 @@ function buildOSCALSAR(sample, useCase) {
 }
 
 function buildOSCALPOAM(sample) {
+  resetWalkUuid(sample.name + ':poam');
   // Build POA&M from open findings across initial + conmon
   const allFindings = [];
   for (const uc of ['initial', 'conmon', 'annual']) {
@@ -6475,10 +6480,10 @@ function buildKSIPackage(sample) {
 // github.com/GSA/fedramp-automation/tree/master/src/validations/rules
 // (archived 2025-07-01; constraints migrating to NIST metaschema, structure unchanged)
 const OSCAL_CONSTRAINTS = [
-  // Schema-level (NIST OSCAL 1.1.2)
+  // Schema-level (NIST OSCAL 1.0.4)
   { id: 'C-001', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.title is REQUIRED' },
   { id: 'C-002', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.last-modified is REQUIRED and ISO-8601' },
-  { id: 'C-003', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.oscal-version is REQUIRED (1.1.2)' },
+  { id: 'C-003', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.oscal-version is REQUIRED (≥1.0.4)' },
   { id: 'C-004', sev: 'error',   ref: 'OSCAL §metadata',           desc: 'metadata.parties uuid is RFC 4122 v4 format' },
   { id: 'C-005', sev: 'error',   ref: 'OSCAL §results',            desc: 'results array is non-empty (SAR)' },
   { id: 'C-006', sev: 'error',   ref: 'OSCAL §observations',       desc: 'every observation has methods[] and subjects[]' },
@@ -6530,7 +6535,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
       text: text,
       cites: [
         docCite,
-        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.1.2', date: '2025-01-15', section: c.desc },
+        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.0.4', date: '2025-01-15', section: c.desc },
         { kind: 'POLICY', title: 'fedramp.gov · OSCAL Registry (FedRAMP extensions)', version: 'rev5-latest', date: '2024-09-10', section: c.id + ' constraint reference' },
       ]
     });
@@ -6554,7 +6559,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
       text: text,
       cites: [
         docCite,
-        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.1.2', date: '2025-01-15', section: c.desc },
+        { kind: 'POLICY', title: 'NIST OSCAL ' + c.ref, version: '1.0.4', date: '2025-01-15', section: c.desc },
       ]
     });
   };
@@ -6565,7 +6570,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   if (sar) {
     // C-001
     sar.metadata && sar.metadata.title
-      ? pass('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that it is populated with the system title required by the OSCAL 1.1.2 schema.')
+      ? pass('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that it is populated with the system title required by the OSCAL 1.0.4 schema.')
       : fail('C-001', 'metadata.title', 'The 3PAO examined the OSCAL SAR metadata.title field, and found that the required title element is missing.');
 
     // C-002
@@ -6575,7 +6580,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
 
     // C-003
     sar.metadata && sar.metadata['oscal-version']
-      ? pass('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that it declares ' + sar.metadata['oscal-version'] + ' matching the NIST OSCAL 1.1.2 schema the package is validated against.')
+      ? pass('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that it declares ' + sar.metadata['oscal-version'] + ' meeting the FedRAMP minimum of 1.0.4.')
       : fail('C-003', 'metadata.oscal-version', 'The 3PAO examined the OSCAL SAR metadata.oscal-version field, and found that the version declaration is missing.');
 
     // C-004 (UUID format)
@@ -6749,7 +6754,7 @@ async function runPackageValidator(sample) {
   // Stage 2 — Schema validation
   setStage(2);
   setStatus('◆ SCHEMA · NIST OSCAL 1.1.2 schema check');
-  log('00:06.4', 'sch', 'running NIST OSCAL 1.1.2 metaschema validation against SAR + POA&M structure');
+  log('00:06.4', 'sch', 'running NIST OSCAL 1.1.2 schema validation against SAR + POA&M structure (FedRAMP minimum: 1.0.4)');
   await wait(500);
 
   // Stage 3 — Constraint validation
@@ -6815,7 +6820,7 @@ async function runPackageValidator(sample) {
     <div class="ret-section-label">
       <span class="sar-section-num">§2</span>
       <span class="sar-section-title">Package Components · Schema Conformity</span>
-      <span class="sar-section-ref">per fedramp.gov OSCAL Registry · NIST OSCAL 1.1.2</span>
+      <span class="sar-section-ref">per fedramp.gov OSCAL Registry · NIST OSCAL 1.0.4</span>
     </div>
     <div class="def-strip">
       <span class="def-label">SAR · ${(JSON.stringify(sarObj).length / 1024).toFixed(1)} KB · POA&amp;M · ${(JSON.stringify(poamObj).length / 1024).toFixed(1)} KB${ksiObj ? ' · KSI · ' + (JSON.stringify(ksiObj).length / 1024).toFixed(1) + ' KB' : ''}</span>
@@ -6833,12 +6838,12 @@ async function runPackageValidator(sample) {
 
 // ── Canonical Evidence Record schema ──
 // Internal normalized representation that all connectors map INTO.
-// Aligns to NIST OSCAL 1.1.2 primitives (subject, observation, finding, risk, evidence)
+// Aligns to NIST OSCAL 1.0.4 primitives (subject, observation, finding, risk, evidence)
 // so the round-trip from connector → canonical → OSCAL output preserves structure.
 // Reference: automate.fedramp.gov SAR-to-OSCAL mapping
 const CANONICAL_EVIDENCE_SCHEMA = {
   description: 'SPARKAE internal normalized evidence record · OSCAL-aligned with namespaced extension support',
-  oscalAlignment: 'NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
+  oscalAlignment: 'NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
   extensionNamespace: 'https://sparkae.dev/ns/oscal',
   extensionPattern: 'OSCAL prop assembly with ns flag · per fedramp.gov · standards-conformant vendor extensions',
   fields: [
@@ -6910,7 +6915,7 @@ const CUSTOM_CONNECTOR_TEMPLATE = {
 // Per fedramp.gov SAR Quality Review · validation failures become QA findings, not silent drops
 const RUNTIME_VALIDATORS = [
   { id: 'V-001', sev: 'error', name: 'Required field present',     desc: 'All 11 required canonical fields populated', fedrampRef: 'fedramp.gov · OSCAL Schema · required fields' },
-  { id: 'V-002', sev: 'error', name: 'UUID v4 format',              desc: 'evidence_id and subject_uuid match RFC 4122 v4', fedrampRef: 'NIST OSCAL 1.1.2 · uuid datatype' },
+  { id: 'V-002', sev: 'error', name: 'UUID v4 format',              desc: 'evidence_id and subject_uuid match RFC 4122 v4', fedrampRef: 'NIST OSCAL 1.0.4 · uuid datatype' },
   { id: 'V-003', sev: 'error', name: 'ISO-8601 timestamp',          desc: 'collected_at parses as ISO-8601 with timezone', fedrampRef: 'NIST OSCAL · dateTime-with-timezone' },
   { id: 'V-004', sev: 'error', name: 'Control ID resolves',          desc: 'control_or_ksi resolves to a real NIST 800-53 Rev 5 control or KSI ID', fedrampRef: 'fedramp.gov · FedRAMP Moderate Baseline + KSI 25.11C' },
   { id: 'V-005', sev: 'error', name: 'evidence_kind enum valid',     desc: 'Value is one of SSP|POLICY|PROC|CONFIG|EVIDENCE|LOG|SCAN|TEST|INTERVIEW|CHANGE|CONMON|POAM|SAR', fedrampRef: 'fedramp.gov OSCAL Registry · accepted values' },
@@ -7656,7 +7661,7 @@ function openSchemaDetail(tier, connectorId) {
     + '  "payload": { /* preserved native payload */ }'
     + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.dev/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
     + '\n}</pre>'
-    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
+    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
     + '<a class="cta" onclick="window.close()">Close</a>'
     + '</body></html>';
@@ -7916,7 +7921,7 @@ async function runDataSources(sample) {
 // styled for letter-size printing.
 
 function renderExecOnePager(systems) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = displayDate();
   const ready = systems.filter(s => s.statusClass === 'sat').length;
   const minor = systems.filter(s => s.statusClass === 'nr').length;
   const material = systems.filter(s => s.statusClass === 'ots').length;
@@ -8500,68 +8505,19 @@ async function runPortfolio() {
   renderFindings(findings);
 }
 
+
 // ─────────────────────────────────────────────────────────────────────
-// AUTHORITATIVE REPORT GENERATORS
-// Real .xlsx output via SheetJS, shaped to FedRAMP Rev5 templates.
-// SAR + SRTM (Appendix B) + ConMon Monthly + POA&M (V-NNN format).
+// DOWNLOAD PLUMBING
+// Every export is built by demo-exports.js from the last live-engine run.
+// (This page once carried ~1,000 lines of .xlsx/.docx generators behind
+// buttons that could never work: the SheetJS and docx libraries they needed
+// were never loaded, on purpose, because loading them would have meant a
+// third-party script. The buttons toasted "library still loading" forever.
+// They are gone; what is here is what actually runs.)
 // ─────────────────────────────────────────────────────────────────────
 
-function _today() {
-  // Artifacts from a live-engine run are dated with the run's own assessment
-  // date, so exporting the same package twice gives the same bytes. The
-  // walkthrough documents carry no assessment date and use the wall clock.
-  if (activeUC === 'initial' && window.__lastRunWasReal && typeof ENGINE_LAST_RUN !== 'undefined' && ENGINE_LAST_RUN && ENGINE_LAST_RUN.assessmentDate) return ENGINE_LAST_RUN.assessmentDate;
-  const d = new Date();
-  const z = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
-}
 function _fileSafe(s) {
   return String(s || '').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-}
-function _cspName(s)     { return s && s.name ? s.name : 'Unknown CSP'; }
-function _cspShort(s)    { return _cspName(s).split(' ')[0] || 'CSP'; }
-function _baselineFor(id) {
-  if (id === 'cloudvault')  return 'FedRAMP Low';
-  if (id === 'meshgate')    return 'FedRAMP Moderate';
-  if (id === 'custom')      return (window.CUSTOM_BASELINE || 'FedRAMP Low');
-  return 'FedRAMP Moderate';
-}
-function _flattenCites(cites) {
-  if (!cites || !cites.length) return '';
-  return cites.map(c => {
-    const parts = [c.kind, c.title, c.version, c.date, c.section].filter(p => p && String(p).length);
-    return parts.join(' · ');
-  }).join(' || ');
-}
-function _ctrlFamily(ctrl) {
-  const m = String(ctrl || '').match(/^([A-Z]{2})/);
-  return m ? m[1] : '—';
-}
-// Family-level fallback names per NIST SP 800-53 Rev5. Specific control
-// names (e.g. "Account Management" for AC-2) aren't carried in sample data;
-// we report the family name to keep the SRTM canonical column populated.
-const _CTRL_FAMILY_NAMES = {
-  AC: 'Access Control',                            AT: 'Awareness and Training',
-  AU: 'Audit and Accountability',                  CA: 'Assessment, Authorization, and Monitoring',
-  CM: 'Configuration Management',                  CP: 'Contingency Planning',
-  IA: 'Identification and Authentication',         IR: 'Incident Response',
-  MA: 'Maintenance',                               MP: 'Media Protection',
-  PE: 'Physical and Environmental Protection',     PL: 'Planning',
-  PM: 'Program Management',                        PS: 'Personnel Security',
-  PT: 'Personally Identifiable Information Processing and Transparency',
-  RA: 'Risk Assessment',                           SA: 'System and Services Acquisition',
-  SC: 'System and Communications Protection',      SI: 'System and Information Integrity',
-  SR: 'Supply Chain Risk Management',
-};
-function _ctrlName(ctrl) {
-  const fam = _ctrlFamily(ctrl);
-  return _CTRL_FAMILY_NAMES[fam] || '';
-}
-function _methodLetter(m) {
-  if (m === 'EXAMINE')   return 'E';
-  if (m === 'INTERVIEW') return 'I';
-  if (m === 'TEST')      return 'T';
-  return m || '';
 }
 function _toast(msg, isErr) {
   const el = document.getElementById('dl-toast');
@@ -8572,595 +8528,6 @@ function _toast(msg, isErr) {
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2800);
 }
-function _xlsxReady() {
-  if (typeof XLSX === 'undefined') {
-    _toast('Report library still loading — try again in a moment.', true);
-    return false;
-  }
-  return true;
-}
-function _sourceFindings(sample) {
-  // Prefer findings already on screen; fall back to initial assessment findings for the SSP.
-  if (currentFindings && currentFindings.length) return currentFindings;
-  if (sample && sample.initial && sample.initial.findings) return sample.initial.findings;
-  return [];
-}
-function _autosize(ws, widths) {
-  ws['!cols'] = widths.map(w => ({ wch: w }));
-}
-
-// ── SAR · multi-sheet workbook ──────────────────────────────────────
-function downloadSAR() {
-  if (!_xlsxReady()) return;
-  const sample   = SAMPLES[selected];
-  const baseline = _baselineFor(selected);
-  const findings = _sourceFindings(sample);
-  const csp      = _cspName(sample);
-  const date     = _today();
-
-  const sat = findings.filter(f => f.verdict === 'SAT').length;
-  const ots = findings.filter(f => f.verdict === 'OTS').length;
-  const nr  = findings.filter(f => f.verdict === 'NR').length;
-  const pass = findings.filter(f => f.verdict === 'PASS').length;
-
-  const wb = XLSX.utils.book_new();
-
-  // ── Cover ─────────────────────────────────────────────────────────
-  const cover = [
-    ['Security Assessment Report (SAR)'],
-    ['Per FedRAMP SAR Template Rev5 · NIST SP 800-53A Rev5 methodology'],
-    [],
-    ['Cloud Service Provider', csp],
-    ['Authorization Baseline',  baseline],
-    ['Control Catalog',          'NIST SP 800-53 Rev5'],
-    ['Assessment Type',          USE_CASES[activeUC] ? (activeUC === 'initial' ? 'Initial Assessment' : activeUC === 'annual' ? 'Annual Reassessment' : activeUC === 'scr' ? 'Significant Change Request' : 'Assessment') : 'Assessment'],
-    ['Assessment Date',          date],
-    ['3PAO',                     'SPARKAE Reference 3PAO'],
-    ['Total Controls in Scope',  sample ? sample.controls : '—'],
-    ['Findings Reported',        findings.length],
-    [],
-    ['Authoritative reference',  'fedramp.gov/documents-templates · SAR Template Rev5'],
-    ['Generated by',             'SPARKAE · SPARK Assessment Engine'],
-  ];
-  const wsCover = XLSX.utils.aoa_to_sheet(cover);
-  _autosize(wsCover, [32, 60]);
-  XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
-
-  // ── §1 Scope · §2 Methodology (combined narrative sheet) ──────────
-  const scope = [
-    ['§1 · Scope'],
-    [],
-    ['Cloud Service Offering',   csp],
-    ['Authorization Baseline',    baseline],
-    ['Control Catalog',           'NIST SP 800-53 Rev5'],
-    ['Total Controls in Scope',   sample ? sample.controls : '—'],
-    ['Authorization Boundary',    _cspShort(sample) + ' production boundary per SSP §9'],
-    [],
-    ['§2 · Assessment Methodology'],
-    [],
-    ['Reference', 'NIST SP 800-53A Rev5 · Assessing Security and Privacy Controls'],
-    ['Reference', 'FedRAMP SAR Template Rev5 · per fedramp.gov/documents-templates'],
-    ['Reference', 'FedRAMP Penetration Test Guidance v3.0 (Jun 2022) · 6 mandatory attack vectors'],
-    ['Reference', 'FedRAMP ConMon Strategy Guide (Rev5)'],
-    [],
-    ['Test Methods Applied', 'Examine (E) · Interview (I) · Test (T) per 800-53A'],
-    ['Verdict Scheme',       'Satisfied (SAT) · Other Than Satisfied (OTS) · Not Reviewed (NR)'],
-    ['Sampling',             'CORE controls assessed in full; remaining controls per ⅓ rotation'],
-    ['Engine',               'SPARKAE · deterministic adjudication · adversarial verifier ON'],
-  ];
-  const wsScope = XLSX.utils.aoa_to_sheet(scope);
-  _autosize(wsScope, [32, 80]);
-  XLSX.utils.book_append_sheet(wb, wsScope, '1-2 Scope-Methodology');
-
-  // ── §3 Security Assessment Results · per-finding rollup ───────────
-  const sec3Header = ['Control', 'Family', 'Verdict', 'Risk', 'Method', 'Implementation Status', 'Finding Statement', 'Recommendation', 'Evidence Citations'];
-  const sec3Rows = findings.map(f => [
-    f.ctrl || '', _ctrlFamily(f.ctrl), f.verdict || '', f.risk || '', f.method || '',
-    f.implStatus || '', f.text || '', f.recommendation || '', _flattenCites(f.cites),
-  ]);
-  const wsSec3 = XLSX.utils.aoa_to_sheet([sec3Header].concat(sec3Rows));
-  _autosize(wsSec3, [12, 8, 10, 10, 12, 18, 60, 60, 60]);
-  XLSX.utils.book_append_sheet(wb, wsSec3, '3 Security Assessment Results');
-
-  // ── §4 Non-Conforming Controls · OTS only, per-control statements ─
-  const sec4Header = ['Control', 'Family', 'Risk', 'Method', 'Determination Statement Not Met', 'Recommendation'];
-  const sec4Rows = findings.filter(f => f.verdict === 'OTS').map(f => [
-    f.ctrl || '', _ctrlFamily(f.ctrl), f.risk || '', f.method || '', f.text || '', f.recommendation || '',
-  ]);
-  const wsSec4 = XLSX.utils.aoa_to_sheet([sec4Header].concat(sec4Rows));
-  _autosize(wsSec4, [12, 8, 10, 10, 70, 60]);
-  XLSX.utils.book_append_sheet(wb, wsSec4, '4 Non-Conforming Controls');
-
-  // ── §5 Risks Corrected During Testing ─────────────────────────────
-  const sec5Header = ['Control', 'Original Verdict', 'Corrective Action', 'Final Verdict', 'Date Corrected'];
-  const sec5Rows = findings.filter(f => f.status === 'CLOSED' || f.correctedDuringTest).map(f => [
-    f.ctrl || '', 'OTS', f.recommendation || 'Remediated during assessment', 'SAT', date,
-  ]);
-  const wsSec5 = XLSX.utils.aoa_to_sheet([sec5Header].concat(sec5Rows));
-  _autosize(wsSec5, [12, 16, 60, 14, 14]);
-  XLSX.utils.book_append_sheet(wb, wsSec5, '5 Risks Corrected');
-
-  // ── §6 Risks Remaining (Risk Exposure Table · RET) ────────────────
-  const retHeader = ['Weakness ID', 'Control', 'Weakness / Finding', 'Likelihood', 'Impact', 'Risk Exposure', 'Source of Discovery', 'Affected Asset', 'Mitigating Factors', 'Recommendation'];
-  const otsList = findings.filter(f => f.verdict === 'OTS');
-  const retRows = otsList.map((f, i) => {
-    const risk = f.risk || 'Moderate';
-    const likelihood = risk === 'High' ? 'High' : risk === 'Low' ? 'Low' : 'Moderate';
-    const impact     = risk === 'High' ? 'High' : risk === 'Low' ? 'Low' : 'Moderate';
-    return [
-      'V-' + String(i + 1).padStart(3, '0'),
-      f.ctrl || '',
-      f.text || '',
-      likelihood, impact, risk,
-      (f.cites && f.cites[0] && f.cites[0].kind) || 'Assessment',
-      _cspShort(sample) + ' boundary',
-      f.implStatus === 'partial' ? 'Partial implementation reduces but does not eliminate exposure.' : 'None identified.',
-      f.recommendation || '',
-    ];
-  });
-  const wsRet = XLSX.utils.aoa_to_sheet([retHeader].concat(retRows));
-  _autosize(wsRet, [12, 12, 60, 12, 10, 14, 22, 22, 38, 60]);
-  XLSX.utils.book_append_sheet(wb, wsRet, '6 Risks Remaining (RET)');
-
-  // ── §7 Identified Risks (Annual Assessment carry-forward) ─────────
-  const sec7Header = ['Weakness ID', 'Control', 'Source Cycle', 'Original Risk', 'Current Status', 'Notes'];
-  const sec7Rows = findings.filter(f => f.carryForward || f.verdict === 'PASS').map((f, i) => [
-    'V-CF-' + String(i + 1).padStart(3, '0'),
-    f.ctrl || '',
-    f.priorCycle || 'Prior assessment cycle',
-    f.risk || 'Moderate',
-    f.verdict === 'PASS' ? 'Closed (re-tested)' : 'Open · carried forward',
-    f.recommendation || '',
-  ]);
-  const wsSec7 = XLSX.utils.aoa_to_sheet([sec7Header].concat(sec7Rows));
-  _autosize(wsSec7, [14, 12, 20, 14, 22, 50]);
-  XLSX.utils.book_append_sheet(wb, wsSec7, '7 Identified Risks');
-
-  // ── §8 Auxiliary Documents · evidence catalog ─────────────────────
-  const sec8Header = ['Document Type', 'Title', 'Reference', 'Date', 'Linked Control'];
-  const seenCites = {};
-  const sec8Rows = [];
-  findings.forEach(f => {
-    (f.cites || []).forEach(c => {
-      const key = (c.kind || '') + '|' + (c.title || '');
-      if (seenCites[key]) return;
-      seenCites[key] = true;
-      sec8Rows.push([c.kind || '', c.title || '', c.ref || '', c.date || '', f.ctrl || '']);
-    });
-  });
-  const wsSec8 = XLSX.utils.aoa_to_sheet([sec8Header].concat(sec8Rows));
-  _autosize(wsSec8, [14, 50, 30, 14, 14]);
-  XLSX.utils.book_append_sheet(wb, wsSec8, '8 Auxiliary Documents');
-
-  // ── §9 Summary · counts, distribution, AO recommendation ──────────
-  const summary = [
-    ['§9 · Executive Summary'],
-    [],
-    ['Verdict', 'Count', 'Percent of reported'],
-    ['Satisfied (SAT)',         sat,  findings.length ? (sat  / findings.length * 100).toFixed(1) + '%' : '—'],
-    ['Other Than Satisfied',    ots,  findings.length ? (ots  / findings.length * 100).toFixed(1) + '%' : '—'],
-    ['Not Reviewed (NR)',       nr,   findings.length ? (nr   / findings.length * 100).toFixed(1) + '%' : '—'],
-    ['Passed (annual carry)',   pass, findings.length ? (pass / findings.length * 100).toFixed(1) + '%' : '—'],
-    [],
-    ['Risk Distribution (OTS findings)'],
-    ['High',      findings.filter(f => f.verdict === 'OTS' && f.risk === 'High').length],
-    ['Moderate',  findings.filter(f => f.verdict === 'OTS' && f.risk === 'Moderate').length],
-    ['Low',       findings.filter(f => f.verdict === 'OTS' && f.risk === 'Low').length],
-    [],
-    ['Method Distribution'],
-    ['Examine',   findings.filter(f => f.method === 'EXAMINE').length],
-    ['Interview', findings.filter(f => f.method === 'INTERVIEW').length],
-    ['Test',      findings.filter(f => f.method === 'TEST').length],
-  ];
-  const wsSummary = XLSX.utils.aoa_to_sheet(summary);
-  _autosize(wsSummary, [36, 12, 22]);
-  XLSX.utils.book_append_sheet(wb, wsSummary, '9 Summary');
-
-  XLSX.writeFile(wb, _fileSafe(_cspShort(sample)) + '_SAR_' + date + '.xlsx');
-  _toast('SAR exported · §1-§9 + Cover · ' + findings.length + ' findings');
-}
-
-// ── SRTM · FedRAMP Test Case Workbook (TCW) ────────────────────────
-// Authoritative source: GSA/fedramp-automation Rev5 baselines (OSCAL).
-// Per fedramp.gov Rev5 SAR Playbook the SRTM is also known as the "Test
-// Case Workbook" and contains a "Control Summary" tab. Per OSCAL Rev5,
-// each objective has assessment-objective + assessment-method parts;
-// implementation-status accepted values are the fixed SSP enum:
-// implemented · partial · planned · alternative · not-applicable.
-function downloadSRTM() {
-  if (!_xlsxReady()) return;
-  const sample   = SAMPLES[selected];
-  const baseline = _baselineFor(selected);
-  const findings = _sourceFindings(sample);
-  const date     = _today();
-
-  const wb = XLSX.utils.book_new();
-
-  // ── Cover ─────────────────────────────────────────────────────────
-  const cover = [
-    ['Security Requirements Traceability Matrix (SRTM)'],
-    ['Also known as the FedRAMP Test Case Workbook (TCW) · Rev5'],
-    [],
-    ['Cloud Service Provider',  _cspName(sample)],
-    ['Baseline',                 baseline],
-    ['Control Catalog',          'NIST SP 800-53 Rev5'],
-    ['Assessment Objectives',    'Per NIST SP 800-53A Rev5 + FedRAMP Rev5 baseline (OSCAL)'],
-    ['Assessment Date',          date],
-    ['Total Objectives Tested',  findings.length],
-    [],
-    ['Authoritative Templates'],
-    ['  Rev5 OSCAL baselines',   'github.com/GSA/fedramp-automation · /dist/content/rev5/baselines'],
-    ['  TCW · Excel template',   'fedramp.gov/documents-templates · Test Case Workbook (Rev5)'],
-    ['  SAR mapping',            'automate.fedramp.gov/documentation/sar — TCW row → finding assembly'],
-    [],
-    ['Test Methods (per NIST SP 800-53A Rev5)'],
-    ['  E', 'EXAMINE — review of specifications, mechanisms, activities, or artifacts'],
-    ['  I', 'INTERVIEW — directed discussion with individuals or groups'],
-    ['  T', 'TEST — exercising assessment objects under specified conditions'],
-    [],
-    ['Result Codes'],
-    ['  SAT', 'Satisfied — determination statement met'],
-    ['  OTS', 'Other Than Satisfied — determination statement not met (becomes RET / POA&M entry)'],
-    ['  NR',  'Not Reviewed'],
-    ['  NA',  'Not Applicable (with rationale)'],
-    [],
-    ['Implementation Status (SSP-accepted enum)'],
-    ['  ', 'implemented · partial · planned · alternative · not-applicable'],
-  ];
-  const wsCover = XLSX.utils.aoa_to_sheet(cover);
-  _autosize(wsCover, [32, 92]);
-  XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
-
-  // ── Control Summary ───────────────────────────────────────────────
-  // Per FedRAMP Rev5 SAR Playbook: the TCW carries a Control Summary tab
-  // that rolls up objective-level results to the parent control.
-  // Aggregate findings by control ID.
-  const summaryMap = {};
-  findings.forEach(f => {
-    const ctrl = (f.ctrl || '').split('.')[0]; // strip determination suffix (e.g. AU-2.a → AU-2)
-    if (!summaryMap[ctrl]) {
-      summaryMap[ctrl] = { ctrl, fam: _ctrlFamily(ctrl), name: _ctrlName(ctrl) || _ctrlFamily(ctrl), objs: [], status: '' };
-    }
-    summaryMap[ctrl].objs.push(f);
-  });
-  const summaryRows = Object.values(summaryMap).map(g => {
-    const total = g.objs.length;
-    const sat   = g.objs.filter(o => o.verdict === 'SAT').length;
-    const ots   = g.objs.filter(o => o.verdict === 'OTS').length;
-    const na    = g.objs.filter(o => o.verdict === 'NA').length;
-    const nr    = g.objs.filter(o => o.verdict === 'NR').length;
-    let rollup = 'SAT';
-    if (ots > 0) rollup = 'OTS';
-    else if (nr > 0) rollup = 'NR';
-    else if (na === total) rollup = 'NA';
-    const impl = g.objs[0] && g.objs[0].implStatus || '';
-    return [g.ctrl, g.fam, g.name, total, sat, ots, na, nr, rollup, impl];
-  });
-  const summaryHeader = [
-    'Control', 'Family', 'Control Name',
-    'Objectives', 'SAT', 'OTS', 'NA', 'NR',
-    'Control Result (rollup)', 'Implementation Status',
-  ];
-  const wsSummary = XLSX.utils.aoa_to_sheet([summaryHeader].concat(summaryRows));
-  _autosize(wsSummary, [10, 8, 28, 11, 6, 6, 6, 6, 22, 22]);
-  XLSX.utils.book_append_sheet(wb, wsSummary, 'Control Summary');
-
-  // ── Test Cases (one row per assessment objective) ─────────────────
-  // Canonical TCW columns + OSCAL-aligned identifiers (objective-id,
-  // assessment-method) so this workbook can round-trip into an OSCAL
-  // SAR finding assembly (one finding per row).
-  const header = [
-    // Canonical TCW columns
-    'Control ID', 'Control Objective ID', 'Control Name',
-    'Determination Statement (NIST SP 800-53A)',
-    'Assessment Method', 'Sample Size', 'Result',
-    'Originating Requirement', 'Comments / Observation',
-    // OSCAL alignment (per automate.fedramp.gov mapping)
-    'OSCAL objective-id', 'Assessment Method (OSCAL)',
-    'Implementation Status', 'Risk',
-    'Evidence Citation (OSCAL observation)',
-    'Date Tested',
-  ];
-  const rows = findings.map(f => {
-    const ctrlId  = (f.ctrl || '').split('.')[0];
-    const objId   = f.ctrl || ctrlId;        // e.g. "AU-2.a"
-    const oscalId = (objId || '').toLowerCase().replace(/\./g, '_smt.') + '_obj';
-    return [
-      // Canonical TCW
-      ctrlId,
-      objId,
-      _ctrlName(ctrlId) || _ctrlFamily(ctrlId),
-      f.text || '',
-      _methodLetter(f.method),
-      1,
-      f.verdict || '',
-      'NIST SP 800-53 Rev5 · ' + ctrlId,
-      f.recommendation || '',
-      // OSCAL alignment
-      oscalId,
-      f.method || '',                         // EXAMINE | INTERVIEW | TEST
-      f.implStatus || '',                     // implemented | partial | planned | alternative | not-applicable
-      f.risk || '',
-      _flattenCites(f.cites),
-      date,
-    ];
-  });
-  const ws = XLSX.utils.aoa_to_sheet([header].concat(rows));
-  _autosize(ws, [10, 14, 24, 60, 14, 8, 8, 26, 50, 22, 16, 18, 10, 60, 12]);
-  XLSX.utils.book_append_sheet(wb, ws, 'Test Cases');
-
-  // ── References ────────────────────────────────────────────────────
-  const refs = [
-    ['Authoritative Sources for this TCW'],
-    [],
-    ['#', 'Source', 'Location / Reference'],
-    [1,  'FedRAMP Rev5 OSCAL Baselines',
-         'github.com/GSA/fedramp-automation · /dist/content/rev5/baselines/{low,moderate,high}'],
-    [2,  'FedRAMP Rev5 Resolved Profile Catalog (response-points)',
-         'github.com/GSA/fedramp-automation · /dist/content/rev5/baselines/resolved-profile-catalog'],
-    [3,  'FedRAMP SAR · Rev5 Playbook (TCW ↔ SRTM, Control Summary)',
-         'fedramp.gov/docs/rev5/playbook/csp/authorization/sar/'],
-    [4,  'OSCAL SAR mapping (TCW row → finding assembly)',
-         'automate.fedramp.gov/documentation/sar/4-sar-template-to-oscal-mapping/'],
-    [5,  'NIST SP 800-53A Rev5 (assessment objectives + methods)',
-         'csrc.nist.gov/publications/detail/sp/800-53a/rev-5/final'],
-    [6,  'NIST SP 800-53 Rev5 (control catalog)',
-         'csrc.nist.gov/publications/detail/sp/800-53/rev-5/final'],
-    [7,  'FedRAMP TCW · Excel template (Rev5)',
-         'fedramp.gov/documents-templates · "Test Case Workbook"'],
-    [],
-    ['Round-trip note'],
-    ['', 'Each row in the Test Cases tab corresponds to exactly one finding assembly in an OSCAL SAR. ' +
-         'OTS rows must appear in the SAR Risk Exposure Table (RET) and, if not corrected during testing, in the POA&M.'],
-  ];
-  const wsRefs = XLSX.utils.aoa_to_sheet(refs);
-  _autosize(wsRefs, [4, 56, 80]);
-  XLSX.utils.book_append_sheet(wb, wsRefs, 'References');
-
-  XLSX.writeFile(wb, _fileSafe(_cspShort(sample)) + '_TCW_SRTM_' + date + '.xlsx');
-  _toast('TCW (SRTM) exported · ' + Object.keys(summaryMap).length + ' controls · ' + findings.length + ' objectives');
-}
-
-// ── ConMon Monthly Report · per FedRAMP ConMon Strategy Guide ───────
-function downloadConMon() {
-  if (!_xlsxReady()) return;
-  const sample = SAMPLES[selected];
-  const cm     = sample && sample.conmon;
-  if (!cm) {
-    _toast('ConMon data not available for this SSP.', true);
-    return;
-  }
-  const date = _today();
-
-  const wb = XLSX.utils.book_new();
-
-  // Cover
-  const cover = [
-    ['Continuous Monitoring (ConMon) Monthly Report'],
-    ['Per FedRAMP ConMon Strategy Guide (Rev5) · NIST SP 800-137'],
-    [],
-    ['Cloud Service Provider', _cspName(sample)],
-    ['Reporting Period',        cm.period || '—'],
-    ['Baseline',                _baselineFor(selected)],
-    ['Generated',               date],
-  ];
-  const wsCover = XLSX.utils.aoa_to_sheet(cover);
-  _autosize(wsCover, [30, 60]);
-  XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
-
-  // Executive Summary
-  const sev = cm.severities || {};
-  const totalOpen = (sev.critical && sev.critical.total || 0) + (sev.high && sev.high.total || 0) + (sev.moderate && sev.moderate.total || 0) + (sev.low && sev.low.total || 0);
-  const totalAging = (sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0) + (sev.moderate && sev.moderate.aging || 0) + (sev.low && sev.low.aging || 0);
-  const summary = [
-    ['Executive Summary'],
-    [],
-    ['Asset count (in-boundary)', cm.assets || 0],
-    ['Authenticated scan coverage', cm.assets ? Math.round((cm.authenticated || 0) / cm.assets * 100) + '%' : '—'],
-    ['Total findings (open)',     totalOpen],
-    ['Aging vulnerabilities',     totalAging],
-    ['VDR submissions',           cm.vdr || 0],
-    ['KEV-listed exposures',      cm.kev || 0],
-    ['DFR risk',                  cm.dfrRisk ? 'YES — review required' : 'No'],
-  ];
-  const wsSum = XLSX.utils.aoa_to_sheet(summary);
-  _autosize(wsSum, [36, 22]);
-  XLSX.utils.book_append_sheet(wb, wsSum, 'Executive Summary');
-
-  // Inventory · per CM-8 Integrated Inventory Workbook reconciliation
-  const invHdr = ['Asset Class', 'In-Boundary Count', 'Authenticated Scanned', 'Source'];
-  const invRows = [
-    ['All in-boundary assets', cm.assets || 0, cm.authenticated || 0, 'CM-8 IIW reconciliation'],
-  ];
-  if (cm.scanTypes) {
-    const labels = { os: 'Operating System hosts', webapp: 'Web applications', database: 'Database instances', container: 'Container images / runtimes' };
-    Object.keys(cm.scanTypes).forEach(k => {
-      const t = cm.scanTypes[k];
-      const auth = Math.round(((t.authPercent || 0) / 100) * (t.count || 0));
-      invRows.push([labels[k] || k, t.count || 0, auth, t.scanner || '']);
-    });
-  }
-  const wsInv = XLSX.utils.aoa_to_sheet([invHdr].concat(invRows));
-  _autosize(wsInv, [32, 18, 22, 30]);
-  XLSX.utils.book_append_sheet(wb, wsInv, 'Inventory');
-
-  // Vulnerability Summary · severity x SLA · per RA-5(d)
-  const vsHdr = ['Severity', 'Open Findings', 'Aging (past SLA)', 'SLA Window (days)'];
-  const vsRows = ['critical', 'high', 'moderate', 'low'].map(s => [
-    SEVERITY_LABELS[s], (sev[s] && sev[s].total) || 0, (sev[s] && sev[s].aging) || 0, (sev[s] && sev[s].sla) || '—',
-  ]);
-  const wsVs = XLSX.utils.aoa_to_sheet([vsHdr].concat(vsRows));
-  _autosize(wsVs, [12, 16, 18, 18]);
-  XLSX.utils.book_append_sheet(wb, wsVs, 'Vulnerability Summary');
-
-  // Scanner Coverage · per ConMon Strategy Guide §3
-  const scHdr = ['#', 'Coverage Check', 'Status', 'Evidence'];
-  const scRows = [
-    [1,  'Monthly cadence met (OS · Web · DB · Container)', 'PASS', 'Scan timestamps within reporting period'],
-    [2,  'Authenticated scanning ≥ 90%',                    cm.assets && (cm.authenticated / cm.assets) >= 0.9 ? 'PASS' : 'FAIL', cm.authenticated + '/' + cm.assets + ' authenticated'],
-    [3,  'Inventory reconciliation (CM-8)',                  'PASS', 'Inventory Workbook synchronized with scan targets'],
-    [4,  'OS scanning coverage',                             'PASS', (cm.scanTypes && cm.scanTypes.os ? cm.scanTypes.os.scanner : 'configured')],
-    [5,  'Web application scanning',                         'PASS', (cm.scanTypes && cm.scanTypes.webapp ? cm.scanTypes.webapp.scanner : 'configured')],
-    [6,  'Database scanning',                                'PASS', (cm.scanTypes && cm.scanTypes.database ? cm.scanTypes.database.scanner : 'configured')],
-    [7,  'Container image / runtime scanning',               'PASS', (cm.scanTypes && cm.scanTypes.container ? cm.scanTypes.container.scanner : 'configured')],
-    [8,  'Critical/High SLA (30 days)',                      (sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0) === 0 ? 'PASS' : 'FAIL', ((sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0)) + ' aging'],
-    [9,  'Moderate SLA (90 days)',                           (sev.moderate && sev.moderate.aging || 0) <= 12 ? 'PASS' : 'FAIL', (sev.moderate && sev.moderate.aging || 0) + ' aging'],
-    [10, 'Deviation Request submission cadence',             cm.vdr > 0 ? 'PASS' : 'INFO', (cm.vdr || 0) + ' VDRs in period'],
-  ];
-  const wsSc = XLSX.utils.aoa_to_sheet([scHdr].concat(scRows));
-  _autosize(wsSc, [4, 50, 8, 60]);
-  XLSX.utils.book_append_sheet(wb, wsSc, 'Scanner Coverage');
-
-  // POA&M Status · open/closed/ongoing this cycle
-  const pdHdr = ['Movement', 'Count'];
-  const pdRows = [
-    ['New POA&M items added',  cm.poamDelta && cm.poamDelta.added   || 0],
-    ['POA&M items closed',     cm.poamDelta && cm.poamDelta.closed  || 0],
-    ['Open / ongoing items',   cm.poamDelta && cm.poamDelta.ongoing || 0],
-  ];
-  const wsPd = XLSX.utils.aoa_to_sheet([pdHdr].concat(pdRows));
-  _autosize(wsPd, [28, 12]);
-  XLSX.utils.book_append_sheet(wb, wsPd, 'POAM Status');
-
-  // Significant Changes · per CM-3 / SCR cadence (placeholder — populated when SCR data is available)
-  const scrHdr = ['Change ID', 'Title', 'Status', 'CM-3 Approval', 'Date'];
-  const scrRows = (cm.scrs || []).map((s, i) => [
-    s.id || ('SCR-' + String(i + 1).padStart(3, '0')),
-    s.title || '',
-    s.status || 'Open',
-    s.cm3 || 'Pending',
-    s.date || '',
-  ]);
-  if (!scrRows.length) scrRows.push(['—', 'No significant changes this period', '—', '—', '—']);
-  const wsScr = XLSX.utils.aoa_to_sheet([scrHdr].concat(scrRows));
-  _autosize(wsScr, [16, 50, 14, 18, 12]);
-  XLSX.utils.book_append_sheet(wb, wsScr, 'Significant Changes');
-
-  // Findings Detail · per-finding rollup
-  const fHdr = ['Control', 'Verdict', 'Risk', 'Method', 'Finding', 'Recommendation', 'Evidence'];
-  const fRows = (cm.findings || []).map(f => [
-    f.ctrl || '', f.verdict || '', f.risk || '', f.method || '',
-    f.text || '', f.recommendation || '', _flattenCites(f.cites),
-  ]);
-  const wsF = XLSX.utils.aoa_to_sheet([fHdr].concat(fRows));
-  _autosize(wsF, [12, 10, 10, 12, 60, 60, 60]);
-  XLSX.utils.book_append_sheet(wb, wsF, 'Findings');
-
-  XLSX.writeFile(wb, _fileSafe(_cspShort(sample)) + '_ConMon_' + (cm.period ? _fileSafe(cm.period) : date) + '.xlsx');
-  _toast('ConMon report exported · 8 sheets · ' + totalOpen + ' open findings');
-}
-
-// ── POA&M · FedRAMP POA&M Template (V-NNN) ──────────────────────────
-function downloadPOAM() {
-  if (!_xlsxReady()) return;
-  const sample   = SAMPLES[selected];
-  const findings = _sourceFindings(sample);
-  const date     = _today();
-
-  const wb = XLSX.utils.book_new();
-
-  // Cover
-  const cover = [
-    ['Plan of Action and Milestones (POA&M)'],
-    ['Per FedRAMP POA&M Template Completion Guide · V-NNN identifier convention'],
-    [],
-    ['Cloud Service Provider', _cspName(sample)],
-    ['Baseline',                _baselineFor(selected)],
-    ['Status Date',             date],
-    ['Reference',               'fedramp.gov/assets/resources/documents/CSP_POAM_Template_Completion_Guide.pdf'],
-  ];
-  const wsCover = XLSX.utils.aoa_to_sheet(cover);
-  _autosize(wsCover, [28, 90]);
-  XLSX.utils.book_append_sheet(wb, wsCover, 'Cover');
-
-  // FedRAMP POA&M Template canonical columns (Rev5) — per CSP_POAM_Template_Completion_Guide.pdf
-  const header = [
-    'POA&M Item ID', 'Controls', 'Weakness Name', 'Weakness Description',
-    'Weakness Detector Source', 'Weakness Source Identifier', 'Asset Identifier',
-    'Point of Contact', 'Resources Required', 'Overall Remediation Plan',
-    'Original Detection Date', 'Scheduled Completion Date', 'Planned Milestones',
-    'Milestone Changes', 'Status Date', 'Vendor Dependency', 'Last Vendor Check-in Date',
-    'Vendor Dependent Product Name', 'Original Risk Rating', 'Adjusted Risk Rating',
-    'Risk Adjustment', 'False Positive', 'Operational Requirement', 'Deviation Rationale',
-    'Supporting Documents', 'Comments', 'Auto-Approve',
-    'Binding Operational Directive 22-01 tracking', 'Binding Operational Directive 22-01 Due Date',
-    'CVE',
-  ];
-  const slaDays = (risk) => risk === 'High' ? 30 : risk === 'Low' ? 180 : 90;
-  const addDays = (iso, n) => {
-    const d = iso ? new Date(iso) : new Date();
-    d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
-  };
-
-  const otsList = findings.filter(f => f.verdict === 'OTS' || f.verdict === 'NR');
-  const openRows  = [];
-  const closedRows = [];
-  otsList.forEach((f, i) => {
-    const id = 'V-' + String(i + 1).padStart(3, '0');
-    const detected = (f.cites && f.cites[0] && f.cites[0].date) || date;
-    const sla = slaDays(f.risk);
-    const closed = f.status === 'CLOSED';
-    const cveMatch = (f.text || '').match(/CVE-\d{4}-\d{4,7}/i);
-    const cve = (f.cve || (cveMatch && cveMatch[0]) || '');
-    const isKEV = !!(f.kev || (cve && /CVE-2024-21887|CVE-2023-/i.test(cve)));
-    const row = [
-      id,                                                                 // POA&M Item ID
-      f.ctrl || '',                                                       // Controls
-      (f.ctrl || '') + ' weakness',                                       // Weakness Name
-      f.text || '',                                                       // Weakness Description
-      (f.method === 'TEST' ? 'Penetration / functional test'              // Weakness Detector Source
-        : f.method === 'INTERVIEW' ? 'Stakeholder interview'
-        : '3PAO assessment'),
-      (f.cites && f.cites[0] && f.cites[0].title) || 'Assessment evidence', // Weakness Source Identifier
-      _cspShort(sample) + '-' + _ctrlFamily(f.ctrl).toLowerCase(),         // Asset Identifier
-      'CSP Security Lead',                                                // Point of Contact
-      'Engineering · Security Operations · Compliance',                   // Resources Required
-      f.recommendation || '',                                             // Overall Remediation Plan
-      detected,                                                           // Original Detection Date
-      addDays(detected, sla),                                             // Scheduled Completion Date
-      'M1: scope ' + sla + 'd · M2: implement · M3: re-test',             // Planned Milestones
-      'None',                                                             // Milestone Changes
-      date,                                                               // Status Date
-      'No', '', '',                                                       // Vendor Dep · Last Vendor Check-in · Vendor Dep Product
-      f.risk || 'Moderate',                                               // Original Risk Rating
-      f.risk || 'Moderate',                                               // Adjusted Risk Rating
-      'No', 'No', 'No', '',                                               // Risk Adj · False Pos · Op Req · Deviation Rationale
-      '',                                                                 // Supporting Documents
-      'Generated by SPARKAE assessment engine',                           // Comments
-      'No',                                                               // Auto-Approve
-      isKEV ? 'Yes' : 'No',                                               // BOD 22-01 tracking
-      isKEV ? addDays(detected, 14) : '',                                 // BOD 22-01 Due Date
-      cve,                                                                // CVE
-    ];
-    if (closed) closedRows.push(row); else openRows.push(row);
-  });
-
-  const wsOpen = XLSX.utils.aoa_to_sheet([header].concat(openRows));
-  _autosize(wsOpen, header.map(() => 18));
-  XLSX.utils.book_append_sheet(wb, wsOpen, 'Open POA&M Items');
-
-  const wsClosed = XLSX.utils.aoa_to_sheet([header].concat(closedRows));
-  _autosize(wsClosed, header.map(() => 18));
-  XLSX.utils.book_append_sheet(wb, wsClosed, 'Closed POA&M Items');
-
-  XLSX.writeFile(wb, _fileSafe(_cspShort(sample)) + '_POAM_' + date + '.xlsx');
-  _toast('POA&M exported · ' + openRows.length + ' open · ' + closedRows.length + ' closed');
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// .DOCX GENERATORS · SAR + ConMon via the docx library (UMD global)
-// Real Word documents — proper headings, tables, FedRAMP template shape.
-// ─────────────────────────────────────────────────────────────────────
-
-function _docxReady() {
-  if (typeof docx === 'undefined') {
-    _toast('Word library still loading — try again in a moment.', true);
-    return false;
-  }
-  return true;
-}
-
 function _saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -9170,368 +8537,43 @@ function _saveBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// Helpers shared by both .docx generators.
-function _docxTitle(text, level) {
-  const { Paragraph, TextRun, HeadingLevel } = docx;
-  const map = { 1: HeadingLevel.HEADING_1, 2: HeadingLevel.HEADING_2, 3: HeadingLevel.HEADING_3 };
-  return new Paragraph({
-    heading: map[level] || HeadingLevel.HEADING_2,
-    spacing: { before: 240, after: 120 },
-    children: [new TextRun({ text: text, bold: true })],
-  });
-}
-function _docxPara(text, opts) {
-  const { Paragraph, TextRun } = docx;
-  opts = opts || {};
-  return new Paragraph({
-    spacing: { after: opts.after || 120 },
-    children: [new TextRun({ text: String(text || ''), italics: !!opts.italic, color: opts.color, size: opts.size })],
-  });
-}
-function _docxLabelValue(label, value) {
-  const { Paragraph, TextRun } = docx;
-  return new Paragraph({
-    spacing: { after: 80 },
-    children: [
-      new TextRun({ text: String(label) + ':  ', bold: true }),
-      new TextRun({ text: String(value == null ? '—' : value) }),
-    ],
-  });
-}
-function _docxTable(headers, rows, colWidthsPct) {
-  const { Table, TableRow, TableCell, Paragraph, TextRun, WidthType, BorderStyle, AlignmentType } = docx;
-  const border = { style: BorderStyle.SINGLE, size: 4, color: 'BFBFBF' };
-  const cellBorders = { top: border, bottom: border, left: border, right: border };
-
-  const headerRow = new TableRow({
-    tableHeader: true,
-    children: headers.map((h, i) => new TableCell({
-      width: colWidthsPct ? { size: colWidthsPct[i], type: WidthType.PERCENTAGE } : undefined,
-      shading: { fill: 'EFE9DD' },
-      borders: cellBorders,
-      children: [new Paragraph({
-        children: [new TextRun({ text: String(h), bold: true, size: 18 })],
-        alignment: AlignmentType.LEFT,
-      })],
-    })),
-  });
-  const bodyRows = rows.map(r => new TableRow({
-    children: r.map((cell, i) => new TableCell({
-      width: colWidthsPct ? { size: colWidthsPct[i], type: WidthType.PERCENTAGE } : undefined,
-      borders: cellBorders,
-      children: [new Paragraph({
-        children: [new TextRun({ text: String(cell == null ? '' : cell), size: 18 })],
-      })],
-    })),
-  }));
-  return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [headerRow].concat(bodyRows),
-  });
+// The export state for the last live run: the engine's own records, the
+// declared assessment date, and the receipt whose digest seeds every UUID.
+function liveExportState() {
+  const run = ENGINE_LAST_RUN;
+  if (!run) return null;
+  return {
+    findings: run.raw,
+    baseline: run.baseline,
+    assessment_date: run.assessmentDate,
+    receipt: run.receipt,
+  };
 }
 
-// ── SAR · .docx ─────────────────────────────────────────────────────
-async function downloadSARdocx() {
-  if (!_docxReady()) return;
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } = docx;
-  const sample   = SAMPLES[selected];
-  const baseline = _baselineFor(selected);
-  const findings = _sourceFindings(sample);
-  const csp      = _cspName(sample);
-  const date     = _today();
+const LIVE_EXPORTS = {
+  ar:       { build: st => JSON.stringify(DEMO_EXPORTS.buildAssessmentResults(st, { systemName: st.receipt.system_name }), null, 2), ext: 'oscal-ar.json', mime: 'application/json' },
+  findings: { build: st => DEMO_EXPORTS.buildFindingsCSV(st), ext: 'findings.csv', mime: 'text/csv' },
+  ret:      { build: st => DEMO_EXPORTS.buildRET(st), ext: 'ret.csv', mime: 'text/csv' },
+  poam:     { build: st => DEMO_EXPORTS.buildPOAM(st), ext: 'poam.csv', mime: 'text/csv' },
+  tcw:      { build: st => DEMO_EXPORTS.buildTCW(st), ext: 'tcw.csv', mime: 'text/csv' },
+  summary:  { build: st => DEMO_EXPORTS.buildSummary(st, { grade: SparkAEEngine.grade }), ext: 'summary.txt', mime: 'text/plain' },
+  receipt:  { build: st => JSON.stringify(st.receipt, null, 2), ext: 'receipt.json', mime: 'application/json' },
+};
 
-  const sat = findings.filter(f => f.verdict === 'SAT').length;
-  const ots = findings.filter(f => f.verdict === 'OTS').length;
-  const nr  = findings.filter(f => f.verdict === 'NR').length;
-  const otsList = findings.filter(f => f.verdict === 'OTS');
-
-  const ucLabel = activeUC === 'initial' ? 'Initial Assessment'
-                : activeUC === 'annual'  ? 'Annual Reassessment'
-                : activeUC === 'scr'     ? 'Significant Change Request'
-                : 'Assessment';
-
-  // Cover
-  const cover = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 1200, after: 240 },
-      children: [new TextRun({ text: 'Security Assessment Report', bold: true, size: 56 })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
-      children: [new TextRun({ text: csp, size: 36 })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 1200 },
-      children: [new TextRun({ text: baseline + ' · ' + ucLabel, italics: true, color: '888888' })],
-    }),
-    _docxLabelValue('Cloud Service Provider', csp),
-    _docxLabelValue('Authorization Baseline', baseline),
-    _docxLabelValue('Control Catalog', 'NIST SP 800-53 Rev5'),
-    _docxLabelValue('Assessment Methodology', 'NIST SP 800-53A Rev5'),
-    _docxLabelValue('Assessment Type', ucLabel),
-    _docxLabelValue('Assessment Date', date),
-    _docxLabelValue('3PAO', 'SPARKAE Reference 3PAO'),
-    _docxLabelValue('Total Controls in Scope', sample ? sample.controls : '—'),
-    _docxLabelValue('Findings Reported', findings.length),
-    _docxPara(' '),
-    _docxPara('Authoritative reference: fedramp.gov/documents-templates · SAR Template Rev5', { italic: true, color: '888888' }),
-    _docxPara('Generated by SPARKAE · SPARK Assessment Engine', { italic: true, color: '888888' }),
-  ];
-
-  // §9 Executive Summary (canonical SAR §9 — surfaced first per FedRAMP convention)
-  const execSummary = [
-    _docxTitle('§9 · Executive Summary', 1),
-    _docxPara('This Security Assessment Report (SAR) documents the independent third-party assessment of ' + csp + ' against the ' + baseline + ' control baseline. The assessment was conducted per the NIST SP 800-53A Rev5 methodology and reports its findings in alignment with the FedRAMP SAR Template Rev5.'),
-    _docxPara(' '),
-    _docxTitle('Verdict Distribution', 2),
-    _docxTable(
-      ['Verdict', 'Count', 'Percent'],
-      [
-        ['Satisfied (SAT)',         sat, findings.length ? (sat  / findings.length * 100).toFixed(1) + '%' : '—'],
-        ['Other Than Satisfied',    ots, findings.length ? (ots  / findings.length * 100).toFixed(1) + '%' : '—'],
-        ['Not Reviewed (NR)',       nr,  findings.length ? (nr   / findings.length * 100).toFixed(1) + '%' : '—'],
-      ],
-      [50, 25, 25],
-    ),
-    _docxPara(' '),
-    _docxTitle('Risk Distribution (OTS findings)', 2),
-    _docxTable(
-      ['Risk', 'Count'],
-      [
-        ['High',     findings.filter(f => f.verdict === 'OTS' && f.risk === 'High').length],
-        ['Moderate', findings.filter(f => f.verdict === 'OTS' && f.risk === 'Moderate').length],
-        ['Low',      findings.filter(f => f.verdict === 'OTS' && f.risk === 'Low').length],
-      ],
-      [60, 40],
-    ),
-  ];
-
-  // §1 Scope · §2 Methodology
-  const scope = [
-    _docxTitle('§1 · Scope and §2 · Assessment Methodology', 1),
-    _docxPara('The assessment scope encompassed all ' + (sample ? sample.controls : 'in-scope') + ' controls in the ' + baseline + ' baseline, applied to the ' + csp + ' boundary. The CORE control set was assessed in full; remaining controls were evaluated using the FedRAMP one-third (⅓) rotation per the Annual Assessment Guidance v3.0.'),
-    _docxPara(' '),
-    _docxTitle('Test Methods', 2),
-    _docxPara('Per NIST SP 800-53A Rev5, three test methods were applied:'),
-    _docxPara('  • Examine (E) — review of documentation, records, configuration, and other artifacts.'),
-    _docxPara('  • Interview (I) — discussion with personnel responsible for control implementation.'),
-    _docxPara('  • Test (T) — direct observation, replication, or technical execution of control behavior.'),
-    _docxPara(' '),
-    _docxTitle('Verdict Scheme', 2),
-    _docxPara('  • Satisfied (SAT) — control determination statements are fully met.'),
-    _docxPara('  • Other Than Satisfied (OTS) — one or more determination statements are not fully met; finding documented.'),
-    _docxPara('  • Not Reviewed (NR) — evidence insufficient to render a verdict; findings carry forward to remediation.'),
-  ];
-
-  // §3 Security Assessment Results — per-finding rollup
-  const findingsRows = findings.map(f => [
-    f.ctrl || '',
-    _ctrlFamily(f.ctrl),
-    f.verdict || '',
-    f.risk || '',
-    f.method || '',
-    (f.text || '').length > 220 ? (f.text || '').substring(0, 220) + '…' : (f.text || ''),
-  ]);
-  const section3 = [
-    _docxTitle('§3 · Security Assessment Results', 1),
-    _docxPara('The table below itemizes each finding observed during the assessment, with control reference, family, verdict, risk rating, test method, and finding statement.'),
-    _docxPara(' '),
-    _docxTable(
-      ['Control', 'Family', 'Verdict', 'Risk', 'Method', 'Finding'],
-      findingsRows,
-      [12, 8, 10, 10, 10, 50],
-    ),
-  ];
-
-  // §4 Non-Conforming Controls + §6 Risks Remaining (RET)
-  const retRows = otsList.map((f, i) => {
-    const risk = f.risk || 'Moderate';
-    return [
-      'V-' + String(i + 1).padStart(3, '0'),
-      f.ctrl || '',
-      risk, risk, risk,
-      ((f.text || '').length > 200 ? (f.text || '').substring(0, 200) + '…' : (f.text || '')),
-    ];
-  });
-  const ret = [
-    _docxTitle('§4 · Non-Conforming Controls and §6 · Risks Remaining (RET)', 1),
-    _docxPara('Each Other Than Satisfied (OTS) finding is rated by Likelihood and Impact, producing a Risk Exposure value per the FedRAMP RET methodology. Weakness IDs follow the V-NNN convention.'),
-    _docxPara(' '),
-    _docxTable(
-      ['Weakness ID', 'Control', 'Likelihood', 'Impact', 'Exposure', 'Weakness'],
-      retRows,
-      [12, 12, 12, 12, 12, 40],
-    ),
-  ];
-
-  // §5 Detailed Findings · Narrative
-  const detailParas = [];
-  detailParas.push(_docxTitle('§5 · Risks Corrected During Testing and Detailed Findings', 1));
-  detailParas.push(_docxPara('The following narrative entries provide the full finding statement, evidence citations, and recommendation for each OTS finding documented in the assessment.'));
-  otsList.slice(0, 24).forEach((f, i) => {
-    detailParas.push(_docxTitle('5.' + (i + 1) + '  ' + (f.ctrl || '') + ' · V-' + String(i + 1).padStart(3, '0') + ' · ' + (f.risk || '') + ' Risk', 2));
-    detailParas.push(_docxLabelValue('Method', f.method || ''));
-    detailParas.push(_docxLabelValue('Implementation Status', f.implStatus || ''));
-    detailParas.push(_docxPara(' '));
-    detailParas.push(_docxPara('Finding:  ' + (f.text || ''), { after: 140 }));
-    detailParas.push(_docxPara('Recommendation:  ' + (f.recommendation || ''), { after: 140 }));
-    if (f.cites && f.cites.length) {
-      detailParas.push(_docxPara('Evidence:  ' + _flattenCites(f.cites), { italic: true, color: '666666' }));
-    }
-  });
-
-  const doc = new Document({
-    creator: 'SPARKAE',
-    title: csp + ' · Security Assessment Report',
-    description: 'FedRAMP SAR Template Rev5 · NIST SP 800-53A Rev5 methodology',
-    sections: [{
-      properties: {},
-      children: [].concat(cover, [_docxPara(' ')], execSummary, scope, section3, ret, detailParas),
-    }],
-  });
-
-  const blob = await Packer.toBlob(doc);
-  _saveBlob(blob, _fileSafe(_cspShort(sample)) + '_SAR_' + date + '.docx');
-  _toast('SAR exported · .docx · ' + findings.length + ' findings');
-}
-
-// ── ConMon · .docx ──────────────────────────────────────────────────
-async function downloadConMondocx() {
-  if (!_docxReady()) return;
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } = docx;
-  const sample = SAMPLES[selected];
-  const cm     = sample && sample.conmon;
-  if (!cm) {
-    _toast('ConMon data not available for this SSP.', true);
+function downloadLive(kind) {
+  const st = liveExportState();
+  if (!st) {
+    _toast('Run §01 Initial Assessment first — exports are built from the live engine run, not from walkthroughs.', true);
     return;
   }
-  const date = _today();
-  const sev  = cm.severities || {};
-  const totalOpen  = (sev.critical && sev.critical.total || 0) + (sev.high && sev.high.total || 0) + (sev.moderate && sev.moderate.total || 0) + (sev.low && sev.low.total || 0);
-  const totalAging = (sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0) + (sev.moderate && sev.moderate.aging || 0) + (sev.low && sev.low.aging || 0);
-
-  const cover = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { before: 1200, after: 240 },
-      children: [new TextRun({ text: 'Continuous Monitoring (ConMon)', bold: true, size: 48 })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
-      children: [new TextRun({ text: 'Monthly Report', size: 36 })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 1000 },
-      children: [new TextRun({ text: _cspName(sample) + ' · ' + (cm.period || '—'), italics: true, color: '888888' })],
-    }),
-    _docxLabelValue('Cloud Service Provider', _cspName(sample)),
-    _docxLabelValue('Reporting Period',        cm.period || '—'),
-    _docxLabelValue('Baseline',                _baselineFor(selected)),
-    _docxLabelValue('Reference Framework',      'FedRAMP ConMon Strategy Guide (Rev5) · NIST SP 800-137'),
-    _docxLabelValue('Generated',                date),
-  ];
-
-  const execSummary = [
-    _docxTitle('1. Executive Summary', 1),
-    _docxTable(
-      ['Metric', 'Value'],
-      [
-        ['Asset count (in-boundary)',     cm.assets || 0],
-        ['Authenticated scan coverage',   cm.assets ? Math.round((cm.authenticated || 0) / cm.assets * 100) + '%' : '—'],
-        ['Total findings (open)',         totalOpen],
-        ['Aging vulnerabilities',         totalAging],
-        ['VDR submissions',               cm.vdr || 0],
-        ['KEV-listed exposures',          cm.kev || 0],
-        ['DFR risk',                      cm.dfrRisk ? 'YES — review required' : 'No'],
-      ],
-      [60, 40],
-    ),
-  ];
-
-  const passFail = (cond) => cond ? 'PASS' : 'FAIL';
-  const scoreRows = [
-    ['1',  'Monthly cadence met (OS · Web · DB · Container)', 'PASS', 'Scan timestamps within reporting period'],
-    ['2',  'Authenticated scanning ≥ 90%',                    passFail(cm.assets && (cm.authenticated / cm.assets) >= 0.9), (cm.authenticated || 0) + '/' + (cm.assets || 0) + ' authenticated'],
-    ['3',  'Inventory reconciliation (CM-8)',                 'PASS', 'Inventory Workbook synchronized with scan targets'],
-    ['4',  'OS scanning coverage',                            'PASS', (cm.scanTypes && cm.scanTypes.os ? cm.scanTypes.os.scanner : 'configured')],
-    ['5',  'Web application scanning',                        'PASS', (cm.scanTypes && cm.scanTypes.webapp ? cm.scanTypes.webapp.scanner : 'configured')],
-    ['6',  'Database scanning',                               'PASS', (cm.scanTypes && cm.scanTypes.database ? cm.scanTypes.database.scanner : 'configured')],
-    ['7',  'Container image / runtime scanning',              'PASS', (cm.scanTypes && cm.scanTypes.container ? cm.scanTypes.container.scanner : 'configured')],
-    ['8',  'Critical/High SLA (30 days)',                     passFail(((sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0)) === 0), ((sev.critical && sev.critical.aging || 0) + (sev.high && sev.high.aging || 0)) + ' aging'],
-    ['9',  'Moderate SLA (90 days)',                          passFail((sev.moderate && sev.moderate.aging || 0) <= 12), (sev.moderate && sev.moderate.aging || 0) + ' aging'],
-    ['10', 'Deviation Request submission cadence',            (cm.vdr > 0 ? 'PASS' : 'INFO'), (cm.vdr || 0) + ' VDRs in period'],
-  ];
-  const scorecard = [
-    _docxTitle('2. Scan Coverage Scorecard', 1),
-    _docxPara('Per FedRAMP ConMon Strategy Guide (Rev5) §3 — ten authoritative coverage checks computed from the monthly evidence package.'),
-    _docxPara(' '),
-    _docxTable(['#', 'Check', 'Status', 'Evidence'], scoreRows, [5, 50, 12, 33]),
-  ];
-
-  const stRows = [];
-  if (cm.scanTypes) {
-    const labels = { os: 'Operating System', webapp: 'Web Application', database: 'Database', container: 'Container' };
-    Object.keys(cm.scanTypes).forEach(k => {
-      const t = cm.scanTypes[k];
-      stRows.push([labels[k] || k, t.count, (t.authPercent || 0) + '%', t.scanner || '']);
-    });
-  }
-  const scanTypes = [
-    _docxTitle('3. Scan Type Breakdown', 1),
-    _docxTable(['Scan Type', 'Asset Count', 'Authenticated %', 'Scanner'], stRows, [30, 18, 22, 30]),
-  ];
-
-  const slaRows = ['critical', 'high', 'moderate', 'low'].map(s => [
-    SEVERITY_LABELS[s],
-    (sev[s] && sev[s].total) || 0,
-    (sev[s] && sev[s].aging) || 0,
-    (sev[s] && sev[s].sla)   || '—',
-  ]);
-  const sla = [
-    _docxTitle('4. SLA Compliance · per FedRAMP RA-5(d)', 1),
-    _docxTable(['Severity', 'Open Findings', 'Aging (past SLA)', 'SLA Window'], slaRows, [25, 25, 25, 25]),
-  ];
-
-  const poamDelta = [
-    _docxTitle('5. POA&M Delta · this cycle', 1),
-    _docxTable(
-      ['Movement', 'Count'],
-      [
-        ['New POA&M items added',  cm.poamDelta && cm.poamDelta.added   || 0],
-        ['POA&M items closed',     cm.poamDelta && cm.poamDelta.closed  || 0],
-        ['Open / ongoing items',   cm.poamDelta && cm.poamDelta.ongoing || 0],
-      ],
-      [60, 40],
-    ),
-  ];
-
-  const fRows = (cm.findings || []).map(f => [
-    f.ctrl || '', f.verdict || '', f.risk || '', f.method || '',
-    ((f.text || '').length > 240 ? (f.text || '').substring(0, 240) + '…' : (f.text || '')),
-  ]);
-  const findings = [
-    _docxTitle('6. Findings Detail', 1),
-    _docxTable(['Control', 'Verdict', 'Risk', 'Method', 'Finding'], fRows, [12, 10, 10, 12, 56]),
-  ];
-
-  const doc = new Document({
-    creator: 'SPARKAE',
-    title: _cspName(sample) + ' · ConMon Monthly Report',
-    description: 'Per FedRAMP ConMon Strategy Guide (Rev5) · NIST SP 800-137',
-    sections: [{
-      properties: {},
-      children: [].concat(cover, [_docxPara(' ')], execSummary, scorecard, scanTypes, sla, poamDelta, findings),
-    }],
-  });
-
-  const blob = await Packer.toBlob(doc);
-  _saveBlob(blob, _fileSafe(_cspShort(sample)) + '_ConMon_' + (cm.period ? _fileSafe(cm.period) : date) + '.docx');
-  _toast('ConMon report exported · .docx · ' + totalOpen + ' open findings');
+  const spec = LIVE_EXPORTS[kind];
+  if (!spec) return;
+  let body;
+  try { body = spec.build(st); }
+  catch (e) { _toast('Export failed: ' + (e && e.message ? e.message : e), true); return; }
+  const name = 'sparkae-' + _fileSafe(st.baseline.toLowerCase()) + '-' + st.assessment_date + '-' + spec.ext;
+  _saveBlob(new Blob([body], { type: spec.mime + ';charset=utf-8' }), name);
+  _toast(name + ' · ' + body.length.toLocaleString() + ' bytes · sha1 ' + DEMO_EXPORTS.sha1Hex(body).slice(0, 12));
 }
 
 // ── Main runner — dispatches by use case ──
@@ -9588,37 +8630,70 @@ syncUCToUI();
 
 
 
-// ════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // §01 REAL-ENGINE BRIDGE
-// ════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // Use case §01 Initial Assessment is backed by the actual deterministic
-// assessor (demo-engine.js over demo-standalone-catalog.js) rather than by an
-// authored script. The stage narration in runInitial() is kept — it is what
-// makes the run legible — but every number it reports downstream comes from
-// the engine: verdicts, per-gate pass counts, defensibility, and the finding
-// list. The other eight use cases remain guided walkthroughs and are badged as
-// such in the UI, so nobody has to guess which is which.
+// assessor (demo-engine.js over demo-standalone-catalog.js). runInitialLive()
+// below is the whole run: it parses the package, indexes the evidence,
+// adjudicates every objective in the selected profile, tallies the seven
+// recorded gates, and builds the reproducibility receipt — and it narrates
+// ONLY those computed events. No appendix walk, no test reports, no scans:
+// if the package is one text file, the console says one file. The other
+// eight use cases remain guided walkthroughs and are badged as such.
 //
 // Nothing here invents a verdict. Each shell finding is a projection of one
 // engine record, and each citation names a file the BM25 retriever actually
 // pulled the evidence chunk from.
 
 const ENGINE_ROW_CAP = 120;      // paintFindings cascades rows in; 981 at once is a timer storm
-const ENGINE_BASELINE = 'Low';   // the bundled sample SSP is a Low-baseline package
 
 // The bundled sample SSP is a fixed document with fixed dates — effective
 // 2026-01-15, last reviewed 2026-03-10, configuration updated 2026-04-01, most
-// recent vulnerability scan 2026-05-28. Assessing it against the wall clock
-// meant its temporal gates decayed with the calendar: by August the scan was
-// 90+ days old and the 30-day ConMon cadence gate failed for no reason but
-// elapsed time, while the page promises "same SSP + same rules = same output
-// every time". This is the fixture's own assessment date — a few days after
-// its most recent scan, which is when a 3PAO would assess it — so the sample
-// walkthrough is reproducible. Uploaded packages carry the user's real
-// evidence and are still assessed as of today.
+// recent vulnerability scan 2026-05-28. Its assessment date is pinned a few
+// days after its most recent scan, which is when an assessor would assess it,
+// so the sample run is reproducible on any day. It seeds the rail's
+// "Assessed as of" field; uploads default that field to the visitor's own
+// date (read once, from the field, never inside the engine) and the visitor
+// can change it. Whatever the field says is the date every verdict reports.
 const SAMPLE_ASSESSMENT_DATE = '2026-06-01';
 
+// The catalog snapshot this page ships, for the receipt.
+const CATALOG_VERSION = '2026-07-21';
+let _catalogDigest = null;
+function catalogDigest() {
+  if (!_catalogDigest) _catalogDigest = DEMO_EXPORTS.sha1Hex(DEMO_EXPORTS.stableJson(CATALOG));
+  return _catalogDigest;
+}
+
 let ENGINE_LAST_RUN = null;
+
+// Declared inputs, read from the rail.
+function engineBaseline() {
+  const el = document.getElementById('engine-profile');
+  const v = el && el.value;
+  return v === 'Moderate' || v === 'High' ? v : 'Low';
+}
+// The declared assessment date, or '' when the field is empty or malformed —
+// never a silent substitute. runInitialLive() stops on '' and says so; the
+// walkthrough's display dates fall back to the sample date explicitly.
+function engineAssessmentDate() {
+  const el = document.getElementById('assessment-date');
+  const v = el && el.value;
+  return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : '';
+}
+function displayDate() {
+  return engineAssessmentDate() || SAMPLE_ASSESSMENT_DATE;
+}
+function profileCounts(baseline) {
+  let controls = 0, objectives = 0;
+  for (const c of Object.values(CATALOG)) {
+    if (!c.b.includes(baseline)) continue;
+    controls++;
+    objectives += c.d.filter(d => d.b.includes(baseline)).length;
+  }
+  return { controls, objectives };
+}
 
 // The shell renders finding text and citation metadata straight into innerHTML.
 // Its own findings are authored literals, but engine findings quote uploaded
@@ -9654,17 +8729,22 @@ function engineFindingToShell(f, corpusLabel) {
   if (f.finding) bits.push(engEsc(f.finding));
   if (f.gap_description && f.status !== 'Satisfied') bits.push(engEsc(f.gap_description));
   const conf = typeof f.confidence === 'number' ? Math.round(f.confidence * 100) + '%' : '—';
-  const meta = '<div class="eng-meta">confidence ' + conf +
+  const gates = f.gates || [];
+  const review = f.review_required
+    ? '<span class="eng-review" title="' + engEsc(f.review_reason || '') + '">review required · ' + engEsc(f.review_reason || 'low evidence support') + '</span>'
+    : '';
+  const meta = '<div class="eng-meta">evidence-support ' + conf +
                ' · defensibility ' + (f.defensibility_score || 0) +
                '/100 (' + SparkAEEngine.grade(f.defensibility_score || 0) + ')' +
                ' · concept coverage ' + Math.round((f.concept_coverage || 0) * 100) + '%' +
-               ' · gates ' + (f.gates || []).filter(g => g.pass && typeof g.gate === 'number').length + '/7' +
-               '</div>';
+               ' · gates ' + gates.filter(g => g.pass).length + '/' + gates.length + ' passed' +
+               ' · assessed as of ' + engEsc(f.assessment_date || '') +
+               review + '</div>';
 
   return {
     ctrl: engEsc(f.dif_id || f.control_id),
     verdict: engineVerdict(f.status),
-    method: f.assessment_method || 'EXAMINE',
+    method: 'EXAMINE',
     risk: f.risk_exposure_before || 'Low',
     implStatus: f.status === 'Satisfied' ? 'implemented'
               : f.status === 'Not Reviewed' ? 'not-verified' : 'partial',
@@ -9675,12 +8755,10 @@ function engineFindingToShell(f, corpusLabel) {
 }
 
 // Build the corpus for §01: an uploaded package if there is one, otherwise the
-// bundled sample SSP. Returns null when neither is available, which is the
-// signal for runInitial to fall back to the scripted walkthrough.
+// bundled sample SSP. Reports exactly which files were parsed and which were
+// refused, and why — a refusal is shown, never absorbed.
 async function engineCorpus(sample) {
   const E = window.SparkAEEngine;
-  if (!E || typeof CATALOG === 'undefined') return null;
-
   let files = [];
   let label = '';
   let bundled = false;
@@ -9696,47 +8774,27 @@ async function engineCorpus(sample) {
   } else {
     return null;
   }
-
-  const chunks = [];
-  for (const f of files) {
-    try { chunks.push(...await E.parseFile(f)); } catch (e) { /* unreadable member: skip */ }
-  }
-  return chunks.length ? { chunks, label, files, bundled } : null;
+  const r = await E.parsePackage(files);
+  return { chunks: r.chunks, parsed: r.parsed, skipped: r.skipped, label, files, bundled };
 }
 
-// The rail's assessment date as a Date, or undefined when the field is empty
-// or unparseable.
-function uploadAssessmentDate() {
-  const el = document.getElementById('assess-date');
-  const v = el && /^\d{4}-\d{2}-\d{2}$/.test(el.value) ? el.value : '';
-  if (!v) return undefined;
-  const d = new Date(v + 'T00:00:00Z');
-  return isNaN(d) ? undefined : d;
-}
-
-// Run the real assessor and project the result into the shell's summary shape.
-async function runRealEngineForInitial(sample) {
+// Adjudicate every objective in the profile. Pure computation; yields to the
+// event loop every 150 objectives so the console keeps painting.
+async function runEngine(corpus, baseline, asOfDay, onProgress) {
   const E = window.SparkAEEngine;
-  const corpus = await engineCorpus(sample);
-  if (!corpus) return null;
-
   const retriever = new E.BM25Retriever(corpus.chunks);
   const refutationIdx = E.buildRefutationIndex(retriever);
-  const controls = Object.entries(CATALOG).filter(([, c]) => c.b.includes(ENGINE_BASELINE));
-  // Pinned for the bundled fixture; for an uploaded package the date comes
-  // from the rail's "Assess uploads as of" field — run context the visitor
-  // sees and can change, never a date read out of the package. An empty
-  // field leaves the temporal gate indeterminate (fail closed).
-  const uploadDate = uploadAssessmentDate();
-  const asOf = corpus.bundled ? new Date(SAMPLE_ASSESSMENT_DATE + 'T00:00:00Z') : uploadDate;
+  const controls = Object.entries(CATALOG).filter(([, c]) => c.b.includes(baseline));
+  const asOf = new Date(asOfDay + 'T00:00:00Z');
 
   const findings = [];
   const gateReached = [0, 0, 0, 0, 0, 0, 0];
   const gatePassed = [0, 0, 0, 0, 0, 0, 0];
+  const total = controls.reduce((n, [, c]) => n + c.d.filter(d => d.b.includes(baseline)).length, 0);
 
   let sinceYield = 0;
   for (const [ctrlId, ctrl] of controls) {
-    for (const dif of ctrl.d.filter(d => d.b.includes(ENGINE_BASELINE))) {
+    for (const dif of ctrl.d.filter(d => d.b.includes(baseline))) {
       const r = E.assessDif(dif, retriever, ctrlId, ctrl.T, ctrl.F, refutationIdx, asOf);
       findings.push(r);
       (r.gates || []).forEach(g => {
@@ -9745,58 +8803,67 @@ async function runRealEngineForInitial(sample) {
           if (g.pass) gatePassed[g.gate - 1]++;
         }
       });
-      // Keep the narration animating while ~1,000 objectives adjudicate.
-      if (++sinceYield >= 150) { sinceYield = 0; await new Promise(r2 => setTimeout(r2, 0)); }
+      if (++sinceYield >= 150) {
+        sinceYield = 0;
+        if (onProgress) onProgress(findings.length, total);
+        await new Promise(r2 => setTimeout(r2, 0));
+      }
     }
   }
 
   const sat = findings.filter(f => f.status === 'Satisfied').length;
   const ots = findings.filter(f => f.status === 'Other Than Satisfied').length;
   const nr = findings.filter(f => f.status === 'Not Reviewed').length;
+  const review = findings.filter(f => f.review_required).length;
   const def = findings.length
     ? Math.round(findings.reduce((s, f) => s + (f.defensibility_score || 0), 0) / findings.length)
     : 0;
 
-  const first = findings[0] || {};
+  const receipt = DEMO_EXPORTS.buildReceipt({
+    engineVersion: E.ENGINE_VERSION,
+    catalogVersion: CATALOG_VERSION,
+    catalogDigest: catalogDigest(),
+    ruleset: E.RULESET,
+    chunks: corpus.chunks,
+    findings,
+    assessmentDate: asOfDay,
+    baseline,
+  });
+  receipt.system_name = corpus.bundled ? 'CloudVault Storage Platform (sample)' : 'Uploaded package';
   const ranked = rankLiveRun(findings);
-  ENGINE_LAST_RUN = {
+  receipt.files_parsed = corpus.parsed.slice();
+  receipt.files_refused = corpus.skipped.map(x => x.name + ' — ' + x.reason);
+
+  return {
     corpusLabel: corpus.label,
     bundled: corpus.bundled,
-    fileCount: corpus.files.length,
-    fileNames: corpus.files.map(f => f.name),
-    chunkCount: corpus.chunks.length,
-    controlCount: controls.length,
-    assessmentDate: corpus.bundled ? SAMPLE_ASSESSMENT_DATE : (first.assessment_date || ''),
-    assessmentDateSource: corpus.bundled ? 'pinned' : (first.assessment_date_source === 'supplied' ? 'rail' : 'none'),
     families: familyTallies(findings),
     gapRank: ranked.gapRank,
     topFinding: ranked.topFinding,
+    fileCount: corpus.parsed.length,
+    skipped: corpus.skipped,
+    chunkCount: corpus.chunks.length,
+    controlCount: controls.length,
+    baseline,
+    assessmentDate: asOfDay,
     gateReached, gatePassed,
     raw: findings,
+    receipt,
+    reviewCount: review,
     // na/nt/ra/or_/fp stay 0: the engine emits SAT / OTS / NR only. Showing a
     // fabricated Not-Applicable or Risk-Adjustment count next to real verdicts
-    // is exactly the kind of number a 3PAO would (rightly) never forgive.
+    // is exactly the kind of number an assessor would (rightly) never forgive.
     summary: { sat, ots, nr, na: 0, nt: 0, ra: 0, or_: 0, fp: 0, def,
                findings: findings.map(f => engineFindingToShell(f, corpus.label)) },
   };
-  const meta = document.getElementById('cv-engine-meta');
-  if (meta && sample && sample.liveEngine) {
-    meta.style.display = '';
-    meta.textContent = 'live engine · FedRAMP ' + ENGINE_BASELINE + ' · ' +
-      controls.length + ' controls · ' + findings.length + ' objectives · assessed as of ' + ENGINE_LAST_RUN.assessmentDate;
-  }
-  return ENGINE_LAST_RUN;
 }
 
-// ── Live-run narration ───────────────────────────────────────────────────
-// The scripted §01 narration walks seventeen appendices, seventeen policy
-// families, an inventory workbook and a scan profile — none of which the
-// engine has seen when the corpus is one SSP text file. On a live run the
-// console reports what the engine actually did, in the time it actually
-// took: corpus indexed, baseline scoped, every family's tally, seven gates
-// with real denominators, then what blocks authorization first.
-const LIVE_STAGES = ['Index', 'Scope', 'Examine', 'Gates', 'Findings', 'Output'];
-const GATE_NAMES = ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Status'];
+// ── Ranked blockers + the finding to open first ───────────────────────────
+// After a run the first thing a visitor reads is not 981 rows but what blocks
+// authorization, ranked, and the single most consequential finding opened
+// with its passage, its failed gate and its correction. Every value here is
+// computed from the engine's records; the order is fixed, so the same run
+// names the same finding.
 const GAP_LABELS = {
   missing_evidence: 'missing evidence — the objective\'s concepts are not covered by any passage',
   incomplete_policy: 'incomplete policy — undefined parameters or draft language',
@@ -9807,82 +8874,6 @@ const GAP_LABELS = {
 };
 const GAP_ORDER = ['missing_implementation', 'contradictory_evidence', 'incomplete_policy', 'temporal_gap', 'missing_evidence', 'other_gap'];
 
-function tstamp(sec) {
-  const deci = Math.round(sec * 10);
-  return fmt(Math.floor(deci / 10)) + '.' + (deci % 10);
-}
-
-async function narrateLiveRun(R) {
-  document.getElementById('log').innerHTML = '';
-  let t = 0;
-  const step = async (tag, msg, cls, ms) => { log(tstamp(t), tag, msg, cls || ''); t += (ms || 300) / 1000; await wait(ms || 300); };
-
-  setStage(1);
-  setStatus('◆ INDEX · reading the package');
-  await step('init', `<span class="key">live engine</span> · ${engEsc(R.corpusLabel)} · ${R.fileCount} file(s) · ${R.chunkCount} chunks indexed (BM25)`, '', 350);
-  if (R.bundled) {
-    await step('init', 'sample package is the SSP body only · no appendices, scan exports, or interview records are bundled · every verdict below comes from that text', 'ok', 350);
-  } else {
-    const names = R.fileNames.slice(0, 6).map(engEsc).join(' · ') + (R.fileCount > 6 ? ' · +' + (R.fileCount - 6) + ' more' : '');
-    await step('init', names, '', 350);
-  }
-  const dateNote = R.assessmentDateSource === 'pinned' ? 'pinned for the bundled sample'
-                 : R.assessmentDateSource === 'rail' ? 'set in the rail (change it and run again to assess as of another date)'
-                 : 'none set in the rail — the temporal gate is indeterminate and fails closed';
-  await step('init', `assessment date ${R.assessmentDate || '—'} · ${dateNote} · same package, same date, same verdicts, on any machine`, '', 400);
-
-  setStage(2);
-  setStatus('◆ SCOPE · FedRAMP ' + ENGINE_BASELINE + ' baseline');
-  await step('scope', `NIST SP 800-53A Rev 5 · FedRAMP ${ENGINE_BASELINE} baseline · ${R.controlCount} controls · ${R.raw.length} &ldquo;Determine if&rdquo; objectives · EXAMINE only (Interview and Test stay with the assessor)`, 'ok', 450);
-
-  setStage(3);
-  setStatus('◆ EXAMINE · evidence retrieved and adjudicated per objective');
-  for (const fam of R.families) {
-    await step('exam', `${fam.id} · ${engEsc(fam.name)} · ${fam.total} objectives · ${fam.sat} SAT · ${fam.ots} OTS${fam.nr ? ' · ' + fam.nr + ' NR' : ''}`, fam.ots + fam.nr > fam.sat ? 'warn' : 'ok', 210);
-  }
-
-  setStage(4);
-  setStatus('◆ GATES · 7 deterministic gates');
-  await step('gate', 'seven deterministic gates per objective · presence · concept coverage · evidence strength · ODP resolution · contradiction · temporal coherence · status', '', 300);
-  // Real tallies: a gate pill is marked pass only if a majority of the
-  // objectives that reached it passed. A thin package legitimately fails
-  // gate 2 across most objectives, and the demo shows that rather than a
-  // reassuring row of green.
-  for (let g = 1; g <= 7; g++) {
-    const reached = R.gateReached[g - 1], passed = R.gatePassed[g - 1];
-    const ok = reached > 0 && passed / reached >= 0.5;
-    setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
-    await step('gate', `gate ${g} · ${GATE_NAMES[g - 1]} · ${passed}/${reached} objectives passed`, ok ? 'ok' : 'warn', 140);
-  }
-
-  setStage(5);
-  setStatus('◆ FINDINGS · ranking what blocks authorization');
-  const S = R.summary;
-  await step('find', `${S.ots} Other Than Satisfied · ${S.sat} Satisfied · ${S.nr} Not Reviewed (no passage cleared the relevance threshold)`, S.ots ? 'warn' : 'ok', 350);
-  for (const row of R.gapRank) {
-    await step('find', `${row.count} × ${GAP_LABELS[row.type]}`, 'warn', 180);
-  }
-  if (R.topFinding) {
-    await step('find', `most consequential · <span class="key">${engEsc(R.topFinding.dif_id)}</span> · ${engEsc(R.topFinding.finding)}`, 'warn', 350);
-  }
-
-  setStage(6);
-  setStatus('◆ OUTPUT · draft findings, citations, exports');
-  await step('out', `defensibility scored · <span class="key">${S.def}/100</span> · every verdict carries its passage, confidence, and grade`, 'ok', 350);
-  await step('done', 'complete · draft findings ready for assessor review · nothing left this browser', 'ok', 200);
-
-  document.querySelectorAll('.stage').forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
-  setStatus('◆ COMPLETE · draft findings ready for assessor review');
-  document.getElementById('results').classList.add('show');
-  renderInitialSummary(S);
-  renderLiveHeadline(R);
-  renderExportBar();
-  renderFindings(S.findings);
-}
-
-// Ranked gap categories over the Other-Than-Satisfied findings, and the one
-// finding to open first: highest risk, then lowest defensibility, then
-// objective id — a fixed order, so the same run names the same finding.
 function rankLiveRun(findings) {
   const E = window.SparkAEEngine;
   const counts = {};
@@ -9916,8 +8907,7 @@ function familyTallies(findings) {
 }
 
 // The passage to quote under the finding: the window around the phrase the
-// gate reacted to (a refuting statement, a draft marker, an unresolved
-// parameter) when the finding names one, else the start of the evidence.
+// gate reacted to when the finding names one, else the start of the evidence.
 function evidenceExcerpt(f) {
   const text = (f.evidence_description || '').replace(/\s+/g, ' ');
   const m = /:\s*(.+)$/.exec(f.finding || '');
@@ -9926,10 +8916,10 @@ function evidenceExcerpt(f) {
     const needle = m[1].replace(/;.*$/, '').trim().toLowerCase();
     if (needle.length >= 6) at = text.toLowerCase().indexOf(needle);
   }
-  if (at < 0) return { text: text.slice(0, 260), more: text.length > 260, from: 0 };
+  if (at < 0) return { text: text.slice(0, 260), more: text.length > 260 };
   const start = Math.max(0, at - 110);
   const end = Math.min(text.length, at + 150);
-  return { text: (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : ''), more: false, from: start };
+  return { text: (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : ''), more: false };
 }
 
 function difText(difId) {
@@ -9940,38 +8930,34 @@ function difText(difId) {
   return '';
 }
 
-// The first thing a visitor reads after a run: not 981 rows, but what blocks
-// authorization, ranked, and the single most consequential finding opened
-// with its passage, its failed gate, and its correction.
-function renderLiveHeadline(R) {
+function renderLiveHeadline(run) {
   const host = document.getElementById('results-summary');
   if (!host) return;
-  const S = R.summary;
-  const total = R.raw.length;
-  const rank = R.gapRank.map(r => `<li><span class="lead-n">${r.count}</span><span>${GAP_LABELS[r.type]}</span></li>`).join('');
-  const f = R.topFinding;
+  const S = run.summary;
+  const total = run.raw.length;
+  const rank = run.gapRank.map(r => `<li><span class="lead-n">${r.count}</span><span>${GAP_LABELS[r.type]}</span></li>`).join('');
+  const f = run.topFinding;
   let card = '';
   if (f) {
     const ctrl = typeof CATALOG !== 'undefined' && CATALOG[f.control_id];
-    const failed = [];
-    (f.gates || []).forEach(g => { if (!g.pass && typeof g.gate === 'number' && !failed.some(x => x.startsWith('gate ' + g.gate + ' '))) failed.push('gate ' + g.gate + ' · ' + g.name); });
-    const refs = (f.evidence_references || []).length ? f.evidence_references.map(engEsc).join(', ') : R.corpusLabel;
+    const failed = (f.gates || []).filter(g => !g.pass && g.gate !== 7).map(g => 'gate ' + g.gate + ' · ' + g.name);
+    const refs = (f.evidence_references || []).length ? f.evidence_references.map(engEsc).join(', ') : engEsc(run.corpusLabel);
     const excerpt = evidenceExcerpt(f);
     card = `
       <div class="lead-finding">
         <div class="lead-finding-head">
           <span class="lead-finding-id">${engEsc(f.dif_id)} · ${engEsc((ctrl && ctrl.T) || f.control_id)}</span>
           <span class="verdict-tag ots">OTS</span>
-          <span class="lead-finding-meta">confidence ${Math.round((f.confidence || 0) * 100)}% · defensibility ${f.defensibility_score || 0}/100 (${SparkAEEngine.grade(f.defensibility_score || 0)}) · risk ${engEsc(f.risk_exposure_before || 'Low')}</span>
+          <span class="lead-finding-meta">evidence-support ${Math.round((f.confidence || 0) * 100)}% · defensibility ${f.defensibility_score || 0}/100 (${SparkAEEngine.grade(f.defensibility_score || 0)}) · risk ${engEsc(f.risk_exposure_before || 'Low')}</span>
         </div>
         <div class="lead-row"><span class="lead-k">Determine if</span><span>${engEsc(difText(f.dif_id) || '—')}</span></div>
-        <div class="lead-row"><span class="lead-k">Evidence</span><span>${engEsc(refs)}${excerpt.text ? ' — &ldquo;' + engEsc(excerpt.text) + (excerpt.more ? '…' : '') + '&rdquo;' : ''}</span></div>
+        <div class="lead-row"><span class="lead-k">Evidence</span><span>${refs}${excerpt.text ? ' — &ldquo;' + engEsc(excerpt.text) + (excerpt.more ? '…' : '') + '&rdquo;' : ''}</span></div>
         <div class="lead-row"><span class="lead-k">Failed</span><span>${failed.length ? engEsc(failed.join(' · ')) : '—'}</span></div>
         <div class="lead-row"><span class="lead-k">Finding</span><span>${engEsc(f.finding || '')}</span></div>
         <div class="lead-row"><span class="lead-k">Correction</span><span>${engEsc(f.recommendation || '')}</span></div>
       </div>`;
   }
-  const upload = R.bundled
+  const after = run.bundled
     ? `This was <strong>CloudVault Federal</strong>, a synthetic sample. <a href="#" onclick="document.getElementById('ssp-upload-input').click();return false;">Drop your own package</a> — it never leaves this browser. Or <a href="index.html#cta">start a 30-day pilot on the local engine →</a>`
     : `Your package was assessed in this browser and nothing was uploaded. <a href="index.html#cta">Start a 30-day pilot on the local engine →</a>`;
   const panel = document.createElement('div');
@@ -9980,13 +8966,170 @@ function renderLiveHeadline(R) {
     <div class="sar-section-label">
       <span class="sar-section-num">◆</span>
       <span class="sar-section-title">What blocks authorization first</span>
-      <span class="sar-section-ref">ranked from this run · every row traceable to a passage · draft until an assessor adopts it</span>
+      <span class="sar-section-ref">ranked from this run · every row traceable to a passage · automated EXAMINE preparation, draft until an assessor adopts it</span>
     </div>
     <p class="lead-line">SparkAE found <strong>${S.ots}</strong> Other-Than-Satisfied objective${S.ots === 1 ? '' : 's'} across <strong>${total}</strong>${S.nr ? `, and <strong>${S.nr}</strong> it could not review because no passage cleared the relevance threshold` : ''}.</p>
     ${rank ? `<ul class="lead-rank">${rank}</ul>` : ''}
     ${card}
-    <div class="after-run">${upload}</div>`;
+    <div class="after-run">${after}</div>`;
   host.insertBefore(panel, host.firstChild);
+}
+
+// Elapsed-time stamps for the live console: real, measured, and only decorative.
+function liveClock() {
+  const t0 = performance.now();
+  return () => {
+    const sec = (performance.now() - t0) / 1000;
+    return fmt(Math.floor(sec)) + '.' + Math.floor((sec % 1) * 10);
+  };
+}
+
+async function runInitialLive(sample) {
+  const ts = liveClock();
+  const baseline = engineBaseline();
+  const asOfDay = engineAssessmentDate();
+  renderStages(USE_CASES.initial.liveStages);
+  renderGates();
+  if (!asOfDay) {
+    // The date is a declared input; an empty field is not a date. Stop here
+    // rather than assess against a value the visitor cannot see.
+    log(ts(), 'stop', '✗ no assessment date: enter a date in the rail\'s <span class="key">Assessed as of</span> field and run again', 'warn');
+    setStatus('◆ STOPPED · assessment date required');
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('assessment-date');
+    if (el) el.focus();
+    return;
+  }
+
+  // ── 1 · Parse ──
+  setStage(1);
+  setStatus('◆ PARSE · reading the package in your browser · nothing leaves this page');
+  const corpus = await engineCorpus(sample);
+  if (!corpus) {
+    log(ts(), 'stop', 'nothing to assess: no upload and no bundled document set', 'warn');
+    setStatus('◆ STOPPED · nothing to assess');
+    return;
+  }
+  log(ts(), 'init', '<span class="key">live engine</span> · ' + engEsc(corpus.label) + ' · ' + corpus.files.length + ' file(s) received');
+  for (const name of corpus.parsed) log(ts(), 'read', 'parsed <span class="key">' + engEsc(name) + '</span>', 'ok');
+  for (const sk of corpus.skipped) log(ts(), 'read', '✗ refused <span class="key">' + engEsc(sk.name) + '</span> · ' + engEsc(sk.reason), 'warn');
+  if (!corpus.chunks.length) {
+    log(ts(), 'stop', 'no readable evidence: every file was refused · the run stops here rather than adjudicate against nothing', 'warn');
+    setStatus('◆ STOPPED · no readable evidence in the package');
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    return;
+  }
+  log(ts(), 'read', corpus.parsed.length + ' file(s) parsed · ' + corpus.chunks.length + ' evidence chunks' + (corpus.skipped.length ? ' · ' + corpus.skipped.length + ' file(s) refused (listed above — not counted as evidence)' : ''), corpus.skipped.length ? 'warn' : 'ok');
+  await wait(200);
+
+  // ── 2 · Index ──
+  setStage(2);
+  setStatus('◆ INDEX · BM25 over the evidence chunks');
+  const counts = profileCounts(baseline);
+  log(ts(), 'idx', 'BM25 index built · ' + corpus.chunks.length + ' chunks · k1 1.5 · b 0.75', 'ok');
+  log(ts(), 'idx', 'profile <span class="key">FedRAMP ' + baseline + '</span> · ' + counts.controls + ' controls · ' + counts.objectives + ' determination statements');
+  log(ts(), 'idx', 'assessed as of <span class="key">' + asOfDay + '</span> · declared input (the engine reads no clock)');
+  await wait(200);
+
+  // ── 3 · Adjudicate ──
+  setStage(3);
+  setStatus('◆ ADJUDICATE · ' + counts.objectives + ' objectives · 7 recorded gates each');
+  const run = await runEngine(corpus, baseline, asOfDay, (n, total) => {
+    setStatus('◆ ADJUDICATE · ' + n + ' / ' + total + ' objectives');
+  });
+  ENGINE_LAST_RUN = run;
+  const d = run.summary;
+  for (const fam of run.families) {
+    log(ts(), 'adj', fam.id + ' · ' + engEsc(fam.name) + ' · ' + fam.total + ' objectives · ' + fam.sat + ' SAT · ' + fam.ots + ' OTS' + (fam.nr ? ' · ' + fam.nr + ' NR' : ''), fam.ots + fam.nr > fam.sat ? 'warn' : 'ok');
+    await wait(40);
+  }
+  log(ts(), 'adj', run.raw.length + ' objectives adjudicated · Satisfied ' + d.sat + ' · Other Than Satisfied ' + d.ots + ' · Not Reviewed ' + d.nr, 'ok');
+  if (run.reviewCount) log(ts(), 'adj', run.reviewCount + ' Satisfied result(s) fall below the evidence-support floors and are flagged <span class="key">review required</span>', 'warn');
+  await wait(200);
+
+  // ── 4 · Gate tallies ──
+  setStage(4);
+  setStatus('◆ GATES · per-gate tallies across every objective that reached each gate');
+  const names = SparkAEEngine.GATE_NAMES;
+  for (let g = 1; g <= 7; g++) {
+    const reached = run.gateReached[g - 1], passed = run.gatePassed[g - 1];
+    const ok = reached > 0 && passed / reached >= 0.5;
+    setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
+    log(ts(), 'gate', 'gate ' + g + ' · ' + names[g - 1] + ' · ' + passed + '/' + reached + ' objectives passed', ok ? 'ok' : 'warn');
+    await wait(90);
+  }
+
+  // ── 5 · Report ──
+  setStage(5);
+  setStatus('◆ REPORT · receipt · exports');
+  for (const row of run.gapRank) log(ts(), 'rank', row.count + ' × ' + GAP_LABELS[row.type], 'warn');
+  if (run.topFinding) log(ts(), 'rank', 'most consequential · <span class="key">' + engEsc(run.topFinding.dif_id) + '</span> · ' + engEsc(run.topFinding.finding), 'warn');
+  const r = run.receipt;
+  log(ts(), 'rcpt', 'engine v' + r.engine_version + ' · catalog ' + r.catalog_version + ' <span class="key">' + r.catalog_digest.slice(0, 12) + '</span> · ruleset <span class="key">' + r.ruleset_digest.slice(0, 12) + '</span>');
+  log(ts(), 'rcpt', 'evidence <span class="key">' + r.evidence_digest.slice(0, 12) + '</span> · assessed as of ' + r.assessment_date + ' → verdict digest <span class="key">' + r.verdict_digest.slice(0, 12) + '</span>', 'ok');
+  log(ts(), 'rcpt', 'same engine + catalog + ruleset + evidence + date → same verdict digest, on any machine, on any day');
+  log(ts(), 'out', 'defensibility (average finding-trace quality) · <span class="key">' + d.def + '/100</span>', 'ok');
+  log(ts(), 'done', 'automated EXAMINE preparation complete · INTERVIEW and TEST not performed · an assessor work aid, not a SAR', 'ok');
+
+  document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
+  setStatus('◆ COMPLETE · EXAMINE preparation · assessor review required');
+  const meta = document.getElementById('cv-engine-meta');
+  if (meta && sample && sample.liveEngine && corpus.bundled) {
+    meta.style.display = '';
+    meta.textContent = 'live engine · FedRAMP ' + baseline + ' · ' + run.controlCount + ' controls · ' + run.raw.length + ' determination statements · as of ' + asOfDay;
+  }
+  document.getElementById('results').classList.add('show');
+  renderInitialSummaryLive(run);
+  renderLiveHeadline(run);
+  document.getElementById('export-bar').innerHTML = '';
+  renderFindings(d.findings);
+}
+
+function renderInitialSummaryLive(run) {
+  const d = run.summary;
+  const total = d.sat + d.ots + d.nr;
+  const satPct = total > 0 ? Math.round(100 * d.sat / total) : 0;
+  const r = run.receipt;
+  const refused = run.skipped.length
+    ? '<div class="live-refused">' + run.skipped.length + ' file(s) refused and not counted as evidence: ' +
+      run.skipped.map(x => '<span class="key">' + engEsc(x.name) + '</span> — ' + engEsc(x.reason)).join(' · ') + '</div>'
+    : '';
+  document.getElementById('results-summary').innerHTML = `
+    <div class="sar-section-label">
+      <span class="sar-section-num">§5</span>
+      <span class="sar-section-title">Determinations · automated EXAMINE preparation</span>
+      <span class="sar-section-ref">NIST SP 800-53A Rev 5 · EXAMINE only · INTERVIEW and TEST not performed</span>
+      <span class="sar-section-total">${total} objectives · ${satPct}% satisfied · FedRAMP ${run.baseline}</span>
+    </div>
+    <div class="verdict-summary">
+      <div class="verdict-cell sat"><div class="num" id="live-r-sat">0</div><div class="lbl">Satisfied</div><div class="sub">all 7 gates passed</div></div>
+      <div class="verdict-cell ots"><div class="num" id="live-r-ots">0</div><div class="lbl">Other Than Sat</div><div class="sub">a gate failed · → RET</div></div>
+      <div class="verdict-cell nr"><div class="num" id="live-r-nr">0</div><div class="lbl">Not Reviewed</div><div class="sub">no evidence above threshold</div></div>
+      <div class="verdict-cell na"><div class="num" id="live-r-review">0</div><div class="lbl">Review required</div><div class="sub">Satisfied below support floors</div></div>
+    </div>
+    <div class="def-strip">
+      <span class="def-label">Defensibility · average finding-trace quality (internal rubric, not assessor acceptance)</span>
+      <span class="def-num" id="live-r-def">0</span>
+      <span class="def-max">/ 100</span>
+    </div>
+    <div class="receipt-strip">
+      <div class="receipt-title">Reproducibility receipt</div>
+      <div class="receipt-grid">
+        <span>engine</span><code>v${engEsc(r.engine_version)}</code>
+        <span>catalog</span><code>${engEsc(r.catalog_version)} · ${engEsc(r.catalog_digest)}</code>
+        <span>ruleset</span><code>${engEsc(r.ruleset_digest)}</code>
+        <span>evidence</span><code>${engEsc(r.evidence_digest)} · ${run.fileCount} file(s) · ${run.chunkCount} chunks</code>
+        <span>assessed as of</span><code>${engEsc(r.assessment_date)}</code>
+        <span>verdicts</span><code>${engEsc(r.verdict_digest)}</code>
+      </div>
+      <div class="receipt-note">Same five inputs → same verdict digest. Exports built from this run are byte-identical on every download.</div>
+      ${refused}
+    </div>`;
+  animateNum('live-r-sat', d.sat);
+  animateNum('live-r-ots', d.ots);
+  animateNum('live-r-nr', d.nr);
+  animateNum('live-r-review', run.reviewCount);
+  animateNum('live-r-def', d.def);
 }
 
 // Capture the raw File objects for the engine. The shell's own change handler
@@ -9995,6 +9138,19 @@ function renderLiveHeadline(R) {
 let CUSTOM_PKG_FILES = [];
 document.getElementById('ssp-upload-input').addEventListener('change', (ev) => {
   CUSTOM_PKG_FILES = Array.from(ev.target.files || []);
+  // An upload carries the visitor's real evidence, so the default assessment
+  // date becomes their own — read once, here, into a visible field they can
+  // edit. The engine itself never reads the clock.
+  if (CUSTOM_PKG_FILES.length) {
+    const el = document.getElementById('assessment-date');
+    if (el) el.value = new Date().toISOString().slice(0, 10);
+  }
+});
+document.getElementById('engine-profile').addEventListener('change', () => {
+  const b = engineBaseline();
+  const c = profileCounts(b);
+  const cv = document.getElementById('cv-meta');
+  if (cv) cv.textContent = 'FedRAMP ' + b + ' · ' + c.controls + ' controls · ' + c.objectives + ' objectives · v2.4';
 });
 
 // ── Capped, batched finding painter ─────────────────────────────────────

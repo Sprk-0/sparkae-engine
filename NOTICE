@@ -1,0 +1,29 @@
+SparkAE public reference build
+Copyright 2026 ONE Solution Cyber
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use the files in this repository except in compliance with the License. You
+may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+SparkAE and the SparkAE marks are reserved. The SparkAE server product is
+separate commercial software and is not covered by this licence.
+
+Third-party material:
+
+- NIST SP 800-53 Rev 5 and SP 800-53A Rev 5 catalog text
+  (demo-standalone-catalog.js) is a work of the United States Government
+  and is not subject to copyright in the United States.
+- The OSCAL 1.1.2 assessment-results JSON Schema (tests/schema/) is
+  published by NIST and is likewise a United States Government work.
+- IBM Plex Sans and IBM Plex Mono (static/fonts/): Copyright 2017 IBM Corp.,
+  SIL Open Font License 1.1 — see static/fonts/OFL-IBM-Plex.txt.
+- Fraunces (static/fonts/): Copyright 2018 The Fraunces Project Authors,
+  SIL Open Font License 1.1 — see static/fonts/OFL-Fraunces.txt.

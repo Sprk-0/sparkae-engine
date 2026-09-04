@@ -16,18 +16,33 @@
    `const` redeclaration across two classic scripts is a hard SyntaxError that
    would take the whole page down.
 
-   Pure logic — no DOM access, no network, and no clock. The assessment date
-   is run context the caller supplies; the four temporal gates receive it and
-   the result reports it as `assessment_date` with `assessment_date_source`
-   ('supplied' or 'none'). With no date the temporal gate cannot verify
-   currency and fails closed ('indeterminate') rather than borrowing a date
-   from the evidence under test — a package whose newest scan is years old
-   must not pass the cadence gate by being assessed "as of" that scan. The
-   same corpus and date therefore give the same verdicts on any machine on
-   any day. Determinism is a product guarantee (repo rule 6): same corpus in,
-   same verdicts out. Do not introduce new Date() with no arguments,
-   Date.now(), Math.random(), or iteration that depends on object key order
-   below.
+   Pure logic — no DOM access, no network, no clock. The verdict path never
+   reads the wall clock: assessDif REQUIRES an assessment date (a Date) and
+   throws without one, the four temporal gates receive that date rather than
+   reaching for `new Date()` themselves, and every result reports the date it
+   was assessed against as `assessment_date`. The caller decides the date —
+   the demo page pins one for the bundled sample and shows an editable
+   assessment-date field for uploads — so the reproducibility tuple is
+   explicit: engine version + catalog digest + ruleset digest + evidence
+   digest + assessment date → the same verdicts, on any machine, on any day.
+   Determinism is a product guarantee (repo rule 6): same corpus in, same
+   verdicts out. Do not introduce Date.now(), new Date() with no arguments,
+   Math.random(), or iteration that depends on object key order below.
+
+   Gate model (canonical, seven top-level gates — each result's `gates`
+   array holds one record per gate reached, in order, and nothing else):
+     1 Presence       evidence above the relevance threshold exists
+     2 Concepts       concept coverage of the objective text
+     3 Strength       traceable references (3a) and no keyword stuffing (3b)
+     4 ODP            organization-defined parameters resolved
+     5 Contradiction  no refutation (5a), no self-contradiction (5b),
+                      no draft/placeholder markers (5c)
+     6 Temporal       currency (6a), scan cadence (6b), no future-dated
+                      claims (6c), open-finding SLA (6d)
+     7 Determination  Satisfied only if gates 1–6 all passed
+   Sub-checks are nested under their gate as `checks: [{id, name, pass}]`;
+   they never appear as top-level gate records, so `gates.length` is at most
+   7 and a Satisfied result always carries exactly seven passing records.
    ═══════════════════════════════════════════════════════════════════ */
 (function (global) {
 'use strict';
@@ -136,27 +151,54 @@ function chunkText(text, filename, maxChunk = 800, minChunk = 100) {
   return chunks;
 }
 
+function unsupported(name, reason) {
+  const err = new Error(reason);
+  err.code = 'UNSUPPORTED';
+  err.filename = name;
+  return err;
+}
+
+// Parse one uploaded file into evidence chunks. Throws (with `code`) rather
+// than returning a placeholder: a parser failure must never quietly shrink
+// the evidence set and let the run continue towards a verdict as if the file
+// had been read. parsePackage() below is the tolerant wrapper that records
+// each refusal and reports it.
 async function parseFile(file) {
   const name = file.name;
   const ext = (name.split('.').pop() || '').toLowerCase();
-  if (ext === 'txt' || ext === 'md' || ext === 'nessus' || ext === 'xml' || ext === 'json') {
+  if (ext === 'txt' || ext === 'md' || ext === 'nessus' || ext === 'xml' || ext === 'json' || ext === 'csv') {
     const text = await file.text();
+    if (!text || !text.trim()) throw unsupported(name, 'file is empty');
     return chunkText(text, name);
   }
-  if (ext === 'csv') {
-    const text = await file.text();
-    return chunkText(text, name);
+  if (ext === 'docx') return await parseDocx(file);
+  if (ext === 'zip') return (await parseZipReport(file)).chunks;
+  if (UNSUPPORTED_EXTENSIONS.includes(ext)) {
+    throw unsupported(name, '.' + ext + ' text extraction is not available in the browser build (server product only)');
   }
-  if (ext === 'docx') {
-    return await parseDocx(file);
+  throw unsupported(name, 'unrecognised file type .' + ext + ' — supported: ' + SUPPORTED_EXTENSIONS.map(e => '.' + e).join(' '));
+}
+
+// Parse a whole upload. Returns every chunk that was actually read plus an
+// explicit account of what was not, so the caller can show the visitor
+// "N files parsed · M refused (and why)" instead of a reassuring total.
+async function parsePackage(files) {
+  const chunks = [], parsed = [], skipped = [];
+  for (const f of files) {
+    const ext = ((f.name || '').split('.').pop() || '').toLowerCase();
+    try {
+      if (ext === 'zip') {
+        const r = await parseZipReport(f);
+        chunks.push(...r.chunks); parsed.push(...r.parsed); skipped.push(...r.skipped);
+      } else {
+        chunks.push(...await parseFile(f));
+        parsed.push(f.name);
+      }
+    } catch (e) {
+      skipped.push({ name: f.name, reason: e && e.message ? e.message : String(e) });
+    }
   }
-  // For formats we can't parse client-side (PDF, XLSX, XLS, DOC), extract what we can
-  if (ext === 'pdf') {
-    return [{text: '[PDF file: ' + name + ' — text extraction requires server-side processing. Upload to SparkAE server for full analysis.]', filename: name, offset: 0, control_ids: []}];
-  }
-  const text = await file.text().catch(() => '');
-  if (text && text.trim()) return chunkText(text, name);
-  return [{text: '[Binary file: ' + name + ']', filename: name, offset: 0, control_ids: []}];
+  return { chunks, parsed, skipped };
 }
 
 async function parseDocx(file) {
@@ -165,7 +207,7 @@ async function parseDocx(file) {
     const buf = await file.arrayBuffer();
     const entries = await unzip(buf);
     const docXml = entries['word/document.xml'];
-    if (!docXml) return [{text: '[DOCX: could not find document.xml]', filename: file.name, offset: 0, control_ids: []}];
+    if (!docXml) throw unsupported(file.name, 'DOCX has no word/document.xml');
     const text = docXml
       .replace(/<w:br[^>]*\/>/gi, '\n')
       .replace(/<\/w:p>/gi, '\n\n')
@@ -174,9 +216,11 @@ async function parseDocx(file) {
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+    if (!text) throw unsupported(file.name, 'DOCX contains no text');
     return chunkText(text, file.name);
   } catch(e) {
-    return [{text: '[DOCX parse error: ' + e.message + ']', filename: file.name, offset: 0, control_ids: []}];
+    if (e && e.code === 'UNSUPPORTED') throw e;
+    throw unsupported(file.name, 'DOCX could not be parsed: ' + (e && e.message ? e.message : e));
   }
 }
 
@@ -224,21 +268,31 @@ async function unzip(buffer) {
   return entries;
 }
 
-async function parseZip(file) {
+async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
   const entries = await unzip(buf);
-  const allChunks = [];
+  const chunks = [], parsed = [], skipped = [];
+  // Member order is the archive's own order, which is fixed for a given file.
   for (const [name, content] of Object.entries(entries)) {
     if (name.endsWith('/')) continue; // directory
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
-      allChunks.push(...chunkText(content, name));
+      if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); }
+      else skipped.push({ name, reason: 'archive member is empty' });
     } else if (ext === 'docx') {
-      // Nested DOCX in ZIP — skip (can't easily re-parse nested zip)
-      allChunks.push({text: '[Nested DOCX: ' + name + ']', filename: name, offset: 0, control_ids: []});
+      // unzip() decodes members as text, so a nested DOCX cannot be re-parsed
+      // here. Refuse it visibly rather than emit a placeholder chunk.
+      skipped.push({ name, reason: 'DOCX inside a ZIP is not parsed in the browser build — upload the .docx directly' });
+    } else {
+      skipped.push({ name, reason: 'unsupported archive member type .' + ext });
     }
   }
-  return allChunks;
+  if (!parsed.length && !skipped.length) throw unsupported(file.name, 'ZIP contains no readable members');
+  return { chunks, parsed, skipped };
+}
+
+async function parseZip(file) {
+  return (await parseZipReport(file)).chunks;
 }
 
 // ════════════════════════════════════════════════════════
@@ -247,6 +301,23 @@ async function parseZip(file) {
 
 const MIN_EVIDENCE_SCORE = 0.15;
 const MIN_CONCEPT_COVERAGE = 0.40;
+
+// A Satisfied verdict resting on thin support is still Satisfied — the gates
+// are the rule — but it is flagged for a human before anyone relies on it.
+// Below either floor the result carries `review_required: true` and says why.
+const REVIEW_CONFIDENCE_FLOOR = 0.60;
+const REVIEW_COVERAGE_FLOOR = 0.60;
+
+// Bump on ANY change to a gate, threshold, pattern list or scoring formula
+// below. It is part of the reproducibility tuple stamped into every export,
+// so a verdict can be traced to the exact rules that produced it.
+const ENGINE_VERSION = '1.0.0';
+
+// File types this build parses in the browser. Anything else is refused with
+// a reason — never silently turned into a placeholder chunk that reads as
+// evidence. PDF and XLSX text extraction is a server-product feature.
+const SUPPORTED_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'xml', 'nessus', 'docx', 'zip'];
+const UNSUPPORTED_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'doc', 'pptx', 'ppt'];
 
 // ── Gate 2: Concept Extraction & Coverage ──
 
@@ -522,29 +593,9 @@ function extractDates(text) {
     .sort((a, b) => b.dateObj - a.dateObj);
 }
 
-// Find the passage carrying a phrase: first in the evidence already
-// retrieved for this objective, else anywhere in the corpus (the refutation
-// index is corpus-wide). Returns a window around it and the file it sits in.
-function locatePhrase(retriever, evidenceText, phrase) {
-  const needle = String(phrase || '').toLowerCase();
-  if (needle.length < 6) return { excerpt: '', filename: '' };
-  const window = (text, at) => {
-    const start = Math.max(0, at - 220), end = Math.min(text.length, at + needle.length + 220);
-    return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
-  };
-  let at = evidenceText.toLowerCase().indexOf(needle);
-  if (at >= 0) return { excerpt: window(evidenceText, at), filename: '' };
-  for (const c of (retriever && retriever.chunks || [])) {
-    const text = foldHomoglyphs(c && c.text || '');
-    at = text.toLowerCase().indexOf(needle);
-    if (at >= 0) return { excerpt: window(text, at), filename: c.filename || '' };
-  }
-  return { excerpt: '', filename: '' };
-}
-
 function checkCurrency(dates, assessmentDate) {
   if (!dates.length) return {isCurrent:true, staleDays:0, concerns:[]};
-  const ad = assessmentDate;
+  const ad = assessmentDate; // supplied by assessDif — never the clock
   const most = dates[0];
   const daysOld = Math.round((ad - most.dateObj) / 86400000);
   const thresh = STALENESS[most.ctxType] || 365;
@@ -564,7 +615,7 @@ const SCAN_CADENCE_DAYS = 30;
 const SCAN_CONTEXT_RE = /\b(?:vulnerability scan|vuln scan|authenticated scan|credentialed scan|web application scan|database scan|container scan|nessus|qualys|tenable|rapid7|openvas|scanned|last scan|most recent scan|scan(?:s)?\s+(?:was|were|is|are)?\s*(?:performed|completed|run|conducted|executed))\b/i;
 
 function checkScanCadence(dates, assessmentDate) {
-  const ad = assessmentDate;
+  const ad = assessmentDate; // supplied by assessDif — never the clock
   const scanDates = dates.filter(d => SCAN_CONTEXT_RE.test(d.surrounding || ''));
   if (!scanDates.length) return null;
   const most = scanDates[0];
@@ -581,7 +632,7 @@ const PAST_ACTION_RE = /\b(?:completed|performed|conducted|executed|tested|revie
 const FUTURE_PLAN_RE = /\b(?:scheduled|planned|due|target|upcoming|expir|valid until|renew|will be|to be completed|to be performed|to be done|forecast|projected|anticipat|next)\b/i;
 
 function checkFutureDates(dates, assessmentDate) {
-  const ad = assessmentDate;
+  const ad = assessmentDate; // supplied by assessDif — never the clock
   for (const d of dates) {
     const age = Math.round((ad - d.dateObj) / 86400000);
     if (age >= 0) break; // past date, stop
@@ -605,7 +656,7 @@ const SLA_DAYS = {critical:30, high:30, moderate:90, medium:90, low:180};
 
 function checkOpenFindingSla(evidenceText, assessmentDate) {
   if (!evidenceText) return null;
-  const ad = assessmentDate;
+  const ad = assessmentDate; // supplied by assessDif — never the clock
   const sentences = evidenceText.split(/(?<=[.;!?])\s+/);
   for (const sent of sentences) {
     if (!FINDING_NOUN_RE.test(sent)) continue;
@@ -769,50 +820,24 @@ function classifyGapType(finding) {
   return 'other_gap';
 }
 
-
-// The remediation a reviewer reads under the finding. One generic sentence
-// ("review the listed gaps and supply evidence") told an assessor nothing they
-// did not already know from the verdict; this names the specific thing the
-// evidence is missing, per gap type, using what the gates actually measured.
-function recommendationFor(gapType, controlId, coverage, odp, temporalConcerns, refutations, contradictions) {
-  const uncovered = (coverage && coverage.uncovered || []).slice(0, 4);
-  const missingOdps = (odp && odp.missing || []).slice(0, 3);
-  switch (gapType) {
-    case 'missing_implementation':
-      return 'The evidence states or implies that ' + controlId + ' is not (yet) implemented. Implement the control, then replace the statement with a description of the implemented mechanism and the date it took effect.';
-    case 'contradictory_evidence':
-      return 'The evidence for ' + controlId + ' contradicts itself' + (refutations && refutations.length ? ' (' + refutations.length + ' refuting statement' + (refutations.length === 1 ? '' : 's') + ')' : '') + '. Reconcile the conflicting statements so one implementation description stands, and cite the document that is authoritative.';
-    case 'incomplete_policy':
-      if (missingOdps.length) {
-        return 'Define the organization-defined parameter' + (missingOdps.length === 1 ? '' : 's') + ' the objective depends on — ' + missingOdps.join('; ') + ' — with a concrete value in the SSP, then cite the policy that sets it.';
-      }
-      return 'The evidence for ' + controlId + ' still carries draft or placeholder language. Replace it with the final, approved text and record the approval date.';
-    case 'temporal_gap':
-      return 'Refresh the dated evidence for ' + controlId + (temporalConcerns && temporalConcerns.length ? ' (' + temporalConcerns[0] + ')' : '') + ': supply the most recent review, scan, or exercise record with its date, or document the cadence that keeps it current.';
-    case 'missing_evidence':
-    default:
-      if (uncovered.length) {
-        return 'Add to the ' + controlId + ' implementation statement an explicit description of: ' + uncovered.join(', ') + '. Cite the section or document where each is defined.';
-      }
-      return 'Supply evidence that addresses the objective text for ' + controlId + ' directly, with a traceable reference (document, section, date).';
-  }
-}
-
 // ════════════════════════════════════════════════════════
 // SINGLE DIF ASSESSMENT (7-gate pipeline)
 // ════════════════════════════════════════════════════════
 
 function assessDif(dif, retriever, controlId, controlTitle, familyName, refutationIdx, assessmentDate) {
-  // The four temporal gates each used to default to `new Date()`, so identical
-  // evidence produced different verdicts on different days. The date is run
-  // context: the caller's, or none — never the clock, and never a date read
-  // out of the evidence being tested (that would let a stale package pass
-  // its own cadence gate). Reported on every result so a verdict can be
-  // reproduced from its own output.
-  const asOf = assessmentDate || null;
-  const asOfSource = asOf ? 'supplied' : 'none';
-  // '' rather than a throw if a caller hands in an unparseable date.
-  const asOfDay = (asOf && !isNaN(asOf)) ? asOf.toISOString().slice(0, 10) : '';
+  // The four temporal gates once defaulted to `new Date()` internally, and a
+  // later revision read the clock here when the caller passed nothing — so an
+  // uploaded package could get different temporal verdicts on different days
+  // while the page promised "same input, same verdicts". The engine now reads
+  // no clock at all: the assessment date is a required input, the gates
+  // receive it, and every result reports it. The caller (the demo page) owns
+  // the date and shows it, which is what makes a verdict reproducible.
+  // Realm-safe (a Date from another vm context is still a Date).
+  if (Object.prototype.toString.call(assessmentDate) !== '[object Date]' || isNaN(assessmentDate)) {
+    throw new Error('assessDif: assessmentDate (a valid Date) is required — the engine does not read the clock');
+  }
+  const asOf = assessmentDate;
+  const asOfDay = asOf.toISOString().slice(0, 10);
   const query = dif.t + ' ' + controlTitle + ' ' + familyName;
   const hits = retriever.query(query, 8, controlId);
   const strongHits = hits.filter(h => h.score >= MIN_EVIDENCE_SCORE);
@@ -835,12 +860,13 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       proposed_remediation: 'Provide documentation that addresses the DIF objective text.',
       assessment_method: 'EXAMINE',
       assessment_date: asOfDay,
-      assessment_date_source: asOfSource,
       confidence: 0, defensibility_score: 0, concept_coverage: 0,
       gap_description: 'No evidence above the relevance threshold for this objective',
-      // The status gate is recorded even when adjudication stops at gate 1, so
-      // every result carries its determination gate.
-      gates: [{gate:1, name:'Presence', pass:false}, {gate:7, name:'Status', pass:false}]
+      review_required: false,
+      gates: [
+        {gate:1, name:'Presence', pass:false},
+        {gate:7, name:'Determination', pass:false, determination:'Not Reviewed'}
+      ]
     };
   }
   gates.push({gate:1, name:'Presence', pass:true});
@@ -880,15 +906,17 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   }
   if (typeof coverageResult === 'undefined') coverageResult = {ratio: 0, uncovered: [], covered: []};
 
-  // Gate 3: Evidence Strength
+  // Gate 3: Evidence Strength — 3a traceable references, 3b no keyword
+  // stuffing (checked on own-control evidence, not cross-control BM25 results)
   const strength = scoreEvidence(evidenceText);
-  const g3pass = strength.tier !== 'weak' && strength.tier !== 'unknown';
-  gates.push({gate:3, name:'Strength', pass:g3pass});
-  if (!g3pass) gaps.push('Evidence strength: ' + strength.tier + ' — no traceable references');
-
-  // Gate 3b: Stuffing — check own-control evidence, not cross-control BM25 results
+  const g3a = strength.tier !== 'weak' && strength.tier !== 'unknown';
   const stuffed = evidenceLooksStuffed(ownEvidence || evidenceText);
-  if (stuffed) { gates.push({gate:'3b', name:'Stuffing', pass:false}); gaps.push('Evidence appears keyword-stuffed'); }
+  gates.push({gate:3, name:'Strength', pass:g3a && !stuffed, checks:[
+    {id:'3a', name:'Traceability', pass:g3a},
+    {id:'3b', name:'Stuffing', pass:!stuffed}
+  ]});
+  if (!g3a) gaps.push('Evidence strength: ' + strength.tier + ' — no traceable references');
+  if (stuffed) gaps.push('Evidence appears keyword-stuffed');
 
   // Gate 4: ODP Validation
   const odp = validateOdps(dif.t, evidenceText);
@@ -908,83 +936,81 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     const gapType = 'missing_implementation';
     const lk = likelihoodFor(coverageResult.ratio, strength.tier);
     const imp = impactFor([gapType]);
-    gates.push({gate:5, name:'Refutation', pass:false});
-    gates.push({gate:7, name:'Status', pass:false});
-    // Quote the passage that carries the refuting statement — a reader
-    // checking the finding should see the sentence the gate reacted to, not
-    // the first 500 characters of whatever ranked highest.
-    const where = locatePhrase(retriever, evidenceText, allRefutations[0]);
-    const refRefs = strongHits.slice(0,3).map(h => h.filename);
-    if (where.filename && !refRefs.includes(where.filename)) refRefs.unshift(where.filename);
+    gates.push({gate:5, name:'Contradiction', pass:false, checks:[{id:'5a', name:'Refutation', pass:false}]});
+    gates.push({gate:7, name:'Determination', pass:false, determination:'Other Than Satisfied'});
     return {
       dif_id: dif.i, control_id: controlId, objective_id: dif.i,
       status: 'Other Than Satisfied', determination: 'Other Than Satisfied',
       finding: 'Refuting evidence found: ' + allRefutations[0],
-      evidence_description: where.excerpt || evidenceText.slice(0, 500), evidence_references: refRefs,
+      evidence_description: evidenceText.slice(0, 500), evidence_references: strongHits.slice(0,3).map(h => h.filename),
       weakness_name: 'Control Not Implemented — ' + controlId,
       weakness_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
       weakness_type: 'Significant Deficiency',
       likelihood_before: lk, impact_before: imp, risk_exposure_before: calcRiskExposure(lk, imp),
       risk_statement: 'Control objective ' + dif.i + ' is explicitly marked as not implemented in the evidence.',
-      recommendation: 'The evidence for ' + controlId + ' states "' + allRefutations[0] + '". Implement the control, then replace that statement with a description of the implemented mechanism and the date it took effect.',
+      recommendation: 'Complete implementation of ' + controlId + ' and provide updated documentation.',
       proposed_remediation: 'Address the implementation gap: ' + allRefutations[0],
       assessment_method: 'EXAMINE',
       assessment_date: asOfDay,
-      assessment_date_source: asOfSource,
       confidence: computeConfidence('Other Than Satisfied', evidenceText, strength, coverageResult.ratio, defScore, 1),
       defensibility_score: defScore, concept_coverage: coverageResult.ratio,
       gap_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
+      review_required: false,
       gates
     };
   }
+  // 5b self-contradiction, 5c draft/placeholder markers — both scoped to own-control evidence
   const contradictions = detectContradictions(ownEvidence || evidenceText);
-  if (contradictions.length) { gates.push({gate:5, name:'Contradiction', pass:false}); gaps.push('Self-contradictory evidence'); }
-  else gates.push({gate:5, name:'Contradiction', pass:true});
-
-  // Gate 5b: Draft/Placeholder — scope to own-control evidence
   const drafts = detectDraftPlaceholders(ownEvidence || evidenceText);
-  if (drafts.length) { gates.push({gate:'5b', name:'Draft', pass:false}); gaps.push('Draft markers: ' + drafts.join(', ')); }
+  gates.push({gate:5, name:'Contradiction', pass:!contradictions.length && !drafts.length, checks:[
+    {id:'5a', name:'Refutation', pass:true},
+    {id:'5b', name:'Contradiction', pass:!contradictions.length},
+    {id:'5c', name:'Draft', pass:!drafts.length}
+  ]});
+  if (contradictions.length) gaps.push('Self-contradictory evidence');
+  if (drafts.length) gaps.push('Draft markers: ' + drafts.join(', '));
 
   // Gate 6: Temporal — use own-control evidence to avoid cross-control date bleed
   const temporalText = ownEvidence || evidenceText;
   const dates = extractDates(temporalText);
-  let g6pass = false;
+  const currency = checkCurrency(dates, asOf);
+  let g6pass = currency.isCurrent;
   const g6concerns = [];
-  if (!asOf) {
-    // Indeterminate, and fail closed: currency, cadence, future-dating and
-    // SLA age are all relative to an assessment date nobody supplied.
-    g6concerns.push('no assessment date supplied — evidence currency cannot be verified');
-  } else {
-    const currency = checkCurrency(dates, asOf);
-    g6pass = currency.isCurrent;
-    if (!currency.isCurrent) g6concerns.push(currency.concerns[0] || 'no current dates');
+  if (!currency.isCurrent) g6concerns.push(currency.concerns[0] || 'no current dates');
 
-    // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
-    const cadenceIssue = checkScanCadence(dates, asOf);
-    if (cadenceIssue) { g6pass = false; g6concerns.push(cadenceIssue); }
+  // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
+  const cadenceIssue = checkScanCadence(dates, asOf);
+  if (cadenceIssue) { g6pass = false; g6concerns.push(cadenceIssue); }
 
-    // Gate 6c: Future Date Fabrication
-    const futureDateIssue = checkFutureDates(dates, asOf);
-    if (futureDateIssue) { g6pass = false; g6concerns.push(futureDateIssue); }
+  // Gate 6c: Future Date Fabrication
+  const futureDateIssue = checkFutureDates(dates, asOf);
+  if (futureDateIssue) { g6pass = false; g6concerns.push(futureDateIssue); }
 
-    // Gate 6d: Open Finding SLA
-    const slaIssue = checkOpenFindingSla(temporalText, asOf);
-    if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
-  }
+  // Gate 6d: Open Finding SLA
+  const slaIssue = checkOpenFindingSla(temporalText, asOf);
+  if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
 
-  gates.push({gate:6, name:'Temporal', pass:g6pass});
+  gates.push({gate:6, name:'Temporal', pass:g6pass, checks:[
+    {id:'6a', name:'Currency', pass:currency.isCurrent},
+    {id:'6b', name:'Scan cadence', pass:!cadenceIssue},
+    {id:'6c', name:'Future dates', pass:!futureDateIssue},
+    {id:'6d', name:'Finding SLA', pass:!slaIssue}
+  ]});
   if (!g6pass) gaps.push(...g6concerns.map(c => 'Temporal: ' + c));
 
-  // Gate 7: Determination. The status gate is a gate like the other six — it
-  // is recorded on the result so a consumer counting `gates` sees the same
-  // seven the finding text names ("All 7 gates passed"), and a per-gate
-  // tally has a real denominator for gate 7 (every objective that reached
-  // it) instead of zero. It passes exactly when every prior gate passed.
+  // Gate 7: Determination — recorded like every other gate, so a Satisfied
+  // result carries exactly seven passing records and a tally of the gates is
+  // a tally of the gates.
   const allPassed = gates.every(g => g.pass);
-  gates.push({gate:7, name:'Status', pass:allPassed});
   const defScore = scoreDefensibility(evidenceText, coverageResult.ratio, strength, dates.length > 0, contradictions.length > 0);
   const determination = allPassed ? 'Satisfied' : 'Other Than Satisfied';
+  gates.push({gate:7, name:'Determination', pass:allPassed, determination});
   const conf = computeConfidence(determination, evidenceText, strength, coverageResult.ratio, defScore, contradictions.length);
+  // Satisfied on thin support is flagged, not reclassified: the gates decide
+  // the verdict, the floors decide whether a human must look before it is used.
+  const reviewReasons = [];
+  if (allPassed && conf < REVIEW_CONFIDENCE_FLOOR) reviewReasons.push('confidence ' + Math.round(conf * 100) + '% is below the ' + Math.round(REVIEW_CONFIDENCE_FLOOR * 100) + '% floor');
+  if (allPassed && coverageResult.ratio < REVIEW_COVERAGE_FLOOR) reviewReasons.push('concept coverage ' + Math.round(coverageResult.ratio * 100) + '% is below the ' + Math.round(REVIEW_COVERAGE_FLOOR * 100) + '% floor');
   const evRefs = strongHits.slice(0,3).map(h => h.filename).filter((v,i,a) => a.indexOf(v)===i);
 
   const result = {
@@ -995,13 +1021,14 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     evidence_references: evRefs,
     assessment_method: 'EXAMINE',
     assessment_date: asOfDay,
-    assessment_date_source: asOfSource,
     confidence: conf,
     defensibility_score: defScore,
     concept_coverage: coverageResult.ratio,
     evidence_strength: strength.tier,
-    temporal_status: !asOf ? 'indeterminate' : g6pass ? 'current' : 'stale',
+    temporal_status: g6pass ? 'current' : 'stale',
     gap_description: gaps.join('; ') || '',
+    review_required: reviewReasons.length > 0,
+    review_reason: reviewReasons.join('; '),
     gates
   };
 
@@ -1020,29 +1047,54 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     result.risk_exposure_before = calcRiskExposure(lk, imp);
     result.risk_statement = 'Control objective ' + dif.i + ' is not fully verified; ' + (coverageResult.uncovered || []).length + ' concept(s) missing from evidence.';
     result.mitigating_factors = coverageResult.covered && coverageResult.covered.length ? 'Partial evidence present; review surfaced chunks manually to confirm.' : '';
-    result.recommendation = recommendationFor(gapType, controlId, coverageResult, odp, g6concerns, allRefutations, contradictions);
+    result.recommendation = 'Review the listed gaps and either supply additional evidence or implement the missing controls.';
     result.proposed_remediation = (coverageResult.uncovered || []).length ? 'Provide documentation covering: ' + (coverageResult.uncovered || []).slice(0,5).join(', ') + '.' : 'Provide stronger evidence or resolve ODP parameters.';
-    result.assessor_notes = 'Deterministic mode — gates failed: ' + gates.filter(g => !g.pass).length + '; coverage: ' + Math.round(coverageResult.ratio*100) + '%; strength: ' + strength.tier + '.';
+    result.assessor_notes = 'Deterministic mode — gates failed: ' + gates.filter(g => !g.pass && g.gate !== 7).length + '; coverage: ' + Math.round(coverageResult.ratio*100) + '%; strength: ' + strength.tier + '.';
   }
 
   return result;
 }
 
+// The rule set, as data. Hashed into the reproducibility receipt so a change
+// to any threshold changes the ruleset digest even if ENGINE_VERSION is
+// forgotten. Regex pattern lists are covered by the version bump rule above.
+const RULESET = Object.freeze({
+  engine_version: ENGINE_VERSION,
+  bm25: { k1: BM25_K1, b: BM25_B, control_id_boost: CONTROL_ID_BOOST },
+  min_evidence_score: MIN_EVIDENCE_SCORE,
+  min_concept_coverage: MIN_CONCEPT_COVERAGE,
+  review_confidence_floor: REVIEW_CONFIDENCE_FLOOR,
+  review_coverage_floor: REVIEW_COVERAGE_FLOOR,
+  staleness_days: STALENESS,
+  scan_cadence_days: SCAN_CADENCE_DAYS,
+  sla_days: SLA_DAYS,
+  refutation_windows: {
+    near_control_chars: REFUTATION_NEAR_CONTROL_CHARS,
+    near_other_chars: REFUTATION_NEAR_OTHER_CHARS,
+    index_scope_chars: REFUTATION_INDEX_SCOPE_CHARS
+  },
+  gates: ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Determination']
+});
+
 global.SparkAEEngine = {
+  ENGINE_VERSION: ENGINE_VERSION,
+  RULESET: RULESET,
+  GATE_NAMES: RULESET.gates,
+  SUPPORTED_EXTENSIONS: SUPPORTED_EXTENSIONS,
   BM25Retriever: BM25Retriever,
   assessDif: assessDif,
   buildRefutationIndex: buildRefutationIndex,
   parseFile: parseFile,
+  parsePackage: parsePackage,
   parseZip: parseZip,
+  parseZipReport: parseZipReport,
   parseDocx: parseDocx,
   unzip: unzip,
   chunkText: chunkText,
   tokenize: tokenize,
   extractControlIds: extractControlIds,
   grade: grade,
-  extractDates: extractDates,
   classifyGapType: classifyGapType,
-  recommendationFor: recommendationFor,
   scoreDefensibility: scoreDefensibility,
   computeConfidence: computeConfidence,
   calcRiskExposure: calcRiskExposure,

@@ -1,5 +1,7 @@
-# Static site, no build step: publish the repository as-is. _redirects sends
-# the root to the demo and _headers carries the security policy.
+# Static site, no build step: publish the repository root as-is. _headers
+# carries the per-page security policy; _redirects provides the forced /demo
+# short link (to demo-standalone.html) and the /3pao.html -> /assessors.html
+# move. The root serves index.html.
 [build]
   publish = "."
   command = "true"

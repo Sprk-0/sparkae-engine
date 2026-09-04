@@ -15,17 +15,27 @@
 // TokenDatatype and rejects brackets and parens. A download advertised as
 // "OSCAL v1.1.2" failed the official NIST schema in the thousands.
 //
-// The shapes below mirror src/services/oscal_exporter.py
-// (generate_assessment_results / generate_poam) — the server-side exporter
-// that the server exporter already brought to official-schema conformance. Keep the two
-// in step: tests/test_website_demo_exports.py validates this file's output
-// against the vendored NIST schema in data/oscal-schemas/v1.1.2/ using the
-// same validator the backend uses.
+// The shapes below mirror the server product's OSCAL exporter (private
+// repository: src/services/oscal_exporter.py — generate_assessment_results /
+// generate_poam), which was brought to official-schema conformance first.
+// Keep the two in step. The official NIST OSCAL 1.1.2 assessment-results
+// schema is vendored alongside this file in the public repository
+// (tests/schema/) and the public CI validates every build's output against
+// it; the private suite runs the same check with the backend's validator.
+//
+// Determinism. Nothing here reads a clock or a random source. Every UUID is
+// RFC 4122 v5 (SHA-1) derived from the run's evidence digest and a stable
+// name, and every timestamp comes from the assessment date the caller
+// supplies. Build the same artifact twice from the same state and the bytes
+// are identical — which is the property a reviewer will check with sha256.
+// Callers that need a different id scheme inject `opts.uuid`.
 
 var DEMO_EXPORTS = (function () {
   'use strict';
 
   var FEDRAMP_NS = 'https://fedramp.gov/ns/oscal';
+  // Namespace for SparkAE's own metadata props (the reproducibility receipt).
+  var SPARKAE_NS = 'urn:onesolutioncyber:sparkae:reference-engine';
 
   // ── Identifier normalization ───────────────────────────────────────────
   // Mirrors oscal_exporter._to_oscal_control_id.
@@ -55,53 +65,173 @@ var DEMO_EXPORTS = (function () {
     return out;
   }
 
-  // ── UUIDs ──────────────────────────────────────────────────────────────
-  // Identifiers are derived from content, never from a random source: the
-  // same findings exported twice give byte-identical artifacts, which is the
-  // property the site claims ("same input, same output") and the one an
-  // assessor can check with a hash. Each id hashes a seed (the caller's, or
-  // one built from the findings themselves) plus a counter through four
-  // FNV-1a lanes, then stamps the RFC 4122 version and variant bits.
-  function fnv1a(str, basis) {
-    var h = basis >>> 0;
-    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-    return h;
+  // ── Digests ────────────────────────────────────────────────────────────
+  // A synchronous SHA-1 (FIPS 180-4) over UTF-8. The builders are synchronous
+  // and crypto.subtle is async-only, so the hash is implemented here; it is
+  // used for identifiers and receipts, never as security material.
+  function utf8Bytes(str) {
+    var s = String(str), out = [];
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+      else if (c >= 0xd800 && c < 0xdc00 && i + 1 < s.length) {
+        var d = s.charCodeAt(++i);
+        var cp = 0x10000 + ((c - 0xd800) << 10) + (d - 0xdc00);
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      } else out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
   }
-  function seededUuid(seed) {
-    var n = 0;
-    return function () {
-      var key = seed + '|' + (n++);
-      var b = [];
-      [0x811c9dc5, 0x050c5d1f, 0x9e3779b9, 0x7f4a7c15].forEach(function (basis, lane) {
-        var h = fnv1a(key + '|' + lane, basis);
-        b.push((h >>> 24) & 0xff, (h >>> 16) & 0xff, (h >>> 8) & 0xff, h & 0xff);
-      });
-      b[6] = (b[6] & 0x0f) | 0x40; // version 4
-      b[8] = (b[8] & 0x3f) | 0x80; // variant 10
-      var hex = b.map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
-      return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' +
-        hex.slice(16, 20) + '-' + hex.slice(20);
+
+  function sha1Bytes(bytes) {
+    var ml = bytes.length;
+    var withOne = bytes.concat([0x80]);
+    while (withOne.length % 64 !== 56) withOne.push(0);
+    var bitLen = ml * 8;
+    // 64-bit big-endian length; inputs here are far below 2^32 bytes.
+    withOne.push(0, 0, 0, 0, (bitLen >>> 24) & 255, (bitLen >>> 16) & 255, (bitLen >>> 8) & 255, bitLen & 255);
+    var h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+    var w = new Array(80);
+    function rotl(x, n) { return (x << n) | (x >>> (32 - n)); }
+    for (var off = 0; off < withOne.length; off += 64) {
+      for (var i = 0; i < 16; i++) {
+        w[i] = (withOne[off + i * 4] << 24) | (withOne[off + i * 4 + 1] << 16) |
+               (withOne[off + i * 4 + 2] << 8) | withOne[off + i * 4 + 3];
+      }
+      for (i = 16; i < 80; i++) w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+      var a = h0, b = h1, c = h2, d = h3, e = h4, f, k, t;
+      for (i = 0; i < 80; i++) {
+        if (i < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+        else if (i < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+        else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+        else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+        t = (rotl(a, 5) + f + e + k + w[i]) | 0;
+        e = d; d = c; c = rotl(b, 30); b = a; a = t;
+      }
+      h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0; h4 = (h4 + e) | 0;
+    }
+    var out = [];
+    [h0, h1, h2, h3, h4].forEach(function (h) {
+      out.push((h >>> 24) & 255, (h >>> 16) & 255, (h >>> 8) & 255, h & 255);
+    });
+    return out;
+  }
+
+  function hex(bytes) {
+    return bytes.map(function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+  }
+
+  function sha1Hex(str) { return hex(sha1Bytes(utf8Bytes(str))); }
+
+  // ── UUIDs ──────────────────────────────────────────────────────────────
+  // RFC 4122 v5: SHA-1 of namespace bytes + name, version/variant bits set.
+  function uuidV5(namespace, name) {
+    var nsBytes = namespace.replace(/-/g, '').match(/.{2}/g).map(function (h) { return parseInt(h, 16); });
+    var b = sha1Bytes(nsBytes.concat(utf8Bytes(name))).slice(0, 16);
+    b[6] = (b[6] & 0x0f) | 0x50; // version 5
+    b[8] = (b[8] & 0x3f) | 0x80; // variant 10
+    var h = hex(b);
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' +
+      h.slice(16, 20) + '-' + h.slice(20);
+  }
+
+  // The engine's own namespace: v5 of the RFC 4122 DNS namespace and a fixed
+  // name, so it is a constant that anyone can recompute.
+  var DNS_NS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+  var ENGINE_UUID_NS = uuidV5(DNS_NS, 'sparkae-reference-engine');
+
+  // A UUID factory bound to one run. Every call names a distinct, ordered
+  // identifier under the run's seed — so the ids are unique within the
+  // document and identical across builds of the same state.
+  function uuidFactory(seed) {
+    var i = 0;
+    return function (name) {
+      var n = name != null ? String(name) : ('#' + (i++));
+      return uuidV5(ENGINE_UUID_NS, String(seed) + '\u001f' + n);
     };
   }
-  // The document timestamp when the caller supplies none: the newest
-  // assessment date the findings carry, never the wall clock — so the same
-  // findings produce the same artifact on any day. A run with no dated
-  // finding gets a fixed epoch rather than an invented time.
-  function stateNow(state) {
-    var newest = '';
-    (state && state.findings || []).forEach(function (f) {
-      var d = f && f.assessment_date;
-      if (d && d > newest) newest = d;
-    });
-    return newest ? newest + 'T00:00:00+00:00' : '1970-01-01T00:00:00+00:00';
+
+  // ── Reproducibility receipt ────────────────────────────────────────────
+  // The tuple that makes a verdict reproducible, each part digested:
+  //   engine version · catalog digest · ruleset digest · evidence digest ·
+  //   assessment date  →  verdict digest
+  // Two runs with the same first five parts must produce the same sixth;
+  // artifacts built from the same receipt are byte-identical.
+  function stableJson(v) {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (Array.isArray(v)) return '[' + v.map(stableJson).join(',') + ']';
+    return '{' + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ':' + stableJson(v[k]); }).join(',') + '}';
   }
-  // The default factory for a state: seeded by what is being exported.
-  function stateUuid(state, opts) {
-    var ids = (state && state.findings || []).map(function (f) { return f.dif_id || f.objective_id || ''; }).join(',');
-    // Digest the (long) id list once; the per-id hash then works on a short
-    // seed rather than re-walking every objective id for every identifier.
-    var digest = fnv1a(ids, 0x811c9dc5).toString(16) + fnv1a(ids, 0x9e3779b9).toString(16);
-    return seededUuid((state && state.baseline || '') + '|' + (opts && opts.now || '') + '|' + digest);
+
+  function buildReceipt(input) {
+    input = input || {};
+    var chunks = input.chunks || [];
+    var evidence = chunks.map(function (c) {
+      return (c.filename || '') + '\u001e' + (c.offset != null ? c.offset : '') + '\u001e' + (c.text || '');
+    }).join('\u001d');
+    var findings = input.findings || [];
+    var verdictLines = findings.map(function (f) {
+      return [f.dif_id || f.objective_id || '', f.status || '', f.control_id || '',
+        f.confidence != null ? Number(f.confidence).toFixed(4) : '',
+        f.defensibility_score != null ? f.defensibility_score : ''].join('|');
+    }).sort();
+    var receipt = {
+      engine_version: input.engineVersion || '',
+      catalog_version: input.catalogVersion || '',
+      catalog_digest: input.catalogDigest || (input.catalog ? sha1Hex(stableJson(input.catalog)) : ''),
+      ruleset_digest: input.ruleset ? sha1Hex(stableJson(input.ruleset)) : '',
+      evidence_digest: sha1Hex(evidence),
+      evidence_files: chunks.reduce(function (acc, c) {
+        if (c.filename && acc.indexOf(c.filename) === -1) acc.push(c.filename);
+        return acc;
+      }, []).sort(),
+      assessment_date: input.assessmentDate || '',
+      baseline: input.baseline || '',
+      objectives: findings.length,
+      verdict_digest: sha1Hex(verdictLines.join('\n')),
+      assessment_method: 'EXAMINE',
+      interview_test: 'not performed — remain with the assessor'
+    };
+    receipt.receipt_digest = sha1Hex(stableJson(receipt));
+    return receipt;
+  }
+
+  // The instant an artifact is stamped with. Never the wall clock: the
+  // assessment date is the run's declared date, so the same run yields the
+  // same `published` / `collected` values on every build.
+  function stampFor(state, opts) {
+    if (opts && opts.now) return opts.now;
+    var d = state && (state.assessment_date || (state.receipt && state.receipt.assessment_date));
+    if (d) return String(d).length === 10 ? d + 'T00:00:00Z' : String(d);
+    throw new Error('demo-exports: state.assessment_date (or opts.now) is required — the exporters do not read the clock');
+  }
+
+  function uuidFor(state, opts) {
+    if (opts && opts.uuid) return opts.uuid;
+    var seed = (state && state.receipt && state.receipt.receipt_digest) ||
+               (state && state.seed) || '';
+    if (!seed) throw new Error('demo-exports: state.receipt or state.seed is required to derive identifiers — the exporters use no randomness');
+    return uuidFactory(seed);
+  }
+
+  // OSCAL metadata props carrying the receipt, so the document itself says
+  // what produced it.
+  function receiptProps(state) {
+    var r = state && state.receipt;
+    if (!r) return [];
+    return [
+      ['engine-version', r.engine_version],
+      ['catalog-version', r.catalog_version],
+      ['catalog-digest', r.catalog_digest],
+      ['ruleset-digest', r.ruleset_digest],
+      ['evidence-digest', r.evidence_digest],
+      ['assessment-date', r.assessment_date],
+      ['verdict-digest', r.verdict_digest],
+      ['assessment-method', 'EXAMINE'],
+      ['interview-and-test', 'not-performed']
+    ].filter(function (p) { return p[1] !== undefined && p[1] !== null && p[1] !== ''; })
+     .map(function (p) { return { name: p[0], ns: SPARKAE_NS, value: String(p[1]) }; });
   }
 
   // ── CSV ────────────────────────────────────────────────────────────────
@@ -125,8 +255,13 @@ var DEMO_EXPORTS = (function () {
 
   // ── OSCAL Assessment Results ───────────────────────────────────────────
   //
-  // opts.now       ISO-8601 timestamp to stamp the document with.
-  // opts.uuid      UUID factory (default: content-seeded, reproducible).
+  // state.assessment_date  the run's declared date (YYYY-MM-DD) — required
+  //                        unless opts.now is given.
+  // state.receipt          buildReceipt() output — its digest seeds the
+  //                        UUIDs and its fields are stamped into metadata.
+  // opts.now       ISO-8601 timestamp override.
+  // opts.uuid      UUID factory override (the private test harness injects a
+  //                counter; the page relies on the receipt-derived default).
   //
   // Structure follows oscal_exporter.generate_assessment_results:
   //   * control linkage rides as a FedRAMP-namespaced prop on the finding,
@@ -141,8 +276,8 @@ var DEMO_EXPORTS = (function () {
   //     entirely when there is nothing to say.
   function buildAssessmentResults(state, opts) {
     opts = opts || {};
-    var now = opts.now || stateNow(state);
-    var uuid = opts.uuid || stateUuid(state, opts);
+    var now = stampFor(state, opts);
+    var uuid = uuidFor(state, opts);
     var findings = state.findings || [];
     var baseline = state.baseline || 'Low';
 
@@ -294,6 +429,8 @@ var DEMO_EXPORTS = (function () {
       version: '1.0',
       'oscal-version': '1.1.2'
     };
+    var props = receiptProps(state);
+    if (props.length) metadata.props = props;
     if (opts.metadata) {
       Object.keys(opts.metadata).forEach(function (k) {
         if (opts.metadata[k] !== undefined) metadata[k] = opts.metadata[k];
@@ -325,7 +462,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildFindingsCSV(state, opts) {
     opts = opts || {};
-    var today = (opts.now || stateNow(state)).slice(0, 10);
+    var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || []).map(function (f) {
       return csvRow([
         f.control_id, f.objective_id || f.dif_id, f.status,
@@ -351,7 +488,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildRET(state, opts) {
     opts = opts || {};
-    var today = (opts.now || stateNow(state)).slice(0, 10);
+    var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || [])
       .filter(function (f) { return f.status === 'Other Than Satisfied'; })
       .map(function (f, i) {
@@ -376,7 +513,7 @@ var DEMO_EXPORTS = (function () {
 
   function buildPOAM(state, opts) {
     opts = opts || {};
-    var today = (opts.now || stateNow(state)).slice(0, 10);
+    var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || [])
       .filter(function (f) { return f.status !== 'Satisfied'; })
       .map(function (f, i) {
@@ -414,7 +551,8 @@ var DEMO_EXPORTS = (function () {
 
   function buildSummary(state, opts) {
     opts = opts || {};
-    var now = opts.now || stateNow(state);
+    var now = stampFor(state, opts);
+    var r = state.receipt || {};
     var gradeFn = opts.grade || function () { return '—'; };
     var findings = state.findings || [];
     var total = findings.length;
@@ -437,10 +575,21 @@ var DEMO_EXPORTS = (function () {
       'SPARKAE ASSESSMENT PREVIEW — EXECUTIVE SUMMARY',
       '='.repeat(56),
       '',
-      'Generated: ' + now.slice(0, 10),
+      'Assessment date: ' + now.slice(0, 10),
       'Baseline: FedRAMP ' + (state.baseline || 'Low') + ' (NIST SP 800-53 Rev 5)',
-      'Engine: SparkAE Deterministic 7-Gate v0.7.0-rc1 (In-Browser)',
-      'Assessment Method: EXAMINE per NIST SP 800-53A Rev 5',
+      'Engine: SparkAE reference engine' + (r.engine_version ? ' v' + r.engine_version : '') + ' (in-browser, 7 deterministic gates)',
+      'Assessment method: automated EXAMINE preparation per NIST SP 800-53A Rev 5.',
+      'INTERVIEW and TEST were not performed; they remain with the assessor.',
+      '',
+      'REPRODUCIBILITY RECEIPT',
+      '-'.repeat(56),
+      'engine version:   ' + (r.engine_version || 'n/a'),
+      'catalog digest:   ' + (r.catalog_digest || 'n/a'),
+      'ruleset digest:   ' + (r.ruleset_digest || 'n/a'),
+      'evidence digest:  ' + (r.evidence_digest || 'n/a'),
+      'assessment date:  ' + (r.assessment_date || now.slice(0, 10)),
+      'verdict digest:   ' + (r.verdict_digest || 'n/a'),
+      'Same first five values -> same verdict digest, on any machine, on any day.',
       '',
       'RESULTS',
       '-'.repeat(56),
@@ -489,7 +638,13 @@ var DEMO_EXPORTS = (function () {
   return {
     toOscalControlId: toOscalControlId,
     toOscalToken: toOscalToken,
-    seededUuid: seededUuid,
+    sha1Hex: sha1Hex,
+    uuidV5: uuidV5,
+    uuidFactory: uuidFactory,
+    stableJson: stableJson,
+    buildReceipt: buildReceipt,
+    SPARKAE_NS: SPARKAE_NS,
+    ENGINE_UUID_NS: ENGINE_UUID_NS,
     csvSafe: csvSafe,
     csvRow: csvRow,
     buildAssessmentResults: buildAssessmentResults,

@@ -1,0 +1,38 @@
+{
+  "baseline": "Low",
+  "assessment_date": "2026-06-01",
+  "files": 1,
+  "chunks": 10,
+  "controls": 156,
+  "objectives": 981,
+  "satisfied": 427,
+  "other_than_satisfied": 553,
+  "not_reviewed": 1,
+  "review_required": 103,
+  "gate_reached": [
+    981,
+    980,
+    980,
+    980,
+    980,
+    931,
+    981
+  ],
+  "gate_passed": [
+    980,
+    921,
+    948,
+    978,
+    451,
+    931,
+    427
+  ],
+  "engine_version": "1.0.0",
+  "catalog_version": "2026-07-21",
+  "catalog_digest": "91ad1b17138f7e0707fe19e65d9b8c3c77833401",
+  "ruleset_digest": "dc003aa6f464e9ffa82948d8d91dce6f892b5f6f",
+  "evidence_digest": "6de811bac5be771f9cc34c13edc643411c144087",
+  "verdict_digest": "fab631a2ef69867c4db2be43aed59d1ef7ac3a41",
+  "oscal_ar_sha1": "ef65f8ff8110a723f7e42b9534da9e1231b045f5",
+  "oscal_ar_bytes": 2562041
+}

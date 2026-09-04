@@ -1,11 +1,26 @@
 # Security policy
 
-This repository holds a browser-only reference build. It makes no network
-requests and stores nothing outside the page, so the main classes of concern
-are: a crafted document that produces a wrong verdict, a document that breaks
-the export builders, or CSV/OSCAL output that would be unsafe to open elsewhere
-(formula injection, malformed JSON).
+This repository holds a browser-only reference build and a static site. It
+makes no network requests beyond loading its own same-origin files, and it
+stores nothing outside the page. The classes of concern are therefore:
 
-Report those, or anything else, privately through GitHub's **Security →
-Report a vulnerability** form on this repository. Please do not open a public
+- a crafted document that produces a wrong verdict (evasion of a gate —
+  homoglyphs, keyword stuffing, hidden refutations, future-dated claims);
+- a document that breaks the parsers or the export builders, or that makes
+  a parse failure look like evidence;
+- CSV or OSCAL output that would be unsafe to open elsewhere (formula
+  injection, malformed JSON);
+- any published file that reaches a third-party origin, or a header rule
+  that weakens the Content-Security-Policy.
+
+Known limits of this build (not vulnerabilities, but worth knowing before
+you rely on a verdict): retrieval is lexical, contradiction and draft
+detection are pattern-based, the evidence-support score is not calibrated
+against independently labelled assessments, and the defensibility score is an
+internal rubric. Uploads are processed in memory in your browser; very large
+packages are limited by the browser, not by this code.
+
+Report anything in those classes — or anything else — privately through
+GitHub's **Security → Report a vulnerability** form on this repository, or
+by email to the contact address on the site. Please do not open a public
 issue for a security report. We acknowledge within two business days.

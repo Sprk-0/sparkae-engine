@@ -298,10 +298,10 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div class="section-sub">Cloud-native tools cannot follow you inside the boundary. This one does not need to.</div>
     </div>
     <div class="hx-why">
-      <div><div class="h">Deterministic</div><div class="b">No wall-clock, no randomness, no model drift. The same package yields the same findings — reproducible on demand for an assessor or an authorizing body, checkable by hash.</div></div>
+      <div><div class="h">Deterministic</div><div class="b">No wall-clock in the verdict path, no randomness, no model drift. The same evidence, catalog, ruleset and assessment date yield the same determinations on any machine, on any day — and every run emits a reproducibility receipt naming those inputs and the resulting verdict digest. Exports derive their identifiers and timestamps from that receipt, so they are byte-identical too.</div></div>
       <div><div class="h">Zero data out</div><div class="b">The default install makes no outbound calls: no HTTP, no DNS, no CDN, no telemetry. CUI never transits a vendor cloud because there is none in the path. Nothing leaves the network unless you turn that on.</div></div>
       <div><div class="h">Satisfied cannot be ungrounded</div><div class="b">A verdict of Satisfied must be grounded in cited evidence or the engine refuses it. That holds in every mode, including the opt-in LLM ones.</div></div>
-      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results and POA&amp;M, validated against the NIST schema. Structured from the start, whatever shape the mandate takes.</div></div>
+      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results and POA&amp;M, validated against the vendored NIST 1.1.2 schema on every build. Structured from the start, whatever shape the mandate takes.</div></div>
     </div>
     <p class="hx-trust"><strong>This site loads no trackers, no analytics, and no third-party scripts or fonts.</strong> The engine, by default, makes no outbound calls. The browser demo assesses the package on your machine and uploads nothing.</p>
   </div>
@@ -425,7 +425,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
 
         <div class="hx-head" style="margin-top:44px">
           <div class="section-title">The engine. <em>Not a GRC platform.</em></div>
-          <div class="section-sub">Built for production: four rounds of adversarial security review, a comprehensive automated test suite.</div>
+          <div class="section-sub">Built for production: four rounds of adversarial security review and a comprehensive automated test suite in the product repository. The public reference build carries its own conformance suite — schema validation, catalog counts, a determinism golden, a headless-browser run — on public CI.</div>
         </div>
         <dl class="hx-spec">
           <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives (447 controls, 1,513 objectives in the full catalog); FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>

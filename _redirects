@@ -5,7 +5,12 @@
 # than a rewrite so the address bar ends on the canonical URL that the page's
 # own <link rel="canonical"> already declares — a rewrite would serve the same
 # content at two addresses and split the signal.
-/demo    /demo-standalone.html    301
+#
+# The trailing `!` forces the rule: Netlify otherwise skips a redirect whose
+# path resolves to an existing file, and `/demo` would resolve to demo.html
+# if that page were ever published again. Forced, `/demo` is always the
+# standalone demo — which is why its _headers rule can be the strict policy.
+/demo    /demo-standalone.html    301!
 
 # www -> apex is NOT set here on purpose. Netlify does that itself once a
 # primary domain is chosen in Domain settings, and hardcoding one direction

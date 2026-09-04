@@ -1,0 +1,58 @@
+# Conformance suite for the SparkAE public reference build.
+#
+# Everything the README claims about this repository is checked here on every
+# push and pull request: the scripts parse, the catalog counts are right, no
+# published file reaches a third-party origin, the engine and exporters read
+# no clock and use no randomness, the gate model is canonical, the sample
+# package is reproducible (golden verdict digest, byte-identical OSCAL), CSV
+# output is formula-injection safe, and the OSCAL Assessment Results validate
+# against the official NIST 1.1.2 schema vendored in tests/schema/.
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Engine, catalog, determinism, network and CSV checks
+        run: node tests/check.mjs .
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: OSCAL 1.1.2 schema validation (official NIST schema)
+        run: |
+          pip install jsonschema regex
+          python tests/check_oscal_schema.py
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y > /dev/null
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Drive the demo in headless Chromium with all network aborted
+        run: node tests/browser.mjs .

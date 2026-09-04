@@ -10,46 +10,35 @@
 # policies as a set to be enforced *simultaneously* — the effective policy is
 # their intersection, i.e. the most restrictive of each directive.
 #
-# That makes "strict under /*, relaxed for one page" impossible to express:
-# /demo.html matches /* too, so a sitewide `connect-src 'self'` would intersect
-# with the demo's `connect-src *` and win, blocking every visitor-supplied base
-# URL — and doing it silently, which is the worst version of this bug. (An
-# earlier revision of this file did exactly that; review caught it.)
-#
 # So the CSP is declared once per page on non-overlapping paths, and /* carries
 # only the headers that are identical everywhere (duplicating those is
-# harmless). Every shipped page therefore receives exactly ONE CSP.
-#
-# The cost is that a new page silently gets no CSP at all if someone forgets a
-# rule. tests/test_website_csp_scope.py closes that: it reads the PUBLISH
-# allowlist out of build.sh and fails if any shipped .html page lacks a rule, or
-# if a wildcard path ever declares a CSP again.
+# harmless). Every shipped page therefore receives exactly ONE CSP, and
+# tests/test_website_csp_scope.py reads the PUBLISH allowlist out of build.sh
+# and fails if any shipped .html page lacks a rule, if a wildcard path ever
+# declares a CSP, or if any rule's connect-src is broader than 'self'.
 #
 # ── The policy itself ────────────────────────────────────────────────────────
 #
-# `default-src 'self'` is what turns the site's "no external calls" claim into
-# something a visitor's browser enforces rather than something we merely assert
-# — no third-party script, style, font, or image origin is reachable. Two
-# relaxations are deliberate:
+# `default-src 'self'` and `connect-src 'self'` on EVERY page are what turn the
+# site's "no outbound third-party requests" claim into something a visitor's
+# browser enforces rather than something we merely assert — no third-party
+# script, style, font, image, worker or fetch origin is reachable. The
+# API-connected demo (demo.html), which needed a wildcard connect-src to drive
+# a visitor-named instance, is no longer published from this origin at all:
+# one page's exception was the only hole in the guarantee, and the audit that
+# found it was right that a partial promise is not a promise.
+#
+# One relaxation remains:
 #
 #   'unsafe-inline'  Every page inlines its <style>, and the standalone demo
-#                    inlines its whole engine as a single ~110KB <script>.
-#                    Hashing or noncing that on a static host buys very little
-#                    on a site that loads no third-party code at all.
+#                    inlines its shell as a single <script>. Hashing or noncing
+#                    that on a static host buys little on a site that loads no
+#                    third-party code at all; moving the inline shell to a
+#                    same-origin file with a hash is tracked as a follow-up.
 #
-#   connect-src *    ONLY on /demo.html, which drives a live assessment against
-#                    whichever SparkAE instance the visitor is running. The base
-#                    URL is a free-text field — commonly http://localhost:8000
-#                    during an evaluation, but a remote deployment is just as
-#                    legitimate — so no narrower origin list covers it without
-#                    breaking real evaluations. Every other page is held to
-#                    `connect-src 'self'`.
-#
-# Audited when this was scoped: demo.html is the only page that connects
-# off-origin (10 fetches to the visitor-supplied base URL). status.html fetches
-# only the relative `status-data.json`, demo-standalone.html inlines its engine
-# and fetches nothing, and no other page makes a request at all — so 'self'
-# costs those pages nothing.
+# Audited when this was scoped: status.html fetches only the relative
+# `status-data.json`; demo-standalone.html loads three same-origin scripts and
+# fetches nothing; no other page makes a request at all.
 #
 # HSTS deliberately omits includeSubDomains: it would bind every current and
 # future subdomain of the deployment domain (app., status., anything not
@@ -58,11 +47,11 @@
 # rather than inherit from a marketing-site config.
 #
 # VERIFY ON DEPLOY PREVIEW after changing anything above:
-#   curl -sI <preview>/demo.html | grep -i content-security-policy
+#   curl -sI <preview>/demo-standalone.html | grep -i content-security-policy
 #   curl -sI <preview>/          | grep -i content-security-policy
-# Each must return exactly ONE policy — `connect-src *` for the demo,
-# `connect-src 'self'` for everything else. Two headers, or one carrying two
-# comma-separated policies, means the paths overlap again.
+# Each must return exactly ONE policy carrying `connect-src 'self'`. Two
+# headers, or one carrying two comma-separated policies, means the paths
+# overlap again.
 
 # Identical on every response, so /* is safe here — duplicate values of these
 # headers do not intersect the way CSP does.
@@ -133,21 +122,12 @@
 /terms
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
-# The one page permitted to connect off-origin. Identical to the policy above in
-# every directive except connect-src.
-#
-# `/demo` gets the SAME permissive policy even though _redirects 301s it to
-# demo-standalone.html: on that path the header rides a redirect response and is
-# inert, but if Netlify's clean-URL resolution ever wins over the redirect, `/demo`
-# serves demo.html and needs `connect-src *`. Choosing the permissive value here
-# makes the ambiguous case fail towards a working demo rather than a silently
-# broken one, and the widening is bounded to a path that serves either a redirect
-# or demo.html itself.
-/demo.html
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
-
+# `/demo` is a forced 301 to demo-standalone.html (see _redirects). The header
+# on a redirect response is inert, but every route the site can answer still
+# resolves to exactly one CSP — and this one is the strict policy, because no
+# published page is permitted to connect off-origin any more.
 /demo
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
 # Filenames are not content-hashed, so anything cached hard has to be something
 # that changes only when its name would. The fonts qualify; the catalog does

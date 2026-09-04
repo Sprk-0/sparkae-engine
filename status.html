@@ -62,7 +62,8 @@
     ``/metrics`` endpoints; the agent writes a generated ``status-data.json``
     next to this file and the values below reflect that last published
     snapshot — they are not a live, in-browser health probe. Polling cadence
-    is documented in ``docs/operations/incident-response.md``.
+    is documented in the private product repository's incident-response runbook
+    (not published; the SLAs it sets are reproduced below).
   -->
   <div class="placeholder-note">
     Status reflects the most recent published snapshot from this deployment's
@@ -136,7 +137,7 @@
     <h2>SLAs &amp; reporting</h2>
     <p style="color:var(--ink-soft);font-size:14px;line-height:1.7">
       Customer-impacting incidents are notified per the published
-      <a href="https://github.com/Sprk-0/sparkae-engine/incident-response">incident-response runbook</a>:
+      incident-response runbook (internal; its notification SLAs are reproduced here):
       SEV-1 confirmed exfiltration ≤ 4 h; suspected ≤ 24 h; SEV-1 outage
       &gt; 1 h ≤ 1 h; SEV-2 outage &gt; 2 h ≤ 2 h; privacy bug ≤ 24 h.
     </p>

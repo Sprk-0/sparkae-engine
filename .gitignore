@@ -1,2 +1,4 @@
 .DS_Store
 node_modules/
+# written by tests/check.mjs for tests/check_oscal_schema.py
+tests/out/
