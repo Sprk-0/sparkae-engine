@@ -1,0 +1,7 @@
+# The repository root has no index page; the demo lives under demo/. Send the
+# root there with a 302 (not a 301, so the root can become a real page later
+# without fighting browser caches). A rewrite (200) would break the demo's
+# relative script and stylesheet URLs, which resolve against demo/.
+/        /demo/demo-standalone.html   302
+/demo    /demo/demo-standalone.html   302
+/20x     /demo/demo-20x.html          302

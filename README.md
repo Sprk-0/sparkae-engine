@@ -7,6 +7,10 @@ the SparkAE live demo, published as a standalone, dependency-free browser build.
 network. Everything runs inside the page. `demo/demo-20x.html` is the FedRAMP 20x
 persistent-validation walkthrough.
 
+**Host it:** the repository deploys to Netlify as-is (`netlify.toml` publishes the
+root with no build step); `_redirects` sends `/` to the demo and `/20x` to the
+walkthrough, and `_headers` applies a same-origin Content-Security-Policy.
+
 ## What is here
 
 | Path | What it is |

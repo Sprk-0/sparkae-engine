@@ -1,0 +1,5 @@
+# Static site, no build step: publish the repository as-is. _redirects sends
+# the root to the demo and _headers carries the security policy.
+[build]
+  publish = "."
+  command = "true"
