@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SparkAE (Spark Assessment Engine) — Independent Second Reader for Control Assessments | ONE Solution Cyber</title>
-<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo, from ONE Solution Cyber. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<title>SparkAE (Spark Assessment Engine) — Automated Examine for Control Assessments | ONE Solution Cyber</title>
+<meta name="description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo, from ONE Solution Cyber. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <link rel="canonical" href="https://sparkae-public.netlify.app/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SparkAE">
 <meta property="og:url" content="https://sparkae-public.netlify.app/">
-<meta property="og:title" content="SparkAE — Independent Second Reader for Control Assessments">
-<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<meta property="og:title" content="SparkAE — Automated Examine for Control Assessments">
+<meta property="og:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SparkAE — Independent Second Reader for Control Assessments">
-<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. A deterministic assessment engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
+<meta name="twitter:title" content="SparkAE — Automated Examine for Control Assessments">
+<meta name="twitter:description" content="Providers prove. Independent assessors verify. SparkAE preserves the chain. SparkAE performs the Examine method: a deterministic engine that reads evidence against control objectives — NIST SP 800-53A today, in a plain NIST or a FedRAMP Rev5 profile — plus a browser demo. Self-contained by default: zero outbound when LLM_PROVIDER=none.">
 <link rel="stylesheet" href="ae-editorial.css">
 <style>
 
@@ -122,8 +122,8 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
   <div class="container">
     <div>
       <div class="hero-badge fade-up"><span class="dot"></span> Deterministic assessment engine · OSCAL native</div>
-      <h1 class="fade-up fade-up-1">Independent second reading for <em>any control assessment.</em></h1>
-      <p class="lede fade-up fade-up-2">SparkAE reads your evidence against every control objective and shows exactly what it does and does not support. <strong>Deterministic. Nothing leaves your network.</strong> Not a GRC platform.</p>
+      <h1 class="fade-up fade-up-1">The Examine method, automated, for <em>any control assessment.</em></h1>
+      <p class="lede fade-up fade-up-2">SparkAE performs the Examine portion of the assessment test methods: it reads your evidence against every control objective and shows exactly what it does and does not support. Interview and Test stay with the assessor. <strong>Deterministic. Nothing leaves your network.</strong> Not a GRC platform.</p>
       <div class="ctas fade-up fade-up-3">
         <a class="btn btn-primary" href="demo-standalone.html">Run the browser demo →</a>
         <a class="btn btn-ghost" href="#sample">See a real finding</a>
@@ -145,7 +145,9 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <span class="term-title">SPARKAE ENGINE</span>
         </div>
         <div class="term-body">
-          <div><span class="prompt">$ </span><span class="cmd">curl -X POST localhost:8000/v1/assessments -H "X-API-Key: $KEY" \<br>&nbsp;&nbsp;-d '{"baseline":"Low","controls":["AC-2","IA-5","CM-6"],"document_refs":["ssp","ac-policy","ir-plan"]}'</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
+          <div><span class="out"># same for AC-Policy.docx → $POLICY and IR-Plan.pdf → $IRPLAN</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">curl localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
           <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
           <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage</span></div>
           <div><span class="out">Gate 3 · Evidence strength &nbsp;Gate 4 · ODP validation</span></div>
@@ -388,7 +390,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO, webhooks, email, SIEM, and cloud storage are all opt-in via explicit configuration. The deterministic assessment path runs entirely inside the deployment boundary; no telemetry, no auto-update, no calls home.
     </div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — independent second reader for control assessments</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber · SparkAE — the Examine method, automated, for control assessments</div>
   </div>
 </footer>
 </body>

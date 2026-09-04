@@ -10,7 +10,7 @@ the demo.
 
 | Page | What it is |
 |------|------------|
-| `index.html` | What SparkAE is: an independent second reader for FedRAMP Rev5, not a GRC platform. |
+| `index.html` | What SparkAE is: the Examine method of a control assessment, automated — not a GRC platform. |
 | `assessors.html` | For independent assessment services (3PAOs): Examine preparation without losing the judgment. |
 | `integrations.html` | What the engine connects to, and what it deliberately does not. |
 | `demo-standalone.html` | **The live demo.** The full engine, in the browser, against a sample package. No server, no upload, no network. |
