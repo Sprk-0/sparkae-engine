@@ -6,7 +6,7 @@ EXAMINE adjudication model, plus the public site.** Open
 
 SparkAE is the FedRAMP Rev5 / NIST SP 800-53A assessment engine from
 ONE Solution Cyber. This repository is served as-is by Netlify at
-**https://sparkae-public.netlify.app** and is generated from the private
+**https://sparkae.ai** and is generated from the private
 product repository (see *How this repository is maintained*).
 
 ## What is here, and what is not
