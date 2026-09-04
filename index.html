@@ -145,7 +145,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <span class="term-title">SPARKAE ENGINE</span>
         </div>
         <div class="term-body">
-          <div><span class="prompt">$ </span><span class="cmd">sparkae assess --profile fedramp --baseline Low --controls AC-2,IA-5,CM-6</span></div>
+          <div><span class="prompt">$ </span><span class="cmd">curl -X POST localhost:8000/v1/assessments -H "X-API-Key: $KEY" \<br>&nbsp;&nbsp;-d '{"baseline":"Low","controls":["AC-2","IA-5","CM-6"],"document_refs":["ssp","ac-policy","ir-plan"]}'</span></div>
           <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
           <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage</span></div>
           <div><span class="out">Gate 3 · Evidence strength &nbsp;Gate 4 · ODP validation</span></div>
@@ -179,6 +179,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
 
 <!-- ══ WHAT IT IS ══ -->
 <section class="hx-sec" id="what">
+  <span id="lanes"></span>
   <div class="container">
     <div class="hx-head">
       <div class="section-title">Assessment, not a framework. <em>The framework is a profile.</em></div>
@@ -309,14 +310,14 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
         <h3>Local LLM</h3>
         <div class="mode-sub">LLM_PROVIDER=ollama</div>
         <p>An Ollama-served model produces the determination; nothing leaves the network. Not sold as SCIF-ready.</p>
-        <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install .[local]</span></li></ul>
+        <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install '.[local]'</span></li></ul>
       </div>
       <div class="mode-card">
         <span class="mode-tag review">Opt-in</span>
         <h3>Cloud LLM</h3>
         <div class="mode-sub">LLM_PROVIDER=anthropic</div>
         <p>A cloud model produces the determination directly. Clearly flagged: those verdicts are not engine-grounded. The integrity gate still applies.</p>
-        <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>pip install .[cloud]</span></li></ul>
+        <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>pip install '.[cloud]'</span></li></ul>
       </div>
     </div>
 
@@ -353,7 +354,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
         <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source →</a>
       </div>
     </div>
-    <div class="side">
+    <div class="side" id="pricing">
       <strong>30-day paid pilot</strong>
       Your package, the local engine, in the profile you assess against. Gap report you keep either way. Priced against the assessment, not per seat; terms confirmed by the founder — this page is not a rate card.<br><br>
       <a href="mailto:info@sparkae.ai">info@sparkae.ai</a>
