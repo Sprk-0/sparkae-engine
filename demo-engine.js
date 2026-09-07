@@ -323,7 +323,12 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // Bump on ANY change to a gate, threshold, pattern list or scoring formula
 // below. It is part of the reproducibility tuple stamped into every export,
 // so a verdict can be traced to the exact rules that produced it.
-const ENGINE_VERSION = '1.0.0';
+// 1.1.0: Gate 2 scores concept coverage on the control's own evidence first
+// (cross-control retrieval is the fallback only); the corpus refutation index
+// matches case-insensitively like the per-control refutation checks; evidence
+// dates are UTC calendar dates that must round-trip (no local-time or
+// out-of-range normalisation).
+const ENGINE_VERSION = '1.1.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -577,6 +582,21 @@ const DATE_PATTERNS = [
 const STALENESS = {review_date:365,update_date:365,effective_date:1095,creation_date:1095,document_date:365,unknown:365};
 const CTX_PATTERNS = [[/(?:last\s+)?review(?:ed)?/i,'review_date'],[/(?:updated?|revised?|modified)/i,'update_date'],[/effective/i,'effective_date'],[/(?:created?|developed?|established?|drafted?)/i,'creation_date'],[/(?:dated?|version|v\.?\s*\d)/i,'document_date']];
 
+// Build evidence dates in UTC and reject
+// any that do not round-trip. `new Date(y, m, d)` is local-time, so the same
+// evidence produced different day-deltas depending on the visitor's timezone
+// (against the module's determinism promise), and the Date constructor
+// normalises out-of-range components — 2025-02-30 became 2 March — so a typo
+// in the evidence could fabricate a currency finding. A calendar date that is
+// not a real day yields null and is skipped, not "corrected".
+function utcCalendarDate(y, mo, d) {
+  if (!Number.isInteger(y) || !Number.isInteger(mo) || !Number.isInteger(d)) return null;
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  if (isNaN(dt.getTime())) return null;
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+  return dt;
+}
+
 function extractDates(text) {
   if (!text) return [];
   const found = [];
@@ -586,10 +606,10 @@ function extractDates(text) {
     while ((m = pattern.exec(text))) {
       let dateObj;
       try {
-        if (fmt === 'ymd') dateObj = new Date(+m[1], +m[2]-1, +m[3]);
-        else if (fmt === 'mdy') { const mo = MONTHS_MAP[m[1].toLowerCase().replace('.','')]; if (mo) dateObj = new Date(+m[3], mo-1, +m[2]); }
-        else if (fmt === 'my') { const mo = MONTHS_MAP[m[1].toLowerCase().replace('.','')]; if (mo) dateObj = new Date(+m[2], mo-1, 1); }
-        else if (fmt === 'mdy_num') dateObj = new Date(+m[3], +m[1]-1, +m[2]);
+        if (fmt === 'ymd') dateObj = utcCalendarDate(+m[1], +m[2], +m[3]);
+        else if (fmt === 'mdy') { const mo = MONTHS_MAP[m[1].toLowerCase().replace('.','')]; if (mo) dateObj = utcCalendarDate(+m[3], mo, +m[2]); }
+        else if (fmt === 'my') { const mo = MONTHS_MAP[m[1].toLowerCase().replace('.','')]; if (mo) dateObj = utcCalendarDate(+m[2], mo, 1); }
+        else if (fmt === 'mdy_num') dateObj = utcCalendarDate(+m[3], +m[1], +m[2]);
       } catch(e) { continue; }
       if (!dateObj || isNaN(dateObj.getTime())) continue;
       const start = Math.max(0, m.index - 40);
@@ -679,7 +699,8 @@ function checkOpenFindingSla(evidenceText, assessmentDate) {
     const severity = sevMatch[1].toLowerCase();
     const sla = SLA_DAYS[severity] || 180;
     const dateToks = [...sent.matchAll(DATE_TOKEN_RE)].map(m => {
-      try { const [y,mo,d] = m[1].split('-').map(Number); return new Date(y,mo-1,d); } catch(e) { return null; }
+      // UTC + round-trip check, same as extractDates.
+      try { const [y,mo,d] = m[1].split('-').map(Number); return utcCalendarDate(y,mo,d); } catch(e) { return null; }
     }).filter(Boolean);
     if (!dateToks.length) continue;
     const oldest = dateToks.reduce((a,b) => a < b ? a : b);
@@ -711,8 +732,15 @@ function buildRefutationIndex(retriever) {
     const txt = chunk.text || '';
     const cids = chunk.control_ids || [];
     if (!cids.length) continue;
+    // REFUTING_PATTERNS are lower-case and carry no
+    // /i flag; detectRefutations / detectRefutationsScoped lower-case before
+    // matching but this index did not, so a sentence-initial "Not implemented"
+    // was never indexed. Match on the lowered text (positions are compared
+    // against control-id offsets in the original, the same convention
+    // detectRefutationsScoped uses).
+    const lowered = txt.toLowerCase();
     for (const pat of REFUTING_PATTERNS) {
-      const m = execPattern(pat, txt);
+      const m = execPattern(pat, lowered);
       if (!m) continue;
       const pos = m.index;
       // Find which control IDs have an occurrence near this refuting phrase,
@@ -910,7 +938,11 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     gates.push({gate:2, name:'Concepts', pass:false});
     gaps.push('DIF text yields zero extractable concepts — cannot verify coverage');
   } else {
-    const coverage = checkCoverage(concepts, evidenceText);
+    // Score coverage on THIS control's own evidence
+    // first, like gates 3b/5/5a — the cross-control BM25 fallback is only
+    // consulted when the corpus has no chunk tagged with the control, so a
+    // neighbour's prose cannot satisfy the wrong control's concepts.
+    const coverage = checkCoverage(concepts, ownEvidence || evidenceText);
     var coverageResult = coverage;
     const g2pass = concepts.length === 0 || coverage.ratio >= MIN_CONCEPT_COVERAGE;
     gates.push({gate:2, name:'Concepts', pass:g2pass});
@@ -1105,6 +1137,8 @@ global.SparkAEEngine = {
   chunkText: chunkText,
   tokenize: tokenize,
   extractControlIds: extractControlIds,
+  extractDates: extractDates,
+  utcCalendarDate: utcCalendarDate,
   grade: grade,
   classifyGapType: classifyGapType,
   scoreDefensibility: scoreDefensibility,
