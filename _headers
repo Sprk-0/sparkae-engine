@@ -122,6 +122,20 @@
 /terms
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
+# The error page. Netlify serves 404.html for any unmatched path, and it keys
+# header rules on the REQUESTED path — so a visitor who mistypes a URL gets the
+# `/*` block (the shared non-CSP headers) and no policy, while a direct request
+# for /404.html gets the rule below. That is the honest description: this rule
+# covers the file, not every route that can render it. The page is static, loads
+# only same-origin CSS, and reflects nothing from the request, so the uncovered
+# route carries no injection surface — but do not read this rule as blanket
+# coverage of every 404 response.
+/404.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+
+/404
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+
 # `/demo` is a forced 301 to demo-standalone.html (see _redirects). The header
 # on a redirect response is inert, but every route the site can answer still
 # resolves to exactly one CSP — and this one is the strict policy, because no
@@ -134,6 +148,13 @@
 # not — it is regenerated whenever the NIST data behind it moves.
 /static/fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The social card keeps its name across regenerations, so it cannot be cached
+# immutably the way the fonts are: a corrected figure on the card has to be
+# able to reach the scrapers. A day is long enough to be cheap and short
+# enough that a fix is not stuck for a year.
+/static/og-card.png
+  Cache-Control: public, max-age=86400
 
 /demo-standalone-catalog.js
   Cache-Control: public, max-age=3600

@@ -1,0 +1,11 @@
+# SparkAE — https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt
+#
+# Everything published here is meant to be found: the whole point of the site is
+# that an assessor can read how a determination is reached before talking to us.
+# The only excluded path is the error page, which is noindex in its own head and
+# would otherwise be reported as a soft 404.
+User-agent: *
+Allow: /
+Disallow: /404.html
+
+Sitemap: https://sparkae.ai/sitemap.xml
