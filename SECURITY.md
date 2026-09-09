@@ -32,8 +32,7 @@ Playwright (headless Chromium for `tests/browser.mjs`), and `jsonschema` +
 ## Reporting
 
 Report anything in those classes — or anything else — privately by email to
-the contact address on the site (the same address is in every page footer).
-Where GitHub's **Security → Report a vulnerability** form is enabled on this
-repository you may use it instead; the email path always works. Please do not
-open a public issue for a security report. We acknowledge within two business
-days.
+[info@sparkae.ai](mailto:info@sparkae.ai). Where GitHub's **Security → Report a
+vulnerability** form is enabled on this repository you may use it instead; the
+email path always works. Please do not open a public issue for a security
+report. We acknowledge within two business days.

@@ -35,7 +35,8 @@ var DEMO_EXPORTS = (function () {
 
   var FEDRAMP_NS = 'https://fedramp.gov/ns/oscal';
   // Namespace for SparkAE's own metadata props (the reproducibility receipt).
-  var SPARKAE_NS = 'urn:onesolutioncyber:sparkae:reference-engine';
+  // Same origin as the public site; do not point this at a prior domain.
+  var SPARKAE_NS = 'https://sparkae.ai/ns/oscal';
 
   // ── Identifier normalization ───────────────────────────────────────────
   // Mirrors oscal_exporter._to_oscal_control_id.

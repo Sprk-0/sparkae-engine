@@ -2696,7 +2696,7 @@ html,body{
   </div>
   <div class="colophon-bottom">
     <span><a href="index.html">Home</a> · <a href="assessors.html">For Assessors</a> · <a href="integrations.html">Integrations</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
-    <span>SparkAE is made by ONE Solution Cyber · © 2026</span>
+    <span>© 2026 SparkAE — The Independent Validation Layer for FedRAMP</span>
     <span>Set in Fraunces &amp; IBM Plex · Reference build</span>
   </div>
 </footer>
@@ -6891,7 +6891,7 @@ async function runPackageValidator(sample) {
 const CANONICAL_EVIDENCE_SCHEMA = {
   description: 'SPARKAE internal normalized evidence record · OSCAL-aligned with namespaced extension support',
   oscalAlignment: 'NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
-  extensionNamespace: 'https://sparkae.dev/ns/oscal',
+  extensionNamespace: 'https://sparkae.ai/ns/oscal',
   extensionPattern: 'OSCAL prop assembly with ns flag · per fedramp.gov · standards-conformant vendor extensions',
   fields: [
     // Core fields (always required)
@@ -6908,7 +6908,7 @@ const CANONICAL_EVIDENCE_SCHEMA = {
     { name: 'method',             type: 'enum',     required: true,  oscal: 'observation.methods',              desc: 'EXAMINE | INTERVIEW | TEST per NIST 800-53A' },
     { name: 'payload',            type: 'object',   required: false, oscal: 'observation.relevant-evidence',    desc: 'Source-specific structured payload preserved for traceability' },
     // Extension fields for unstructured / non-conforming inputs
-    { name: 'extensions',         type: 'object',   required: false, oscal: 'observation.props[ns="https://sparkae.dev/ns/oscal"]', desc: 'Namespaced key-value bag for vendor-specific fields without canonical homes · OSCAL prop extension pattern per fedramp.gov' },
+    { name: 'extensions',         type: 'object',   required: false, oscal: 'observation.props[ns="https://sparkae.ai/ns/oscal"]', desc: 'Namespaced key-value bag for vendor-specific fields without canonical homes · OSCAL prop extension pattern per fedramp.gov' },
     { name: 'unmapped_payload',   type: 'object',   required: false, oscal: 'observation.relevant-evidence.description', desc: 'Raw preserved native data when no mapping rule matched · enables late binding + drift recovery' },
     { name: 'confidence',         type: 'number',   required: false, oscal: 'observation.props[name="confidence"]',       desc: '0.0–1.0 · extraction confidence (PDF OCR, NLP, parsed CSV) · low-confidence flagged in SAR per fedramp.gov SAR Quality Review' },
     { name: 'validation_status',  type: 'enum',     required: false, oscal: 'observation.props[name="validation"]',       desc: 'valid | drift | missing_field | unmapped | low_confidence · surfaced as QA finding when not "valid"' },
@@ -6970,7 +6970,7 @@ const RUNTIME_VALIDATORS = [
   { id: 'V-007', sev: 'warn',  name: 'Schema drift · missing field', desc: 'Native source field referenced in mapping not present in payload (vendor API change)', fedrampRef: 'SPARKAE operational · auto-surfaced as QA finding' },
   { id: 'V-008', sev: 'warn',  name: 'Low confidence',                desc: 'confidence below configured threshold (default 0.85) · record flagged for human review', fedrampRef: 'fedramp.gov · SAR Quality Review · 3PAO defensibility' },
   { id: 'V-009', sev: 'warn',  name: 'Unmapped payload present',      desc: 'Native fields preserved in unmapped_payload · pilot should configure mapping or accept extension', fedrampRef: 'OSCAL · optional fields · vendor extension pattern' },
-  { id: 'V-010', sev: 'info',  name: 'Extension namespace correct',   desc: 'extensions[] use https://sparkae.dev/ns/oscal namespace per OSCAL prop pattern', fedrampRef: 'fedramp.gov · OSCAL Extensions and Accepted Values · §3' },
+  { id: 'V-010', sev: 'info',  name: 'Extension namespace correct',   desc: 'extensions[] use https://sparkae.ai/ns/oscal namespace per OSCAL prop pattern', fedrampRef: 'fedramp.gov · OSCAL Extensions and Accepted Values · §3' },
 ];
 
 // ── Worked custom-connector examples (4) ──
@@ -7682,7 +7682,7 @@ function openSchemaDetail(tier, connectorId) {
     + '<table><thead><tr><th>Native source</th><th></th><th>Canonical field</th><th>Transform</th></tr></thead><tbody>'
     + mappingRows + '</tbody></table>'
 
-    + (tier === 'custom' && extensionFields ? '<h2>§3a · Namespaced Extensions <span class="ref">vendor-specific fields preserved per fedramp.gov OSCAL prop pattern · ns="https://sparkae.dev/ns/oscal"</span></h2><div style="font-size:11px;line-height:1.7">' + extensionFields + '</div><div style="font-size:10px;color:#5A6270;font-family:Courier New,monospace;letter-spacing:0.04em;margin-top:8px">Per fedramp.gov · OSCAL Extensions and Accepted Values §3 · "Each industry standards body or organization may create their own extensions in their own name space." Vendor-specific data round-trips losslessly without polluting the core canonical schema.</div>' : '')
+    + (tier === 'custom' && extensionFields ? '<h2>§3a · Namespaced Extensions <span class="ref">vendor-specific fields preserved per fedramp.gov OSCAL prop pattern · ns="https://sparkae.ai/ns/oscal"</span></h2><div style="font-size:11px;line-height:1.7">' + extensionFields + '</div><div style="font-size:10px;color:#5A6270;font-family:Courier New,monospace;letter-spacing:0.04em;margin-top:8px">Per fedramp.gov · OSCAL Extensions and Accepted Values §3 · "Each industry standards body or organization may create their own extensions in their own name space." Vendor-specific data round-trips losslessly without polluting the core canonical schema.</div>' : '')
 
     + '<h2>§4 · FedRAMP Destination <span class="ref">authoritative deliverable per fedramp.gov</span></h2>'
     + '<div class="dest"><strong>Feeds into:</strong> ' + (schema.fedrampDestination || connector.fedrampDestination) + '</div>'
@@ -7706,7 +7706,7 @@ function openSchemaDetail(tier, connectorId) {
     + '  "integrity_hash": "sha256:...",\n'
     + '  "method": "(EXAMINE|INTERVIEW|TEST)",\n'
     + '  "payload": { /* preserved native payload */ }'
-    + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.dev/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
+    + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.ai/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
     + '\n}</pre>'
     + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 

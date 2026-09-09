@@ -20,6 +20,9 @@
 //   9. the OSCAL AR has the right root, declares 1.1.2, and carries the
 //      reproducibility receipt; it is written to tests/out/ for the schema
 //      check (tests/check_oscal_schema.py)
+//  10. public identity: the social card ships, every page is canonical on
+//      sparkae.ai, exporter props use that origin as the SparkAE namespace,
+//      and published copy does not name a prior company or a prior domain
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -215,9 +218,27 @@ const props = (arRoot && arRoot.metadata.props) || [];
 const propNames = props.map(p => p.name);
 check(['engine-version', 'catalog-digest', 'ruleset-digest', 'evidence-digest', 'assessment-date', 'verdict-digest', 'assessment-method', 'interview-and-test'].every(n => propNames.includes(n)), 'metadata.props carry the reproducibility receipt');
 check(props.some(p => p.name === 'interview-and-test' && p.value === 'not-performed'), 'the document states INTERVIEW and TEST were not performed');
+check(props.every(p => p.ns === 'https://sparkae.ai/ns/oscal'), 'receipt props use the sparkae.ai OSCAL namespace');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'sample-ar.json'), a.arText);
 ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
+
+// ── 10. public identity (this tree is https://sparkae.ai) ───────────────────
+console.log('10. public identity');
+const og = fs.readFileSync(path.join(root, 'static/og-card.png'));
+check(og[0] === 0x89 && og[1] === 0x50 && og[2] === 0x4e && og[3] === 0x47, 'static/og-card.png is a PNG');
+check(og.readUInt32BE(16) === 1200 && og.readUInt32BE(20) === 630, 'static/og-card.png is 1200×630');
+const leftover = /ONE Solution Cyber|onesolutioncyber|sparkae\.dev/i;
+for (const f of [...published, 'README.md', 'NOTICE', 'SECURITY.md', 'CONTRIBUTING.md']) {
+  check(!leftover.test(read(f)), f + ': no prior-company or prior-domain identity');
+}
+check(EX.SPARKAE_NS === 'https://sparkae.ai/ns/oscal', 'exporter namespace is https://sparkae.ai/ns/oscal');
+for (const f of published.filter(f => f.endsWith('.html'))) {
+  const html = read(f);
+  check(/rel="canonical" href="https:\/\/sparkae\.ai\//.test(html), f + ': canonical is on sparkae.ai');
+  check(/property="og:site_name" content="SparkAE"/.test(html), f + ': og:site_name is SparkAE');
+  check(/content="https:\/\/sparkae\.ai\/static\/og-card\.png"/.test(html), f + ': og/twitter image is the social card');
+}
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

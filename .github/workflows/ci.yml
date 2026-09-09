@@ -5,8 +5,9 @@
 # published file reaches a third-party origin, the engine and exporters read
 # no clock and use no randomness, the gate model is canonical, the sample
 # package is reproducible (golden verdict digest, byte-identical OSCAL), CSV
-# output is formula-injection safe, and the OSCAL Assessment Results validate
-# against the official NIST 1.1.2 schema vendored in tests/schema/.
+# output is formula-injection safe, the OSCAL Assessment Results validate
+# against the official NIST 1.1.2 schema vendored in tests/schema/, and the
+# published identity is sparkae.ai (canonical URLs, social card, namespace).
 name: conformance
 
 on:

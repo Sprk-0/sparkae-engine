@@ -1,13 +1,16 @@
 # SparkAE — public reference build
 
-**A browser-executable reference implementation of SparkAE's deterministic
-EXAMINE adjudication model, plus the public site.** Open
-`demo-standalone.html`. No build, no server, no network.
+[![SparkAE — every determination, traced to evidence](static/og-card.png)](https://sparkae.ai)
 
-SparkAE is the FedRAMP Rev5 / NIST SP 800-53A assessment engine from
-ONE Solution Cyber. This repository is served as-is by Netlify at
-**https://sparkae.ai** and is generated from the private
-product repository (see *How this repository is maintained*).
+**The public site and in-browser reference engine at [sparkae.ai](https://sparkae.ai).**
+Open `demo-standalone.html`. No build, no server, no network.
+
+SparkAE reads an assessment package, evaluates every “Determine if”
+objective through seven deterministic gates, and shows precisely what
+the evidence supports, contradicts, or fails to prove. Interview and
+Test stay with the assessor. This repository is served as-is by Netlify
+at **https://sparkae.ai** and is generated from the private product
+repository (see *How this repository is maintained*).
 
 ## What is here, and what is not
 
@@ -105,8 +108,10 @@ catalog is visible in every artifact it produced.
 
 OSCAL: the exporter emits **NIST OSCAL 1.1.2** and CI validates the output
 against the official NIST 1.1.2 assessment-results schema vendored in
-`tests/schema/`. The package-validator walkthrough (§07) applies FedRAMP
-constraint checks that accept OSCAL 1.0.4 or later.
+`tests/schema/`. SparkAE's own metadata props (the reproducibility receipt)
+use the namespace `https://sparkae.ai/ns/oscal`. The package-validator
+walkthrough (§07) applies FedRAMP constraint checks that accept OSCAL 1.0.4
+or later.
 
 ## Verify it yourself
 
@@ -148,7 +153,8 @@ Code in this repository is licensed under the Apache License, Version 2.0 —
 see `LICENSE` and `NOTICE`. The SparkAE server product is separate commercial
 software (licensed, not sold; FAR 12.212 / DFARS 227.7202 terms for federal
 buyers) and is not covered by that licence. SparkAE and the SparkAE marks are
-reserved. NIST SP 800-53 / 800-53A catalog text is a work of the United
-States Government and is not subject to copyright in the United States. The
-IBM Plex and Fraunces typefaces in `static/fonts/` are distributed under the
-SIL Open Font License 1.1 — the licence texts travel with the files there.
+reserved. Contact: [info@sparkae.ai](mailto:info@sparkae.ai). NIST SP 800-53 /
+800-53A catalog text is a work of the United States Government and is not
+subject to copyright in the United States. The IBM Plex and Fraunces
+typefaces in `static/fonts/` are distributed under the SIL Open Font License
+1.1 — the licence texts travel with the files there.

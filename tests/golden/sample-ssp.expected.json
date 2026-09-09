@@ -33,6 +33,6 @@
   "ruleset_digest": "7609e9bfacb78ac9b7eacbebbe6a0ce01ad35eaa",
   "evidence_digest": "6de811bac5be771f9cc34c13edc643411c144087",
   "verdict_digest": "3dd76f5f30831b0c4248a1be0ef3d1902559822f",
-  "oscal_ar_sha1": "a65e836484d154b381e19002172130447fc34cc2",
-  "oscal_ar_bytes": 2558681
+  "oscal_ar_sha1": "bfb181f69581a97397105d9b8a114db4d1e3ec6e",
+  "oscal_ar_bytes": 2558519
 }
