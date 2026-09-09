@@ -145,20 +145,30 @@ Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
 headers, and `_redirects` provides the forced `/demo` short link.
 
-**Served as-is** is meant literally, so it is worth checking rather than
-believing:
+**Served as-is** is meant literally, and it is a claim about the deployed site
+rather than about these files, so it has its own check:
 
 ```bash
-curl -fsS https://sparkae.ai/demo-standalone.html | diff - demo-standalone.html
+node tests/check_published.mjs          # or --site <deploy-preview-url>
 ```
 
-That has to come back empty. It did not while Netlify's Pretty URLs
-post-processing was enabled: that feature rewrites the *published* HTML,
-turning every internal `href="x.html"` into `href='/x'`, so all seven pages
-differed from the files here and the site's own links pointed at addresses its
-`canonical` tags disclaim. `netlify.toml` pins it off. Netlify still answers
-both `/x` and `/x.html`, so anything already linking the extensionless form
-keeps landing — the site just no longer emits it.
+It fetches every published file from `https://sparkae.ai` and compares the
+bytes with the working tree, then confirms `/` is `index.html`, that `/demo`
+and `/3pao.html` are still 301s, and that Netlify's own config files are not
+served as content. Run it from a checkout of the commit that was deployed — a
+tree ahead of the last deploy differs for the ordinary reason.
+
+This is the only check here that uses the network, so it is not part of
+`tests/check.mjs` and not a merge gate; CI runs it weekly and on demand.
+
+It exists because the claim was false and nothing noticed. Netlify's Pretty
+URLs post-processing is on unless a project says otherwise, and it rewrites the
+*published* HTML — every internal `href="x.html"` is served as `href='/x'` — so
+all seven pages differed from the files here, and the site's own links pointed
+at addresses its `canonical` tags disclaim. `netlify.toml` now pins it off, and
+`tests/check.mjs` fails if that pin goes away. Netlify still answers both `/x`
+and `/x.html`, so anything already linking the extensionless form keeps
+landing; the site just no longer emits it.
 
 ## Licence
 
