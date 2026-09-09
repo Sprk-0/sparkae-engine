@@ -235,15 +235,20 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <summary>OSCAL assessment-results record ▾</summary>
           <div class="terminal">
             <div class="term-body" style="font-size:12px;line-height:1.7">
-              <div><span class="out">{ "target": "AC-2_a.[02]",</span></div>
-              <div><span class="out">&nbsp;&nbsp;"props": [ { "name": "status", "value": </span><span class="err">"other-than-satisfied"</span><span class="out"> },</span></div>
-              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> }, { "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> } ],</span></div>
-              <div><span class="out">&nbsp;&nbsp;"related-observations": [ { "description": </span><span class="ok">"SSP §3.2"</span><span class="out">, "method": "EXAMINE" } ] }</span></div>
+              <div><span class="out">{ "target": { "type": "objective-id", "target-id": "AC-2_a.02",</span></div>
+              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"status": { "state": </span><span class="err">"not-satisfied"</span><span class="out"> } },</span></div>
+              <div><span class="out">&nbsp;&nbsp;"props": [ { "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> },</span></div>
+              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> } ],</span></div>
+              <div><span class="out">&nbsp;&nbsp;"related-observations": [ { "observation-uuid": "3f2ac9d1&hellip;" } ] }</span></div>
+              <div><span class="out">&nbsp;</span></div>
+              <div><span class="out">observations[] &mdash; where the evidence trace lives</span></div>
+              <div><span class="out">{ "uuid": "3f2ac9d1&hellip;", "methods": [ "EXAMINE" ], "types": [ "finding" ],</span></div>
+              <div><span class="out">&nbsp;&nbsp;"relevant-evidence": [ { "description": </span><span class="ok">"SSP §3.2"</span><span class="out"> } ] }</span></div>
             </div>
           </div>
         </details>
       </div>
-      <div class="hx-cap"><span>One finding from the sample run · synthetic data</span><span>Same evidence → same result, every time</span></div>
+      <div class="hx-cap"><span>Illustrative finding · synthetic data</span><span>Same evidence → same result, every time</span></div>
     </div>
   </div>
 </section>

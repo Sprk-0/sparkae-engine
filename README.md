@@ -126,11 +126,16 @@ published file loads or calls a third-party origin and every page's CSP is
 gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
 temporal verdicts); the golden fixture; CSV formula-injection safety; the
-OSCAL document's shape and receipt; and that every page keeps one address —
+OSCAL document's shape and receipt; that every page keeps one address —
 internal links resolve to files in this tree, `canonical`, `og:url` and
 `sitemap.xml` agree on it, and `netlify.toml` still pins off the
-post-processing that would rewrite it. The GitHub Actions workflow in
-`.github/workflows/ci.yml` runs both on every push.
+post-processing that would rewrite it; and that the OSCAL record the site
+*shows* is the OSCAL that is *emitted* — the status values it prints are the
+two the schema allows, `related-observations` is shown as the
+`observation-uuid` pointer it is, and in the export every such pointer resolves
+to an observation the document actually contains (a document can validate
+against the schema and still reference observations that are not there). The
+GitHub Actions workflow in `.github/workflows/ci.yml` runs both on every push.
 
 ## How this repository is maintained
 

@@ -274,5 +274,73 @@ check(!unlisted.length && !stray.length,
   + (unlisted.length ? ' — not listed: ' + unlisted.join(', ') : '')
   + (stray.length ? ' — listed but not a canonical: ' + stray.join(', ') : ''));
 
+// ── 11. the OSCAL the site shows is the OSCAL that is emitted ───────────────
+// The homepage renders a finding record under the heading "OSCAL
+// assessment-results record", which makes it a claim about the export and not
+// decoration. It had drifted into something the schema in tests/schema/ would
+// reject: the target as a bare string rather than an object, a status of
+// "other-than-satisfied" (the human label, not either token the enum allows),
+// and a related-observations entry carrying the description and method inline
+// instead of pointing at an observation. JSON-schema validation cannot catch
+// any of that, because it never sees the page.
+//
+// The second half checks the export itself for the thing the schema also cannot
+// see: whether those observation pointers resolve. A document can validate
+// perfectly and still reference observations it does not contain.
+console.log('11. OSCAL shown = OSCAL emitted');
+const schema = JSON.parse(fs.readFileSync(path.join(here, 'schema', 'oscal_assessment-results_schema.json'), 'utf8'));
+const statusStates = (function findEnum(node) {
+  if (Array.isArray(node)) return node.map(findEnum).find(Boolean);
+  if (node && typeof node === 'object') {
+    if (Array.isArray(node.enum) && node.enum.includes('satisfied')) return node.enum;
+    return Object.values(node).map(findEnum).find(Boolean);
+  }
+  return undefined;
+})(schema);
+check(Array.isArray(statusStates) && statusStates.length, 'vendored NIST schema declares the finding-status enum: ' + (statusStates || []).join(' | '));
+
+// The JSON on a page is interleaved with the markup that colours it, so the
+// tags come off before anything is matched.
+const plain = (f) => read(f).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
+const quiet = [];
+for (const f of pages) {
+  const text = plain(f);
+  const states = [...text.matchAll(/"state"\s*:\s*"([^"]+)"/g)].map(m => m[1]);
+  const refs = [...text.matchAll(/related-observations([\s\S]{0,160})/g)];
+  const targets = [...text.matchAll(/"target"\s*:\s*(.)/g)];
+  const label = /\bother-than-satisfied\b/.test(text);
+  if (!states.length && !refs.length && !targets.length && !label) { quiet.push(f); continue; }
+
+  const badStates = states.filter(s => !statusStates.includes(s));
+  check(!badStates.length, f + `: ${states.length} OSCAL "state" value(s), all in the schema enum` + (badStates.length ? ' — not a token: ' + [...new Set(badStates)].join(', ') : ''));
+
+  // "other-than-satisfied" is not an OSCAL value in any position; the label the
+  // engine and the UI use is the prose "Other Than Satisfied".
+  check(!label, f + ': does not present "other-than-satisfied" as an OSCAL value');
+
+  // related-observations is a list of pointers. Where a page shows one, the
+  // description and methods belong on the observation it names, which is what
+  // the §07 package validator enforces on a real document.
+  const inline = refs.filter(m => !/observation-uuid/.test(m[1]));
+  check(!inline.length, f + `: ${refs.length} related-observations reference(s), all observation-uuid pointers` + (inline.length ? ' — shown inline instead' : ''));
+
+  // A finding target is an object carrying target-id, never the id on its own.
+  const flat = targets.filter(m => m[1] !== '{');
+  check(!flat.length, f + `: ${targets.length} OSCAL "target"(s), all the object form` + (flat.length ? ' — shown as a bare value' : ''));
+}
+ok(`${quiet.length} page(s) show no OSCAL record: ` + quiet.join(', '));
+
+// Referential integrity of the observation area, on the document just built.
+const arResult = arRoot.results[0];
+const obsUuids = new Set((arResult.observations || []).map(o => o.uuid));
+const obsRefs = (arResult.findings || []).flatMap(f => (f['related-observations'] || []).map(r => r['observation-uuid']));
+const dangling = obsRefs.filter(u => !obsUuids.has(u));
+const orphans = [...obsUuids].filter(u => !obsRefs.includes(u));
+check(obsUuids.size > 0, `the export carries an observations array (${obsUuids.size} observations for ${obsRefs.length} references)`);
+check(!dangling.length, 'every related-observations pointer resolves to an observation in the document' + (dangling.length ? ` — ${dangling.length} dangling` : ''));
+check(!orphans.length, 'every observation is referenced by a finding' + (orphans.length ? ` — ${orphans.length} orphaned` : ''));
+check((arResult.observations || []).every(o => Array.isArray(o.methods) && o.methods.includes('EXAMINE')),
+  'every observation records methods: [EXAMINE]');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
