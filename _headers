@@ -67,9 +67,12 @@
 # BOTH route forms are listed for every page. Netlify serves `foo.html` at the
 # extensionless `/foo` as well, and header rules match the REQUESTED path — so
 # listing only `/foo.html` leaves `/foo` with no CSP at all now that `/*` no
-# longer carries one (caught in review). The site's own links all use
-# `.html`, but external links, search-engine canonicalisation and typed URLs
-# reach the clean form.
+# longer carries one (caught in review). The site's own links all use `.html`
+# — netlify.toml pins Netlify's Pretty URLs post-processing off, so that holds
+# for what is published and not merely for what is committed — but external
+# links, search-engine canonicalisation and typed URLs reach the clean form
+# whatever the site emits. Listing both forms is also what kept every route
+# covered through the period when Pretty URLs was rewriting those links.
 
 /
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'

@@ -20,6 +20,9 @@
 //   9. the OSCAL AR has the right root, declares 1.1.2, and carries the
 //      reproducibility receipt; it is written to tests/out/ for the schema
 //      check (tests/check_oscal_schema.py)
+//  10. every page has one address: internal links resolve to files in this
+//      tree, canonical / og:url / sitemap.xml agree on it, and netlify.toml
+//      still pins off the post-processing that rewrites those links
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -218,6 +221,58 @@ check(props.some(p => p.name === 'interview-and-test' && p.value === 'not-perfor
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'sample-ar.json'), a.arText);
 ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
+
+// ── 10. one address per page ────────────────────────────────────────────────
+// The README says this repository is served as-is, and every page names one
+// canonical address. Both claims are hostage to Netlify's Pretty URLs
+// post-processing, which is on by default and rewrites the published HTML —
+// every internal href="x.html" becomes href='/x' — so the site stops matching
+// the source and starts linking the address its own canonical disclaims.
+// netlify.toml pins it off; this section is what notices if that pin goes away,
+// and what catches a hand-written clean-URL link doing the same thing.
+console.log('10. one address per page');
+const SITE = 'https://sparkae.ai';
+const pages = published.filter(f => f.endsWith('.html'));
+const toml = read('netlify.toml').replace(/^\s*#.*$/gm, '');
+check(/\[build\.processing\.html\][\s\S]*?pretty_urls\s*=\s*false/.test(toml),
+  'netlify.toml: Pretty URLs post-processing is pinned off');
+
+// An internal link must name a file that exists here. `/assessors` resolves on
+// Netlify and nowhere else — including from the file:// URL the demo has to
+// keep working from (CONTRIBUTING, constraint 2).
+for (const f of pages) {
+  const dead = [];
+  for (const m of read(f).matchAll(/href="([^"]*)"/g)) {
+    // Skip anything that is not a path into this tree: a scheme (https:, mailto:,
+    // data:), a protocol-relative URL, or a bare fragment.
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(m[1])) continue;
+    const target = m[1].split(/[?#]/)[0];
+    if (target && !fs.existsSync(path.join(root, target.replace(/^\//, '')))) dead.push(m[1]);
+  }
+  check(!dead.length, f + ': every internal link resolves to a file here' + (dead.length ? ' — ' + [...new Set(dead)].join(', ') : ''));
+}
+
+const canonicalOf = {};
+for (const f of pages) {
+  const html = read(f);
+  const want = SITE + (f === 'index.html' ? '/' : '/' + f);
+  const canon = (html.match(/<link rel="canonical" href="([^"]+)"/) || [])[1];
+  const og = (html.match(/<meta property="og:url" content="([^"]+)"/) || [])[1];
+  check(canon === want && og === want, f + ': canonical and og:url both name ' + want);
+  canonicalOf[f] = canon;
+}
+
+// 404.html is left out of the sitemap on purpose: it is noindex and robots.txt
+// disallows it. Every other published page has to be listed at its canonical
+// address, or it goes unindexed with nothing to say so.
+const locs = [...read('sitemap.xml').replace(/<!--[\s\S]*?-->/g, '').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+const indexed = pages.filter(f => f !== '404.html');
+const unlisted = indexed.filter(f => !locs.includes(canonicalOf[f]));
+const stray = locs.filter(l => !indexed.some(f => canonicalOf[f] === l));
+check(!unlisted.length && !stray.length,
+  `sitemap.xml: ${locs.length} <loc>s, each the canonical of a published page`
+  + (unlisted.length ? ' — not listed: ' + unlisted.join(', ') : '')
+  + (stray.length ? ' — listed but not a canonical: ' + stray.join(', ') : ''));
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

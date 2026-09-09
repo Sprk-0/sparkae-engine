@@ -125,8 +125,11 @@ published file loads or calls a third-party origin and every page's CSP is
 `connect-src 'self'`; no clock or randomness in the engine or exporters; the
 gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
-temporal verdicts); the golden fixture; CSV formula-injection safety; and the
-OSCAL document's shape and receipt. The GitHub Actions workflow in
+temporal verdicts); the golden fixture; CSV formula-injection safety; the
+OSCAL document's shape and receipt; and that every page keeps one address —
+internal links resolve to files in this tree, `canonical`, `og:url` and
+`sitemap.xml` agree on it, and `netlify.toml` still pins off the
+post-processing that would rewrite it. The GitHub Actions workflow in
 `.github/workflows/ci.yml` runs both on every push.
 
 ## How this repository is maintained
@@ -141,6 +144,21 @@ in `CONTRIBUTING.md`.
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
 headers, and `_redirects` provides the forced `/demo` short link.
+
+**Served as-is** is meant literally, so it is worth checking rather than
+believing:
+
+```bash
+curl -fsS https://sparkae.ai/demo-standalone.html | diff - demo-standalone.html
+```
+
+That has to come back empty. It did not while Netlify's Pretty URLs
+post-processing was enabled: that feature rewrites the *published* HTML,
+turning every internal `href="x.html"` into `href='/x'`, so all seven pages
+differed from the files here and the site's own links pointed at addresses its
+`canonical` tags disclaim. `netlify.toml` pins it off. Netlify still answers
+both `/x` and `/x.html`, so anything already linking the extensionless form
+keeps landing — the site just no longer emits it.
 
 ## Licence
 
