@@ -20,6 +20,8 @@
 //   9. the OSCAL AR has the right root, declares 1.1.2, and carries the
 //      reproducibility receipt; it is written to tests/out/ for the schema
 //      check (tests/check_oscal_schema.py)
+//  10. the homepage hero labelled as the sample run is a finding this engine
+//      emits for that run, shown in the OSCAL shape the exporters write
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -218,6 +220,55 @@ check(props.some(p => p.name === 'interview-and-test' && p.value === 'not-perfor
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'sample-ar.json'), a.arText);
 ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
+
+// ── 10. homepage hero is a real sample-run finding, shown as real OSCAL ─────
+// The hero is labelled "from the sample run". That is a claim about this
+// engine, not decoration: the objective, verdict and confidence on the card
+// have to be the ones assessDif returns for CloudVault / Low / 2026-06-01.
+// The expandable record is labelled OSCAL assessment-results, so it has to
+// use the shape demo-exports.js emits and the vendored schema accepts.
+console.log('10. homepage hero matches the sample run');
+const home = read('index.html');
+const hero = (home.match(/id="sample-run-finding"([\s\S]*?)<div class="hx-cap">/) || [])[1] || '';
+check(!!hero, 'homepage has #sample-run-finding');
+const heroId = ((hero.match(/class="id">([^<·]+)/) || [])[1] || '').trim();
+const heroStatus = ((hero.match(/class="tag">([^<]+)/) || [])[1] || '').trim();
+const heroConf = parseFloat(((hero.match(/<strong>Confidence<\/strong>\s*([0-9.]+)/) || [])[1] || ''));
+const actual = a.findings.find(f => f.objective_id === heroId);
+check(!!actual, 'hero objective ' + heroId + ' exists in the sample run');
+if (actual) {
+  check(actual.status === heroStatus, 'hero status is the sample-run status (' + actual.status + ')');
+  check(Number.isFinite(heroConf) && Math.abs(actual.confidence - heroConf) < 0.005,
+    'hero confidence is the sample-run confidence (' + actual.confidence + ')');
+}
+check(/sample run/.test(home) && /2026-06-01/.test(home),
+  'hero caption still names the sample run and the pinned assessment date');
+
+const schema = JSON.parse(fs.readFileSync(path.join(here, 'schema', 'oscal_assessment-results_schema.json'), 'utf8'));
+const statusStates = (function findEnum(node) {
+  if (Array.isArray(node)) return node.map(findEnum).find(Boolean);
+  if (node && typeof node === 'object') {
+    if (Array.isArray(node.enum) && node.enum.includes('satisfied')) return node.enum;
+    return Object.values(node).map(findEnum).find(Boolean);
+  }
+  return undefined;
+})(schema);
+check(Array.isArray(statusStates) && statusStates.length,
+  'vendored NIST schema declares the finding-status enum: ' + (statusStates || []).join(' | '));
+
+const plainHome = home.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
+const states = [...plainHome.matchAll(/"state"\s*:\s*"([^"]+)"/g)].map(m => m[1]);
+const badStates = states.filter(s => !statusStates.includes(s));
+check(states.length > 0 && !badStates.length,
+  'homepage OSCAL "state" value(s) are in the schema enum' + (badStates.length ? ' — not a token: ' + [...new Set(badStates)].join(', ') : ''));
+check(!/\bother-than-satisfied\b/.test(plainHome),
+  'homepage does not present "other-than-satisfied" as an OSCAL value');
+check(/"target"\s*:\s*\{/.test(plainHome) && !/"target"\s*:\s*"/.test(plainHome),
+  'homepage OSCAL target is the object form with target-id, not a bare string');
+check(/related-risks/.test(plainHome) && /risk-uuid/.test(plainHome),
+  'Other Than Satisfied hero shows related-risks as a risk-uuid pointer');
+check(/server product/.test(home) && /pip install/.test(home) && /will not work/.test(home),
+  'homepage says pip install is the server product and will not work from this tree');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

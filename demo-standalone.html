@@ -2313,9 +2313,9 @@ html,body{
 
     <div class="onb-step active" data-onb-step="1">
       <div class="onb-num">Step 1 · Welcome</div>
-      <h2 class="onb-title">SPARKAE · the SPARK Assessment Engine accelerates your FedRAMP authorization path</h2>
-      <p class="onb-body">This pilot demonstrates the full FedRAMP authorization lifecycle — Initial Assessment, Continuous Monitoring, Annual Reassessment, Significant Change Requests, KSI Validation for the 20x Phase 2 path, and OSCAL package validation — across 4 sample cloud service offerings. The control catalog is <strong>NIST SP 800-53 Rev5</strong>; the tailoring, baselines, and templates are <strong>FedRAMP Rev5</strong>.</p>
-      <p class="onb-body">Every finding, citation, and recommendation references authoritative sources at <strong style="color:var(--vermillion)">fedramp.gov</strong>. The platform produces SAR-conformant output, not a marketing approximation.</p>
+      <h2 class="onb-title">SPARKAE · a browser reference for the Examine method</h2>
+      <p class="onb-body"><strong>§01 Initial Assessment</strong> runs the real deterministic engine in this browser — FedRAMP Low, Moderate, or High against a sample SSP or a package you drop in. Nothing is uploaded. INTERVIEW and TEST stay with the assessor. The other eight tabs are <strong>guided walkthroughs</strong> of the rest of a FedRAMP lifecycle; they are labelled as such and do not run the engine.</p>
+      <p class="onb-body">The control catalog is <strong>NIST SP 800-53 Rev5</strong>; the tailoring and baselines are <strong>FedRAMP Rev5</strong>. §01 exports OSCAL 1.1.2 assessment-results and CSVs computed from that run. They are automated EXAMINE preparation, not a Security Assessment Report and not a substitute for a recognized assessment service.</p>
       <div class="onb-meta">
         <div class="onb-meta-cell"><div class="onb-meta-num">9</div><div class="onb-meta-lbl">Use cases</div></div>
         <div class="onb-meta-cell"><div class="onb-meta-num">11</div><div class="onb-meta-lbl">QA rules</div></div>
@@ -2326,8 +2326,8 @@ html,body{
 
     <div class="onb-step" data-onb-step="2">
       <div class="onb-num">Step 2 · Connect your evidence sources</div>
-      <h2 class="onb-title">Map your existing tools to FedRAMP artifact categories</h2>
-      <p class="onb-body">Tab <strong>§09 Data Sources</strong> shows two tiers of connectors. Tier 1 is evidence sources (scanners, IdP, cloud posture, doc repos). Tier 2 is GRC platforms you may already use — every connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned), then onward to the FedRAMP deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>.</p>
+      <h2 class="onb-title">Walkthrough: how evidence sources would map</h2>
+      <p class="onb-body">Tab <strong>§09 Data Sources</strong> is a guided walkthrough, not a live connector. It shows how evidence sources and GRC platforms <em>would</em> map into an OSCAL-aligned record. None of those connectors run in this browser build. PDF/OCR, webhooks, and two-way GRC sync are server-product or future work, not this page.</p>
       <div class="onb-connectors">
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Doc repos</span><span class="onb-conn-cat">Drive · GitHub · Confluence · Box → SSP · IaC · policies · ATO letters</span></div>
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Workflow</span><span class="onb-conn-cat">Jira → POA&amp;M · CM-3 changes · IR-4 incidents</span></div>
@@ -2348,15 +2348,15 @@ html,body{
         <div class="onb-phase"><span class="onb-phase-name">Quality</span><span class="onb-phase-list">QA Audit · Package Validator · Portfolio</span></div>
         <div class="onb-phase"><span class="onb-phase-name">Foundation</span><span class="onb-phase-list">Data Sources</span></div>
       </div>
-      <p class="onb-body">Try <strong>§01 Initial Assessment</strong> with the CloudVault sample first. The runner walks 7 stages and produces a SAR-structured output with §5 results, RET adjustments, and a defensibility score.</p>
+      <p class="onb-body">Try <strong>§01 Initial Assessment</strong> with the CloudVault sample first. That tab runs the seven gates and writes the exports this build actually ships: OSCAL assessment-results, findings / RET / POA&amp;M / TCW CSV, a summary, and a reproducibility receipt.</p>
     </div>
 
     <div class="onb-step" data-onb-step="4">
       <div class="onb-num">Step 4 · Generate AO briefing</div>
-      <h2 class="onb-title">Output ready for AO presentation</h2>
-      <p class="onb-body">When you've run a few use cases, open <strong>§08 Portfolio</strong> for the cross-system executive view. Click <strong style="color:var(--vermillion)">⎙ OPEN ONE-PAGER</strong> to generate a printable AO briefing — fully self-contained, references all <strong style="color:var(--vermillion)">fedramp.gov</strong> authoritative sources, ready for printing or saving to PDF.</p>
+      <h2 class="onb-title">Walkthrough: a printable briefing from §08</h2>
+      <p class="onb-body"><strong>§08 Portfolio</strong> is a guided walkthrough. Its one-pager is an illustrative AO briefing generated from the walkthrough’s reference portfolio, not from a §01 live-engine run, and it is not an official Security Assessment Report.</p>
       <div class="onb-checklist">
-        <div class="onb-check">✓ SAR-conformant section structure (§5 · Appendix A · §1-§4)</div>
+        <div class="onb-check">✓ Walkthrough one-pager structured like a SAR outline (§5 · Appendix A · §1-§4)</div>
         <div class="onb-check">✓ Composite Authorization Posture per system (SAR Sat · ConMon SLA · KSI Auto · Defensibility)</div>
         <div class="onb-check">✓ AO Recommendations broken out by system tier (ATO · conditional ATO · defer)</div>
         <div class="onb-check">✓ References block citing fedramp.gov authoritative sources</div>
@@ -6891,7 +6891,7 @@ async function runPackageValidator(sample) {
 const CANONICAL_EVIDENCE_SCHEMA = {
   description: 'SPARKAE internal normalized evidence record · OSCAL-aligned with namespaced extension support',
   oscalAlignment: 'NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
-  extensionNamespace: 'https://sparkae.dev/ns/oscal',
+  extensionNamespace: 'https://sparkae.ai/ns/oscal',
   extensionPattern: 'OSCAL prop assembly with ns flag · per fedramp.gov · standards-conformant vendor extensions',
   fields: [
     // Core fields (always required)
@@ -6908,7 +6908,7 @@ const CANONICAL_EVIDENCE_SCHEMA = {
     { name: 'method',             type: 'enum',     required: true,  oscal: 'observation.methods',              desc: 'EXAMINE | INTERVIEW | TEST per NIST 800-53A' },
     { name: 'payload',            type: 'object',   required: false, oscal: 'observation.relevant-evidence',    desc: 'Source-specific structured payload preserved for traceability' },
     // Extension fields for unstructured / non-conforming inputs
-    { name: 'extensions',         type: 'object',   required: false, oscal: 'observation.props[ns="https://sparkae.dev/ns/oscal"]', desc: 'Namespaced key-value bag for vendor-specific fields without canonical homes · OSCAL prop extension pattern per fedramp.gov' },
+    { name: 'extensions',         type: 'object',   required: false, oscal: 'observation.props[ns="https://sparkae.ai/ns/oscal"]', desc: 'Namespaced key-value bag for vendor-specific fields without canonical homes · OSCAL prop extension pattern per fedramp.gov' },
     { name: 'unmapped_payload',   type: 'object',   required: false, oscal: 'observation.relevant-evidence.description', desc: 'Raw preserved native data when no mapping rule matched · enables late binding + drift recovery' },
     { name: 'confidence',         type: 'number',   required: false, oscal: 'observation.props[name="confidence"]',       desc: '0.0–1.0 · extraction confidence (PDF OCR, NLP, parsed CSV) · low-confidence flagged in SAR per fedramp.gov SAR Quality Review' },
     { name: 'validation_status',  type: 'enum',     required: false, oscal: 'observation.props[name="validation"]',       desc: 'valid | drift | missing_field | unmapped | low_confidence · surfaced as QA finding when not "valid"' },
@@ -6970,7 +6970,7 @@ const RUNTIME_VALIDATORS = [
   { id: 'V-007', sev: 'warn',  name: 'Schema drift · missing field', desc: 'Native source field referenced in mapping not present in payload (vendor API change)', fedrampRef: 'SPARKAE operational · auto-surfaced as QA finding' },
   { id: 'V-008', sev: 'warn',  name: 'Low confidence',                desc: 'confidence below configured threshold (default 0.85) · record flagged for human review', fedrampRef: 'fedramp.gov · SAR Quality Review · 3PAO defensibility' },
   { id: 'V-009', sev: 'warn',  name: 'Unmapped payload present',      desc: 'Native fields preserved in unmapped_payload · pilot should configure mapping or accept extension', fedrampRef: 'OSCAL · optional fields · vendor extension pattern' },
-  { id: 'V-010', sev: 'info',  name: 'Extension namespace correct',   desc: 'extensions[] use https://sparkae.dev/ns/oscal namespace per OSCAL prop pattern', fedrampRef: 'fedramp.gov · OSCAL Extensions and Accepted Values · §3' },
+  { id: 'V-010', sev: 'info',  name: 'Extension namespace correct',   desc: 'extensions[] use https://sparkae.ai/ns/oscal namespace per OSCAL prop pattern', fedrampRef: 'fedramp.gov · OSCAL Extensions and Accepted Values · §3' },
 ];
 
 // ── Worked custom-connector examples (4) ──
@@ -7682,7 +7682,7 @@ function openSchemaDetail(tier, connectorId) {
     + '<table><thead><tr><th>Native source</th><th></th><th>Canonical field</th><th>Transform</th></tr></thead><tbody>'
     + mappingRows + '</tbody></table>'
 
-    + (tier === 'custom' && extensionFields ? '<h2>§3a · Namespaced Extensions <span class="ref">vendor-specific fields preserved per fedramp.gov OSCAL prop pattern · ns="https://sparkae.dev/ns/oscal"</span></h2><div style="font-size:11px;line-height:1.7">' + extensionFields + '</div><div style="font-size:10px;color:#5A6270;font-family:Courier New,monospace;letter-spacing:0.04em;margin-top:8px">Per fedramp.gov · OSCAL Extensions and Accepted Values §3 · "Each industry standards body or organization may create their own extensions in their own name space." Vendor-specific data round-trips losslessly without polluting the core canonical schema.</div>' : '')
+    + (tier === 'custom' && extensionFields ? '<h2>§3a · Namespaced Extensions <span class="ref">vendor-specific fields preserved per fedramp.gov OSCAL prop pattern · ns="https://sparkae.ai/ns/oscal"</span></h2><div style="font-size:11px;line-height:1.7">' + extensionFields + '</div><div style="font-size:10px;color:#5A6270;font-family:Courier New,monospace;letter-spacing:0.04em;margin-top:8px">Per fedramp.gov · OSCAL Extensions and Accepted Values §3 · "Each industry standards body or organization may create their own extensions in their own name space." Vendor-specific data round-trips losslessly without polluting the core canonical schema.</div>' : '')
 
     + '<h2>§4 · FedRAMP Destination <span class="ref">authoritative deliverable per fedramp.gov</span></h2>'
     + '<div class="dest"><strong>Feeds into:</strong> ' + (schema.fedrampDestination || connector.fedrampDestination) + '</div>'
@@ -7706,7 +7706,7 @@ function openSchemaDetail(tier, connectorId) {
     + '  "integrity_hash": "sha256:...",\n'
     + '  "method": "(EXAMINE|INTERVIEW|TEST)",\n'
     + '  "payload": { /* preserved native payload */ }'
-    + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.dev/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
+    + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.ai/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
     + '\n}</pre>'
     + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
