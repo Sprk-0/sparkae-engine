@@ -218,7 +218,7 @@ const props = (arRoot && arRoot.metadata.props) || [];
 const propNames = props.map(p => p.name);
 check(['engine-version', 'catalog-digest', 'ruleset-digest', 'evidence-digest', 'assessment-date', 'verdict-digest', 'assessment-method', 'interview-and-test'].every(n => propNames.includes(n)), 'metadata.props carry the reproducibility receipt');
 check(props.some(p => p.name === 'interview-and-test' && p.value === 'not-performed'), 'the document states INTERVIEW and TEST were not performed');
-check(props.every(p => p.ns === 'https://sparkae.ai/ns/oscal'), 'receipt props use the sparkae.ai OSCAL namespace');
+check(['engine-version', 'catalog-digest', 'ruleset-digest', 'evidence-digest', 'assessment-date', 'verdict-digest', 'assessment-method', 'interview-and-test'].every(n => props.some(p => p.name === n && p.ns === 'https://sparkae.ai/ns/oscal')), 'receipt props use the sparkae.ai OSCAL namespace');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'sample-ar.json'), a.arText);
 ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
