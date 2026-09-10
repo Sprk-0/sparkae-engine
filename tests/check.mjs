@@ -226,8 +226,8 @@ ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
 // ── 10. public identity (this tree is https://sparkae.ai) ───────────────────
 console.log('10. public identity');
 const og = fs.readFileSync(path.join(root, 'static/og-card.png'));
-check(og[0] === 0x89 && og[1] === 0x50 && og[2] === 0x4e && og[3] === 0x47, 'static/og-card.png is a PNG');
-check(og.readUInt32BE(16) === 1200 && og.readUInt32BE(20) === 630, 'static/og-card.png is 1200×630');
+check(og.length >= 8 && og[0] === 0x89 && og[1] === 0x50 && og[2] === 0x4e && og[3] === 0x47 && og[4] === 0x0d && og[5] === 0x0a && og[6] === 0x1a && og[7] === 0x0a, 'static/og-card.png is a PNG');
+check(og.length >= 24 && og.readUInt32BE(16) === 1200 && og.readUInt32BE(20) === 630, 'static/og-card.png is 1200×630');
 const leftover = /ONE Solution Cyber|onesolutioncyber|sparkae\.dev/i;
 for (const f of [...published, 'README.md', 'NOTICE', 'SECURITY.md', 'CONTRIBUTING.md']) {
   check(!leftover.test(read(f)), f + ': no prior-company or prior-domain identity');
