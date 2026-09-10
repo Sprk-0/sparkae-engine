@@ -242,12 +242,11 @@ check(/\[build\.processing\.html\][\s\S]*?pretty_urls\s*=\s*false/.test(toml),
 // keep working from (CONTRIBUTING, constraint 2).
 for (const f of pages) {
   const dead = [];
-  for (const m of read(f).matchAll(/href="([^"]*)"/g)) {
-    // Skip anything that is not a path into this tree: a scheme (https:, mailto:,
-    // data:), a protocol-relative URL, or a bare fragment.
     if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(m[1])) continue;
     const target = m[1].split(/[?#]/)[0];
-    if (target && !fs.existsSync(path.join(root, target.replace(/^\//, '')))) dead.push(m[1]);
+    const resolved = path.resolve(root, target.replace(/^\//, ''));
+    const inTree = resolved === root || resolved.startsWith(root + path.sep);
+    if (target && (!inTree || !fs.existsSync(resolved))) dead.push(m[1]);
   }
   check(!dead.length, f + ': every internal link resolves to a file here' + (dead.length ? ' — ' + [...new Set(dead)].join(', ') : ''));
 }
