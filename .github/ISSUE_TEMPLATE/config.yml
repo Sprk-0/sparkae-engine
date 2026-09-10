@@ -1,0 +1,13 @@
+# Route people to the product, not a blank GitHub form, when GitHub is
+# not the right door. Security reports stay on the email path in SECURITY.md.
+blank_issues_enabled: true
+contact_links:
+  - name: SparkAE website
+    url: https://sparkae.ai
+    about: Product, live browser demo, and 30-day pilot requests
+  - name: Email SparkAE
+    url: mailto:info@sparkae.ai
+    about: Pilots, partnerships, and anything that should not be a public issue
+  - name: Security report
+    url: mailto:info@sparkae.ai?subject=Security%20report
+    about: Private vulnerability reports — do not open a public issue

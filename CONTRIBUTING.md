@@ -23,9 +23,19 @@ Three constraints, all enforced by `node tests/check.mjs`:
    files parsed and refused, objectives adjudicated, gate tallies, verdicts
    and the receipt. Do not add narration that describes activity the engine
    did not perform, and keep INTERVIEW and TEST with the assessor.
+4. **The public identity is sparkae.ai.** Canonical URLs, Open Graph tags,
+   the social card, contact address and the OSCAL extension namespace all
+   name that origin. Do not reintroduce a prior company name or a prior
+   domain.
 
 Run `node tests/check.mjs .` and `python tests/check_oscal_schema.py`
-before opening a PR; CI runs the same two commands.
+before opening a PR; CI runs the same two commands. The identity checks
+in `check.mjs` fail if a page's canonical, social card or OSCAL namespace
+leaves sparkae.ai, or if a prior company name or domain comes back.
+
+GitHub's About box (description, website, topics) is not a file in this
+tree — set it in the repository settings so the listing names
+https://sparkae.ai the way the pages do.
 
 `node tests/check_published.mjs` is the exception to constraint 2 and the only
 check here that touches the network: it asks whether the deployed site is still
