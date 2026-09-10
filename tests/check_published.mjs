@@ -46,10 +46,9 @@ const fail = (msg) => { failures++; console.log('  FAIL ' + msg); };
 const check = (cond, msg) => (cond ? ok(msg) : fail(msg));
 
 // Netlify reads netlify.toml, _headers and _redirects from the publish root and
-// does not serve them; nothing else in the tree is withheld, so `publish = "."`
-// puts the docs and this suite on the site too. That is intended — the point of
-// the repository is that the checks are as public as the claims — but it means
-// the file list below is "the tree", not "the pages".
+// does not serve them. This script intentionally skips dotfiles/dot-directories
+// and a few local-only directories (.git, .github, node_modules, out), so the
+// file list below is “the public tree we intend to publish”, not just “the pages”.
 const NOT_SERVED = ['netlify.toml', '_headers', '_redirects'];
 const SKIP_DIRS = new Set(['.git', '.github', 'node_modules', 'out']);
 
