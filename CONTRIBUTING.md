@@ -37,5 +37,10 @@ GitHub's About box (description, website, topics) is not a file in this
 tree — set it in the repository settings so the listing names
 https://sparkae.ai the way the pages do.
 
+`node tests/check_published.mjs` is the exception to constraint 2 and the only
+check here that touches the network: it asks whether the deployed site is still
+this tree byte-for-byte, which no offline check can see. It is not a merge gate
+— run it after a deploy, or with `--site` against a deploy preview.
+
 By submitting a contribution you agree it is licensed under the Apache
 License 2.0 that covers this repository.

@@ -215,35 +215,40 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       </div>
     </div>
     <div class="fade-up fade-up-2">
-      <div class="hx-card">
+      <div class="hx-card" id="sample-run-finding">
         <div class="hd">
-          <div class="id">AC-2_a.[02] · Account Management</div>
+          <div class="id">AC-2_g · Account Management</div>
           <span class="tag">Other Than Satisfied</span>
         </div>
         <div class="meta">
-          <div><strong>Confidence</strong>0.68 / 1.0</div>
-          <div><strong>Defensibility</strong>Grade C</div>
-          <div><strong>Gap type</strong>Incomplete coverage</div>
+          <div><strong>Confidence</strong>0.35 / 1.0</div>
+          <div><strong>Defensibility</strong>Grade B · 73/100</div>
+          <div><strong>Gap type</strong>Missing evidence</div>
           <div><strong>Method</strong>EXAMINE</div>
         </div>
-        <div class="row"><span class="k">Objective</span><span><strong>Determine if</strong> prohibited account types are defined.</span></div>
-        <div class="row"><span class="k">Evidence</span><span>SSP §3.2 &ldquo;Account Types&rdquo; (BM25 0.74): &ldquo;<em>Permitted account types include</em> individual, service, and emergency accounts&hellip;&rdquo; AC-Policy.docx §4.1.</span></div>
-        <div class="row"><span class="k">Failed gate</span><span>Gate 2 · Concept coverage — the passage enumerates permitted types and never names a prohibited one, so the objective is only partially covered.</span></div>
-        <div class="row"><span class="k">Finding</span><span>The SSP lists permitted account types but never the prohibited ones. Other Than Satisfied.</span></div>
-        <div class="row"><span class="k">Correction</span><span>Add an explicit list of prohibited account types (shared, guest, anonymous) to SSP §3.2 and cross-reference the account-management policy. Draft until an assessor adopts it.</span></div>
+        <div class="row"><span class="k">Objective</span><span><strong>Determine if</strong> the use of accounts is monitored.</span></div>
+        <div class="row"><span class="k">Evidence</span><span>CloudVault-Federal-SSP.txt — Access Control Policy (v3.2) states purpose, scope, roles, and annual review. It never says accounts are <em>monitored</em>.</span></div>
+        <div class="row"><span class="k">Failed gate</span><span>Gate 2 · Concept coverage 0% (need 40%); missing: use of accounts is monitored.</span></div>
+        <div class="row"><span class="k">Finding</span><span>Concept coverage 0% (need 40%); missing: use of accounts is monitored. Other Than Satisfied.</span></div>
+        <div class="row"><span class="k">Correction</span><span>Provide documentation covering: use of accounts is monitored. Draft until an assessor adopts it.</span></div>
         <details>
           <summary>OSCAL assessment-results record ▾</summary>
           <div class="terminal">
             <div class="term-body" style="font-size:12px;line-height:1.7">
-              <div><span class="out">{ "target": "AC-2_a.[02]",</span></div>
-              <div><span class="out">&nbsp;&nbsp;"props": [ { "name": "status", "value": </span><span class="err">"other-than-satisfied"</span><span class="out"> },</span></div>
-              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;{ "name": "confidence", "value": </span><span class="warn">"0.68"</span><span class="out"> }, { "name": "defensibility", "value": </span><span class="warn">"C"</span><span class="out"> } ],</span></div>
-              <div><span class="out">&nbsp;&nbsp;"related-observations": [ { "description": </span><span class="ok">"SSP §3.2"</span><span class="out">, "method": "EXAMINE" } ] }</span></div>
+              <div><span class="out">{ "target": { "type": "objective-id", "target-id": "AC-2_g",</span></div>
+              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"status": { "state": </span><span class="err">"not-satisfied"</span><span class="out"> } },</span></div>
+              <div><span class="out">&nbsp;&nbsp;"props": [ { "name": "control-id", "ns": "https://fedramp.gov/ns/oscal", "value": "ac-2" } ],</span></div>
+              <div><span class="out">&nbsp;&nbsp;"related-risks": [ { "risk-uuid": "&hellip;" } ] }</span></div>
+              <div><span class="out">&nbsp;</span></div>
+              <div><span class="out">risks[] &mdash; where the gap lives on an Other Than Satisfied finding</span></div>
+              <div><span class="out">{ "uuid": "&hellip;", "title": "Missing Evidence — AC-2", "status": "open",</span></div>
+              <div><span class="out">&nbsp;&nbsp;"remediations": [ { "lifecycle": "recommendation",</span></div>
+              <div><span class="out">&nbsp;&nbsp;&nbsp;&nbsp;"description": </span><span class="ok">"Provide documentation covering: use of accounts is monitored."</span><span class="out"> } ] }</span></div>
             </div>
           </div>
         </details>
       </div>
-      <div class="hx-cap"><span>One finding from the sample run · synthetic data</span><span>Same evidence → same result, every time</span></div>
+      <div class="hx-cap"><span>One finding from the sample run · CloudVault · FedRAMP Low · 2026-06-01 · synthetic data</span><span>Same evidence → same result, every time</span></div>
     </div>
   </div>
 </section>
@@ -292,11 +297,11 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div class="section-sub">The evaluation a senior assessor performs, automated and reproducible. Examine only.</div>
     </div>
     <div class="hx-rail">
-      <div><h4>Upload</h4><p>SSP, policies, POA&amp;M, scan results, pen-test reports. PDF, DOCX, XLSX, CSV, OSCAL JSON.</p></div>
-      <div><h4>Select</h4><p>FedRAMP Rev5: Low (156 controls / 981 DIFs), Moderate (323 / 1,307), High (410 / 1,429). NIST mode adds the PM family: 172 / 339 / 426 controls. Or pick controls.</p></div>
-      <div><h4>Assess</h4><p>Evidence presence → concept coverage → evidence strength → ODP validation → contradictions → temporal coherence → status.</p></div>
+      <div><h4>Upload</h4><p>Browser demo: <code>.zip</code>, <code>.docx</code>, <code>.txt</code>, <code>.md</code>, <code>.csv</code>, <code>.json</code>, <code>.xml</code>, <code>.nessus</code>. PDF and XLSX text extraction is a server-product feature and is refused here, not guessed.</p></div>
+      <div><h4>Select</h4><p>The browser demo runs FedRAMP Rev5 Low (156 / 981), Moderate (323 / 1,307), or High (410 / 1,429). <code>FRAMEWORK=nist</code> and the PM family are server-product install flags, not this repository.</p></div>
+      <div><h4>Assess</h4><p>Evidence presence → concept coverage → evidence strength → ODP validation → contradictions → temporal coherence → status. Examine only.</p></div>
       <div><h4>Review</h4><p>Per-objective verdicts with the passage cited, confidence (0–1.0), defensibility (A–F), gap type, and the correction — ranked by what blocks authorization first.</p></div>
-      <div><h4>Export</h4><p>OSCAL assessment-results and POA&amp;M in every profile; SAR, SAP, RET, CRM, CIS and TCW in the FedRAMP profile. Into the GRC tool you already run.</p></div>
+      <div><h4>Export</h4><p>This build: OSCAL 1.1.2 assessment-results, findings / RET / POA&amp;M / TCW CSV, summary, and the receipt. SAR/SAP DOCX, XLSX workbooks, and OSCAL POA&amp;M ship only in the server product.</p></div>
     </div>
   </div>
 </section>
@@ -353,7 +358,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div>
         <span class="eyebrow">Profiles today</span>
         <h3>NIST SP 800-53A Rev 5</h3>
-        <p>As plain NIST 800-53 (install with <code>FRAMEWORK=nist</code>: the Low / Moderate / High sets plus the PM family, OSCAL and POA&amp;M exports) or as FedRAMP Rev5 (<code>FRAMEWORK=fedramp</code>, the default) with the FedRAMP-tailored baselines, CORE controls and FedRAMP deliverables. FedRAMP 20x support is in development and is not sold.</p>
+        <p>The browser demo assesses FedRAMP Rev5 Low / Moderate / High. The commercial server product also installs as plain NIST 800-53 (<code>FRAMEWORK=nist</code>: those sets plus the PM family). <code>FRAMEWORK=</code> is not a flag in this repository. FedRAMP 20x support is in development and is not sold.</p>
       </div>
       <div>
         <span class="eyebrow">Whose tool it is</span>
@@ -372,31 +377,32 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div class="inner">
         <div class="hx-head" id="modes">
           <div class="section-title">Three deployment modes. <em>You choose what leaves your network.</em></div>
-          <div class="section-sub">LLM is always opt-in. When a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
+          <div class="section-sub">These install lines are the commercial server product. This Apache-2.0 repository has no Python package — <code>pip install .</code> from this checkout will not work. LLM is always opt-in. When a model is on, it produces the determination directly; the 7-gate engine does not run alongside it.</div>
         </div>
         <div class="modes-grid hx-modes">
           <div class="mode-card">
-            <span class="mode-tag safe">Default</span>
+            <span class="mode-tag safe">Default · server product</span>
             <h3>Self-contained</h3>
             <div class="mode-sub">LLM_PROVIDER=none</div>
             <p>The deterministic 7-gate engine with ten local analytical services. BM25 retrieval, optional local ChromaDB.</p>
-            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install .</span></li></ul>
+            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>server: pip install .</span></li></ul>
           </div>
           <div class="mode-card">
             <span class="mode-tag safe">Opt-in · stays local</span>
             <h3>Local LLM</h3>
             <div class="mode-sub">LLM_PROVIDER=ollama</div>
             <p>An Ollama-served model produces the determination; nothing leaves the network. Not sold as SCIF-ready.</p>
-            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>pip install '.[local]'</span></li></ul>
+            <ul class="mode-specs"><li><span>External calls</span><span>None</span></li><li><span>Install</span><span>server: pip install '.[local]'</span></li></ul>
           </div>
           <div class="mode-card">
             <span class="mode-tag review">Opt-in</span>
             <h3>Cloud LLM</h3>
             <div class="mode-sub">LLM_PROVIDER=anthropic</div>
             <p>A cloud model produces the determination directly. Clearly flagged: those verdicts are not engine-grounded. The integrity gate (the published evidence floors) still applies.</p>
-            <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>pip install '.[cloud]'</span></li></ul>
+            <ul class="mode-specs"><li><span>External calls</span><span>Cloud LLM API</span></li><li><span>Install</span><span>server: pip install '.[cloud]'</span></li></ul>
           </div>
         </div>
+        <p class="hx-boundary"><strong>This repository is the browser demo, not that install.</strong> Open <a href="demo-standalone.html">demo-standalone.html</a>. There is no Docker image and no <code>/v1</code> API here.</p>
 
         <div class="hx-head" style="margin-top:44px">
           <div class="section-title">Nine workflows. <em>Try each one in the browser.</em></div>
@@ -436,7 +442,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
 
         <div class="hx-head" style="margin-top:44px">
           <div class="section-title">The engine. <em>Not a GRC platform.</em></div>
-          <div class="section-sub">Built for production: four rounds of adversarial security review and a comprehensive automated test suite in the product repository. The public reference build carries its own conformance suite — schema validation, catalog counts, a determinism golden, a headless-browser run — on public CI.</div>
+          <div class="section-sub">The commercial server product is reviewed and tested in the private product repository. Those reviews and that suite are not published here and are not claimed as a number. The public reference build carries its own conformance suite — schema validation, catalog counts, a determinism golden, a headless-browser run — on public CI.</div>
         </div>
         <dl class="hx-spec">
           <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives (447 controls, 1,513 objectives in the full catalog); FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>
@@ -455,25 +461,23 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
             <span class="term-dot" style="background:#D4A017"></span>
             <span class="term-dot" style="background:#3D5235"></span>
             <span style="flex:1"></span>
-            <span class="term-title">SPARKAE ENGINE · REST API</span>
+            <span class="term-title">SERVER PRODUCT · REST API · illustration</span>
           </div>
           <div class="term-body">
+            <div><span class="out"># Commercial server product — not this repository. There is no localhost:8000 here.</span></div>
             <div><span class="prompt">$ </span><span class="cmd">SSP=$(curl -s http://localhost:8000/v1/documents -H "X-API-Key: $KEY" -F file=@SSP.pdf -F document_type=SSP | jq -r .id)</span></div>
             <div><span class="out"># same for AC-Policy.docx → $POLICY and IR-Plan.pdf → $IRPLAN</span></div>
             <div><span class="prompt">$ </span><span class="cmd">curl http://localhost:8000/v1/assessments -H "X-API-Key: $KEY" -H "Content-Type: application/json" \<br>&nbsp;&nbsp;-d "{\"baseline\":\"Low\",\"controls\":[\"AC-2\",\"IA-5\",\"CM-6\"],\"document_refs\":[\"$SSP\",\"$POLICY\",\"$IRPLAN\"]}"</span></div>
             <div><span class="info">Parsing 3 documents · indexing 412 evidence chunks (BM25)</span></div>
             <div><span class="out">Gate 1 · Evidence presence &nbsp;&nbsp;Gate 2 · Concept coverage &nbsp;Gate 3 · Evidence strength</span></div>
             <div><span class="out">Gate 4 · ODP validation &nbsp;&nbsp;&nbsp;&nbsp;Gate 5 · Contradictions &nbsp;&nbsp;&nbsp;Gate 6 · Temporal coherence &nbsp;Gate 7 · Status</span></div>
-            <div><span class="info">AC-2 Account Management · 26 objectives</span></div>
-            <div><span class="ok">  AC-2_a.[01]  Satisfied            0.91  SSP §3.2</span></div>
-            <div><span class="err">  AC-2_a.[02]  Other Than Satisfied 0.68  prohibited types not listed</span></div>
-            <div><span class="ok">  AC-2_b       Satisfied            0.87  managers designated</span></div>
-            <div><span class="warn">  AC-2_g       Other Than Satisfied 0.42  “monitored” — no specifics</span></div>
-            <div><span class="info">Complete: 28 Satisfied / 14 Other Than Satisfied</span></div>
+            <div><span class="info">The numbers below are an API sketch, not the CloudVault sample run.</span></div>
+            <div><span class="ok">  AC-2_a.[01]  Satisfied            cited evidence</span></div>
+            <div><span class="err">  AC-2_g       Other Than Satisfied  accounts not monitored</span></div>
             <div><span class="ok">Exports: OSCAL AR · SAR · RET · POA&amp;M · CRM · CIS</span></div>
           </div>
         </div>
-        <p style="margin-top:14px;font-size:13px;color:var(--ink-soft)">The in-browser reference engine behind the live demo is published as source — see <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a> in the footer.</p>
+        <p style="margin-top:14px;font-size:13px;color:var(--ink-soft)">The in-browser reference engine behind the live demo is published as source — see <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a> in the footer. Cloning that repository does not install the API above.</p>
       </div>
     </details>
   </div>

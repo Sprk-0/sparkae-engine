@@ -2313,9 +2313,9 @@ html,body{
 
     <div class="onb-step active" data-onb-step="1">
       <div class="onb-num">Step 1 · Welcome</div>
-      <h2 class="onb-title">SPARKAE · the SPARK Assessment Engine accelerates your FedRAMP authorization path</h2>
-      <p class="onb-body">This pilot demonstrates the full FedRAMP authorization lifecycle — Initial Assessment, Continuous Monitoring, Annual Reassessment, Significant Change Requests, KSI Validation for the 20x Phase 2 path, and OSCAL package validation — across 4 sample cloud service offerings. The control catalog is <strong>NIST SP 800-53 Rev5</strong>; the tailoring, baselines, and templates are <strong>FedRAMP Rev5</strong>.</p>
-      <p class="onb-body">Every finding, citation, and recommendation references authoritative sources at <strong style="color:var(--vermillion)">fedramp.gov</strong>. The platform produces SAR-conformant output, not a marketing approximation.</p>
+      <h2 class="onb-title">SPARKAE · a browser reference for the Examine method</h2>
+      <p class="onb-body"><strong>§01 Initial Assessment</strong> runs the real deterministic engine in this browser — FedRAMP Low, Moderate, or High against a sample SSP or a package you drop in. Nothing is uploaded. INTERVIEW and TEST stay with the assessor. The other eight tabs are <strong>guided walkthroughs</strong> of the rest of a FedRAMP lifecycle; they are labelled as such and do not run the engine.</p>
+      <p class="onb-body">The control catalog is <strong>NIST SP 800-53 Rev5</strong>; the tailoring and baselines are <strong>FedRAMP Rev5</strong>. §01 exports OSCAL 1.1.2 assessment-results and CSVs computed from that run. They are automated EXAMINE preparation, not a Security Assessment Report and not a substitute for a recognized assessment service.</p>
       <div class="onb-meta">
         <div class="onb-meta-cell"><div class="onb-meta-num">9</div><div class="onb-meta-lbl">Use cases</div></div>
         <div class="onb-meta-cell"><div class="onb-meta-num">11</div><div class="onb-meta-lbl">QA rules</div></div>
@@ -2326,8 +2326,8 @@ html,body{
 
     <div class="onb-step" data-onb-step="2">
       <div class="onb-num">Step 2 · Connect your evidence sources</div>
-      <h2 class="onb-title">Map your existing tools to FedRAMP artifact categories</h2>
-      <p class="onb-body">Tab <strong>§09 Data Sources</strong> shows two tiers of connectors. Tier 1 is evidence sources (scanners, IdP, cloud posture, doc repos). Tier 2 is GRC platforms you may already use — every connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned), then onward to the FedRAMP deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>.</p>
+      <h2 class="onb-title">Walkthrough: how evidence sources would map</h2>
+      <p class="onb-body">Tab <strong>§09 Data Sources</strong> is a guided walkthrough, not a live connector. It shows how evidence sources and GRC platforms <em>would</em> map into an OSCAL-aligned record. None of those connectors run in this browser build. PDF/OCR, webhooks, and two-way GRC sync are server-product or future work, not this page.</p>
       <div class="onb-connectors">
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Doc repos</span><span class="onb-conn-cat">Drive · GitHub · Confluence · Box → SSP · IaC · policies · ATO letters</span></div>
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Workflow</span><span class="onb-conn-cat">Jira → POA&amp;M · CM-3 changes · IR-4 incidents</span></div>
@@ -2348,15 +2348,15 @@ html,body{
         <div class="onb-phase"><span class="onb-phase-name">Quality</span><span class="onb-phase-list">QA Audit · Package Validator · Portfolio</span></div>
         <div class="onb-phase"><span class="onb-phase-name">Foundation</span><span class="onb-phase-list">Data Sources</span></div>
       </div>
-      <p class="onb-body">Try <strong>§01 Initial Assessment</strong> with the CloudVault sample first. The runner walks 7 stages and produces a SAR-structured output with §5 results, RET adjustments, and a defensibility score.</p>
+      <p class="onb-body">Try <strong>§01 Initial Assessment</strong> with the CloudVault sample first. That tab runs the seven gates and writes the exports this build actually ships: OSCAL assessment-results, findings / RET / POA&amp;M / TCW CSV, a summary, and a reproducibility receipt.</p>
     </div>
 
     <div class="onb-step" data-onb-step="4">
       <div class="onb-num">Step 4 · Generate AO briefing</div>
-      <h2 class="onb-title">Output ready for AO presentation</h2>
-      <p class="onb-body">When you've run a few use cases, open <strong>§08 Portfolio</strong> for the cross-system executive view. Click <strong style="color:var(--vermillion)">⎙ OPEN ONE-PAGER</strong> to generate a printable AO briefing — fully self-contained, references all <strong style="color:var(--vermillion)">fedramp.gov</strong> authoritative sources, ready for printing or saving to PDF.</p>
+      <h2 class="onb-title">Walkthrough: a printable briefing from §08</h2>
+      <p class="onb-body"><strong>§08 Portfolio</strong> is a guided walkthrough. Its one-pager is an illustrative AO briefing generated from the walkthrough’s reference portfolio, not from a §01 live-engine run, and it is not an official Security Assessment Report.</p>
       <div class="onb-checklist">
-        <div class="onb-check">✓ SAR-conformant section structure (§5 · Appendix A · §1-§4)</div>
+        <div class="onb-check">✓ Walkthrough one-pager structured like a SAR outline (§5 · Appendix A · §1-§4)</div>
         <div class="onb-check">✓ Composite Authorization Posture per system (SAR Sat · ConMon SLA · KSI Auto · Defensibility)</div>
         <div class="onb-check">✓ AO Recommendations broken out by system tier (ATO · conditional ATO · defer)</div>
         <div class="onb-check">✓ References block citing fedramp.gov authoritative sources</div>

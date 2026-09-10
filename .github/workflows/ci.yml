@@ -5,15 +5,24 @@
 # published file reaches a third-party origin, the engine and exporters read
 # no clock and use no randomness, the gate model is canonical, the sample
 # package is reproducible (golden verdict digest, byte-identical OSCAL), CSV
-# output is formula-injection safe, the OSCAL Assessment Results validate
-# against the official NIST 1.1.2 schema vendored in tests/schema/, and the
-# published identity is sparkae.ai (canonical URLs, social card, namespace).
+# output is formula-injection safe, every page keeps a single address across
+# its links, canonical, og:url and sitemap.xml, and the OSCAL Assessment
+# Results validate against the official NIST 1.1.2 schema vendored in
+# tests/schema/.
 name: conformance
 
 on:
   push:
     branches: [main]
   pull_request:
+  # The published-site job below asks a question about the deployed site rather
+  # than about a commit, so it needs a trigger that is not a code change: on
+  # demand after a deploy, and on a schedule so that drift introduced by the
+  # host rather than by a commit cannot sit unnoticed the way the Pretty URLs
+  # rewrite did.
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,7 +37,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Engine, catalog, determinism, network and CSV checks
+      - name: Engine, catalog, determinism, network, CSV and address checks
         run: node tests/check.mjs .
 
       - uses: actions/setup-python@v5
@@ -57,3 +66,22 @@ jobs:
 
       - name: Drive the demo in headless Chromium with all network aborted
         run: node tests/browser.mjs .
+
+  # Is sparkae.ai this repository? The only check here that uses the network,
+  # and the only one that can answer that, so it is kept off pull requests: a
+  # red build should mean the change is wrong, not that a deploy is mid-flight.
+  # It compares main against the live site, which is the pair that should agree.
+  published:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: The published site is this tree, byte for byte
+        run: node tests/check_published.mjs

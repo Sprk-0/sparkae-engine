@@ -20,7 +20,19 @@ repository (see *How this repository is maintained*).
 | `demo-standalone-catalog.js` — NIST SP 800-53A Rev 5 determination statements with FedRAMP baseline tags | PDF and XLSX text extraction; Nessus / ZAP scan ingestion into POA&M |
 | `demo-exports.js` — six builders: OSCAL 1.1.2 Assessment Results (JSON), findings CSV, RET CSV, POA&M CSV, TCW CSV, executive summary (text) — plus the reproducibility receipt | SAR / SAP DOCX, SRTM / CIS / CRM XLSX, OSCAL POA&M and the other server-side export formats |
 | `demo-standalone.html` — the live demo (§01 runs the engine above; §02–§09 are labelled walkthroughs), `demo-20x.html`, the site pages, self-hosted fonts, per-page CSP | Optional LLM modes, integrations, the assessor console, ten analytical services |
-| `tests/` — the conformance suite that CI runs on every push | The product test suite (~9,400 tests) and Postgres/RLS suites |
+| `tests/` — the conformance suite that CI runs on every push | The product test suite and Postgres/RLS suites (private; not a published count) |
+
+This repository is **not** the SparkAE server product. There is no package
+to install: no `pyproject.toml`, no Docker image, no `/v1` API.
+`pip install .` from this checkout will not yield PDF/XLSX parsers, LLM
+modes, or the assessor console.
+
+The homepage in this tree is the marketing site for the commercial
+product **and** the host of the browser demo. Treat `pip install`,
+`FRAMEWORK=`, `localhost:8000/v1`, and Docker snippets on `index.html`
+as server-product copy, not instructions for this repo. §02–§09 and
+`demo-20x.html` are guided walkthroughs; they are not executed by
+`demo-engine.js`.
 
 The **Source** link on the site points here so that anyone can inspect exactly
 how a verdict is reached and reproduce it offline. It does not demonstrate
@@ -130,9 +142,11 @@ published file loads or calls a third-party origin and every page's CSP is
 `connect-src 'self'`; no clock or randomness in the engine or exporters; the
 gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
-temporal verdicts); the golden fixture; CSV formula-injection safety; and the
-OSCAL document's shape and receipt. The GitHub Actions workflow in
-`.github/workflows/ci.yml` runs both on every push.
+temporal verdicts); the golden fixture; CSV formula-injection safety; the
+OSCAL document's shape and receipt; and that the homepage hero labelled
+“from the sample run” is a finding this engine actually emits for that
+run, shown in the OSCAL shape the exporters write. The GitHub Actions
+workflow in `.github/workflows/ci.yml` runs both on every push.
 
 ## How this repository is maintained
 
@@ -146,6 +160,31 @@ in `CONTRIBUTING.md`.
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
 headers, and `_redirects` provides the forced `/demo` short link.
+
+**Served as-is** is meant literally, and it is a claim about the deployed site
+rather than about these files, so it has its own check:
+
+```bash
+node tests/check_published.mjs          # or --site <deploy-preview-url>
+```
+
+It fetches every published file from `https://sparkae.ai` and compares the
+bytes with the working tree, then confirms `/` is `index.html`, that `/demo`
+and `/3pao.html` are still 301s, and that Netlify's own config files are not
+served as content. Run it from a checkout of the commit that was deployed — a
+tree ahead of the last deploy differs for the ordinary reason.
+
+This is the only check here that uses the network, so it is not part of
+`tests/check.mjs` and not a merge gate; CI runs it weekly and on demand.
+
+It exists because the claim was false and nothing noticed. Netlify's Pretty
+URLs post-processing is on unless a project says otherwise, and it rewrites the
+*published* HTML — every internal `href="x.html"` is served as `href='/x'` — so
+all seven pages differed from the files here, and the site's own links pointed
+at addresses its `canonical` tags disclaim. `netlify.toml` now pins it off, and
+`tests/check.mjs` fails if that pin goes away. Netlify still answers both `/x`
+and `/x.html`, so anything already linking the extensionless form keeps
+landing; the site just no longer emits it.
 
 ## Licence
 
