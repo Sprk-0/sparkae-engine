@@ -27,5 +27,10 @@ Three constraints, all enforced by `node tests/check.mjs`:
 Run `node tests/check.mjs .` and `python tests/check_oscal_schema.py`
 before opening a PR; CI runs the same two commands.
 
+`node tests/check_published.mjs` is the exception to constraint 2 and the only
+check here that touches the network: it asks whether the deployed site is still
+this tree byte-for-byte, which no offline check can see. It is not a merge gate
+— run it after a deploy, or with `--site` against a deploy preview.
+
 By submitting a contribution you agree it is licensed under the Apache
 License 2.0 that covers this repository.

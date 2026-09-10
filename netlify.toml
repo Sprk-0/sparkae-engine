@@ -5,3 +5,30 @@
 [build]
   publish = "."
   command = "true"
+
+# ── Pretty URLs, pinned off ──────────────────────────────────────────────────
+#
+# Netlify's Pretty URLs post-processing is ON unless a project says otherwise,
+# and it does not merely route: it REWRITES the published HTML, turning every
+# internal href="x.html" into href='/x' and re-serialising the tags it touches.
+# Left on, it quietly cost this site two things it claims:
+#
+#   1. "Served as-is" (README). All seven published pages differed byte-for-byte
+#      from the files in this repository, so a reader who fetched a page from
+#      sparkae.ai and diffed it against the source — the check this repository
+#      exists to invite — found a mismatch it could not explain. The engine and
+#      catalog were untouched; the pages were not.
+#   2. One address per page. Every page's <link rel="canonical">, its og:url and
+#      every <loc> in sitemap.xml name the `.html` form, but the rewrite pointed
+#      each internal link at the extensionless one, which Netlify also answers
+#      with a 200 rather than a redirect. The site's whole internal link graph
+#      then voted for the address each page disclaims — the same split signal
+#      _redirects declines to create for /demo.
+#
+# Turning this off does not remove the clean URLs: Netlify answers both /x and
+# /x.html either way, so anything already linking the extensionless form keeps
+# landing. It stops the site EMITTING the form its own canonicals disown.
+#
+# tests/check.mjs fails if this pin is dropped or flipped.
+[build.processing.html]
+  pretty_urls = false
