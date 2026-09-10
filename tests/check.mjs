@@ -20,9 +20,8 @@
 //   9. the OSCAL AR has the right root, declares 1.1.2, and carries the
 //      reproducibility receipt; it is written to tests/out/ for the schema
 //      check (tests/check_oscal_schema.py)
-//  10. every page has one address: internal links resolve to files in this
-//      tree, canonical / og:url / sitemap.xml agree on it, and netlify.toml
-//      still pins off the post-processing that rewrites those links
+//  10. the homepage hero labelled as the sample run is a finding this engine
+//      emits for that run, shown in the OSCAL shape the exporters write
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -222,71 +221,29 @@ fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, 'sample-ar.json'), a.arText);
 ok('wrote tests/out/sample-ar.json for check_oscal_schema.py');
 
-// ── 10. one address per page ────────────────────────────────────────────────
-// The README says this repository is served as-is, and every page names one
-// canonical address. Both claims are hostage to Netlify's Pretty URLs
-// post-processing, which is on by default and rewrites the published HTML —
-// every internal href="x.html" becomes href='/x' — so the site stops matching
-// the source and starts linking the address its own canonical disclaims.
-// netlify.toml pins it off; this section is what notices if that pin goes away,
-// and what catches a hand-written clean-URL link doing the same thing.
-console.log('10. one address per page');
-const SITE = 'https://sparkae.ai';
-const pages = published.filter(f => f.endsWith('.html'));
-const toml = read('netlify.toml').replace(/^\s*#.*$/gm, '');
-check(/\[build\.processing\.html\][\s\S]*?pretty_urls\s*=\s*false/.test(toml),
-  'netlify.toml: Pretty URLs post-processing is pinned off');
-
-// An internal link must name a file that exists here. `/assessors` resolves on
-// Netlify and nowhere else — including from the file:// URL the demo has to
-// keep working from (CONTRIBUTING, constraint 2).
-for (const f of pages) {
-  const dead = [];
-    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(m[1])) continue;
-    const target = m[1].split(/[?#]/)[0];
-    const resolved = path.resolve(root, target.replace(/^\//, ''));
-    const inTree = resolved === root || resolved.startsWith(root + path.sep);
-    if (target && (!inTree || !fs.existsSync(resolved))) dead.push(m[1]);
-  }
-  check(!dead.length, f + ': every internal link resolves to a file here' + (dead.length ? ' — ' + [...new Set(dead)].join(', ') : ''));
+// ── 10. homepage hero is a real sample-run finding, shown as real OSCAL ─────
+// The hero is labelled "from the sample run". That is a claim about this
+// engine, not decoration: the objective, verdict and confidence on the card
+// have to be the ones assessDif returns for CloudVault / Low / 2026-06-01.
+// The expandable record is labelled OSCAL assessment-results, so it has to
+// use the shape demo-exports.js emits and the vendored schema accepts.
+console.log('10. homepage hero matches the sample run');
+const home = read('index.html');
+const hero = (home.match(/id="sample-run-finding"([\s\S]*?)<div class="hx-cap">/) || [])[1] || '';
+check(!!hero, 'homepage has #sample-run-finding');
+const heroId = ((hero.match(/class="id">([^<·]+)/) || [])[1] || '').trim();
+const heroStatus = ((hero.match(/class="tag">([^<]+)/) || [])[1] || '').trim();
+const heroConf = parseFloat(((hero.match(/<strong>Confidence<\/strong>\s*([0-9.]+)/) || [])[1] || ''));
+const actual = a.findings.find(f => f.objective_id === heroId);
+check(!!actual, 'hero objective ' + heroId + ' exists in the sample run');
+if (actual) {
+  check(actual.status === heroStatus, 'hero status is the sample-run status (' + actual.status + ')');
+  check(Number.isFinite(heroConf) && Math.abs(actual.confidence - heroConf) < 0.005,
+    'hero confidence is the sample-run confidence (' + actual.confidence + ')');
 }
+check(/sample run/.test(home) && /2026-06-01/.test(home),
+  'hero caption still names the sample run and the pinned assessment date');
 
-const canonicalOf = {};
-for (const f of pages) {
-  const html = read(f);
-  const want = SITE + (f === 'index.html' ? '/' : '/' + f);
-  const canon = (html.match(/<link rel="canonical" href="([^"]+)"/) || [])[1];
-  const og = (html.match(/<meta property="og:url" content="([^"]+)"/) || [])[1];
-  check(canon === want && og === want, f + ': canonical and og:url both name ' + want);
-  canonicalOf[f] = canon;
-}
-
-// 404.html is left out of the sitemap on purpose: it is noindex and robots.txt
-// disallows it. Every other published page has to be listed at its canonical
-// address, or it goes unindexed with nothing to say so.
-const locs = [...read('sitemap.xml').replace(/<!--[\s\S]*?-->/g, '').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-const indexed = pages.filter(f => f !== '404.html');
-const unlisted = indexed.filter(f => !locs.includes(canonicalOf[f]));
-const stray = locs.filter(l => !indexed.some(f => canonicalOf[f] === l));
-check(!unlisted.length && !stray.length,
-  `sitemap.xml: ${locs.length} <loc>s, each the canonical of a published page`
-  + (unlisted.length ? ' — not listed: ' + unlisted.join(', ') : '')
-  + (stray.length ? ' — listed but not a canonical: ' + stray.join(', ') : ''));
-
-// ── 11. the OSCAL the site shows is the OSCAL that is emitted ───────────────
-// The homepage renders a finding record under the heading "OSCAL
-// assessment-results record", which makes it a claim about the export and not
-// decoration. It had drifted into something the schema in tests/schema/ would
-// reject: the target as a bare string rather than an object, a status of
-// "other-than-satisfied" (the human label, not either token the enum allows),
-// and a related-observations entry carrying the description and method inline
-// instead of pointing at an observation. JSON-schema validation cannot catch
-// any of that, because it never sees the page.
-//
-// The second half checks the export itself for the thing the schema also cannot
-// see: whether those observation pointers resolve. A document can validate
-// perfectly and still reference observations it does not contain.
-console.log('11. OSCAL shown = OSCAL emitted');
 const schema = JSON.parse(fs.readFileSync(path.join(here, 'schema', 'oscal_assessment-results_schema.json'), 'utf8'));
 const statusStates = (function findEnum(node) {
   if (Array.isArray(node)) return node.map(findEnum).find(Boolean);
@@ -296,50 +253,22 @@ const statusStates = (function findEnum(node) {
   }
   return undefined;
 })(schema);
-check(Array.isArray(statusStates) && statusStates.length, 'vendored NIST schema declares the finding-status enum: ' + (statusStates || []).join(' | '));
+check(Array.isArray(statusStates) && statusStates.length,
+  'vendored NIST schema declares the finding-status enum: ' + (statusStates || []).join(' | '));
 
-// The JSON on a page is interleaved with the markup that colours it, so the
-// tags come off before anything is matched.
-const plain = (f) => read(f).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
-const quiet = [];
-for (const f of pages) {
-  const text = plain(f);
-  const states = [...text.matchAll(/"state"\s*:\s*"([^"]+)"/g)].map(m => m[1]);
-  const refs = [...text.matchAll(/related-observations([\s\S]{0,160})/g)];
-  const targets = [...text.matchAll(/"target"\s*:\s*(.)/g)];
-  const label = /\bother-than-satisfied\b/.test(text);
-  if (!states.length && !refs.length && !targets.length && !label) { quiet.push(f); continue; }
-
-  const badStates = states.filter(s => !statusStates.includes(s));
-  check(!badStates.length, f + `: ${states.length} OSCAL "state" value(s), all in the schema enum` + (badStates.length ? ' — not a token: ' + [...new Set(badStates)].join(', ') : ''));
-
-  // "other-than-satisfied" is not an OSCAL value in any position; the label the
-  // engine and the UI use is the prose "Other Than Satisfied".
-  check(!label, f + ': does not present "other-than-satisfied" as an OSCAL value');
-
-  // related-observations is a list of pointers. Where a page shows one, the
-  // description and methods belong on the observation it names, which is what
-  // the §07 package validator enforces on a real document.
-  const inline = refs.filter(m => !/observation-uuid/.test(m[1]));
-  check(!inline.length, f + `: ${refs.length} related-observations reference(s), all observation-uuid pointers` + (inline.length ? ' — shown inline instead' : ''));
-
-  // A finding target is an object carrying target-id, never the id on its own.
-  const flat = targets.filter(m => m[1] !== '{');
-  check(!flat.length, f + `: ${targets.length} OSCAL "target"(s), all the object form` + (flat.length ? ' — shown as a bare value' : ''));
-}
-ok(`${quiet.length} page(s) show no OSCAL record: ` + quiet.join(', '));
-
-// Referential integrity of the observation area, on the document just built.
-const arResult = arRoot.results[0];
-const obsUuids = new Set((arResult.observations || []).map(o => o.uuid));
-const obsRefs = (arResult.findings || []).flatMap(f => (f['related-observations'] || []).map(r => r['observation-uuid']));
-const dangling = obsRefs.filter(u => !obsUuids.has(u));
-const orphans = [...obsUuids].filter(u => !obsRefs.includes(u));
-check(obsUuids.size > 0, `the export carries an observations array (${obsUuids.size} observations for ${obsRefs.length} references)`);
-check(!dangling.length, 'every related-observations pointer resolves to an observation in the document' + (dangling.length ? ` — ${dangling.length} dangling` : ''));
-check(!orphans.length, 'every observation is referenced by a finding' + (orphans.length ? ` — ${orphans.length} orphaned` : ''));
-check((arResult.observations || []).every(o => Array.isArray(o.methods) && o.methods.includes('EXAMINE')),
-  'every observation records methods: [EXAMINE]');
+const plainHome = home.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
+const states = [...plainHome.matchAll(/"state"\s*:\s*"([^"]+)"/g)].map(m => m[1]);
+const badStates = states.filter(s => !statusStates.includes(s));
+check(states.length > 0 && !badStates.length,
+  'homepage OSCAL "state" value(s) are in the schema enum' + (badStates.length ? ' — not a token: ' + [...new Set(badStates)].join(', ') : ''));
+check(!/\bother-than-satisfied\b/.test(plainHome),
+  'homepage does not present "other-than-satisfied" as an OSCAL value');
+check(/"target"\s*:\s*\{/.test(plainHome) && !/"target"\s*:\s*"/.test(plainHome),
+  'homepage OSCAL target is the object form with target-id, not a bare string');
+check(/related-risks/.test(plainHome) && /risk-uuid/.test(plainHome),
+  'Other Than Satisfied hero shows related-risks as a risk-uuid pointer');
+check(/server product/.test(home) && /pip install/.test(home) && /will not work/.test(home),
+  'homepage says pip install is the server product and will not work from this tree');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

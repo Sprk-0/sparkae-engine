@@ -17,7 +17,19 @@ product repository (see *How this repository is maintained*).
 | `demo-standalone-catalog.js` — NIST SP 800-53A Rev 5 determination statements with FedRAMP baseline tags | PDF and XLSX text extraction; Nessus / ZAP scan ingestion into POA&M |
 | `demo-exports.js` — six builders: OSCAL 1.1.2 Assessment Results (JSON), findings CSV, RET CSV, POA&M CSV, TCW CSV, executive summary (text) — plus the reproducibility receipt | SAR / SAP DOCX, SRTM / CIS / CRM XLSX, OSCAL POA&M and the other server-side export formats |
 | `demo-standalone.html` — the live demo (§01 runs the engine above; §02–§09 are labelled walkthroughs), `demo-20x.html`, the site pages, self-hosted fonts, per-page CSP | Optional LLM modes, integrations, the assessor console, ten analytical services |
-| `tests/` — the conformance suite that CI runs on every push | The product test suite (~9,400 tests) and Postgres/RLS suites |
+| `tests/` — the conformance suite that CI runs on every push | The product test suite and Postgres/RLS suites (private; not a published count) |
+
+This repository is **not** the SparkAE server product. There is no package
+to install: no `pyproject.toml`, no Docker image, no `/v1` API.
+`pip install .` from this checkout will not yield PDF/XLSX parsers, LLM
+modes, or the assessor console.
+
+The homepage in this tree is the marketing site for the commercial
+product **and** the host of the browser demo. Treat `pip install`,
+`FRAMEWORK=`, `localhost:8000/v1`, and Docker snippets on `index.html`
+as server-product copy, not instructions for this repo. §02–§09 and
+`demo-20x.html` are guided walkthroughs; they are not executed by
+`demo-engine.js`.
 
 The **Source** link on the site points here so that anyone can inspect exactly
 how a verdict is reached and reproduce it offline. It does not demonstrate
@@ -126,16 +138,10 @@ published file loads or calls a third-party origin and every page's CSP is
 gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
 temporal verdicts); the golden fixture; CSV formula-injection safety; the
-OSCAL document's shape and receipt; that every page keeps one address —
-internal links resolve to files in this tree, `canonical`, `og:url` and
-`sitemap.xml` agree on it, and `netlify.toml` still pins off the
-post-processing that would rewrite it; and that the OSCAL record the site
-*shows* is the OSCAL that is *emitted* — the status values it prints are the
-two the schema allows, `related-observations` is shown as the
-`observation-uuid` pointer it is, and in the export every such pointer resolves
-to an observation the document actually contains (a document can validate
-against the schema and still reference observations that are not there). The
-GitHub Actions workflow in `.github/workflows/ci.yml` runs both on every push.
+OSCAL document's shape and receipt; and that the homepage hero labelled
+“from the sample run” is a finding this engine actually emits for that
+run, shown in the OSCAL shape the exporters write. The GitHub Actions
+workflow in `.github/workflows/ci.yml` runs both on every push.
 
 ## How this repository is maintained
 
