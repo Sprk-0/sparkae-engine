@@ -272,7 +272,7 @@ await page.click('.filter-chip[data-filter="verdict"][data-value="all"]');
 await settle();
 const all = await table();
 counts.all = all.count;
-const totalOf = s => { const m = /(\d[\d,]*) (?:findings? in this run|of (\d[\d,]*) match)/.exec(s); return m ? +(m[2] || m[1]).replace(/,/g, '') : -1; };
+const totalOf = s => { const nums = (s.match(/\d[\d,]*/g) || []); const last = nums[nums.length - 1]; return last ? +last.replace(/,/g, '') : -1; };
 check('the count names the same run total under every filter',
   totalOf(counts.all) === all.total && totalOf(counts.ots) === all.total && totalOf(counts.nr) === all.total,
   JSON.stringify(counts) + ' vs total ' + all.total);
