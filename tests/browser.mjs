@@ -408,6 +408,78 @@ const railReach = await page.evaluate(() => {
   };
 });
 
+// The four measurements below were missing: the assertions that read them were
+// added without them, so building the `checks` array threw ReferenceError on
+// `hashMiss` and this whole suite — every check above included — stopped
+// running. It is a merge gate, so it has to fail loudly or not at all.
+
+// Each homepage workflow card carries a #hash. pages.mjs proves the cards point
+// at the right ones over HTTP; this proves the demo honours them from a disk,
+// which is the claim this file exists to make.
+const HASH_TABS = [
+  { hash: 'initial', btn: 'Run assessment' },
+  { hash: 'annual', btn: 'Run annual reassessment' },
+  { hash: 'scr', btn: 'Run SCR review' },
+  { hash: 'conmon', btn: 'Run ConMon cycle' },
+  { hash: 'ksi', btn: 'Run KSI validation' },
+  { hash: 'qa', btn: 'Run QA audit' },
+  { hash: 'pkg', btn: 'Validate OSCAL package' },
+  { hash: 'portfolio', btn: 'Generate portfolio rollup' },
+  { hash: 'src', btn: 'Sync data sources' },
+];
+const hashMiss = [];
+for (const want of HASH_TABS) {
+  await page.goto('file://' + path.join(root, 'demo-standalone.html') + '#' + want.hash);
+  await page.waitForSelector('.uc-tab.active[data-uc="' + want.hash + '"]', { timeout: 5000 }).catch(() => {});
+  await dismissOnboarding();
+  const landed = await page.evaluate(() => ({
+    uc: (document.querySelector('.uc-tab.active') || {}).dataset?.uc || '',
+    btn: ((document.getElementById('run-btn') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
+  }));
+  if (landed.uc !== want.hash || !landed.btn.includes(want.btn)) hashMiss.push({ want, ...landed });
+}
+
+// MeshGate is the walkthroughs' subject and §01 ships no documents for it. The
+// rail claimed 325 controls for FedRAMP Moderate one line below its own
+// computed 323, and running §01 on it ended in "nothing to assess".
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.click('.ssp-option[data-id="meshgate"]');
+await page.waitForTimeout(300);
+const meshIdle = await page.evaluate(() => {
+  const t = (sel) => ((document.querySelector(sel) || {}).textContent || '').replace(/\s+/g, ' ').trim();
+  return {
+    meta: t('.ssp-option[data-id="meshgate"] .ssp-meta'),
+    title: t('#idle-title'),
+    copy: t('#idle-copy') + ' ' + t('#rail-note') + ' ' +
+      t('.ssp-option[data-id="meshgate"] .ssp-name'),
+  };
+});
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /STOPPED/.test(document.getElementById('console-status').textContent),
+  null, { timeout: 30000 }).catch(() => {});
+const meshStop = await page.evaluate(() => ({
+  status: document.getElementById('console-status').textContent.replace(/\s+/g, ' ').trim(),
+  log: document.getElementById('log').textContent.replace(/\s+/g, ' ').trim(),
+}));
+
+// A walkthrough's export bar names deliverables it does not produce. They were
+// <a href="#"> with a pointer cursor, so they read as finished downloads.
+await page.goto('file://' + path.join(root, 'demo-standalone.html') + '#conmon');
+await dismissOnboarding();
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => (document.getElementById('export-bar') || {}).children?.length > 0,
+  null, { timeout: 30000 }).catch(() => {});
+const exportBar = await page.evaluate(() => {
+  const el = document.getElementById('export-bar');
+  return {
+    hashLinks: el ? el.querySelectorAll('a[href="#"], a[href$="#"]').length : -1,
+    note: el ? ((el.querySelector('.export-note') || {}).textContent || '') : '',
+  };
+});
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
