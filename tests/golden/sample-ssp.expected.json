@@ -5,10 +5,10 @@
   "chunks": 10,
   "controls": 156,
   "objectives": 981,
-  "satisfied": 383,
-  "other_than_satisfied": 597,
+  "satisfied": 284,
+  "other_than_satisfied": 696,
   "not_reviewed": 1,
-  "review_required": 108,
+  "review_required": 55,
   "gate_reached": [
     981,
     980,
@@ -20,19 +20,19 @@
   ],
   "gate_passed": [
     980,
-    869,
+    574,
     948,
     978,
     434,
     891,
-    383
+    284
   ],
-  "engine_version": "1.1.0",
+  "engine_version": "1.2.0",
   "catalog_version": "2026-07-21",
   "catalog_digest": "91ad1b17138f7e0707fe19e65d9b8c3c77833401",
-  "ruleset_digest": "7609e9bfacb78ac9b7eacbebbe6a0ce01ad35eaa",
+  "ruleset_digest": "ceb3e3d50fa6f2e3886a04119b1f55536ec77937",
   "evidence_digest": "6de811bac5be771f9cc34c13edc643411c144087",
-  "verdict_digest": "3dd76f5f30831b0c4248a1be0ef3d1902559822f",
-  "oscal_ar_sha1": "bfb181f69581a97397105d9b8a114db4d1e3ec6e",
-  "oscal_ar_bytes": 2558519
+  "verdict_digest": "355a46a6abb3d561471b59a69ecb2c69d2fa0877",
+  "oscal_ar_sha1": "10a49678a75d79381b489573ebe60f8db743f165",
+  "oscal_ar_bytes": 2586754
 }

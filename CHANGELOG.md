@@ -17,56 +17,122 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-11 (the console's own controls)
+## 2026-09-11 (attribution and inventory)
 
-Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
 
-An acceptance walk of the live demo, control by control: click everything the
-page offers and ask whether it does what it says. Nine of them did not. No
-verdict, gate or export changed — this is the layer between the visitor and the
-engine.
+Two of the reviewer's repository recommendations.
 
-- **A filter changed while rows were still painting kept the rows it replaced.**
-  Both painters clear the table and then append from timers, and nothing
-  cancelled the timers of the paint they replaced. Choosing Satisfied and then
-  Other-Than-Satisfied half a second later left 60 Satisfied rows sitting under
-  the Other-Than-Satisfied heading — the table contradicting the selection above
-  it. Every scheduled append now carries its paint's generation and drops itself
-  when a later paint has started.
-- **Filter chips that could not match a row.** The bar was a fixed
-  Examine · Interview · Test / SAT · OTS · NR · PASS row whatever the run held.
-  §01 is EXAMINE-only by construction and says so in three places, yet offered
-  Interview and Test, both of which silently emptied the table; §06's findings
-  all carry method QA, which no chip named. The chips are now built from the run
-  that produced them, carry their counts, and a dimension holding one value is
-  stated rather than offered as a choice.
-- **The count beside them meant two things.** "120 of 383 findings shown" when
-  the painter capped the rows and "1 of 981 findings shown" when it did not:
-  painted-of-matched in one case, matched-of-total in the other, so filtering to
-  Satisfied reported a smaller run. One sentence now, and the run total is in
-  every version of it.
-- **An empty table said nothing.** It is indistinguishable from a broken one.
-  A selection that matches nothing now names itself and says how many rows
-  clearing it would bring back.
-- **§01 met the rail's second system with "nothing to assess".** MeshGate is the
-  subject of the §02–§09 walkthroughs and this build ships no document set for
-  it, but the rail listed it as a peer of the sample under "Choose an SSP", so a
-  visitor's second click on the tab they land on ended in *nothing to assess: no
-  upload and no bundled document set* — the absence of a corpus, reported as an
-  outcome. The rail entry now says which sections it is for, the rail says so
-  before Run is pressed, and the run stops by naming the system and the way
-  forward.
-- **The rail disagreed with its own catalog**: FedRAMP Moderate was 325 controls
-  on one line and 323 on the line above it, one authored and one computed. 323.
-- **§09 told visitors to click something that is not clickable.** "Click any
-  connector card to view its schema mapping" — the cards carry no handler and no
-  pointer; the mapping is behind the link inside them, which the copy now names.
-- **A hidden panel labelled §02 as §03.** An "Annual Reassessment · §03 ·
-  Preview · in private preview Q3 2026" block sat in the console markup, never
-  displayed, for a section that is neither §03 nor in preview. Removed.
+- **The artifact inventory no longer claims determinations.** `classifyFile`
+  matches on file *names*, and the upload panel rendered those matches as
+  findings: "OTS finding · CA-5" beside POA&M, "critical · NR finding · PL-2"
+  beside SSP. A package missing a file called `poam.xlsx` was told an objective
+  had been adjudicated. Nothing in that list adjudicates anything — the engine
+  reads document contents when a run starts, and a package can lack a file named
+  like a POA&M and still satisfy CA-5 from an SSP section. Missing artifacts are
+  now reported as missing, with the control each would ordinarily inform, under a
+  heading that says the match is on names rather than contents and that this is
+  not an assessment. The same wording went through §01's walkthrough narration,
+  where an absent artifact was narrated as a finding the engine had emitted.
+- **CSV says who determined what.** The OSCAL exporter has carried
+  `engine-determination`, `assessor-determination` and `determination-source`
+  since the assessor layer landed; CSV collapsed all of it into one cell, so a
+  revised Satisfied was indistinguishable from an engine Satisfied and the
+  assessor's statement was lost entirely. The findings CSV gains four columns —
+  Engine Determination, Assessor Determination, Determination Source, Assessor
+  Statement — beside the effective Determination a consumer acts on. The engine
+  column is the engine's and a revision cannot rewrite it, which is the same rule
+  the reproducibility receipt follows.
 
-`tests/selections.mjs` added and wired into CI: seventeen checks over the tabs,
-the rail and the filters. Twelve of them fail against the previous build.
+Seven checks added, all failing against the previous build.
+
+## 2026-09-11 (upload re-review)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
+
+The reviewer rechecked the build and found two more, both reproduced here
+before being changed.
+
+- **A refused member name could execute.** The upload panel has escaped file
+  names on the success path since the first XSS fix. The error path did not:
+  `err.message` went into `innerHTML`, and that message names the member that
+  could not be read. A package whose members are all refused therefore executed
+  its own filename — and the message carrying it was the one added the day
+  before to report that nothing in the upload was readable. Fixing one defect
+  opened another.
+- **Selecting a bundled sample assessed the previous upload.** The uploaded
+  package stayed bound when a sample was selected, and `engineCorpus` prefers it
+  over the selection, so choosing CloudVault re-assessed the visitor's evidence
+  under CloudVault's pinned date. `discardPreviousRun` ran on upload, on clear
+  and at run start — not on selection, which is the path this missed. Selecting
+  a sample now releases the package, resets the upload panel and discards the
+  previous run.
+
+Seven browser checks added; six fail against the previous build, reporting the
+reviewer's findings verbatim (`data-refused-audit=1`, `img count=2`, upload
+still bound after selecting CloudVault).
+
+## 2026-09-11 (subject matter · engine 1.2.0)
+
+**Engine 1.2.0** · verdict digest `3dd76f5f3083` → `355a46a6abb3`
+· ruleset digest `7609e9bfacb7` → `ceb3e3d50fa6`
+· bundled sample **383 → 284 Satisfied**
+
+Finding 2 of the 2026-09-11 upload review, the one this build had acknowledged
+and not fixed. Determinations move, which is the point: the previous ones were
+wrong.
+
+**Gate 2 reads subject matter, not compliance vocabulary.** The reviewer showed
+that two documents about account monitoring and multi-factor authentication
+returned Satisfied for `AT-1_a.[01]` — "an awareness and training policy is
+developed and documented". The objective split into three concepts, and two of
+them were carried by words that appear in every SSP ever written:
+
+    "awareness"                     uncovered
+    "training policy is developed"  covered by "the account management
+                                     policy is developed"
+    "documented"                    covered by "and documented"
+                                     → 67%, over the 40% floor
+
+A concept is now covered only by a term that is not generic compliance
+vocabulary, and a concept made entirely of such vocabulary — "documented" — is
+set aside rather than counted. The list of generic terms is published in the
+ruleset and hashed into the ruleset digest, so a determination can be audited
+against the rule rather than taken on trust.
+
+**Gate 2b: evidence that never names a control's subject cannot satisfy it.**
+The subject comes from the control's family and title — AT-1 is "Awareness and
+Training", so evidence that mentions neither fails, whatever else it says.
+
+**Terms match as stems of whole words.** `clause.includes(kw)` matched "train"
+inside "constrained"; a plain word boundary would refuse "account creation" for
+an objective about accounts being created. Both are errors. And organization-
+defined parameters are no longer extracted as concepts: no SSP says
+"organization-defined", and counting `[organization-defined policy, procedures,
+prerequisites, and criteria]` as four concepts made objectives uncoverable.
+
+**What moved, and why.** 106 objectives lost Satisfied. 98 are correct — the
+subject is absent from the sample SSP entirely, and the awareness-and-training
+family accounts for most of them, because that document contains no awareness or
+training content at all. 8 are false negatives: the document covers the subject
+but the retriever did not surface the passage. That is a retrieval weakness the
+old rule hid by passing on generic words regardless of which passage it read.
+7 objectives gained Satisfied, from stemming that the old reader could not do —
+including `AC-2_g`, where "monitored" never matched "monitoring".
+
+The homepage hero showed `AC-2_g` as Other Than Satisfied. It is Satisfied now,
+so the hero is a different finding: `AT-1_a.[01]`, where the engine retrieves a
+strong, well-formed Access Control Policy for an awareness-and-training
+objective and refuses it. The conformance suite checks the hero against the run,
+which is how the stale one was caught.
+
+**Also: the Run button could not be reached after a run.** `.rail` is
+`position:sticky; top:80px` and grows to 781px; in a 720px viewport it pins at
+80 and its last 141px — where the Run button sits — could not be scrolled to by
+anything, `scrollIntoView` included. A visitor on a laptop could not press Run
+again. Present on main before this change, and unrelated to it: the browser
+suite had been clicking before the page reached that state. The rail is bounded
+to the visible space and scrolls internally.
 
 ## 2026-09-11 (§09 Data Sources)
 

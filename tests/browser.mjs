@@ -58,6 +58,24 @@ await page.route('**/*', route => {
 
 const dismissOnboarding = () => page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
 
+// paintFindings lands rows in staggered batches (up to ENGINE_ROW_CAP at a
+// time, with the remainder behind a control), so the table is still painting
+// when #results.show appears. Until it stops, the document keeps growing under
+// Playwright's feet: it scrolls #run-btn into view, the next batch re-lays out,
+// the button leaves the viewport, and the click retries until it times out.
+// That is what an "element is outside of the viewport" timeout on a SECOND run
+// means. Wait for the row count to stop moving before touching the page again.
+//
+// This deliberately does not swallow its own timeout. A table that never
+// settles is a hang worth failing on, and catching it here would restore the
+// flakiness the wait exists to remove.
+const settleFindings = () => page.waitForFunction(() => {
+  const n = document.querySelectorAll('.findings-table .verdict-tag').length;
+  const settled = n > 0 && window.__bSettle === n;
+  window.__bSettle = n;
+  return settled;
+}, null, { timeout: 120000, polling: 300 });
+
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 const date = await page.inputValue('#assessment-date');
 const mode = await page.textContent('#stat-mode');
@@ -78,6 +96,7 @@ const idle = await page.evaluate(() => ({
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 await page.waitForTimeout(2500); // number animations settle
 const num = async (sel) => +(await page.textContent(sel));
 const sat = await num('#live-r-sat'), ots = await num('#live-r-ots'), nr = await num('#live-r-nr'), review = await num('#live-r-review');
@@ -114,6 +133,7 @@ const uploadDate = await page.inputValue('#assessment-date');
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 const log2 = await page.textContent('#log');
 const refused = await page.textContent('.live-refused').catch(() => '');
 
@@ -192,6 +212,7 @@ const zipPanel = await page.evaluate(() => ({
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 const zipLog = await page.textContent('#log');
 const zipRefused = await page.textContent('.live-refused').catch(() => '');
 
@@ -232,6 +253,7 @@ await dismissOnboarding();
 await page.click('.uc-tab[data-uc="src"]');
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 120000 });
+await settleFindings();
 // paintFindings lands rows in staggered batches, so a fixed delay reads a
 // half-painted table and can undercount the very rows this is looking for —
 // a check that passes because it looked too early is worse than no check.
@@ -303,6 +325,89 @@ const pf = walkResults.find(r => r.uc === 'portfolio') || {};
 const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
 const pfConsistent = !!pfM && (+pfM[1] === +pfM[2] + +pfM[3] + +pfM[4]);
 
+// ── a refused member name is text ──────────────────────────────────────────
+// The success path has escaped file names since the first XSS fix. The ERROR
+// path did not: err.message went into innerHTML, and that message names the
+// member that could not be read. So a package whose members are all refused
+// executed its own filename — and the message carrying it was the one added to
+// report that nothing was readable. Two members of one name are refused as
+// ambiguous, which is the cheapest way to reach that path.
+const XSS_MEMBER = '<img src=x onerror="document.documentElement.setAttribute(\'data-refused-audit\',\'1\')">.bin';
+fs.writeFileSync(path.join(tmp, 'hostile-refused.zip'), zipOf([
+  { name: XSS_MEMBER, text: 'a' }, { name: XSS_MEMBER, text: 'b' },
+]));
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'hostile-refused.zip')]);
+await page.waitForTimeout(1200);
+const refusedXss = await page.evaluate(() => ({
+  fired: document.documentElement.getAttribute('data-refused-audit'),
+  injected: document.querySelectorAll('#ssp-upload-status img, .upload-file img').length,
+  shownAsText: /img src=x onerror/.test((document.getElementById('ssp-upload-status') || {}).textContent || ''),
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+}));
+
+// ── selecting a sample means assessing that sample ─────────────────────────
+// The uploaded package stayed bound when a bundled sample was selected, and
+// engineCorpus prefers it, so choosing CloudVault re-assessed the upload under
+// CloudVault's pinned date: the visitor's evidence, dated to a document they
+// did not choose.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(900);
+const boundAfterUpload = await page.evaluate(() => (typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length));
+await page.evaluate(() => document.querySelector('.ssp-option[data-id="cloudvault"]').click());
+await page.waitForTimeout(400);
+const afterSelect = await page.evaluate(() => ({
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+  date: document.getElementById('assessment-date').value,
+  panelHidden: ((document.getElementById('ssp-upload-status') || {}).style || {}).display === 'none',
+}));
+await page.click('#run-btn');
+await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
+const selectedRunLog = await page.textContent('#log');
+
+// ── the artifact inventory is an inventory ─────────────────────────────────
+// classifyFile matches on file NAMES. The panel rendered those matches as
+// determinations — "OTS finding · CA-5" against POA&M, "critical · NR finding ·
+// PL-2" against SSP — so a package missing a file called poam.xlsx was told an
+// objective had been adjudicated. Nothing there adjudicates anything.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(1000);
+const inventory = await page.evaluate(() => {
+  const t = (document.getElementById('ssp-upload-status') || {}).textContent || '';
+  return {
+    claimsFinding: /(OTS|NR)\s+finding/i.test(t),
+    saysNotFound: /not found/.test(t),
+    saysWouldInform: /would inform/.test(t),
+    disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
+  };
+});
+
+// The rail is position:sticky at top:80. A sticky element taller than the space
+// it sticks in strands its own contents: at 781px in a 720px viewport it pinned
+// at 80 and its last 141px — which is where the Run button sits — could not be
+// scrolled to by anything, including scrollIntoView. A visitor on a laptop could
+// not press Run again after a run. Assert the primary control is reachable once
+// the page is at its tallest.
+const railReach = await page.evaluate(() => {
+  const b = document.getElementById('run-btn');
+  b.scrollIntoView({ block: 'center' });
+  const r = b.getBoundingClientRect();
+  const rail = document.querySelector('.rail');
+  const rr = rail ? rail.getBoundingClientRect() : null;
+  return {
+    inView: r.top >= 0 && r.bottom <= innerHeight,
+    btnTop: Math.round(r.top), vh: innerHeight,
+    railH: rr ? Math.round(rr.height) : null,
+    railTop: rr ? Math.round(rr.top) : null,
+  };
+});
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
@@ -327,6 +432,30 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the artifact inventory claims no determination',
+    !inventory.claimsFinding, 'panel still says "OTS/NR finding"'],
+  ['a missing artifact is reported as missing, with the control it would inform',
+    inventory.saysNotFound && inventory.saysWouldInform, JSON.stringify(inventory)],
+  ['the inventory says how presence was decided and that it is not an assessment',
+    inventory.disclaims, JSON.stringify(inventory)],
+  ['a REFUSED member name cannot execute: no handler ran',
+    refusedXss.fired === null, 'data-refused-audit=' + refusedXss.fired],
+  ['a REFUSED member name cannot execute: no element was injected',
+    refusedXss.injected === 0, 'img count=' + refusedXss.injected],
+  ['a refused member name is still shown, as text', refusedXss.shownAsText, ''],
+  ['an upload nothing could be read from binds nothing', refusedXss.bound === 0, String(refusedXss.bound)],
+  ['selecting a bundled sample releases the uploaded package',
+    boundAfterUpload === 1 && afterSelect.bound === 0,
+    'bound after upload ' + boundAfterUpload + ', after selecting ' + afterSelect.bound],
+  ['selecting CloudVault restores its pinned date and clears the upload panel',
+    afterSelect.date === golden.assessment_date && afterSelect.panelHidden,
+    'date ' + afterSelect.date + ', panel hidden ' + afterSelect.panelHidden],
+  ['a run after selecting CloudVault reads CloudVault, not the upload',
+    /CloudVault-Federal-SSP\.txt/.test(selectedRunLog) && !/Uploaded package/.test(selectedRunLog), ''],
+  ['the Run button can be scrolled to after a run — the sticky rail does not strand it',
+    railReach.inView,
+    'button top ' + railReach.btnTop + ' in viewport ' + railReach.vh +
+    '; rail ' + railReach.railH + 'px at top ' + railReach.railTop],
   ['the seven §02\u2013§08 walkthroughs each say so in the run, not only in the tab badge',
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
