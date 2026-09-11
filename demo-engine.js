@@ -484,7 +484,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // matches case-insensitively like the per-control refutation checks; evidence
 // dates are UTC calendar dates that must round-trip (no local-time or
 // out-of-range normalisation).
-const ENGINE_VERSION = '1.1.0';
+const ENGINE_VERSION = '1.2.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -508,7 +508,12 @@ function extractConcepts(difText) {
   if (!difText) return [];
   const m = CONCEPT_VERBS.exec(difText);
   let conceptText = m ? difText.slice(m.index + m[0].length) : difText.replace(/^Determine\s+if\s+/i, '');
-  conceptText = conceptText.replace(/\.$/, '').replace(/\([^)]*\)/g, '');
+  // Organization-defined parameters are placeholders for a value the system owner
+  // supplies, not subject matter the evidence must echo: nobody's SSP says
+  // "organization-defined". Gate 4 reads them from the raw objective text; gate 2
+  // must not, or "[organization-defined policy, procedures, prerequisites, and
+  // criteria]" becomes four concepts the evidence can never cover.
+  conceptText = conceptText.replace(/\.$/, '').replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '');
   const parts = conceptText.split(/[;,]|\band\b|\bor\b/);
   const concepts = [], seen = new Set();
   for (let p of parts) {
@@ -518,36 +523,134 @@ function extractConcepts(difText) {
   return concepts;
 }
 
-function extractKeywords(concept) {
-  const kws = [concept];
-  const suffixes = ['tion','ment','ness','ing','ies','ity','ence','ance'];
-  for (const w of concept.split(/\s+/)) {
-    if (w.length > 3) {
-      kws.push(w);
-      for (const sfx of suffixes) {
-        if (w.endsWith(sfx) && w.length > sfx.length + 2) { kws.push(w.slice(0, -sfx.length)); break; }
-      }
-    }
+// The vocabulary every 800-53A objective is written in. These words say how a
+// control is documented, never what it is about: an SSP that says "policy",
+// "developed" and "documented" has said nothing about awareness, or contingency,
+// or incident response. They are listed here rather than inferred so the rule is
+// auditable, and the list is hashed into the ruleset digest.
+const GENERIC_TERMS = new Set([
+  'policy', 'policies', 'procedure', 'procedures', 'plan', 'plans', 'process', 'processes',
+  'program', 'programs', 'document', 'documents', 'documented', 'documentation',
+  'develop', 'developed', 'develops', 'establish', 'established', 'establishes',
+  'define', 'defined', 'defines', 'implement', 'implemented', 'implements', 'implementation',
+  'review', 'reviewed', 'reviews', 'update', 'updated', 'updates',
+  'approve', 'approved', 'disseminate', 'disseminated', 'maintain', 'maintained',
+  'organization', 'organizations', 'organizational', 'management', 'manage', 'managed',
+  'requirement', 'requirements', 'applicable', 'appropriate', 'consistent', 'accordance',
+  'associated', 'related', 'following', 'address', 'addresses', 'facilitate',
+  'periodic', 'periodically', 'annually', 'frequency', 'selection', 'assignment',
+  'system', 'systems', 'information', 'security', 'control', 'controls', 'compliance',
+]);
+
+// Terms are compared as stems of whole words. The previous reader used
+// clause.includes(kw), which matched across word boundaries — "train" inside
+// "constrained" and "restraint" — while a plain word-boundary regex is too
+// strict the other way: "accounts are created" would not match "account
+// creation", and refusing that is a false negative, not rigour.
+const STEM_SUFFIXES = ['ations','ation',' izations','ization','ings','ing','ions','ion',
+  'ments','ment','ness','ities','ity','ences','ence','ances','ance','ers','er','ed','es','s'];
+function stemWord(w) {
+  w = String(w).toLowerCase();
+  for (const sfx of STEM_SUFFIXES) {
+    if (w.endsWith(sfx) && w.length > sfx.length + 2) return w.slice(0, -sfx.length);
   }
-  return kws;
+  return w;
+}
+const WORD_RE = /[a-z0-9-]+/g;
+function clauseStems(clause) {
+  const out = new Set();
+  for (const w of String(clause).toLowerCase().match(WORD_RE) || []) out.add(stemWord(w));
+  return out;
 }
 
+const GENERIC_STEMS = new Set(Array.from(GENERIC_TERMS).map(stemWord));
+
+// The distinguishing terms of a phrase, as stems: what it is about, once the
+// compliance vocabulary is set aside.
+function distinguishingTerms(phrase) {
+  const out = [];
+  for (const w of String(phrase || '').toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9-]+/)) {
+    if (w.length <= 3 || STOP_WORDS.has(w)) continue;
+    const st = stemWord(w);
+    if (GENERIC_STEMS.has(st) || GENERIC_TERMS.has(w)) continue;
+    if (out.indexOf(st) === -1) out.push(st);
+  }
+  return out;
+}
+
+// The subject a control is about, taken from its family and its title. AT-1 is
+// "Awareness and Training" / "Policy and Procedures", so its subject is
+// awareness and training — the title alone is generic for every -1 control.
+function controlSubjectTerms(controlTitle, familyName) {
+  const terms = distinguishingTerms(familyName);
+  for (const t of distinguishingTerms(controlTitle)) if (terms.indexOf(t) === -1) terms.push(t);
+  return terms;
+}
+
+// The same subject, spelled as a reader expects rather than as the matcher
+// stores it: a gap that says "(aware, train)" reads like a defect in the tool.
+function controlSubjectWords(controlTitle, familyName) {
+  const out = [];
+  for (const src of [familyName, controlTitle]) {
+    for (const w of String(src || '').toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9-]+/)) {
+      if (w.length <= 3 || STOP_WORDS.has(w)) continue;
+      if (GENERIC_STEMS.has(stemWord(w)) || GENERIC_TERMS.has(w)) continue;
+      if (out.indexOf(w) === -1) out.push(w);
+    }
+  }
+  return out;
+}
+
+// Gate 2b. Evidence that never names the control's subject in an affirmative
+// clause cannot satisfy that control's objectives, whatever else it says.
+//
+// This is the rule whose absence the 2026-09-11 upload review demonstrated: two
+// documents about account monitoring and multi-factor authentication returned
+// Satisfied for AT-1_a.[01], "an awareness and training policy is developed and
+// documented", because every generic word in the objective was present and
+// neither subject word was needed.
+function mentionsSubject(evidenceText, terms) {
+  if (!terms.length) return true;           // nothing to anchor on; gate 2a decides
+  if (!evidenceText) return false;
+  const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
+  for (const clause of clauses) {
+    if (NEGATION_RE.test(clause)) continue;
+    const stems = clauseStems(clause);
+    if (terms.some(t => stems.has(t))) return true;
+  }
+  return false;
+}
+
+// A concept is covered when the evidence addresses what it is ABOUT. Its generic
+// words are not enough: "training policy is developed" was previously covered by
+// "the account management policy is developed", because `policy` and `developed`
+// were accepted on their own. Only a distinguishing term counts now.
+//
+// A concept that is entirely generic — "documented" — describes no subject, so it
+// is dropped rather than counted. Counting it let contentless vocabulary carry an
+// objective: two such concepts out of three cleared a 40% floor on their own.
 function checkCoverage(concepts, evidenceText) {
-  if (!concepts.length) return {covered:[], uncovered:[], ratio:1.0};
-  if (!evidenceText) return {covered:[], uncovered:[...concepts], ratio:0.0};
-  const evLower = evidenceText.toLowerCase();
-  const clauses = evLower.split(CLAUSE_SPLIT).filter(c => c.trim());
+  const scored = concepts.map(c => ({ concept: c, terms: distinguishingTerms(c) }));
+  const material = scored.filter(x => x.terms.length);
+  const generic = scored.filter(x => !x.terms.length).map(x => x.concept);
+  if (!concepts.length) return {covered:[], uncovered:[], generic:[], ratio:1.0};
+  // Every concept was generic: the objective names no subject of its own, so
+  // coverage cannot speak to it either way. Gate 2b carries the control's
+  // subject instead; this returns 0 so vocabulary alone cannot clear the floor.
+  if (!material.length) return {covered:[], uncovered:[], generic, ratio:0.0};
+  if (!evidenceText) return {covered:[], uncovered: material.map(x => x.concept), generic, ratio:0.0};
+  const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
   const covered = [], uncovered = [];
-  for (const concept of concepts) {
-    const kws = extractKeywords(concept);
+  for (const { concept, terms } of material) {
     let found = false;
     for (const clause of clauses) {
       if (NEGATION_RE.test(clause)) continue;
-      if (kws.some(kw => clause.includes(kw))) { found = true; break; }
+      const stems = clauseStems(clause);
+      if (terms.some(t => stems.has(t))) { found = true; break; }
     }
     (found ? covered : uncovered).push(concept);
   }
-  return {covered, uncovered, ratio: covered.length / concepts.length};
+  return {covered, uncovered, generic, ratio: covered.length / material.length};
 }
 
 // ── Gate 3: Evidence Strength ──
@@ -1105,9 +1208,19 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     // neighbour's prose cannot satisfy the wrong control's concepts.
     const coverage = checkCoverage(concepts, ownEvidence || evidenceText);
     var coverageResult = coverage;
-    const g2pass = concepts.length === 0 || coverage.ratio >= MIN_CONCEPT_COVERAGE;
-    gates.push({gate:2, name:'Concepts', pass:g2pass});
-    if (!g2pass) gaps.push('Concept coverage ' + Math.round(coverage.ratio*100) + '% (need 40%); missing: ' + coverage.uncovered.join(', '));
+    const g2a = coverage.ratio >= MIN_CONCEPT_COVERAGE;
+    // 2b: does the evidence name what this control is about at all? Coverage can
+    // clear its floor on an objective's own wording while the evidence addresses
+    // a different control entirely; the subject is what tells those apart.
+    const subject = controlSubjectTerms(controlTitle, familyName);
+    const g2b = mentionsSubject(ownEvidence || evidenceText, subject);
+    const g2pass = g2a && g2b;
+    gates.push({gate:2, name:'Concepts', pass:g2pass, checks:[
+      {id:'2a', name:'Coverage', pass:g2a},
+      {id:'2b', name:'Subject', pass:g2b}
+    ]});
+    if (!g2a) gaps.push('Concept coverage ' + Math.round(coverage.ratio*100) + '% (need ' + Math.round(MIN_CONCEPT_COVERAGE*100) + '%); missing: ' + coverage.uncovered.join(', '));
+    if (!g2b) gaps.push('Evidence does not address this control\'s subject (' + controlSubjectWords(controlTitle, familyName).join(', ') + ')');
   }
   if (typeof coverageResult === 'undefined') coverageResult = {ratio: 0, uncovered: [], covered: []};
 
@@ -1268,6 +1381,11 @@ const RULESET = Object.freeze({
   bm25: { k1: BM25_K1, b: BM25_B, control_id_boost: CONTROL_ID_BOOST },
   min_evidence_score: MIN_EVIDENCE_SCORE,
   min_concept_coverage: MIN_CONCEPT_COVERAGE,
+  // Gate 2 reads subject matter, not compliance vocabulary: a concept is covered
+  // only by a term that is not in this list, and evidence that never names the
+  // control's subject cannot satisfy it (gate 2b).
+  generic_terms: Array.from(GENERIC_TERMS).sort(),
+  subject_required: true,
   review_confidence_floor: REVIEW_CONFIDENCE_FLOOR,
   review_coverage_floor: REVIEW_COVERAGE_FLOOR,
   staleness_days: STALENESS,
@@ -1297,6 +1415,8 @@ global.SparkAEEngine = {
   docxText: docxText,
   unzip: unzip,
   chunkText: chunkText,
+  checkCoverage: checkCoverage,
+  extractConcepts: extractConcepts,
   tokenize: tokenize,
   extractControlIds: extractControlIds,
   extractDates: extractDates,

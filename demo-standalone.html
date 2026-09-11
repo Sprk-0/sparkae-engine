@@ -299,6 +299,13 @@ html,body{
   padding:28px;
   position:sticky;
   top:80px;
+  /* A sticky element taller than the space it sticks in strands its own
+     contents: the rail is 781px, it pins at 80px, and on a 720px viewport its
+     last 141px — which is where the Run button sits — can never be scrolled to.
+     A visitor on a laptop could not press Run again after a run. Bound it to
+     the visible space and let it scroll internally. */
+  max-height:calc(100vh - 96px);
+  overflow-y:auto;
 }
 .rail-tag{
   font-family:'IBM Plex Mono',monospace;

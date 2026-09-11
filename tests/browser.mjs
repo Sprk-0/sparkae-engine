@@ -58,6 +58,19 @@ await page.route('**/*', route => {
 
 const dismissOnboarding = () => page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
 
+// paintFindings lands rows in staggered batches, and a Low run now paints 981
+// of them. Until it stops, the document keeps growing under Playwright's feet:
+// it scrolls #run-btn into view, the next batch re-lays out, the button leaves
+// the viewport, and the click retries until it times out. That is what a
+// "element is outside of the viewport" timeout on the SECOND run means. Wait
+// for the table to stop moving before touching the page again.
+const settleFindings = () => page.waitForFunction(() => {
+  const n = document.querySelectorAll('.findings-table .verdict-tag').length;
+  const settled = n > 0 && window.__bSettle === n;
+  window.__bSettle = n;
+  return settled;
+}, null, { timeout: 120000, polling: 300 }).catch(() => {});
+
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 const date = await page.inputValue('#assessment-date');
 const mode = await page.textContent('#stat-mode');
@@ -78,6 +91,7 @@ const idle = await page.evaluate(() => ({
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 await page.waitForTimeout(2500); // number animations settle
 const num = async (sel) => +(await page.textContent(sel));
 const sat = await num('#live-r-sat'), ots = await num('#live-r-ots'), nr = await num('#live-r-nr'), review = await num('#live-r-review');
@@ -114,6 +128,7 @@ const uploadDate = await page.inputValue('#assessment-date');
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 const log2 = await page.textContent('#log');
 const refused = await page.textContent('.live-refused').catch(() => '');
 
@@ -192,6 +207,7 @@ const zipPanel = await page.evaluate(() => ({
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
 const zipLog = await page.textContent('#log');
 const zipRefused = await page.textContent('.live-refused').catch(() => '');
 
@@ -232,6 +248,7 @@ await dismissOnboarding();
 await page.click('.uc-tab[data-uc="src"]');
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 120000 });
+await settleFindings();
 // paintFindings lands rows in staggered batches, so a fixed delay reads a
 // half-painted table and can undercount the very rows this is looking for —
 // a check that passes because it looked too early is worse than no check.
@@ -303,6 +320,26 @@ const pf = walkResults.find(r => r.uc === 'portfolio') || {};
 const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
 const pfConsistent = !!pfM && (+pfM[1] === +pfM[2] + +pfM[3] + +pfM[4]);
 
+// The rail is position:sticky at top:80. A sticky element taller than the space
+// it sticks in strands its own contents: at 781px in a 720px viewport it pinned
+// at 80 and its last 141px — which is where the Run button sits — could not be
+// scrolled to by anything, including scrollIntoView. A visitor on a laptop could
+// not press Run again after a run. Assert the primary control is reachable once
+// the page is at its tallest.
+const railReach = await page.evaluate(() => {
+  const b = document.getElementById('run-btn');
+  b.scrollIntoView({ block: 'center' });
+  const r = b.getBoundingClientRect();
+  const rail = document.querySelector('.rail');
+  const rr = rail ? rail.getBoundingClientRect() : null;
+  return {
+    inView: r.top >= 0 && r.bottom <= innerHeight,
+    btnTop: Math.round(r.top), vh: innerHeight,
+    railH: rr ? Math.round(rr.height) : null,
+    railTop: rr ? Math.round(rr.top) : null,
+  };
+});
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
@@ -327,6 +364,10 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the Run button can be scrolled to after a run — the sticky rail does not strand it',
+    railReach.inView,
+    'button top ' + railReach.btnTop + ' in viewport ' + railReach.vh +
+    '; rail ' + railReach.railH + 'px at top ' + railReach.railTop],
   ['the seven §02\u2013§08 walkthroughs each say so in the run, not only in the tab badge',
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
