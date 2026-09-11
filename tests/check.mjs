@@ -983,7 +983,12 @@ check((bench.summary.by_source['external-review'] || {}).cases > 0,
 // rather than against a list of pages, so a new page with a run button fails
 // until it carries the note too.
 console.log('18. preview status beside the run button');
-const runButton = /<a[^>]*class="btn[^"]*"[^>]*href="demo-standalone\.html(?:#[a-z0-9-]+)?"/g;
+// Attribute order is not a property of the page. The first spelling of this
+// required class before href, so `<a href="demo-standalone.html" class="btn
+// btn-ghost">` — which assessors.html already carries — was invisible to it,
+// and a page whose only run button was spelled that way would have passed with
+// no preview status at all. Lookaheads, so either order matches.
+const runButton = /<a\b(?=[^>]*\bhref="demo-standalone\.html(?:#[a-z0-9-]+)?")(?=[^>]*\bclass="[^"]*\bbtn\b)[^>]*>/g;
 for (const f of fs.readdirSync(root).filter(x => /\.html$/.test(x))) {
   const html = read(f);
   const buttons = [...html.matchAll(runButton)];
