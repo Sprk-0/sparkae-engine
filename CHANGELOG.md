@@ -17,6 +17,48 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11 (what the site says it is)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — the site, not the
+engine.
+
+- **The preview status sits beside the button that starts a run.** The homepage,
+  the assessors page, the 20x walkthrough and the demo itself now carry one
+  line, in the same place a visitor decides whether to click: this is an
+  experimental public preview, every determination is automated EXAMINE
+  preparation for an assessor to check rather than an authorization decision,
+  and accuracy is measured on a small published case set and not on real
+  authorization packages — with a link to the benchmark, including what it gets
+  wrong. `check.mjs` §18 is written against the run button rather than a list of
+  pages, so a new page offering a run fails until it says the same thing.
+- **The one section that runs is on the page.** §01 Initial Assessment was
+  reachable only by opening *Under the hood* — an engineering disclosure,
+  collapsed by default — and finding it as one tile of nine, distinguished by a
+  badge. The engine now has its own block on the visible page, and the grid
+  behind the disclosure holds the eight walkthroughs, under a heading that says
+  none of them run the engine. `pages.mjs` asserts both the block and the status
+  are visible on load, with nothing opened: the check fails if either goes back
+  behind a `details`.
+- **Copy that described watching rather than running.** The homepage CTA read
+  *Watch SparkAE find a hidden blocker*; the demo's own headline read *Watch
+  SparkAE find the hidden blockers in a package*. Both now say what the visitor
+  does. The 20x page offered to show the Rev5 lane run “on real data” when the
+  bundled sample is synthetic, and says synthetic now.
+- **The browser suite was dead on `main`.** Five checks landed in
+  `tests/browser.mjs` without the code that computes what they assert, so the
+  file threw `ReferenceError: hashMiss is not defined` before its first check —
+  the whole suite, roughly a hundred checks, silently not running. The
+  behaviours those checks name did ship, so the measurement is written against
+  them rather than the checks removed: what each homepage hash opens, MeshGate's
+  baseline and walkthrough-sample copy, what §01 says when it stops on it, and
+  whether a walkthrough's export chips pretend to be downloads.
+- Also: two sections of `check.mjs` were both numbered 15 after that merge, and
+  the homepage deep-link checks read grid tiles rather than workflow links — so
+  they failed the moment §01 moved out of the grid, while the property they
+  exist to protect still held. They read links now. And §01's promoted copy said
+  “SSP → SAR”, which the same merge had removed from the homepage for the right
+  reason: the live engine does not write a SAR.
+
 ## 2026-09-11 (accuracy benchmark)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — nothing here changes a

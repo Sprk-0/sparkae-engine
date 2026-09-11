@@ -297,10 +297,17 @@ for (const uc of WALKTHROUGH_TABS) {
   await page.waitForFunction(
     () => /COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
     null, { timeout: 180000 });
-  walkResults.push(Object.assign({ uc }, await page.evaluate(() => ({
-    status: document.getElementById('console-status').textContent.trim(),
-    log: document.getElementById('log').textContent,
-  }))));
+  walkResults.push(Object.assign({ uc }, await page.evaluate(() => {
+    const bar = document.getElementById('export-bar');
+    return {
+      status: document.getElementById('console-status').textContent.trim(),
+      log: document.getElementById('log').textContent,
+      // A walkthrough names deliverables it does not build. Offering them as
+      // href="#" downloads would be a link that lies about what it does.
+      exportHashLinks: bar ? bar.querySelectorAll('a[href="#"], a[href=""]').length : -1,
+      exportNote: bar ? ((bar.querySelector('.export-note') || {}).textContent || '') : '',
+    };
+  })));
 }
 const undisclosed = walkResults.filter(r => r.missing ||
   !/(authored, not computed from evidence|seeded from your package)/.test(r.log || '') ||
@@ -407,6 +414,58 @@ const railReach = await page.evaluate(() => {
     railTop: rr ? Math.round(rr.top) : null,
   };
 });
+
+// ── what the homepage's hashes open, and the rail entry §01 cannot assess ──
+// The checks below these were merged without the code that feeds them, so the
+// suite died on a ReferenceError before its first check ran. The behaviour they
+// name did ship; this is the measurement, written against it.
+
+// Every §-card on the homepage now carries a hash. The demo resolves it through
+// UC_HASH_ALIASES on load; a hash that resolves to nothing leaves §01 selected,
+// which is the defect the hashes were added to fix.
+const homeHashes = [...new Set([...fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+  .matchAll(/href="demo-standalone\.html#([a-z0-9-]+)"/g)].map(m => m[1]))];
+const hashMiss = [];
+for (const hash of homeHashes) {
+  await page.goto('file://' + path.join(root, 'demo-standalone.html') + '#' + hash);
+  await dismissOnboarding();
+  const seen = await page.evaluate((h) => {
+    const active = document.querySelector('.uc-tab.active');
+    return {
+      want: typeof ucFromHash === 'function' ? ucFromHash('#' + h) : '',
+      uc: active ? active.dataset.uc : '(none)',
+      btn: document.getElementById('run-btn').textContent.replace(/\s+/g, ' ').trim(),
+    };
+  }, hash);
+  if (!seen.want || seen.uc !== seen.want) {
+    hashMiss.push({ want: { hash: '#' + hash, uc: seen.want }, uc: seen.uc, btn: seen.btn });
+  }
+}
+
+// MeshGate is the subject of the §02–§09 walkthroughs and this build ships no
+// documents for it. §01 reads documents, so picking it there is a run that
+// cannot happen — which the rail says before Run is pressed, and the stop says
+// by naming the system rather than reporting an absent corpus.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.click('.ssp-option[data-id="meshgate"]');
+await page.waitForTimeout(200);
+const meshIdle = await page.evaluate(() => ({
+  meta: (document.querySelector('.ssp-option[data-id="meshgate"] .ssp-meta') || {}).textContent.replace(/\s+/g, ' ').trim(),
+  title: (document.getElementById('idle-title') || {}).textContent.trim(),
+  copy: (document.getElementById('idle-copy') || {}).textContent.replace(/\s+/g, ' ').trim(),
+}));
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /STOPPED|COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
+  null, { timeout: 60000 }).catch(() => {});
+const meshStop = await page.evaluate(() => ({
+  status: document.getElementById('console-status').textContent.trim(),
+  log: document.getElementById('log').textContent.replace(/\s+/g, ' ').trim(),
+}));
+
+const conmonRun = walkResults.find(r => r.uc === 'conmon') || {};
+const exportBar = { hashLinks: conmonRun.exportHashLinks, note: conmonRun.exportNote || '' };
 
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });

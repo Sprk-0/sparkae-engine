@@ -212,9 +212,27 @@ html,body{
   max-width:760px;
   margin:0;
 }
+/* ── Public preview status ──
+   The same note the site carries beside its run buttons. This page is standalone
+   (it must open from file://), so it keeps its own copy rather than importing
+   ae-editorial.css. Keep the two in step. */
+.preview-note{
+  display:flex;align-items:flex-start;gap:14px;max-width:700px;
+  margin:18px 0 0;padding:13px 16px;
+  border:1px solid var(--rule);border-left:3px solid var(--vermillion);
+  background:var(--paper-warm);
+  font-size:13.5px;line-height:1.55;color:var(--ink-soft);
+}
+.preview-note .tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--vermillion);white-space:nowrap;padding-top:3px;
+}
+.preview-note strong{color:var(--ink);font-weight:500}
+.preview-note a{color:var(--vermillion);text-decoration:underline;text-underline-offset:2px}
 @media (max-width:768px){
   .page-hero h1{font-size:32px}
   .page-hero{padding:40px 20px 32px}
+  .preview-note{flex-direction:column;gap:8px}
 }
 
 /* ── Colophon (footer) ── */
@@ -2436,9 +2454,13 @@ html,body{
       <span class="dot"></span>
       <span>Live Demo · Deterministic Engine · runs in your browser</span>
     </div>
-    <h1>Watch SparkAE find the <em>hidden blockers</em> in a package.</h1>
+    <h1>Run the engine on a package. <em>See every determination.</em></h1>
     <p class="page-hero-sub">
       Pick a sample SSP, or upload your own package. <strong>&sect;01 runs the real deterministic engine in your browser</strong> — it indexes what you give it, walks every determination statement in the baseline through seven gates, and reports verdicts it computed, each citing the document it came from. Nothing is uploaded anywhere. The other eight sections are guided walkthroughs of the rest of the FedRAMP lifecycle, and are labelled as such.
+    </p>
+    <p class="preview-note">
+      <span class="tag">Public preview</span>
+      <span><strong>Experimental.</strong> Every determination here is automated EXAMINE preparation for an assessor to check &mdash; never an authorization decision. Accuracy is measured on a small published case set, not on real authorization packages, and what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark &rarr;</a></span>
     </p>
   </div>
 </section>
