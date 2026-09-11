@@ -883,6 +883,7 @@ html,body{
   display:flex;
   gap:12px;
   flex-wrap:wrap;
+  align-items:center;
   padding-top:24px;
   border-top:1px solid #2C3540;
 }
@@ -1023,9 +1024,11 @@ html,body{
 .dl-toast.err{
   border-left-color:var(--vermillion);
 }
-.export-btn{
+/* Named, not offered: these are the artifacts a walkthrough step produces in
+   the server product, so they carry no pointer, no hover and no href. */
+.export-item{
   background:transparent;
-  border:1px solid #2C3540;
+  border:1px dashed #2C3540;
   color:#B8C0CC;
   padding:10px 16px;
   font-family:'IBM Plex Mono',monospace;
@@ -1036,7 +1039,6 @@ html,body{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  text-decoration:none;
 }
 .export-btn .check{color:#7A8290;font-weight:600}
 
@@ -5239,6 +5241,11 @@ function renderSCRSummary(d) {
   animateNum('r-cats', IMPACT_DIMENSIONS.filter(x => d.impacts[x.key].affected).length);
 }
 
+// §02–§09 are guided walkthroughs, so the artifacts they name are authored,
+// not generated. They rendered as <a href="#"> carrying a pointer cursor, a
+// hover state and a green ✓ — the affordance of a finished download — and
+// clicking one jumped to the top of the page. They are a manifest now, and
+// say so. (§01, which does produce files, clears this bar for real buttons.)
 function renderExportBar() {
   const cfg = USE_CASES[activeUC];
   const names = cfg.exports.map(name =>

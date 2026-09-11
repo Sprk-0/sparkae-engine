@@ -317,6 +317,38 @@ check('§09 does not tell a visitor to click a card that is not clickable',
   connectors.clickable === connectors.cards || !/click (any|the) connector/i.test(connectors.copy),
   connectors.clickable + ' of ' + connectors.cards + ' cards clickable');
 
+// ── 9 · The walkthroughs' export bar names artifacts, it does not offer them
+// It rendered `<a href="#">` with a pointer cursor, a hover state and a green
+// ✓ — the affordance of a finished download — for artifacts no walkthrough
+// generates. Clicking one jumped the visitor to the top of the page. §01 does
+// produce files, and clears this bar in favour of real download buttons.
+const exportFaults = [];
+for (const uc of TABS) {
+  await runTab(uc);
+  const bar = await page.evaluate(() => {
+    const el = document.getElementById('export-bar');
+    if (!el) return null;
+    const kids = Array.from(el.children).filter(k => !k.classList.contains('export-note'));
+    return {
+      items: kids.length,
+      links: el.querySelectorAll('a').length,
+      pointers: kids.filter(k => getComputedStyle(k).cursor === 'pointer').length,
+      note: (el.querySelector('.export-note') || {}).textContent || '',
+    };
+  });
+  if (!bar) { exportFaults.push(`${uc}: no export bar`); continue; }
+  if (uc === 'initial') {
+    if (bar.items || bar.links) exportFaults.push(`${uc}: live run should clear the bar, found ${bar.items} item(s)`);
+    continue;
+  }
+  if (!bar.items) exportFaults.push(`${uc}: named no exports`);
+  if (bar.links) exportFaults.push(`${uc}: ${bar.links} link(s) to nowhere`);
+  if (bar.pointers) exportFaults.push(`${uc}: ${bar.pointers} item(s) offer a pointer cursor`);
+  if (!/does not generate|not generated/i.test(bar.note)) exportFaults.push(`${uc}: bar does not say the artifacts are not generated`);
+}
+check('a walkthrough names the exports its step would produce without offering them as downloads',
+  exportFaults.length === 0, exportFaults.join(' | '));
+
 await browser.close();
 
 check('no page or console errors', errors.length === 0, errors.join(' | '));
