@@ -1,9 +1,9 @@
 # Contributing
 
-Bug reports and pull requests are welcome. This repository is generated from
-the private product repository (see the README), so a merged change is
-ported to the source and re-synced rather than committed here directly —
-open the PR anyway; the diff is what gets ported.
+Bug reports and pull requests are welcome, and they land where you send
+them: this repository *is* the public site, so a merged change is what
+https://sparkae.ai serves. The commercial server product is a separate
+private codebase and is not changed from here.
 
 Three constraints, all enforced by `node tests/check.mjs`:
 

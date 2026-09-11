@@ -10,9 +10,10 @@ body:
         - **Security reports do not belong here.** A crafted document that
           evades a gate, or anything else in `SECURITY.md`, goes privately to
           [info@sparkae.ai](mailto:info@sparkae.ai).
-        - **This repository is generated** from the private product repository.
-          A fix is ported to the source and re-synced rather than committed
-          here directly — the report is still what starts that, so open it.
+        - **This is the public reference build**, not the SparkAE server
+          product. `pip install`, Docker and the `/v1` API belong to the
+          commercial product and are not in this tree — see the README's
+          first table before filing against one of them.
 
   - type: textarea
     id: what

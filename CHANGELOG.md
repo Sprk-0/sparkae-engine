@@ -2,10 +2,8 @@
 
 Notable changes to the public reference build.
 
-This repository is generated from the private product repository, so the
-entries below are dated rather than tagged: there are no releases to number
-here, and `ENGINE_VERSION` in `demo-engine.js` moves only when the engine
-does. Because every artifact this build produces carries a reproducibility
+Entries are dated rather than tagged: there are no releases to number here,
+and `ENGINE_VERSION` in `demo-engine.js` moves only when the engine does. Because every artifact this build produces carries a reproducibility
 receipt, an entry records whichever of these moved:
 
 ```text
