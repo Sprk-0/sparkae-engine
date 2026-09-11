@@ -23,6 +23,7 @@
 //   env CHROMIUM           path to a Chromium binary (default: Playwright's own)
 import fs from 'node:fs';
 import os from 'node:os';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -60,6 +61,20 @@ const dismissOnboarding = () => page.evaluate(() => { const o = document.getElem
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 const date = await page.inputValue('#assessment-date');
 const mode = await page.textContent('#stat-mode');
+
+// An assessment is a claim about a specific package as of a specific day. This
+// page used to start one half a second after load, so a visitor arriving from
+// anywhere met a finished assessment of a package they had not chosen. Give it
+// well past that old half-second and confirm the engine is still idle.
+await page.waitForTimeout(1500);
+const idle = await page.evaluate(() => ({
+  status: (document.getElementById('console-status') || {}).textContent || '',
+  resultsShown: !!document.querySelector('#results.show'),
+  runState: ((document.getElementById('run-state') || {}).style || {}).display || '',
+  logLines: (document.getElementById('log') || { children: [] }).children.length,
+  btn: (document.getElementById('run-btn') || {}).textContent || '',
+}));
+
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
@@ -102,6 +117,94 @@ await page.waitForSelector('#results.show', { timeout: 180000 });
 const log2 = await page.textContent('#log');
 const refused = await page.textContent('.live-refused').catch(() => '');
 
+// ── one ingestion ───────────────────────────────────────────────────────────
+// A package is a ZIP, and a ZIP is what the panel used to choke on: it expanded
+// with JSZip, which this page never loads, so an ordinary archive produced
+// "JSZip library failed to load — cannot unpack .zip packages" while the engine
+// read the very same file and assessed it. These drive the real page, because
+// that contradiction lived entirely between two ingestion paths and neither
+// path was wrong on its own.
+//
+// The fixtures are built here rather than committed so they cannot drift, and
+// the DOCX is deflated exactly as Word writes one.
+const CRC_T = (() => { const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+const crc32b = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipOf(members) {
+  const local = [], central = [];
+  let offset = 0;
+  for (const m of members) {
+    const name = Buffer.from(m.name, 'utf8');
+    // A ZIP's CRC-32 covers a member's UNCOMPRESSED bytes, so those are what
+    // this takes and it compresses them itself. Handing it a ready-made
+    // deflate stream and recording a CRC of that produces an archive no
+    // conforming reader accepts — a fixture that passes here and nowhere else.
+    const source = m.bytes || Buffer.from(m.text, 'utf8');
+    const deflate = !!m.deflate;
+    const data = deflate ? zlib.deflateRawSync(source, { level: 9 }) : source;
+    const method = deflate ? 8 : 0;
+    const uncomp = source.length;
+    const crc = crc32b(source);
+    const lh = Buffer.alloc(30 + name.length);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6);
+    lh.writeUInt16LE(method, 8); lh.writeUInt16LE(0, 10); lh.writeUInt16LE(0x21, 12);
+    lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(data.length, 18); lh.writeUInt32LE(uncomp, 22);
+    lh.writeUInt16LE(name.length, 26); lh.writeUInt16LE(0, 28); name.copy(lh, 30);
+    local.push(lh, data);
+    const ch = Buffer.alloc(46 + name.length);
+    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6);
+    ch.writeUInt16LE(0, 8); ch.writeUInt16LE(method, 10); ch.writeUInt16LE(0, 12); ch.writeUInt16LE(0x21, 14);
+    ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(data.length, 20); ch.writeUInt32LE(uncomp, 24);
+    ch.writeUInt16LE(name.length, 28); ch.writeUInt16LE(0, 30); ch.writeUInt16LE(0, 32);
+    ch.writeUInt16LE(0, 34); ch.writeUInt16LE(0, 36); ch.writeUInt32LE(0, 38);
+    ch.writeUInt32LE(offset, 42); name.copy(ch, 46);
+    central.push(ch);
+    offset += lh.length + data.length;
+  }
+  const cd = Buffer.concat(central);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(0, 4); eocd.writeUInt16LE(0, 6);
+  eocd.writeUInt16LE(members.length, 8); eocd.writeUInt16LE(members.length, 10);
+  eocd.writeUInt32LE(cd.length, 12); eocd.writeUInt32LE(offset, 16); eocd.writeUInt16LE(0, 20);
+  return Buffer.concat([...local, cd, eocd]);
+}
+
+const SSP_BODY = 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.';
+const DOCX_XML = '<?xml version="1.0"?><w:document xmlns:w="x"><w:body><w:p><w:r><w:t>' + SSP_BODY + '</w:t></w:r></w:p></w:body></w:document>';
+const docxBytes = zipOf([
+  { name: '[Content_Types].xml', text: '<Types/>' },
+  { name: 'word/document.xml', text: DOCX_XML, deflate: true },
+]);
+// The ordinary shape of a real submission: the SSP is a Word file, in a ZIP.
+fs.writeFileSync(path.join(tmp, 'package.zip'), zipOf([
+  { name: 'README.txt', text: 'This package contains the system security plan.' },
+  { name: 'CloudVault-SSP.docx', bytes: docxBytes },
+]));
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'package.zip')]);
+await page.waitForTimeout(1200);
+const zipPanel = await page.evaluate(() => ({
+  name: (document.querySelector('#ssp-upload-btn .ssp-name') || {}).textContent || '',
+  meta: (document.querySelector('#ssp-upload-btn .ssp-meta') || {}).textContent || '',
+  status: (document.getElementById('ssp-upload-status') || {}).textContent || '',
+  files: Array.from(document.querySelectorAll('.upload-file')).map(e => e.textContent),
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+}));
+await dismissOnboarding();
+await page.click('#run-btn');
+await page.waitForSelector('#results.show', { timeout: 180000 });
+const zipLog = await page.textContent('#log');
+const zipRefused = await page.textContent('.live-refused').catch(() => '');
+
+// A .zip that is not a ZIP: the panel must fail AND leave nothing runnable.
+fs.writeFileSync(path.join(tmp, 'broken.zip'), 'this is not a zip at all');
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'broken.zip')]);
+await page.waitForTimeout(900);
+const brokenPanel = await page.evaluate(() => ({
+  name: (document.querySelector('#ssp-upload-btn .ssp-name') || {}).textContent || '',
+  status: (document.getElementById('ssp-upload-status') || {}).textContent || '',
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+}));
+
 // A file name is text the visitor did not write. The upload inventory renders
 // it, and rendered it by string concatenation into innerHTML until a package
 // named like an <img> with an error handler ran that handler on the live site.
@@ -142,6 +245,29 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the page does not assess anything until the visitor asks',
+    !idle.resultsShown && idle.logLines === 0 && idle.runState !== 'block',
+    'results=' + idle.resultsShown + ' log=' + idle.logLines + ' runState=' + idle.runState],
+  ['the console waits at READY rather than reporting a run nobody started',
+    /READY|Awaiting input/i.test(idle.status) && !/Run again/.test(idle.btn),
+    idle.status + ' | btn=' + idle.btn.trim()],
+  ['an ordinary ZIP does not report an upload failure',
+    !/Upload failed|failed to load/i.test(zipPanel.name + ' ' + zipPanel.meta + ' ' + zipPanel.status),
+    zipPanel.name + ' | ' + zipPanel.meta],
+  ['the panel lists the ZIP\'s members, not the ZIP as one opaque artifact',
+    zipPanel.files.some(t => /README\.txt/.test(t)) && zipPanel.files.some(t => /CloudVault-SSP\.docx/.test(t)),
+    JSON.stringify(zipPanel.files)],
+  ['a successful upload binds the package to the engine', zipPanel.bound === 1, String(zipPanel.bound)],
+  ['a DOCX inside the package is read, not refused',
+    !/CloudVault-SSP\.docx/.test(zipRefused) && /CloudVault-SSP\.docx/.test(zipLog),
+    'refused=' + zipRefused.slice(0, 120)],
+  ['the nested SSP reached the corpus the run assessed',
+    /2 file\(s\)/.test(zipLog) || /CloudVault-SSP\.docx/.test(zipLog), ''],
+  ['a .zip that is not a ZIP is reported as a failure',
+    /Upload failed|could not be read|not a ZIP/i.test(brokenPanel.name + ' ' + brokenPanel.status),
+    brokenPanel.name + ' | ' + brokenPanel.status.slice(0, 120)],
+  ['a failed upload leaves nothing runnable bound to the engine',
+    brokenPanel.bound === 0, String(brokenPanel.bound)],
 ];
 let failures = 0;
 for (const [msg, pass, detail] of checks) {

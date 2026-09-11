@@ -427,10 +427,13 @@ const crc32 = (b) => {
   return (c ^ 0xFFFFFFFF) >>> 0;
 };
 
-// A member is STORED (method 0) from its `text` unless it carries ready-made
-// `bytes` with a `method` and `uncompSize`, which is how the deflated case is
-// built. Storing by default keeps each test about the reader's structure
-// handling rather than about deflate.
+// A member is built from its UNCOMPRESSED bytes — `text` or `bytes` — because
+// that is what a ZIP's CRC-32 covers. Handing the builder an already-compressed
+// stream and recording a CRC of *that* produces an archive no conforming reader
+// accepts, which is how a fixture quietly becomes the strawman it was written
+// not to be. `deflate: true` compresses here, so the CRC stays honest. `raw`
+// is the deliberate exception: a stream that is meant to be malformed, with its
+// `method`, `uncompSize` and `crc` stated outright.
 // `streaming` writes the sizes in a trailing data descriptor and leaves the
 // local header zeroed, which is what a ZIP written to a pipe looks like.
 // `declare` overstates the member count in the EOCD; `patch` gets the finished
@@ -442,10 +445,18 @@ function buildZip(members, opts = {}) {
   let offset = 0;
   for (const m of members) {
     const name = enc.encode(m.name);
-    const data = m.bytes || enc.encode(m.text);
-    const method = m.method || 0;
-    const uncompSize = m.uncompSize === undefined ? data.length : m.uncompSize;
-    const crc = m.crc === undefined ? crc32(data) : m.crc;
+    const source = m.bytes || enc.encode(m.text || '');
+    let data, method, uncompSize, crc;
+    if (m.raw) {
+      data = m.raw; method = m.method === undefined ? 8 : m.method;
+      uncompSize = m.uncompSize === undefined ? m.raw.length : m.uncompSize;
+      crc = m.crc === undefined ? 0 : m.crc;
+    } else if (m.deflate) {
+      data = new Uint8Array(zlib.deflateRawSync(Buffer.from(source), { level: 9 }));
+      method = 8; uncompSize = source.length; crc = crc32(source);
+    } else {
+      data = source; method = 0; uncompSize = source.length; crc = crc32(source);
+    }
     const flags = opts.streaming ? 0x08 : 0;
     const lh = new Uint8Array(30 + name.length);
     const lv = new DataView(lh.buffer);
@@ -517,6 +528,42 @@ const refusals = (rep) => (rep.skipped || []).map(s => s.name + ': ' + s.reason)
 const IMPLEMENTED = 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.pdf.';
 const NOT_IMPLEMENTED = 'AC-2 Account Management. Account monitoring is not implemented. The quarterly review has not been performed and no automated mechanism exists.';
 
+// These fixtures are only worth what their validity is worth: a test that an
+// archive parses is worthless if the archive is one no other reader accepts.
+// So the builder is checked first, against the ZIP spec's own invariant — the
+// CRC-32 in the central directory is over a member's UNCOMPRESSED bytes.
+// Recording a CRC of the compressed stream instead is exactly the mistake that
+// makes a fixture pass here and fail everywhere else, and it is the mistake
+// these fixtures carried until this check existed.
+function verifyZipCRCs(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const eocd = (() => { for (let i = bytes.length - 22; i >= 0; i--) if (view.getUint32(i, true) === 0x06054b50) return i; return -1; })();
+  if (eocd < 0) return 'no EOCD';
+  let cd = view.getUint32(eocd + 16, true);
+  const bad = [];
+  for (let i = 0, n = view.getUint16(eocd + 10, true); i < n; i++) {
+    const method = view.getUint16(cd + 10, true);
+    const crc = view.getUint32(cd + 16, true);
+    const compSize = view.getUint32(cd + 20, true);
+    const nameLen = view.getUint16(cd + 28, true);
+    const name = new TextDecoder().decode(bytes.slice(cd + 46, cd + 46 + nameLen));
+    const localAt = view.getUint32(cd + 42, true);
+    const dataAt = localAt + 30 + view.getUint16(localAt + 26, true) + view.getUint16(localAt + 28, true);
+    const raw = bytes.slice(dataAt, dataAt + compSize);
+    const plain = method === 8 ? new Uint8Array(zlib.inflateRawSync(Buffer.from(raw))) : raw;
+    if (crc32(plain) !== crc) bad.push(name + ' (method ' + method + ')');
+    cd += 46 + nameLen + view.getUint16(cd + 30, true) + view.getUint16(cd + 32, true);
+  }
+  return bad.length ? 'CRC mismatch: ' + bad.join(', ') : '';
+}
+const storedFixture = buildZip([{ name: 'a.txt', text: 'stored member' }]);
+const deflatedFixture = buildZip([{ name: 'b.txt', text: 'deflated member '.repeat(64), deflate: true }]);
+const storedBad = verifyZipCRCs(storedFixture);
+const deflatedBad = verifyZipCRCs(deflatedFixture);
+check(storedBad === '' && deflatedBad === '',
+  'the fixtures this section builds are valid ZIPs: every CRC-32 is over the uncompressed bytes — ' +
+  (storedBad || deflatedBad || 'stored and deflated both verify'));
+
 // Data descriptors: the local headers say the members are zero bytes long.
 // Reading those zeroes refused the first member as a truncated stream and then
 // advanced by zero bytes, so the second member was never seen or reported.
@@ -531,12 +578,9 @@ check(streamingZip.parsed.length === 2 &&
 
 // The ordinary case: a deflated member round-trips through the reader.
 const deflatedText = IMPLEMENTED + '\n\n' + NOT_IMPLEMENTED;
-const deflatedZip = await E.parseZipReport(asFile(buildZip([{
-  name: 'review-ssp.txt',
-  bytes: new Uint8Array(zlib.deflateRawSync(Buffer.from(deflatedText, 'utf8'), { level: 9 })),
-  method: 8,
-  uncompSize: Buffer.byteLength(deflatedText),
-}]), 'deflated.zip'));
+const deflatedZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'review-ssp.txt', text: deflatedText, deflate: true },
+]), 'deflated.zip'));
 check(deflatedZip.parsed.length === 1 && deflatedZip.skipped.length === 0 &&
   deflatedZip.chunks.length > 0 && /monitored continuously/.test(deflatedZip.chunks[0].text),
   'a deflated member inflates to its text — ' + JSON.stringify(refusals(deflatedZip)));
@@ -577,7 +621,7 @@ check(!!dupDif &&
 // arrived at by a different route. The expansion budget would make it worse
 // still: whether a duplicate survived would depend on its predecessors' size.
 const halfCorrupt = await E.parseZipReport(asFile(buildZip([
-  { name: 'review-ssp.txt', bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 142, crc: 0 },
+  { name: 'review-ssp.txt', raw: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), uncompSize: 142 },
   { name: 'review-ssp.txt', text: IMPLEMENTED },
 ]), 'half-corrupt.zip'));
 check(halfCorrupt.parsed.length === 0 && halfCorrupt.chunks.length === 0 &&
@@ -627,7 +671,7 @@ let brokenDocx = '';
 try {
   await E.parseFile(asFile(buildZip([{
     name: 'word/document.xml',
-    bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 500, crc: 0,
+    raw: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), uncompSize: 500,
   }]), 'broken.docx'));
 } catch (e) { brokenDocx = e.message || String(e); }
 check(/could not be read/.test(brokenDocx) && !/has no word\/document\.xml/.test(brokenDocx),
@@ -643,6 +687,36 @@ try {
 } catch (e) { dupDocx = e.message || String(e); }
 check(dupDocx && /ambiguous/.test(dupDocx),
   'a DOCX carrying two word/document.xml is refused, not resolved to the last one');
+
+// A DOCX inside a package is the ordinary shape of a real submission: the SSP
+// is a Word file and the package is a ZIP. Refusing it meant the one document
+// the assessment most depends on was the one left out, and a run reached
+// Complete having read the README and not the SSP.
+const nestedDocx = buildZip([
+  { name: '[Content_Types].xml', text: '<Types/>' },
+  { name: 'word/document.xml', text: docxBody, deflate: true },
+]);
+const packageZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'README.txt', text: 'This package contains the system security plan.' },
+  { name: 'CloudVault-SSP.docx', bytes: nestedDocx },
+]), 'office-package.zip'));
+check(packageZip.parsed.length === 2 && packageZip.parsed.indexOf('CloudVault-SSP.docx') !== -1 &&
+  packageZip.skipped.length === 0 &&
+  packageZip.chunks.some(c => c.filename === 'CloudVault-SSP.docx' && /monitored continuously/.test(c.text)),
+  'a DOCX inside a package is read, and its text reaches the corpus under its own name — ' +
+  JSON.stringify(packageZip.parsed) + ' refused ' + JSON.stringify(refusals(packageZip)));
+
+// The nested reader shares the enclosing archive's allowance, so a package of
+// many DOCX members cannot expand past the limit one member at a time.
+const nestedBomb = buildZip([
+  { name: 'word/document.xml', bytes: new Uint8Array(70 * 1024 * 1024), deflate: true },
+]);
+const nestedBombZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'big.docx', bytes: nestedBomb },
+]), 'nested-bomb.zip'));
+check(nestedBombZip.parsed.length === 0 && refusals(nestedBombZip).some(r => /MB limit/.test(r)),
+  'a nested DOCX expands against the package\'s allowance, not its own — ' +
+  JSON.stringify(refusals(nestedBombZip)));
 
 // Resource limits: an archive may not be trusted about its own size.
 const manyZip = await E.parseZipReport(asFile(buildZip(
@@ -668,13 +742,9 @@ check(short.parsed.length === 0 && refusals(short).some(r => /past the end/.test
 // This one is 70 MB of zeroes in about 70 KB on disk; the reader must stop
 // spending memory at its own limit rather than at the archive's word.
 const BOMB_BYTES = 70 * 1024 * 1024;
-const bombZip = await E.parseZipReport(asFile(buildZip([{
-  name: 'bomb.txt',
-  bytes: new Uint8Array(zlib.deflateRawSync(Buffer.alloc(BOMB_BYTES), { level: 9 })),
-  method: 8,
-  uncompSize: BOMB_BYTES,
-  crc: 0,
-}]), 'bomb.zip'));
+const bombZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'bomb.txt', bytes: new Uint8Array(BOMB_BYTES), deflate: true },
+]), 'bomb.zip'));
 check(bombZip.parsed.length === 0 && refusals(bombZip).some(r => /MB limit/.test(r)),
   'a member that expands past the archive-wide limit is refused by name — ' +
   JSON.stringify(refusals(bombZip)));
