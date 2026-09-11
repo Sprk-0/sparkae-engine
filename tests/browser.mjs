@@ -390,7 +390,7 @@ const inventory = await page.evaluate(() => {
   return {
     claimsFinding: /(OTS|NR)\s+finding/i.test(t),
     saysNotFound: /not found/.test(t),
-    namesTheControl: /not found · evidence for [A-Z]{2}-\d/.test(t),
+    namesTheControl: /not found · evidence for [A-Z]{2}-\d+/.test(t),
     disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
   };
 });
