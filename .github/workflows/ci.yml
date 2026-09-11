@@ -75,6 +75,9 @@ jobs:
       - name: Assessor statements, revisions, and what reaches the exports
         run: node tests/assessor.mjs .
 
+      - name: Every published page loads clean when served
+        run: node tests/pages.mjs .
+
   # Is sparkae.ai this repository? The only check here that uses the network,
   # and the only one that can answer that, so it is kept off pull requests: a
   # red build should mean the change is wrong, not that a deploy is mid-flight.

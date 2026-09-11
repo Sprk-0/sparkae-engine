@@ -132,10 +132,16 @@ node tests/check.mjs .                 # node ≥ 18, no dependencies
 pip install jsonschema regex && python tests/check_oscal_schema.py
 ```
 
-There are also two browser-level checks — `node tests/browser.mjs .` and
-`node tests/assessor.mjs .`, after `npm i playwright && npx playwright install
-chromium` — which drive the demo in headless Chromium with every non-file
-request aborted (CI's `browser` job runs both). The first compares what the
+There are also three browser-level checks — `node tests/browser.mjs .`,
+`node tests/assessor.mjs .` and `node tests/pages.mjs .`, after
+`npm i playwright && npx playwright install chromium` (CI's `browser` job runs
+all three). The first two drive the demo in headless Chromium with every
+non-file request aborted. `pages.mjs` serves the whole tree over a local HTTP
+server and opens every published page, because a page that throws on load
+would otherwise ship green: `check.mjs` only parses the inline scripts, and
+until this existed no page but the demo was ever executed. It asks the least a
+visitor is owed — the page renders, it does not throw, it reaches no other
+origin, and every internal link resolves. The first compares what the
 page shows and downloads with the golden fixture. The second covers the
 assessor layer: that each finding's examine statement is built from the run
 rather than asserted, that revising a determination reaches the OSCAL, POA&M,
