@@ -247,8 +247,8 @@ verdict digest moved with it.
 ### Released states
 
 Work lands continuously on `main`, and `main` is what sparkae.ai serves. A tag
-marks a state worth citing: **`v1.3.0-preview.1`** names the engine version it
-ships and the preview it belongs to.
+marks a state worth citing and is named for the engine it ships: **`v1.3.0`**,
+after `v1.1.0` before it.
 
 A tag asserts three things:
 
@@ -259,8 +259,8 @@ A tag asserts three things:
 - `tests/check_published.mjs` ran against `https://sparkae.ai` for that commit,
   so the tag is the tree the site was serving, byte for byte.
 
-Every tag here is marked **pre-release**. That describes the evidence rather
-than the build: the determinations are reproducible and the suite is real, and
+Every release here is marked **pre-release** on GitHub. That describes the
+evidence rather than the build: the determinations are reproducible and the suite is real, and
 the accuracy evidence behind them is sixteen cases someone chose, described
 under *Accuracy* above. A pre-release is the honest shape for something you are
 invited to examine and argue with rather than to depend on.

@@ -3,8 +3,8 @@
 Notable changes to the public reference build.
 
 Entries are dated. Tags mark states worth citing rather than numbering every
-change: a tag is `v<engine version>-preview.<n>`, it is marked **pre-release** on
-GitHub, and it names a tree that passed the whole suite and was verified byte for
+change: a tag is named `v<engine version>`, its GitHub release is marked
+**pre-release**, and it names a tree that passed the whole suite and was verified byte for
 byte against the deployed site. `ENGINE_VERSION` in `demo-engine.js` moves only
 when the engine does. Because every artifact this build produces carries a
 reproducibility receipt, an entry records whichever of these moved:
@@ -20,7 +20,7 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-11 — v1.3.0-preview.1
+## 2026-09-11 — v1.3.0
 
 Engine 1.3.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `b39ee143bdfe` ·
 verdict digest `04b1f79d6f44`
@@ -38,7 +38,7 @@ the tag is the tree the site was serving.
 What it does not assert: that the determinations are accurate enough to rely on.
 The accuracy evidence is sixteen cases someone chose — 15 correct, 0 false
 passes, 1 documented false fail — which is a published, re-runnable record and
-not a measurement of field accuracy. That is why every tag here is a
+not a measurement of field accuracy. That is why every release here is a
 pre-release: the evidence behind these determinations is a case set its own
 authors mostly wrote.
 
