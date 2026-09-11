@@ -1,4 +1,5 @@
-# Netlify redirect rules for the published site. build.sh copies this into dist/.
+# Netlify redirect rules for the published site. Netlify reads this file from
+# the publish root; the private repository's build.sh copies it into dist/.
 #
 # Short link for outreach: the standalone demo is the primary "Live Demo" target
 # (see README.md), and <your-domain>/demo is what fits in an email. A 301 rather

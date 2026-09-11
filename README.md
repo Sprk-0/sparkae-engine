@@ -188,21 +188,31 @@ node tests/benchmark.mjs .             # the accuracy cases above
 pip install jsonschema regex && python tests/check_oscal_schema.py
 ```
 
-There are also three browser-level checks — `node tests/browser.mjs .`,
-`node tests/assessor.mjs .` and `node tests/pages.mjs .`, after
+There are also four browser-level checks — `node tests/browser.mjs .`,
+`node tests/assessor.mjs .`, `node tests/selections.mjs .` and
+`node tests/pages.mjs .`, after
 `npm i playwright && npx playwright install chromium` (CI's `browser` job runs
-all three). The first two drive the demo in headless Chromium with every
+all four). The first three drive the demo in headless Chromium with every
 non-file request aborted. `pages.mjs` serves the whole tree over a local HTTP
 server and opens every published page, because a page that throws on load
 would otherwise ship green: `check.mjs` only parses the inline scripts, and
 until this existed no page but the demo was ever executed. It asks the least a
 visitor is owed — the page renders, it does not throw, it reaches no other
-origin, and every internal link resolves. The first compares what the
-page shows and downloads with the golden fixture. The second covers the
+origin, and every internal link resolves. `browser.mjs` compares what the
+page shows and downloads with the golden fixture. `assessor.mjs` covers the
 assessor layer: that each finding's examine statement is built from the run
 rather than asserted, that revising a determination reaches the OSCAL, POA&M,
 RET and summary, and that doing so leaves the reproducibility receipt
-untouched.
+untouched. `selections.mjs` covers the controls themselves — the nine tabs, the
+rail, and the filter chips — and asks of each selection whether it does what
+its label says: that a tab switches the console to its own configuration, that
+a rail entry §01 cannot assess says so before Run is pressed and names the
+system when it stops, that the rail's control counts are the ones this catalog
+yields, that every chip on offer matches rows of its own value and every value
+in the run is on offer, that changing a filter mid-paint leaves none of the
+previous selection's rows behind, that a selection matching nothing says
+which selection emptied the table, and that a walkthrough names the exports
+its step would produce without offering them as downloads it cannot make.
 
 `check.mjs` checks: every script parses; the catalog counts above; no
 published file loads or calls a third-party origin and every page's CSP is
@@ -211,7 +221,8 @@ gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
 temporal verdicts); the golden fixture; CSV formula-injection safety; the
 OSCAL document's shape and receipt; that every page names one address in its
-`canonical`, its `og:url` and `sitemap.xml`, and that Netlify's Pretty URLs
+`canonical`, its `og:url` and `sitemap.xml`, that every page in `sitemap.xml`
+can be reached by link from the homepage, and that Netlify's Pretty URLs
 post-processing stays pinned off; and that the homepage hero labelled
 “from the sample run” is a finding this engine actually emits for that
 run, shown in the OSCAL shape the exporters write. The GitHub Actions
