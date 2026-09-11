@@ -4409,16 +4409,24 @@ function renderUploadStatus(pkg) {
   const ts = pkg.textSig || {};
   const oscal = pkg.oscal || {};
 
-  // This list is an ARTIFACT INVENTORY, matched on file names by classifyFile's
-  // regexes. It used to render as determinations — "OTS finding · CA-5" against
-  // POA&M, "critical · NR finding · PL-2" against SSP — which said an objective
-  // had been adjudicated because no uploaded file was *named* like a POA&M.
+  // This list is an ARTIFACT INVENTORY. It used to render as determinations —
+  // "OTS finding · CA-5" against POA&M, "critical · NR finding · PL-2" against
+  // SSP — which said an objective had been adjudicated because no uploaded file
+  // was named like a POA&M.
   //
-  // Nothing here adjudicates anything. The engine reads document contents and
-  // decides every objective on evidence; a package can be missing a file called
-  // poam.xlsx and still satisfy CA-5 from an SSP section, or contain one and
-  // fail. A missing artifact is a gap in the package, and the control it would
-  // ordinarily inform is worth naming — as context, not as a verdict.
+  // Nothing here adjudicates anything. The engine reads document text and
+  // decides every objective on evidence when a run starts; a package can be
+  // missing a file called poam.xlsx and still satisfy CA-5 from an SSP section,
+  // or contain one and fail. A missing artifact is a gap in the package, and
+  // the control it would ordinarily inform is worth naming — as context, not as
+  // a verdict.
+  //
+  // How presence is decided matters too, and the first version of this fix got
+  // it wrong in the other direction by calling the list name-only. It is not:
+  // classifyFile matches file names, and parseJSONOscal, parseScanCSV and
+  // parseTextDoc read contents, so oscal.ssp, pkg.scanRows and textSig all
+  // carry weight here. A shallow content scan is still not an adjudication, but
+  // saying "names, not contents" was a false claim of its own.
   const artifacts = [
     { lbl: 'SSP',                    ok: present('SSP') || oscal.ssp > 0,      informs: 'PL-2', primary: true },
     { lbl: 'POA&M',                  ok: present('POAM') || oscal.poam > 0,    informs: 'CA-5', primary: true },
@@ -4434,16 +4442,17 @@ function renderUploadStatus(pkg) {
   const checkRows =
     '<div class="upload-row"><span class="upload-label" style="color:var(--vermillion)">Artifact inventory</span>' +
     '<span class="upload-value">' + (artifacts.length - missingCount) + ' of ' + artifacts.length +
-    ' matched by file name</span></div>' +
+    ' present</span></div>' +
     artifacts.map(a =>
       '<div class="upload-row"><span class="upload-label">' + engEsc(a.lbl) + '</span>' +
       '<span class="' + (a.ok ? 'upload-value' : 'upload-warn') + '">' +
       (a.ok ? 'present' : 'not found · would inform ' + engEsc(a.informs)) + '</span></div>'
     ).join('') +
     '<div class="upload-row" style="display:block;opacity:.72;line-height:1.5;padding-top:6px">' +
-    'Matched on file names, not contents. This is what the package appears to contain — ' +
-    'it is not an assessment. Every objective is adjudicated from document text when you run, ' +
-    'and a missing artifact here does not by itself produce a finding.</div>';
+    'Found by file name and by a shallow scan of contents — OSCAL document type, scan rows, ' +
+    'text markers. This is what the package appears to contain; <strong>it is not an ' +
+    'assessment</strong>. Every objective is adjudicated from document text when you run, and a ' +
+    'missing artifact here does not by itself produce a finding.</div>';
 
   // Show top 12 files; collapse remainder into a count
   const showFiles = pkg.inventory.slice(0, 12);

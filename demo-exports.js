@@ -495,7 +495,8 @@ var DEMO_EXPORTS = (function () {
   // ── Tabular deliverables ───────────────────────────────────────────────
 
   // 'Determination' is the effective one — what a downstream consumer should act
-  // on — and the three columns after it say where it came from. The OSCAL
+  // on — and the four columns after it say where it came from and what the
+  // assessor said. The OSCAL
   // exporter has carried engine-determination / assessor-determination /
   // determination-source since the assessor layer landed; CSV collapsed all of
   // it into one cell, so a revised Satisfied was indistinguishable from an

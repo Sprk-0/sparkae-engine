@@ -384,7 +384,7 @@ const inventory = await page.evaluate(() => {
     claimsFinding: /(OTS|NR)\s+finding/i.test(t),
     saysNotFound: /not found/.test(t),
     saysWouldInform: /would inform/.test(t),
-    disclaims: /not an assessment/i.test(t) && /file names, not contents/i.test(t),
+    disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
   };
 });
 
@@ -436,7 +436,7 @@ const checks = [
     !inventory.claimsFinding, 'panel still says "OTS/NR finding"'],
   ['a missing artifact is reported as missing, with the control it would inform',
     inventory.saysNotFound && inventory.saysWouldInform, JSON.stringify(inventory)],
-  ['the inventory says it is matched on names and is not an assessment',
+  ['the inventory says how presence was decided and that it is not an assessment',
     inventory.disclaims, JSON.stringify(inventory)],
   ['a REFUSED member name cannot execute: no handler ran',
     refusedXss.fired === null, 'data-refused-audit=' + refusedXss.fired],
