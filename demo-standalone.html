@@ -5128,14 +5128,33 @@ function renderKSISummary(sample) {
 }
 
 // ── KSI runner (20x Phase 2 · RFC-0017 PVA) ──
-// Eight of the nine tabs are guided walkthroughs over fixed sample data: their
-// figures are authored, not computed from evidence. Each tab carries a
-// `walkthrough` badge in the nav, but the badge is 8px of muted text and the
-// run that follows reads like a finished assessment — "ConMon package ready for
-// JAB" is a sentence a visitor can screenshot and a buyer can misread. The run
-// says it too, at the start and in the status it ends on.
+// Eight of the nine tabs are guided walkthroughs. Each carries a `walkthrough`
+// badge in the nav, but the badge is 8px of muted text and the run that follows
+// reads like a finished assessment — a sentence a visitor can screenshot and a
+// buyer can misread. The run says it too, at the start and in the status it
+// ends on.
+//
+// What it says has to be true of the run actually happening, which is three
+// different things:
+//
+//   · a bundled sample — the figures are authored fixture data;
+//   · an uploaded package — worse, and this is the case worth naming. The
+//     walkthrough tabs seed their numbers from a hash of the visitor's file
+//     names and sizes (`50 + seed % 100` assets, `200 + seed % 800` findings)
+//     and fall back to literals when a parser finds nothing. Those are not
+//     their figures. Only §01 reads the contents of what they uploaded;
+//   · no engine — §01 is itself a walkthrough then, so it cannot be offered as
+//     the tab that computes.
+//
+// A disclosure that is wrong about which of these is happening is not a
+// disclosure.
 function logWalkthroughNotice() {
-  log('00:00.0', 'init', '<span class="key">walkthrough</span> · guided walkthrough over fixed sample data · figures are authored, not computed from evidence · §01 Initial Assessment is the live engine', 'warn');
+  const engineUp = !!window.SparkAEEngine && typeof CATALOG !== 'undefined';
+  const live = engineUp ? ' · §01 Initial Assessment is the live engine and reads your evidence' : '';
+  const body = (selected === 'custom')
+    ? 'guided walkthrough · these figures are seeded from your package\'s file names and counts, not adjudicated from its contents' + live
+    : 'guided walkthrough over authored sample data · figures are authored, not computed from evidence' + live;
+  log('00:00.0', 'init', '<span class="key">walkthrough</span> · ' + body, 'warn');
 }
 
 async function runKSI(sample) {

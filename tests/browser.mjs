@@ -254,9 +254,10 @@ const SRC_TEXT = ['● LIVE', '% coverage', 'last sync', 'sync cadence', 'artifa
   .map(needle => ({ needle, present: srcPanel.text.includes(needle) }));
 
 // ── every walkthrough says it is one ───────────────────────────────────────
-// Eight of the nine tabs are guided walkthroughs over authored sample data, and
-// each completed with a status a visitor could screenshot as a result: "ConMon
-// package ready for JAB", "AAR ready for Authorizing Official". The only
+// Seven tabs are covered here. §09 (src) is the eighth walkthrough and has its
+// own status and dedicated checks above, so it is deliberately not in this list.
+// Each of these completed with a status a visitor could screenshot as a result:
+// "ConMon package ready for JAB", "AAR ready for Authorizing Official". The only
 // disclosure was an 8px badge in the tab nav. §08 also asserted "4 systems"
 // against a SAMPLES map holding two, contradicting the matrix beside it and its
 // own "2 ready" in the same line.
@@ -280,9 +281,24 @@ for (const uc of WALKTHROUGH_TABS) {
   }))));
 }
 const undisclosed = walkResults.filter(r => r.missing ||
-  !/authored, not computed from evidence/.test(r.log || '') ||
+  !/(authored, not computed from evidence|seeded from your package)/.test(r.log || '') ||
   !/walkthrough/i.test(r.status || ''));
 // §08's own numbers have to agree with each other.
+// The disclosure has to be true of the run that is happening. With a package
+// uploaded, these tabs seed their figures from a hash of the visitor's file
+// names — so "authored sample data" would be the wrong sentence in the one case
+// where a visitor is most likely to read the numbers as their own.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(900);
+await page.evaluate(() => document.querySelector('.uc-tab[data-uc="conmon"]').click());
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
+  null, { timeout: 180000 });
+const uploadedNotice = await page.evaluate(() => document.getElementById('log').textContent);
+
 const pf = walkResults.find(r => r.uc === 'portfolio') || {};
 const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
 const pfConsistent = !!pfM && (+pfM[1] === +pfM[2] + +pfM[3] + +pfM[4]);
@@ -311,9 +327,13 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
-  ['every guided walkthrough says so in the run, not only in the tab badge',
+  ['the seven §02\u2013§08 walkthroughs each say so in the run, not only in the tab badge',
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
+  ['a walkthrough run on an uploaded package does not call it sample data',
+    /seeded from your package/.test(uploadedNotice) &&
+    !/authored sample data/.test(uploadedNotice),
+    uploadedNotice.slice(0, 200).replace(/\s+/g, ' ')],
   ['\u00a708 reports the systems it actually rolled up',
     pfConsistent, pf.status || '(no status)'],
   ['§09 shows no telemetry for connectors that do not exist',
