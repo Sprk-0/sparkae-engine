@@ -547,7 +547,11 @@ const GENERIC_TERMS = new Set([
 // "constrained" and "restraint" — while a plain word-boundary regex is too
 // strict the other way: "accounts are created" would not match "account
 // creation", and refusing that is a false negative, not rigour.
-const STEM_SUFFIXES = ['ations','ation',' izations','ization','ings','ing','ions','ion',
+// Longest first: 'ations' must be tried before 'ation' or "authorizations" stems
+// differently from "authorization". There is deliberately no 'izations' entry —
+// 'ations' already reaches it and matches first, so a separate one would be dead
+// however it were spelled.
+const STEM_SUFFIXES = ['ations','ation','ings','ing','ions','ion',
   'ments','ment','ness','ities','ity','ences','ence','ances','ance','ers','er','ed','es','s'];
 function stemWord(w) {
   w = String(w).toLowerCase();

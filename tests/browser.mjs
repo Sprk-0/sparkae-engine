@@ -58,18 +58,23 @@ await page.route('**/*', route => {
 
 const dismissOnboarding = () => page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
 
-// paintFindings lands rows in staggered batches, and a Low run now paints 981
-// of them. Until it stops, the document keeps growing under Playwright's feet:
-// it scrolls #run-btn into view, the next batch re-lays out, the button leaves
-// the viewport, and the click retries until it times out. That is what a
-// "element is outside of the viewport" timeout on the SECOND run means. Wait
-// for the table to stop moving before touching the page again.
+// paintFindings lands rows in staggered batches (up to ENGINE_ROW_CAP at a
+// time, with the remainder behind a control), so the table is still painting
+// when #results.show appears. Until it stops, the document keeps growing under
+// Playwright's feet: it scrolls #run-btn into view, the next batch re-lays out,
+// the button leaves the viewport, and the click retries until it times out.
+// That is what an "element is outside of the viewport" timeout on a SECOND run
+// means. Wait for the row count to stop moving before touching the page again.
+//
+// This deliberately does not swallow its own timeout. A table that never
+// settles is a hang worth failing on, and catching it here would restore the
+// flakiness the wait exists to remove.
 const settleFindings = () => page.waitForFunction(() => {
   const n = document.querySelectorAll('.findings-table .verdict-tag').length;
   const settled = n > 0 && window.__bSettle === n;
   window.__bSettle = n;
   return settled;
-}, null, { timeout: 120000, polling: 300 }).catch(() => {});
+}, null, { timeout: 120000, polling: 300 });
 
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 const date = await page.inputValue('#assessment-date');
