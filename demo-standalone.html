@@ -4576,6 +4576,12 @@ function clearCustomUpload() {
     document.querySelector('.ssp-option[data-id="cloudvault"]').classList.add('selected');
   }
   document.getElementById('ssp-upload-input').value = '';
+  // The raw File objects are what engineCorpus prefers over the selected
+  // sample, so leaving them here made Clear upload cosmetic: the panel reset
+  // and the next run still assessed the cleared package, under whatever
+  // assessment date the newly selected sample carried.
+  CUSTOM_PKG_FILES = [];
+  discardPreviousRun();
 }
 
 document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
@@ -9051,6 +9057,19 @@ function examineStatement(f) {
 // which is the same split the assessors page describes.
 const ASSESSOR_REVISIONS = new Map();
 
+// Everything that belongs to one run and must not outlive it. A determination
+// is derived from a specific corpus, baseline and assessment date; an assessor
+// revision is a judgement about one such determination. Carrying either into
+// the next run attaches a human conclusion, or an export, to evidence it was
+// never made against — which an upload review reproduced by revising an
+// objective on one package and finding that revision on the next.
+function discardPreviousRun() {
+  ASSESSOR_REVISIONS.clear();
+  ENGINE_LAST_RUN = null;              // exports have nothing to build from
+  const res = document.getElementById('results');
+  if (res) res.classList.remove('show');
+}
+
 // Revisions as the exporters want them: objective id → { status, statement },
 // with the UI's SAT/OTS/NR translated to the determination strings the engine
 // and OSCAL use. Returns null when nothing was revised, so the builders take
@@ -9121,6 +9140,9 @@ function liveClock() {
 
 async function runInitialLive(sample) {
   const ts = liveClock();
+  // Before anything is read: a run re-derives every determination, so the
+  // previous run's revisions and export binding are void from here.
+  discardPreviousRun();
   const baseline = engineBaseline();
   const asOfDay = engineAssessmentDate();
   renderStages(USE_CASES.initial.liveStages);
@@ -9281,6 +9303,9 @@ function renderInitialSummaryLive(run) {
 let CUSTOM_PKG_FILES = [];
 document.getElementById('ssp-upload-input').addEventListener('change', (ev) => {
   CUSTOM_PKG_FILES = Array.from(ev.target.files || []);
+  // New evidence: whatever is on screen and whatever an assessor concluded
+  // belongs to the package that was here before it.
+  discardPreviousRun();
   // An upload carries the visitor's real evidence, so the default assessment
   // date becomes their own — read once, here, into a visible field they can
   // edit. The engine itself never reads the clock.

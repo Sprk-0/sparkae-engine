@@ -22,6 +22,7 @@
 //   env CHROMIUM           explicit browser binary (default: Playwright's own)
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -135,7 +136,48 @@ await page.locator('.ex-block.revised .ex-btn[data-act="reset"]').first().click(
 await page.waitForFunction(() => document.querySelectorAll('.ex-block.revised').length === 0, null, { timeout: 30000 });
 const poamReverted = await download('poam');
 
+// ── a revision belongs to the run that produced it ──────────────────────────
+// Revise again, then assess a DIFFERENT package. An upload review reproduced
+// the failure this pins: the revision map was keyed only by objective id and
+// never cleared, so a judgement made about one package attached itself to the
+// next one's finding for the same objective — and every export consumed it.
+await block.locator('summary').click();
+await block.locator('.ex-btn[data-act="revise"]').click();
+await block.locator('.ex-edit').waitFor({ state: 'visible', timeout: 15000 });
+await block.locator('.ex-edit').fill('ISOLATION PROBE: this conclusion applies only to the bundled sample.');
+await block.locator('.ex-select').selectOption('SAT');
+await block.locator('.ex-btn[data-act="save"]').click();
+await page.waitForFunction(() => document.querySelectorAll('.ex-block.revised').length === 1, null, { timeout: 30000 });
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sparkae-isolation-'));
+const other = path.join(tmp, 'other-package.txt');
+fs.writeFileSync(other, 'AC-2 Account Management. Accounts are reviewed quarterly by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28.');
+await page.setInputFiles('#ssp-upload-input', [other]);
+await page.waitForTimeout(1200);
+// Uploading other evidence must already have voided the previous run.
+const afterUpload = await page.evaluate(() => ({
+  revisions: (typeof ASSESSOR_REVISIONS === 'undefined') ? -1 : ASSESSOR_REVISIONS.size,
+  exportState: (typeof ENGINE_LAST_RUN === 'undefined') ? 'undefined' : String(ENGINE_LAST_RUN),
+}));
+
+await page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
+await page.click('#run-btn');
+await page.waitForSelector('#results.show', { timeout: 180000 });
+await page.waitForFunction(() => document.querySelectorAll('.ex-block').length > 0, null, { timeout: 60000 });
+const carriedOver = await page.locator('.ex-block.revised').count();
+const poamOther = await download('poam');
+
+// Clear upload must really clear: the raw File objects are what the corpus
+// builder prefers, so leaving them made the button cosmetic.
+await page.evaluate(() => clearCustomUpload());
+await page.waitForTimeout(400);
+const afterClear = await page.evaluate(() => ({
+  files: (typeof CUSTOM_PKG_FILES === 'undefined') ? -1 : CUSTOM_PKG_FILES.length,
+  revisions: (typeof ASSESSOR_REVISIONS === 'undefined') ? -1 : ASSESSOR_REVISIONS.size,
+}));
+
 await browser.close();
+fs.rmSync(tmp, { recursive: true, force: true });
 
 const checks = [
   ['no request left the page (every non-file request aborted)', blocked.length === 0, blocked.slice(0, 2).join(' | ')],
@@ -157,6 +199,12 @@ const checks = [
   ['the OSCAL receipt still attests the ENGINE run', receiptProps(arBefore) === receiptProps(arAfter), ''],
   ['the receipt strip on screen is unchanged', receiptBefore === receiptAfter, ''],
   ['reverting restores the engine determination', rows(poamReverted) === rows(poamBefore), rows(poamBefore) + ' → ' + rows(poamReverted)],
+  ['uploading other evidence voids the previous run', afterUpload.revisions === 0 && afterUpload.exportState === 'null',
+    'revisions=' + afterUpload.revisions + ' exportState=' + afterUpload.exportState],
+  ['a revision does not carry into another package', carriedOver === 0, 'revised rows=' + carriedOver],
+  ["the other package's POA&M is its own", poamOther !== poamAfter, ''],
+  ['clear upload drops the raw files and the revisions', afterClear.files === 0 && afterClear.revisions === 0,
+    'files=' + afterClear.files + ' revisions=' + afterClear.revisions],
   ['no page or console errors', errors.length === 0, errors.slice(0, 2).join(' | ')],
 ];
 
