@@ -208,8 +208,13 @@ async function parseDocx(file) {
   // DOCX is a ZIP containing XML. We use JSZip-like manual parsing.
   try {
     const buf = await file.arrayBuffer();
+    // unzip() returns an array so that duplicate names survive to be refused
+    // rather than silently resolved. A DOCX carrying two word/document.xml
+    // members is two documents claiming to be one; reading either is a guess.
     const entries = await unzip(buf);
-    const docXml = entries['word/document.xml'];
+    const docParts = entries.filter(m => m.name === 'word/document.xml' && !m.directory);
+    if (docParts.length > 1) throw unsupported(file.name, 'DOCX carries ' + docParts.length + ' members named word/document.xml — ambiguous, so none of them is read');
+    const docXml = docParts.length ? docParts[0].text : null;
     if (!docXml) throw unsupported(file.name, 'DOCX has no word/document.xml');
     const text = docXml
       .replace(/<w:br[^>]*\/>/gi, '\n')
@@ -227,69 +232,155 @@ async function parseDocx(file) {
   }
 }
 
-// Minimal ZIP extraction (no external library). Members that cannot be read
-// (an unsupported compression method, a deflate stream that does not inflate)
-// are reported through `failures` so the caller can list them as refused —
-// a member that vanished silently would look like evidence that was never
-// there.
+// Minimal ZIP extraction (no external library), read from the central
+// directory. Members that cannot be read (an unsupported compression method,
+// a deflate stream that does not inflate) are reported through `failures` so
+// the caller can list them as refused — a member that vanished silently would
+// look like evidence that was never there.
+//
+// The previous reader walked local file headers and stored members in an
+// object keyed by name. That lost two things, both reproduced against real
+// archives before this was rewritten.
+//
+// A name appearing twice silently kept only the last member. An archive whose
+// first `review-ssp.txt` recorded that account monitoring is not implemented,
+// and whose second asserted the opposite, parsed as one member, reported no
+// refusal, and turned Other Than Satisfied into Satisfied. Contradictory
+// evidence disappeared without a trace, which is the failure this engine
+// exists to make impossible.
+//
+// A streaming archive records its sizes in a data descriptor AFTER the
+// compressed data and leaves zeroes in the local header. Reading those zeroes
+// sliced an empty buffer, refused the member as a truncated stream, and then
+// advanced the offset by zero bytes — so the scan stopped and the remaining
+// members were never seen or reported.
+//
+// The central directory is the authoritative inventory: it names every member,
+// carries the real sizes whatever the local header says, and points at each
+// local header. Members come back as an ARRAY so a duplicate name survives to
+// be refused rather than silently resolved.
+const ZIP_MAX_MEMBERS = 512;
+const ZIP_MAX_BYTES = 64 * 1024 * 1024;
+
+// `budget` is the archive's remaining expansion allowance, shared across its
+// members: a cap applied per member would let a 512-member archive expand to
+// 512 times the limit, which is the shape a zip bomb takes.
+async function inflateMember(data, method, budget) {
+  const spend = (n) => {
+    budget.left -= n;
+    if (budget.left < 0) throw new Error('the archive expands past the ' + (ZIP_MAX_BYTES / 1048576) + ' MB limit');
+  };
+  if (method === 0) { spend(data.length); return new TextDecoder().decode(data); }  // stored
+  if (method !== 8) throw new Error('unsupported compression method ' + method);
+  const ds = new DecompressionStream('deflate-raw');
+  const writer = ds.writable.getWriter();
+  // A bad deflate stream rejects these as well as the read below; swallow them
+  // here so the rejection surfaces once, through the read loop.
+  writer.write(data).catch(() => {});
+  writer.close().catch(() => {});
+  const reader = ds.readable.getReader();
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    spend(value.length);
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let pos = 0;
+  chunks.forEach(c => { out.set(c, pos); pos += c.length; });
+  return new TextDecoder().decode(out);
+}
+
+// Scan back for the End of Central Directory record. The comment it may carry
+// is at most 65535 bytes, so the record starts within the last 65557.
+function findEOCD(view, len) {
+  const from = Math.max(0, len - 65557);
+  for (let i = len - 22; i >= from; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) return i;
+  }
+  return -1;
+}
+
 async function unzip(buffer, failures) {
   const view = new DataView(buffer);
-  const entries = {};
-  let offset = 0;
   const bytes = new Uint8Array(buffer);
-  while (offset < bytes.length - 4) {
-    const sig = view.getUint32(offset, true);
-    if (sig !== 0x04034b50) break; // Local file header
-    const compMethod = view.getUint16(offset + 8, true);
-    const compSize = view.getUint32(offset + 18, true);
-    const uncompSize = view.getUint32(offset + 22, true);
-    const nameLen = view.getUint16(offset + 26, true);
-    const extraLen = view.getUint16(offset + 28, true);
-    const name = new TextDecoder().decode(bytes.slice(offset + 30, offset + 30 + nameLen));
-    const dataStart = offset + 30 + nameLen + extraLen;
-    const data = bytes.slice(dataStart, dataStart + compSize);
-    if (compMethod === 0) { // Stored
-      entries[name] = new TextDecoder().decode(data);
-    } else if (compMethod === 8) { // Deflated
-      try {
-        const ds = new DecompressionStream('deflate-raw');
-        const writer = ds.writable.getWriter();
-        // A bad deflate stream rejects these promises as well as the read
-        // below; swallow them here so the rejection surfaces once, through
-        // the read loop, instead of as an unhandled rejection.
-        writer.write(data).catch(() => {});
-        writer.close().catch(() => {});
-        const reader = ds.readable.getReader();
-        const chunks = [];
-        while (true) {
-          const {done, value} = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-        const total = chunks.reduce((s, c) => s + c.length, 0);
-        const result = new Uint8Array(total);
-        let pos = 0;
-        chunks.forEach(c => { result.set(c, pos); pos += c.length; });
-        entries[name] = new TextDecoder().decode(result);
-      } catch(e) {
-        if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
-      }
-    } else if (failures) {
-      failures.push({ name, reason: 'archive member uses unsupported compression method ' + compMethod });
-    }
-    offset = dataStart + compSize;
+  const members = [];
+  const budget = { left: ZIP_MAX_BYTES };
+  const eocd = findEOCD(view, bytes.length);
+  if (eocd < 0) {
+    if (failures) failures.push({ name: '(archive)', reason: 'no ZIP central directory found — the file is not a ZIP, or is truncated' });
+    return members;
   }
-  return entries;
+  const count = view.getUint16(eocd + 10, true);
+  let cd = view.getUint32(eocd + 16, true);
+  if (count > ZIP_MAX_MEMBERS) {
+    if (failures) failures.push({ name: '(archive)', reason: 'archive declares ' + count + ' members, above the ' + ZIP_MAX_MEMBERS + ' limit' });
+    return members;
+  }
+  for (let i = 0; i < count; i++) {
+    if (cd + 46 > bytes.length || view.getUint32(cd, true) !== 0x02014b50) {
+      if (failures) failures.push({ name: '(archive)', reason: 'central directory ends after ' + i + ' of ' + count + ' declared members' });
+      break;
+    }
+    const method = view.getUint16(cd + 10, true);
+    const compSize = view.getUint32(cd + 20, true);
+    const nameLen = view.getUint16(cd + 28, true);
+    const extraLen = view.getUint16(cd + 30, true);
+    const commentLen = view.getUint16(cd + 32, true);
+    const localAt = view.getUint32(cd + 42, true);
+    const name = new TextDecoder().decode(bytes.slice(cd + 46, cd + 46 + nameLen));
+    cd += 46 + nameLen + extraLen + commentLen;
+
+    // 0xFFFFFFFF is the ZIP64 sentinel; the real value lives in an extra field
+    // this reader does not parse. Refuse it rather than read the sentinel.
+    if (compSize === 0xFFFFFFFF || localAt === 0xFFFFFFFF) {
+      if (failures) failures.push({ name, reason: 'ZIP64 archive members are not read in the browser build' });
+      continue;
+    }
+    if (name.endsWith('/')) { members.push({ name, text: '', directory: true }); continue; }
+    if (view.getUint32(localAt, true) !== 0x04034b50) {
+      if (failures) failures.push({ name, reason: 'central directory points at no local header for this member' });
+      continue;
+    }
+    // Name and extra lengths are read from the LOCAL header: the two records
+    // may carry different extra fields, and the data begins after the local one.
+    const lNameLen = view.getUint16(localAt + 26, true);
+    const lExtraLen = view.getUint16(localAt + 28, true);
+    const dataAt = localAt + 30 + lNameLen + lExtraLen;
+    if (dataAt + compSize > bytes.length) {
+      if (failures) failures.push({ name, reason: 'archive member extends past the end of the file' });
+      continue;
+    }
+    try {
+      members.push({ name, text: await inflateMember(bytes.slice(dataAt, dataAt + compSize), method, budget) });
+    } catch (e) {
+      if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
+    }
+  }
+  return members;
 }
 
 async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
   const skipped = [];
-  const entries = await unzip(buf, skipped);
+  const members = await unzip(buf, skipped);
   const chunks = [], parsed = [];
+  // A name that appears twice describes two different documents claiming to be
+  // the same one. Reading either is a guess about which the author meant, and
+  // the two may contradict each other, so neither is read and both are named.
+  const seen = Object.create(null);
+  for (const m of members) if (!m.directory) seen[m.name] = (seen[m.name] || 0) + 1;
+  const ambiguous = Object.keys(seen).filter(n => seen[n] > 1);
   // Member order is the archive's own order, which is fixed for a given file.
-  for (const [name, content] of Object.entries(entries)) {
-    if (name.endsWith('/')) continue; // directory
+  for (const { name, text: content, directory } of members) {
+    if (directory) continue;
+    if (ambiguous.indexOf(name) !== -1) {
+      skipped.push({ name, reason: 'archive carries ' + seen[name] + ' members named this — ambiguous, so none of them is read' });
+      continue;
+    }
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
       if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); }
