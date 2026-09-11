@@ -305,5 +305,92 @@ check(sitemapLocs.length === indexable.length,
 check(!sitemapLocs.some(l => /\/404\.html$/.test(l)), 'sitemap.xml does not list the error page');
 check(/Disallow:\s*\/404\.html/.test(read('robots.txt')), 'robots.txt disallows the error page');
 
+// ── 12. adversarial evidence, and the date arithmetic under it ──────────────
+// Ported from the private product repository, where these were the only tests
+// of these behaviours anywhere: an attacker-shaped document and the calendar
+// edges the temporal gates stand on. Everything above asserts what the engine
+// does with evidence written in good faith; this asserts what it does with
+// evidence written to get a pass.
+console.log('12. adversarial evidence and date arithmetic');
+
+// A chunk tagged with the control under test, carrying a traceable reference
+// and a dated scan, so the earlier gates clear and the gate under test is what
+// decides the verdict.
+const ADV = 'AC-2 Account Management. The organization manages information system accounts, ' +
+  'including establishing, activating, modifying, reviewing, disabling, and removing ' +
+  'accounts. Account review is performed quarterly by the ISSO per SSP section 5.2. ' +
+  'Reference: CloudVault-SSP.pdf section 5.2. Most recent scan: 2026-05-28.\n\n' +
+  'AC-2 continued. Automated mechanisms support account management. Notification of ' +
+  'account changes is sent to the ISSO. See procedure PROC-AC-002 revision 4.';
+const ADV_PLAIN = ADV + '\n\nAC-2 note: placeholder text remains in this section.';
+// The same word with Cyrillic r a c e o and d — visually identical to the line
+// above, and the reason foldHomoglyphs exists. Gate 5 folds before matching;
+// the gates that read the control's own evidence first must fold too, or a
+// marker spelled this way walks past a check the plain spelling fails.
+const ADV_HOMOGLYPH = ADV + '\n\nAC-2 note: рlасеhоlԁеr text remains in this section.';
+
+const ADV_DIF = {
+  i: 'AC-02(a)',
+  t: 'The organization defines and documents the types of information system accounts to be managed.',
+  b: ['Low'],
+};
+const advAssess = (text, day) => {
+  const retriever = new E.BM25Retriever(E.chunkText(text, 'ssp.txt'));
+  const idx = E.buildRefutationIndex(retriever);
+  return E.assessDif(ADV_DIF, retriever, 'AC-2', 'Account Management', 'AC', idx,
+    new Date(day + 'T00:00:00Z'));
+};
+// Gate 5's draft-marker finding is nested as sub-check 5c.
+const sub5c = (res) => {
+  const g5 = (res.gates || []).find(g => g.gate === 5) || {};
+  const c = (g5.checks || []).find(x => String(x.id || x.name || '').includes('5c'));
+  return c ? c.pass : undefined;
+};
+
+const advPlain = advAssess(ADV_PLAIN, SAMPLE_DATE);
+check(sub5c(advPlain) === false && advPlain.status === 'Other Than Satisfied',
+  'a plain draft marker fails gate 5c — the control case the homoglyph test needs');
+
+const advHomo = advAssess(ADV_HOMOGLYPH, SAMPLE_DATE);
+check(sub5c(advHomo) === false && advHomo.status === 'Other Than Satisfied',
+  'the same marker in Cyrillic homoglyphs still fails gate 5c — it cannot be spelled past the gate');
+
+const advClean = advAssess(ADV, SAMPLE_DATE);
+check(sub5c(advClean) === true,
+  'folding invents no draft marker in evidence that has none');
+
+// If the date were ignored these would agree, which is exactly how a clock-
+// reading verdict path hides: the scan above is dated 2026-05-28, either side
+// of the 30-day ConMon cadence.
+const advFresh = advAssess(ADV, '2026-06-01');
+const advStale = advAssess(ADV, '2026-12-01');
+check(advFresh.temporal_status === 'current' && advStale.temporal_status === 'stale' &&
+  advFresh.assessment_date === '2026-06-01' && advStale.assessment_date === '2026-12-01',
+  'the assessment date reaches the temporal gates rather than being recorded and ignored');
+
+// Dates parsed out of evidence anchor at UTC midnight, so a run does not change
+// meaning with the machine's timezone.
+const advDates = E.extractDates('Most recent scan: 2026-05-28.');
+check(advDates.length === 1 && advDates[0].dateStr === '2026-05-28' &&
+  new Date(advDates[0].dateObj).toISOString() === '2026-05-28T00:00:00.000Z',
+  'an evidence date is parsed to UTC midnight, not to the local day');
+
+// A date that does not exist must be refused rather than rolled forward into a
+// neighbouring day, which would silently move a finding's temporal verdict.
+check(E.extractDates('Reviewed 2024-02-29.').length === 1 &&
+  E.extractDates('Reviewed 2025-02-29.').length === 0 &&
+  E.extractDates('Reviewed 2026-13-01.').length === 0 &&
+  E.extractDates('Reviewed 2026-04-31.').length === 0,
+  'impossible calendar dates are rejected, and a real leap day is kept');
+
+// The refutation index is what gate 5a reads; a refutation written in sentence
+// case is still a refutation.
+const refRetriever = new E.BM25Retriever(E.chunkText(
+  'AC-2 Account Management. Account review is documented.\n\n' +
+  'AC-2 finding: Not implemented. The quarterly review has not been performed.', 'ssp.txt'));
+const refIdx = E.buildRefutationIndex(refRetriever);
+check(!!refIdx['AC-2'] && refIdx['AC-2'].some(h => /not/i.test(h) && /implemented/i.test(h)),
+  'the refutation index matches a capitalised refutation, not only a lowercase one');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
