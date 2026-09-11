@@ -5,10 +5,10 @@
 # published file reaches a third-party origin, the engine and exporters read
 # no clock and use no randomness, the gate model is canonical, the sample
 # package is reproducible (golden verdict digest, byte-identical OSCAL), CSV
-# output is formula-injection safe, every page keeps a single address across
-# its links, canonical, og:url and sitemap.xml, and the OSCAL Assessment
-# Results validate against the official NIST 1.1.2 schema vendored in
-# tests/schema/.
+# output is formula-injection safe, every page names one address in its
+# canonical, its og:url and sitemap.xml, Netlify's Pretty URLs post-processing
+# is pinned off, and the OSCAL Assessment Results validate against the official
+# NIST 1.1.2 schema vendored in tests/schema/.
 #
 # The browser job additionally proves the assessor layer: the examine statement
 # is built from the run rather than asserted, a revision reaches the OSCAL,

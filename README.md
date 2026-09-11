@@ -148,7 +148,9 @@ published file loads or calls a third-party origin and every page's CSP is
 gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
 temporal verdicts); the golden fixture; CSV formula-injection safety; the
-OSCAL document's shape and receipt; and that the homepage hero labelled
+OSCAL document's shape and receipt; that every page names one address in its
+`canonical`, its `og:url` and `sitemap.xml`, and that Netlify's Pretty URLs
+post-processing stays pinned off; and that the homepage hero labelled
 “from the sample run” is a finding this engine actually emits for that
 run, shown in the OSCAL shape the exporters write. The GitHub Actions
 workflow in `.github/workflows/ci.yml` runs both on every push.
@@ -184,9 +186,19 @@ node tests/check_published.mjs          # or --site <deploy-preview-url>
 
 It fetches every published file from `https://sparkae.ai` and compares the
 bytes with the working tree, then confirms `/` is `index.html`, that `/demo`
-and `/3pao.html` are still 301s, and that Netlify's own config files are not
-served as content. Run it from a checkout of the commit that was deployed — a
-tree ahead of the last deploy differs for the ordinary reason.
+and `/3pao.html` are still 301s, that Netlify's own config files are not
+served as content, and that the security headers and the per-page
+Content-Security-Policy are the ones the host actually returns — `_headers` is
+a statement of intent, and this is the only check that reads the wire.
+
+It also asks whether anything *unpublished* is really gone. The file comparison
+walks this repository, so it can only ask whether a file that exists here is
+served correctly; a file live on the site but deleted from this tree is
+invisible to it. Paths that must stay gone are listed in `MUST_NOT_BE_SERVED`
+at the top of the script.
+
+Run it from a checkout of the commit that was deployed — a tree ahead of the
+last deploy differs for the ordinary reason.
 
 This is the only check here that uses the network, so it is not part of
 `tests/check.mjs` and not a merge gate; CI runs it weekly and on demand.
