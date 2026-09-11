@@ -2412,8 +2412,8 @@ html,body{
 
     <div class="onb-step" data-onb-step="2">
       <div class="onb-num">Step 2 · Connect your evidence sources</div>
-      <h2 class="onb-title">Walkthrough: how evidence sources would map</h2>
-      <p class="onb-body">Tab <strong>§09 Data Sources</strong> is a guided walkthrough, not a live connector. It shows how evidence sources and GRC platforms <em>would</em> map into an OSCAL-aligned record. None of those connectors run in this browser build. PDF/OCR, webhooks, and two-way GRC sync are server-product or future work, not this page.</p>
+      <h2 class="onb-title">Walkthrough: how evidence sources map</h2>
+      <p class="onb-body">Tab <strong>§09 Data Sources</strong> is a guided walkthrough, not a live connector. It illustrates the mapping from evidence sources and GRC platforms into an OSCAL-aligned record. None of those connectors run in this browser build, and PDF/OCR, webhooks and two-way GRC sync are server-product features rather than part of this page.</p>
       <div class="onb-connectors">
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Doc repos</span><span class="onb-conn-cat">Drive · GitHub · Confluence · Box → SSP · IaC · policies · ATO letters</span></div>
         <div class="onb-connector"><span class="onb-conn-name">Tier 1 · Workflow</span><span class="onb-conn-cat">Jira → POA&amp;M · CM-3 changes · IR-4 incidents</span></div>
@@ -2496,7 +2496,7 @@ html,body{
     </p>
     <p class="preview-note">
       <span class="tag">Public preview</span>
-      <span><strong>Experimental.</strong> Every determination here is automated EXAMINE preparation for an assessor to check &mdash; never an authorization decision. Accuracy is measured on a small published case set, not on real authorization packages, and what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark &rarr;</a></span>
+      <span><strong>This build runs the engine, not a recording.</strong> It reads the documents you give it and computes every determination in the baseline. Those determinations are automated EXAMINE preparation an assessor checks, not an authorization decision, and their accuracy rests on a small published case set rather than on real authorization packages &mdash; what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark &rarr;</a>. This describes the public build in this repository, not the commercial server product.</span>
     </p>
   </div>
 </section>
@@ -2646,7 +2646,7 @@ html,body{
           <div id="idle-state" class="idle-state">
             <div class="idle-glyph">▸</div>
             <h3 id="idle-title">Engine is idle</h3>
-            <p id="idle-copy">Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The deterministic engine will ingest, retrieve, adjudicate, verify, and export.</p>
+            <p id="idle-copy">Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The deterministic engine ingests, retrieves, adjudicates, verifies, and exports.</p>
           </div>
 
           <!-- Running / done state -->
@@ -4662,7 +4662,7 @@ function renderUploadStatus(pkg) {
     artifacts.map(a =>
       '<div class="upload-row"><span class="upload-label">' + engEsc(a.lbl) + '</span>' +
       '<span class="' + (a.ok ? 'upload-value' : 'upload-warn') + '">' +
-      (a.ok ? 'present' : 'not found · would inform ' + engEsc(a.informs)) + '</span></div>'
+      (a.ok ? 'present' : 'not found · evidence for ' + engEsc(a.informs)) + '</span></div>'
     ).join('') +
     '<div class="upload-row" style="display:block;opacity:.72;line-height:1.5;padding-top:6px">' +
     'Found by file name and by a shallow scan of contents — OSCAL document type, scan rows, ' +
@@ -7877,7 +7877,7 @@ function renderConnectorMatrix(sample) {
 
   return `<div class="connector-note">
       <strong>None of these connectors run.</strong> This tab is a guided
-      walkthrough of how evidence sources and GRC platforms would map into an
+      walkthrough of the mapping from evidence sources and GRC platforms into an
       OSCAL-aligned record. There is no connector in this build, no credentials
       are requested, and nothing is fetched from any of these systems — see the
       <a href="integrations.html">Integrations</a> page for what exists today.
@@ -8221,7 +8221,7 @@ async function runDataSources(sample) {
       verdict: 'NR',
       method: 'EXAMINE', risk: 'Moderate', implStatus: 'planned',
       recommendation: 'To feed these categories from ' + c.name + ', a connector would have to be built and configured. None exists in this build; evidence for these categories is uploaded by hand.',
-      text: 'This walkthrough shows how ' + c.name + ' would map into an OSCAL-aligned record: authenticating via ' + c.auth + ' and feeding ' + c.feeds.length + ' FedRAMP artifact types: ' + c.feeds.slice(0, 2).join('; ') + (c.feeds.length > 2 ? '; et al.' : '') + '. No connector was contacted and no evidence was fetched.',
+      text: 'This walkthrough shows the mapping from ' + c.name + ' into an OSCAL-aligned record: authenticating via ' + c.auth + ' and feeding ' + c.feeds.length + ' FedRAMP artifact types: ' + c.feeds.slice(0, 2).join('; ') + (c.feeds.length > 2 ? '; et al.' : '') + '. No connector was contacted and no evidence was fetched.',
       cites: [
         { kind: 'POLICY', title: c.fedrampRef, version: '', date: '2025-12-01', section: c.category + ' · ' + c.auth },
         { kind: 'EVIDENCE', title: 'SPARKAE connector mapping · ' + c.name + ' (illustrative)', version: '', date: '', section: c.artifactKinds.join(' · ') + ' → canonical evidence record' },

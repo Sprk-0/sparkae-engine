@@ -1,12 +1,12 @@
 {
   "summary": {
-    "engine_version": "1.2.0",
-    "ruleset_digest": "ceb3e3d50fa6",
+    "engine_version": "1.3.0",
+    "ruleset_digest": "b39ee143bdfe",
     "assessment_date": "2026-06-01",
     "baseline": "Low",
     "overall": {
-      "cases": 12,
-      "correct": 11,
+      "cases": 16,
+      "correct": 15,
       "false_pass": 0,
       "false_fail": 1,
       "case_error": 0,
@@ -15,18 +15,18 @@
     },
     "matrix": {
       "label_satisfied": {
-        "engine_satisfied": 3,
+        "engine_satisfied": 4,
         "engine_not_satisfied": 1
       },
       "label_not_satisfied": {
         "engine_satisfied": 0,
-        "engine_not_satisfied": 8
+        "engine_not_satisfied": 11
       }
     },
     "by_source": {
       "external-review": {
-        "cases": 3,
-        "correct": 3,
+        "cases": 5,
+        "correct": 5,
         "false_pass": 0,
         "false_fail": 0,
         "case_error": 0,
@@ -34,8 +34,8 @@
         "undocumented_wrong": 0
       },
       "engine-repo": {
-        "cases": 9,
-        "correct": 8,
+        "cases": 11,
+        "correct": 10,
         "false_pass": 0,
         "false_fail": 1,
         "case_error": 0,
@@ -52,6 +52,7 @@
       "objective": "AT-1_a.[01]",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -71,6 +72,7 @@
       "objective": "AC-2_g",
       "expect": "satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Satisfied",
@@ -87,6 +89,7 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -107,6 +110,7 @@
       "objective": "AT-1_a.[01]",
       "expect": "satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Satisfied",
@@ -123,13 +127,14 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
       "satisfied": false,
       "review_required": false,
       "confidence": 0.33,
-      "gate2": "2a=false 2b=true",
+      "gate2": "2a=false 2b=false",
       "failed_gates": [
         2,
         7
@@ -142,6 +147,7 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -162,6 +168,7 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -181,6 +188,7 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -200,6 +208,7 @@
       "objective": "AC-2_f.[01]",
       "expect": "satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Satisfied",
@@ -216,6 +225,7 @@
       "objective": "CP-2_a.(1)",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -235,6 +245,7 @@
       "objective": "AC-2_g",
       "expect": "not-satisfied",
       "correct": true,
+      "assessment_date": "2026-06-01",
       "known_limitation": null,
       "error_kind": null,
       "status": "Other Than Satisfied",
@@ -255,6 +266,7 @@
       "objective": "AC-2_d.(2)",
       "expect": "satisfied",
       "correct": false,
+      "assessment_date": "2026-06-01",
       "known_limitation": "Currently fails. The engine returns Other Than Satisfied because the retriever does not surface the paragraph that answers the objective, not because the document lacks it. Checked directly: running coverage over that paragraph alone gives 1.0. This is one of eight such objectives found when gate 2 was tightened in engine 1.2.0 — the previous rule concealed them by passing on generic vocabulary whatever passage it read. The case is here to hold the count visible rather than let it disappear into a green suite.",
       "error_kind": "false-fail",
       "status": "Other Than Satisfied",
@@ -266,6 +278,83 @@
         2,
         7
       ]
+    },
+    {
+      "id": "pe2-facility-access-list",
+      "source": "external-review",
+      "control": "PE-2",
+      "objective": "PE-2_a.[01]",
+      "expect": "not-satisfied",
+      "correct": true,
+      "assessment_date": "2026-09-11",
+      "known_limitation": null,
+      "error_kind": null,
+      "status": "Other Than Satisfied",
+      "satisfied": false,
+      "review_required": false,
+      "confidence": 0.62,
+      "gate2": "2a=true 2b=false",
+      "failed_gates": [
+        2,
+        7
+      ]
+    },
+    {
+      "id": "cm5-change-restrictions",
+      "source": "external-review",
+      "control": "CM-5",
+      "objective": "CM-5_obj.[01]",
+      "expect": "not-satisfied",
+      "correct": true,
+      "assessment_date": "2026-09-11",
+      "known_limitation": null,
+      "error_kind": null,
+      "status": "Other Than Satisfied",
+      "satisfied": false,
+      "review_required": false,
+      "confidence": 0.62,
+      "gate2": "2a=true 2b=false",
+      "failed_gates": [
+        2,
+        7
+      ]
+    },
+    {
+      "id": "pe8-visitor-records",
+      "source": "engine-repo",
+      "control": "PE-8",
+      "objective": "PE-8a.",
+      "expect": "not-satisfied",
+      "correct": true,
+      "assessment_date": "2026-09-11",
+      "known_limitation": null,
+      "error_kind": null,
+      "status": "Other Than Satisfied",
+      "satisfied": false,
+      "review_required": false,
+      "confidence": 0.62,
+      "gate2": "2a=true 2b=false",
+      "failed_gates": [
+        2,
+        7
+      ]
+    },
+    {
+      "id": "pe2-genuine-facility-list",
+      "source": "engine-repo",
+      "control": "PE-2",
+      "objective": "PE-2_a.[01]",
+      "expect": "satisfied",
+      "correct": true,
+      "assessment_date": "2026-06-01",
+      "known_limitation": null,
+      "error_kind": null,
+      "status": "Satisfied",
+      "satisfied": true,
+      "review_required": false,
+      "confidence": 0.62,
+      "gate2": "2a=true 2b=true",
+      "failed_gates": []
     }
   ]
 }

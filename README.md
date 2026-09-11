@@ -132,20 +132,20 @@ request and on every push to `main`, and fails the build on a wrong
 determination that has no recorded reason.
 
 ```text
-engine 1.2.0 · 12 cases · 11 correct · 0 false passes · 1 false fail
-external-review 3 cases · 3 correct · engine-repo 9 cases · 8 correct
+engine 1.3.0 · 16 cases · 15 correct · 0 false passes · 1 false fail
+external-review 5 cases · 5 correct · engine-repo 11 cases · 10 correct
 ```
 
 **What that is not.** It is a measurement against cases someone chose, not a
 measurement of field accuracy on real authorization packages, and it supports
-no claim of assessment readiness. Three cases are built on the outside
-reviewer's own uploads — documents submitted before the fixes existed, so they
-were not written against this engine's behaviour; one of the three is the
-reviewer's reproduction end to end, and in the other two those documents are
-paired with objectives they do address, a pairing made here. The other nine
-cases are ours in both halves, documents and label, and test what their author
-already believed, which is weaker evidence. The two populations are scored
-separately and never merged into one headline number.
+no claim of assessment readiness. Five cases come from an outside reviewer's
+reproductions — the scenario and the determination they expected, reported
+before the fix that addresses it. The document text in them is reconstructed
+here to the review's description, because the reviewer's own files are not in
+this repository: what is independent of this engine is the case, not the bytes.
+The other eleven are ours in both halves and test what their author already
+believed, which is weaker evidence. The two populations are scored separately
+and never merged into one headline number.
 
 The one current error is a false fail, and it is in the file rather than
 excluded from it: AC-2_d.(2), where the document does answer the objective but
@@ -243,6 +243,27 @@ the table at the top of this README says which capabilities live where.
 
 `CHANGELOG.md` records what moved and, for each change, whether the sample's
 verdict digest moved with it.
+
+### Released states
+
+Work lands continuously on `main`, and `main` is what sparkae.ai serves. A tag
+marks a state worth citing: **`v1.3.0-preview.1`** names the engine version it
+ships and the preview it belongs to.
+
+A tag asserts three things:
+
+- the full suite passed on that tree — `check.mjs`, the accuracy benchmark under
+  `--strict`, the OSCAL 1.1.2 schema validation, and the three browser suites;
+- the reproducibility tuple it names produced the verdict digest it names, so
+  anyone can rerun the bundled sample and compare;
+- `tests/check_published.mjs` ran against `https://sparkae.ai` for that commit,
+  so the tag is the tree the site was serving, byte for byte.
+
+Every tag here is marked **pre-release**. That describes the evidence rather
+than the build: the determinations are reproducible and the suite is real, and
+the accuracy evidence behind them is sixteen cases someone chose, described
+under *Accuracy* above. A pre-release is the honest shape for something you are
+invited to examine and argue with rather than to depend on.
 
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security

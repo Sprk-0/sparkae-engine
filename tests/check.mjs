@@ -284,8 +284,8 @@ check(/"target"\s*:\s*\{/.test(plainHome) && !/"target"\s*:\s*"/.test(plainHome)
   'homepage OSCAL target is the object form with target-id, not a bare string');
 check(/related-risks/.test(plainHome) && /risk-uuid/.test(plainHome),
   'Other Than Satisfied hero shows related-risks as a risk-uuid pointer');
-check(/server product/.test(home) && /pip install/.test(home) && /will not work/.test(home),
-  'homepage says pip install is the server product and will not work from this tree');
+check(/server product/.test(home) && /pip install/.test(home) && /does not work/.test(home),
+  'homepage says pip install is the server product and does not work from this tree');
 
 // ── 11. one address per page, and the pin that keeps it ─────────────────────
 // README.md and netlify.toml both state that this suite fails if the Pretty
@@ -995,11 +995,11 @@ check((bench.summary.by_source['external-review'] || {}).cases > 0,
 
 // ── 18. the preview status is where a run starts ────────────────────────
 // A visitor decides what to trust before they click, not after. Any page that
-// offers a button into the engine has to say what the engine is: an
-// experimental preview whose accuracy is measured on a published case set and
-// not on real authorization packages. The check is written against the button
-// rather than against a list of pages, so a new page with a run button fails
-// until it carries the note too.
+// offers a button into the engine has to say what the engine is: a build that
+// really runs, whose determinations an assessor checks, and whose accuracy
+// rests on a published case set rather than on real authorization packages. The
+// check is written against the button rather than against a list of pages, so a
+// new page with a run button fails until it carries the note too.
 console.log('18. preview status beside the run button');
 // Attribute order is not a property of the page. The first spelling of this
 // required class before href, so `<a href="demo-standalone.html" class="btn
@@ -1016,9 +1016,15 @@ for (const f of fs.readdirSync(root).filter(x => /\.html$/.test(x))) {
   // rather than the whole attribute.
   const noteAt = html.indexOf('class="preview-note');
   if (noteAt === -1) { fail(f + ': offers a run button with no preview status'); continue; }
-  const saysIt = /Public preview/.test(html) && /<strong>Experimental\.<\/strong>/.test(html) &&
-    /not on real authorization packages/.test(html) &&
-    /automated EXAMINE preparation for an assessor to check/.test(html);
+  // What the note has to say, in the present tense: that the engine really runs
+  // here, that an assessor checks what it determines, what the accuracy rests
+  // on, and which build is being described — a homepage that also markets the
+  // commercial server product leaves that last one open otherwise.
+  const saysIt = /Public preview/.test(html) &&
+    /<strong>This build runs the engine, not a recording\.<\/strong>/.test(html) &&
+    /rather than on real authorization packages/.test(html) &&
+    /automated EXAMINE preparation an assessor\s+checks/.test(html.replace(/\s+/g, ' ')) &&
+    /not the commercial server product/.test(html);
   if (!saysIt) { fail(f + ': the preview status does not say what it needs to'); continue; }
   // Beside the button, not buried: the demo page carries it in its own hero,
   // and elsewhere it sits within a screenful of markup of the first run button.
@@ -1037,6 +1043,21 @@ const gridHtml = homeHtml.slice(gridAt, homeHtml.indexOf('<div class="hx-head"',
 check(!/badge live/.test(gridHtml), 'nothing in the walkthrough grid claims to be the live engine');
 check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml),
   'the walkthrough grid holds §02–§09 and no longer holds §01');
+
+// ── 19. a tag is a claim too ─────────────────────────────────────
+// The tag scheme is `v<engine version>-preview.<n>`, so a tag that names a
+// version this build does not ship is wrong on its face. And a tag the README
+// cites but the changelog never records is a state nobody can look up.
+console.log('19. released states');
+const previewTags = [...new Set([...readmeSrc.matchAll(/v\d+\.\d+\.\d+-preview\.\d+/g)].map(m => m[0]))];
+check(previewTags.length > 0, 'the README names the tagged state (' + previewTags.join(', ') + ')');
+const changelogSrc = read('CHANGELOG.md');
+for (const tag of previewTags) {
+  check(tag.slice(1).split('-')[0] === E.ENGINE_VERSION,
+    tag + ' names the engine version this build ships (' + E.ENGINE_VERSION + ')');
+  check(new RegExp('^## .*' + tag.replace(/\./g, '\\.'), 'm').test(changelogSrc),
+    tag + ' has a changelog entry');
+}
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

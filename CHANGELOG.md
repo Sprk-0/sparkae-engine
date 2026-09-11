@@ -2,9 +2,12 @@
 
 Notable changes to the public reference build.
 
-Entries are dated rather than tagged: there are no releases to number here,
-and `ENGINE_VERSION` in `demo-engine.js` moves only when the engine does. Because every artifact this build produces carries a reproducibility
-receipt, an entry records whichever of these moved:
+Entries are dated. Tags mark states worth citing rather than numbering every
+change: a tag is `v<engine version>-preview.<n>`, it is marked **pre-release** on
+GitHub, and it names a tree that passed the whole suite and was verified byte for
+byte against the deployed site. `ENGINE_VERSION` in `demo-engine.js` moves only
+when the engine does. Because every artifact this build produces carries a
+reproducibility receipt, an entry records whichever of these moved:
 
 ```text
 engine version · catalog digest · ruleset digest · evidence digest · assessment date
@@ -17,6 +20,67 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11 — v1.3.0-preview.1
+
+Engine 1.3.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `b39ee143bdfe` ·
+verdict digest `04b1f79d6f44`
+
+The first tagged state of the public reference build — the same tree as the
+entries below, given a name so it can be cited, disputed and returned to.
+
+What the tag asserts: the full suite passed on this tree (`check.mjs`, the
+accuracy benchmark under `--strict`, the OSCAL 1.1.2 schema validation, and the
+three browser suites); the reproducibility tuple above produced that verdict
+digest on the bundled sample, so anyone can rerun it and compare; and
+`tests/check_published.mjs` ran against https://sparkae.ai for this commit, so
+the tag is the tree the site was serving.
+
+What it does not assert: that the determinations are accurate enough to rely on.
+The accuracy evidence is sixteen cases someone chose — 15 correct, 0 false
+passes, 1 documented false fail — which is a published, re-runnable record and
+not a measurement of field accuracy. That is why every tag here is a
+pre-release: the evidence behind these determinations is a case set its own
+authors mostly wrote.
+
+## 2026-09-11 (ambient subject terms · engine 1.3.0)
+
+Engine 1.2.0 → **1.3.0** · ruleset `ceb3e3d50fa6` → `b39ee143bdfe` · verdict
+digest `355a46a6abb3` → `04b1f79d6f44` · golden regenerated
+
+An outside recheck of 1.2.0 found evidence about user accounts satisfying
+`PE-2_a.[01]` — "a list of individuals with authorized access to the facility
+where the system resides has been developed" — at 74% support and 100% concept
+coverage. Reproduced here before anything changed, and it was not one objective:
+the whole PE family passed, and PE-3 with it.
+
+- **A word most of the catalog shares names no subject.** Gate 2b accepted
+  `access` as PE-2's subject because `access` is a word in "Physical Access
+  Authorizations", and account documents are full of it. A term is now *ambient*
+  when it appears in the titles or family names of more than 10% of the
+  catalog's 447 controls — `access` is in 71, `protect` in 82, `monitor` in 48 —
+  and an ambient term cannot establish subject on its own. PE-2's subject becomes
+  physical, environmental, authoriz; AC-2's becomes account.
+- **One sharp term is not enough for a compound subject.** PE-8 is "Visitor
+  Access Records", and "recorded in the ticketing system" matched `record`. Two
+  terms are required where two exist.
+- **284 → 219 Satisfied on the bundled sample, 0 gains, every loss classified.**
+  For 50 of the 65, no sharp subject term appears anywhere in the 875-word
+  document. The other 15 were read by hand: the SSP has no CA section, its only
+  "change" is an audit-log event, its only "restrict" a network ACL. All 65 are
+  refusals of objectives the document does not address.
+- **Four benchmark cases, 12 → 16**, two of them the recheck's own. The first
+  version of them passed against the engine they were written to catch — the
+  suite's pinned date made the documents' dates future and the temporal gate
+  refused them for the wrong reason — so a case can pin its own assessment date
+  now. Against 1.2.0 they are three false passes; against 1.3.0, none.
+- **A provenance claim of ours that was wrong.** The benchmark said
+  `external-review` cases carry "an outside reviewer's own uploads". They do not:
+  those files are not in this repository and the text is reconstructed from the
+  review's description. What is independent is the case, not the bytes.
+
+The frequencies come from the catalog, so they move when it does and the catalog
+digest already covers them; the two parameters are published in `RULESET`.
+
 ## 2026-09-11 (what the site says it is)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — the site, not the
@@ -24,11 +88,10 @@ engine.
 
 - **The preview status sits beside the button that starts a run.** The homepage,
   the assessors page, the 20x walkthrough and the demo itself now carry one
-  line, in the same place a visitor decides whether to click: this is an
-  experimental public preview, every determination is automated EXAMINE
-  preparation for an assessor to check rather than an authorization decision,
-  and accuracy is measured on a small published case set and not on real
-  authorization packages — with a link to the benchmark, including what it gets
+  line, in the same place a visitor decides whether to click: this build runs the engine rather than a
+  recording, its determinations are automated EXAMINE preparation an assessor
+  checks rather than an authorization decision, and their accuracy rests on a
+  small published case set rather than on real authorization packages — with a link to the benchmark, including what it gets
   wrong. `check.mjs` §18 is written against the run button rather than a list of
   pages, so a new page offering a run fails until it says the same thing.
 - **The one section that runs is on the page.** §01 Initial Assessment was

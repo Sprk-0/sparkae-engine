@@ -167,8 +167,38 @@ await page.waitForFunction(() => document.querySelectorAll('.ex-block').length >
 const carriedOver = await page.locator('.ex-block.revised').count();
 const poamOther = await download('poam');
 
+// Revise something on THIS package, so what follows has a revision to lose.
+// Without this the two assertions below pass on an already-empty map.
+await page.locator('.ex-block').first().locator('summary').click();
+await page.locator('.ex-block').first().locator('.ex-btn[data-act="revise"]').click();
+await page.locator('.ex-block').first().locator('.ex-edit').waitFor({ state: 'visible', timeout: 15000 });
+await page.locator('.ex-block').first().locator('.ex-edit').fill('SELECTION PROBE: this conclusion applies only to the uploaded package.');
+await page.locator('.ex-block').first().locator('.ex-select').selectOption('SAT');
+await page.locator('.ex-block').first().locator('.ex-btn[data-act="save"]').click();
+await page.waitForFunction(() => document.querySelectorAll('.ex-block.revised').length === 1, null, { timeout: 30000 });
+
+// SELECTING a bundled sample is the third way the corpus changes, and the one
+// nothing covered: upload and Clear Upload were both pinned here, while the
+// rail — where a visitor actually switches packages — was not. It is also the
+// path that shipped broken once, so it is worth a check of its own.
+await page.click('.ssp-option[data-id="cloudvault"]');
+await page.waitForTimeout(400);
+const afterSelect = await page.evaluate(() => ({
+  files: (typeof CUSTOM_PKG_FILES === 'undefined') ? -1 : CUSTOM_PKG_FILES.length,
+  revisions: (typeof ASSESSOR_REVISIONS === 'undefined') ? -1 : ASSESSOR_REVISIONS.size,
+  exportState: (typeof ENGINE_LAST_RUN === 'undefined') ? 'undefined' : String(ENGINE_LAST_RUN),
+}));
+
 // Clear upload must really clear: the raw File objects are what the corpus
-// builder prefers, so leaving them made the button cosmetic.
+// builder prefers, so leaving them made the button cosmetic. Re-upload first,
+// because the selection above already emptied everything — a DIFFERENT file,
+// since re-selecting the same path is not a change the input reports.
+const again = path.join(tmp, 'third-package.txt');
+fs.writeFileSync(again, 'AC-2 Account Management. Account reviews are recorded by the ISSO each quarter per SSP section 5.2.');
+await page.setInputFiles('#ssp-upload-input', [again]);
+await page.waitForTimeout(1200);
+const beforeClear = await page.evaluate(() =>
+  (typeof CUSTOM_PKG_FILES === 'undefined') ? -1 : CUSTOM_PKG_FILES.length);
 await page.evaluate(() => clearCustomUpload());
 await page.waitForTimeout(400);
 const afterClear = await page.evaluate(() => ({
@@ -203,8 +233,12 @@ const checks = [
     'revisions=' + afterUpload.revisions + ' exportState=' + afterUpload.exportState],
   ['a revision does not carry into another package', carriedOver === 0, 'revised rows=' + carriedOver],
   ["the other package's POA&M is its own", poamOther !== poamAfter, ''],
-  ['clear upload drops the raw files and the revisions', afterClear.files === 0 && afterClear.revisions === 0,
-    'files=' + afterClear.files + ' revisions=' + afterClear.revisions],
+  ['selecting a bundled sample drops the upload, its revision and the export state',
+    afterSelect.files === 0 && afterSelect.revisions === 0 && afterSelect.exportState === 'null',
+    'files=' + afterSelect.files + ' revisions=' + afterSelect.revisions + ' exportState=' + afterSelect.exportState],
+  ['clear upload drops the raw files and the revisions',
+    beforeClear === 1 && afterClear.files === 0 && afterClear.revisions === 0,
+    'files ' + beforeClear + ' \u2192 ' + afterClear.files + ', revisions=' + afterClear.revisions],
   ['no page or console errors', errors.length === 0, errors.slice(0, 2).join(' | ')],
 ];
 

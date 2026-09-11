@@ -390,7 +390,7 @@ const inventory = await page.evaluate(() => {
   return {
     claimsFinding: /(OTS|NR)\s+finding/i.test(t),
     saysNotFound: /not found/.test(t),
-    saysWouldInform: /would inform/.test(t),
+    namesTheControl: /not found · evidence for [A-Z]{2}-\d+/.test(t),
     disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
   };
 });
@@ -493,8 +493,8 @@ const checks = [
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
   ['the artifact inventory claims no determination',
     !inventory.claimsFinding, 'panel still says "OTS/NR finding"'],
-  ['a missing artifact is reported as missing, with the control it would inform',
-    inventory.saysNotFound && inventory.saysWouldInform, JSON.stringify(inventory)],
+  ['a missing artifact is reported as missing, and names the control it belongs to',
+    inventory.saysNotFound && inventory.namesTheControl, JSON.stringify(inventory)],
   ['the inventory says how presence was decided and that it is not an assessment',
     inventory.disclaims, JSON.stringify(inventory)],
   ['a REFUSED member name cannot execute: no handler ran',
