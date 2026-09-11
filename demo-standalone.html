@@ -877,8 +877,16 @@ html,body{
   padding-top:24px;
   border-top:1px solid #2C3540;
 }
+.export-note{
+  flex:1 0 100%;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.04em;
+  color:#7A8290;
+  line-height:1.5;
+}
 
-/* ── Preview exports · real .xlsx + .docx generators ── */
+/* ── Live-engine downloads live in .dl-bar; .export-bar names walkthrough deliverables ── */
 .dl-bar{
   margin-top:24px;
   padding:18px 20px;
@@ -1015,15 +1023,13 @@ html,body{
   font-size:11px;
   letter-spacing:0.1em;
   text-transform:uppercase;
-  cursor:pointer;
-  transition:all 0.2s;
+  cursor:default;
   display:inline-flex;
   align-items:center;
   gap:8px;
   text-decoration:none;
 }
-.export-btn:hover{border-color:var(--vermillion);color:var(--paper)}
-.export-btn .check{color:var(--moss);font-weight:600}
+.export-btn .check{color:#7A8290;font-weight:600}
 
 /* ── Disclaimer ── */
 .demo-disclaimer{
@@ -2452,7 +2458,7 @@ html,body{
           <button class="uc-tab active" data-uc="initial">
             <span class="uc-num">§01</span>
             <span class="uc-name">Initial Assessment</span>
-            <span class="uc-sub">SSP → SAR · 7-gate adjudication <span class="uc-badge live">live engine</span></span>
+            <span class="uc-sub">SSP → determinations · 7-gate adjudication <span class="uc-badge live">live engine</span></span>
           </button>
           <button class="uc-tab" data-uc="annual">
             <span class="uc-num">§02</span>
@@ -2536,8 +2542,8 @@ html,body{
             <div class="ssp-meta" id="cv-engine-meta" style="display:none"></div>
           </button>
           <button class="ssp-option" data-id="meshgate">
-            <div class="ssp-name">MeshGate Identity Service</div>
-            <div class="ssp-meta">FedRAMP Moderate · 325 controls · v3.1</div>
+            <div class="ssp-name">MeshGate Identity Service <span class="uc-badge walk">walkthrough sample</span></div>
+            <div class="ssp-meta">FedRAMP Moderate · 323 controls · v3.1</div>
           </button>
           <button class="ssp-option ssp-upload" id="ssp-upload-btn" type="button">
             <div class="ssp-name">⬆ Upload package · .zip, .docx or text</div>
@@ -2554,7 +2560,7 @@ html,body{
         <div class="rail-stat"><span class="rail-stat-label">Engine</span><span class="rail-stat-value" id="stat-engine">Deterministic</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Verifier</span><span class="rail-stat-value">Adversarial · ON</span></div>
         <div class="rail-stat"><span class="rail-stat-label">Mode</span><span class="rail-stat-value" id="stat-mode">EXAMINE · automated</span></div>
-        <div class="rail-stat"><span class="rail-stat-label">Output</span><span class="rail-stat-value" id="stat-output">SAR + POA&amp;M + OSCAL</span></div>
+        <div class="rail-stat"><span class="rail-stat-label">Output</span><span class="rail-stat-value" id="stat-output">OSCAL AR · CSV · receipt</span></div>
 
         <button class="btn-primary vermillion run-btn" id="run-btn">
           Run assessment
@@ -2575,14 +2581,6 @@ html,body{
             <div class="idle-glyph">▸</div>
             <h3 id="idle-title">Engine is idle</h3>
             <p id="idle-copy">Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The deterministic engine will ingest, retrieve, adjudicate, verify, and export.</p>
-          </div>
-
-          <!-- Annual preview placeholder -->
-          <div id="annual-placeholder" class="uc-placeholder" style="display:none">
-            <span class="uc-placeholder-tag">§03 · Preview</span>
-            <h3>Annual Reassessment</h3>
-            <p>Re-test ⅓ of the control baseline with full E·I·T method coverage. Tracks aging from prior cycles, applies updated NIST 800-53 baselines, and produces an OSCAL Annual Assessment Report aligned with the FedRAMP ConMon strategy.</p>
-            <p class="coming">▸ In private preview · Q3 2026</p>
           </div>
 
           <!-- Running / done state -->
@@ -3272,9 +3270,9 @@ const SAMPLES = {
         leveragedSystem:  { status: 'complete', label: 'Leveraged-system Rev4→Rev5 gap analysis · AWS GovCloud current' },
       },
       cohorts: [
-        { label: 'Year 1 (FY24)', controls: 140, status: 'closed' },
-        { label: 'Year 2 (FY25)', controls: 140, status: 'current' },
-        { label: 'Year 3 (FY26)', controls: 141, status: 'pending' },
+        { label: 'Year 1 (FY24)', controls: 52, status: 'closed' },
+        { label: 'Year 2 (FY25)', controls: 52, status: 'current' },
+        { label: 'Year 3 (FY26)', controls: 52, status: 'pending' },
       ],
       carryForward: 8, newFindings: 10, closedThisCycle: 14, significantChanges: 3, penTest: { conducted: true, vectors: 6 },
       findings: [
@@ -3387,7 +3385,10 @@ const SAMPLES = {
 
   meshgate: {
     name: 'MeshGate Identity Service',
-    controls: 325,
+    // Walkthrough sample only — no liveEngine corpus. FedRAMP Moderate is 323
+    // controls (not 325). §01 names that rather than assessing CloudVault
+    // under this label.
+    controls: 323,
 
     initial: {
       files: ['ssp_meshgate_v3_1.docx', 'rapid7_scan.csv', 'okta_audit.json'],
@@ -3526,8 +3527,8 @@ const SAMPLES = {
         leveragedSystem:  { status: 'complete', label: 'Leveraged-system Rev4→Rev5 gap analysis · all inherited current' },
       },
       cohorts: [
-        { label: 'Year 1 (FY24)', controls: 108, status: 'closed' },
-        { label: 'Year 2 (FY25)', controls: 109, status: 'closed' },
+        { label: 'Year 1 (FY24)', controls: 107, status: 'closed' },
+        { label: 'Year 2 (FY25)', controls: 108, status: 'closed' },
         { label: 'Year 3 (FY26)', controls: 108, status: 'current' },
       ],
       carryForward: 5, newFindings: 5, closedThisCycle: 18, significantChanges: 1, penTest: { conducted: true, vectors: 6 },
@@ -3695,7 +3696,7 @@ const USE_CASES = {
     stages: ['Aggregate', 'Score', 'Rank', 'Forecast', 'Compare', 'Publish'],
     runBtnLabel: 'Generate portfolio rollup',
     idleTitle: 'Portfolio rollup is idle',
-    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. The engine will aggregate Authorization, Operations, and Quality results across all 4 SSPs, compute per-system risk posture, rank systems by SAR Section 5 satisfaction rate and 20x Phase 2 KSI automation coverage, forecast remediation timelines per RA-5(d) SLA windows, and produce a comparison matrix suitable for AO briefings. References <strong style="color:var(--vermillion)">fedramp.gov</strong> Section 5 SAR results and KSI 25.11C Phase 2 thresholds.',
+    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. This guided walkthrough aggregates Authorization, Operations, and Quality results across the sample portfolio, ranks systems by SAR Section 5 satisfaction rate and 20x Phase 2 KSI automation coverage, and produces a comparison matrix suitable for an AO briefing. References <strong style="color:var(--vermillion)">fedramp.gov</strong> Section 5 SAR results and KSI 25.11C Phase 2 thresholds.',
     railOutput: 'Portfolio Rollup + Executive Briefing',
     railMode: 'PORTFOLIO · ROLLUP',
     exports: ['Portfolio Briefing', 'System Comparison Matrix', 'Risk Forecast', 'AO Decision Memo'],
@@ -3748,15 +3749,62 @@ document.addEventListener('click', e => {
 });
 
 // ── Tab handlers ──
+// Homepage "Nine workflows" cards deep-link here (#annual, #ksi, …). The hash
+// is the data-uc id; §02–§09 numbers are accepted as aliases so a copied
+// section number still lands on the tab it names.
+const UC_HASH_ALIASES = {
+  initial: 'initial', '01': 'initial', '1': 'initial',
+  annual: 'annual', '02': 'annual', '2': 'annual',
+  scr: 'scr', '03': 'scr', '3': 'scr',
+  conmon: 'conmon', '04': 'conmon', '4': 'conmon',
+  ksi: 'ksi', '05': 'ksi', '5': 'ksi',
+  qa: 'qa', '06': 'qa', '6': 'qa',
+  pkg: 'pkg', '07': 'pkg', '7': 'pkg',
+  portfolio: 'portfolio', '08': 'portfolio', '8': 'portfolio',
+  src: 'src', '09': 'src', '9': 'src',
+};
+
+function ucFromHash(hash) {
+  const raw = String(hash || '').replace(/^#/, '').trim().toLowerCase();
+  if (!raw) return '';
+  return UC_HASH_ALIASES[raw.replace(/^§/, '').replace(/^uc-/, '')] || '';
+}
+
+function selectUseCase(uc, opts) {
+  opts = opts || {};
+  if (!uc || !USE_CASES[uc] || running) return false;
+  const tab = document.querySelector('.uc-tab[data-uc="' + uc + '"]');
+  if (!tab) return false;
+  activeUC = uc;
+  window.__lastRunWasReal = false;
+  document.querySelectorAll('.uc-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  syncUCToUI();
+  if (opts.hash !== false) {
+    const want = '#' + uc;
+    if (location.hash !== want) {
+      if (history.replaceState) history.replaceState(null, '', want);
+      else location.hash = uc;
+    }
+  }
+  if (opts.scroll) {
+    const el = document.querySelector('.console-section');
+    if (el) el.scrollIntoView();
+  }
+  return true;
+}
+
+function applyHashFromLocation() {
+  const uc = ucFromHash(location.hash);
+  if (!uc) return false;
+  return selectUseCase(uc, { hash: false, scroll: true });
+}
+
+window.addEventListener('hashchange', applyHashFromLocation);
+
 document.querySelectorAll('.uc-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    if (running) return;
-    activeUC = tab.dataset.uc;
-    // The live §01 result is no longer what the console shows.
-    window.__lastRunWasReal = false;
-    document.querySelectorAll('.uc-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    syncUCToUI();
+    selectUseCase(tab.dataset.uc);
   });
 });
 
@@ -3770,10 +3818,14 @@ function syncUCToUI() {
   document.getElementById('stat-output').textContent = cfg.railOutput;
 
   document.getElementById('run-state').style.display = 'none';
-  document.getElementById('annual-placeholder').style.display = 'none';
   document.getElementById('idle-state').style.display = 'block';
-  document.getElementById('idle-title').textContent = cfg.idleTitle;
-  document.getElementById('idle-copy').innerHTML = cfg.idleCopy;
+  if (activeUC === 'initial' && selected === 'meshgate') {
+    document.getElementById('idle-title').textContent = 'No live package for MeshGate';
+    document.getElementById('idle-copy').innerHTML = '<strong>MeshGate Identity Service</strong> is a guided-walkthrough sample — it has no evidence package for the live engine. Pick <strong>CloudVault</strong> or upload a package to run §01, or switch to a walkthrough tab to run MeshGate through that workflow.';
+  } else {
+    document.getElementById('idle-title').textContent = cfg.idleTitle;
+    document.getElementById('idle-copy').innerHTML = cfg.idleCopy;
+  }
   setStatus('◆ READY · Awaiting input');
 }
 
@@ -3810,6 +3862,7 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
       const el = document.getElementById('assessment-date');
       if (el) el.value = SAMPLE_ASSESSMENT_DATE;
     }
+    syncUCToUI();
   });
 });
 
@@ -5021,10 +5074,11 @@ function renderSCRSummary(d) {
 
 function renderExportBar() {
   const cfg = USE_CASES[activeUC];
-  const html = cfg.exports.map(name =>
-    `<a href="#" class="export-btn"><span class="check">✓</span>${name}</a>`
+  const names = cfg.exports.map(name =>
+    `<span class="export-btn" role="note"><span class="check">◇</span>${name}</span>`
   ).join('');
-  document.getElementById('export-bar').innerHTML = html;
+  document.getElementById('export-bar').innerHTML =
+    '<div class="export-note">Illustrative deliverable names — this walkthrough does not generate files. Downloads come from a §01 live-engine run.</div>' + names;
 }
 
 function renderCites(cites) {
@@ -5914,6 +5968,11 @@ const FEDRAMP_SCR_GUIDE = { kind: 'POLICY', title: 'FedRAMP RFC-0007 Significant
 const FEDRAMP_VDR_GUIDE = { kind: 'POLICY', title: 'FedRAMP Vulnerability Deviation Request Guide (RA · FP · OR)', version: 'v3.0', date: '2023-04-04' };
 const FEDRAMP_RA5_REF = { kind: 'POLICY', title: 'FedRAMP Rev5 Baseline · RFC-0030', version: '2026-Q1', date: '2026-03-19' };
 
+const QA_USE_CASES = ['initial', 'conmon', 'annual', 'scr'];
+function sampleRoster() {
+  return Object.keys(SAMPLES).filter(k => SAMPLES[k] && SAMPLES[k].name);
+}
+
 function computeQAReport() {
   const r = {
     R1:  { checks: 0, passed: 0 },
@@ -5938,9 +5997,9 @@ function computeQAReport() {
   const structureRe = /^The 3PAO (examined|interviewed|tested) .+, and found that .+\.$/;
   const failures = [];  // dynamically-detected discrepancies
 
-  for (const k of Object.keys(SAMPLES)) {
+  for (const k of sampleRoster()) {
     const s = SAMPLES[k];
-    for (const uc of ['initial', 'conmon', 'annual', 'scr']) {
+    for (const uc of QA_USE_CASES) {
       if (!s[uc] || !s[uc].findings) continue;
       for (const f of s[uc].findings) {
         totalFindings++;
@@ -6224,7 +6283,8 @@ function computeQAReport() {
   const passes = observations.filter(o => o.verdict === 'PASS').length;
   const score = Math.max(0, Math.round(100 * totalPassed / totalChecks - warnings * 0.5 - fails * 5));
 
-  return { rules: r, totalFindings, totalCites, totalChecks, totalPassed, warnings, failures: fails, passes, score, observations };
+  return { rules: r, totalFindings, totalCites, totalChecks, totalPassed, warnings, failures: fails, passes, score, observations,
+    sampleCount: sampleRoster().length, useCaseCount: QA_USE_CASES.length };
 }
 
 function renderQAMatrix(report) {
@@ -6261,7 +6321,7 @@ function renderQASummary(report) {
         <span class="scr-classification">QA AUDIT</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7A8290;letter-spacing:0.05em">cross-portfolio quality control · ${report.totalChecks.toLocaleString()} rule checks</span>
       </div>
-      <div style="font-family:'Fraunces',serif;font-size:18px;color:var(--paper);font-weight:500;letter-spacing:-0.005em;line-height:1.4;margin-bottom:8px">Validated ${report.totalFindings} findings and ${report.totalCites} citations across 4 SSPs and 7 use cases against the FedRAMP SAR Quality Guide.</div>
+      <div style="font-family:'Fraunces',serif;font-size:18px;color:var(--paper);font-weight:500;letter-spacing:-0.005em;line-height:1.4;margin-bottom:8px">Validated ${report.totalFindings} findings and ${report.totalCites} citations across ${report.sampleCount} system${report.sampleCount === 1 ? '' : 's'} and ${report.useCaseCount} use cases against the FedRAMP SAR Quality Guide.</div>
       <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A8C39A;letter-spacing:0.04em">▸ ${report.warnings === 0 && report.failures === 0 ? 'No discrepancies surfaced' : `${report.failures} failure${report.failures === 1 ? '' : 's'} · ${report.warnings} warning${report.warnings === 1 ? '' : 's'}`} · ${report.observations.filter(o => o.verdict === 'PASS').length} rule confirmations recorded</div>
     </div>
     <div class="ret-section-label">
@@ -6289,11 +6349,11 @@ async function runQA() {
   renderQAMatrix(report);
 
   setStage(1);
-  setStatus('◆ INTAKE · loading portfolio · 4 SSPs · 4 use cases');
+  setStatus('◆ INTAKE · loading portfolio · ' + report.sampleCount + ' system' + (report.sampleCount === 1 ? '' : 's') + ' · ' + report.useCaseCount + ' use cases');
   log('00:00.0', 'init', `<span class="key">portfolio scan</span> · ${report.totalFindings} findings · ${report.totalCites} citations`);
   await wait(400);
-  for (const k of Object.keys(SAMPLES)) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · 4 use cases`, 'ok');
+  for (const k of sampleRoster()) {
+    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · ${report.useCaseCount} use cases`, 'ok');
     await wait(250);
   }
   log('00:05.0', 'init', `${report.totalChecks.toLocaleString()} rule checks queued`, 'ok');
@@ -8298,7 +8358,7 @@ function openExecOnePager() {
 
 
 // Aggregates Authorization (§01-§03), Operations (§04-§05), and Quality (§06-§07) results
-// across all 4 SSPs into a single comparison matrix. References:
+// across the sample portfolio into a single comparison matrix. References:
 // - fedramp.gov · SAR Template Rev5 §5 (Satisfied / OTS / NA / NT proportions)
 // - fedramp.gov/docs/key-security-indicators · FRMR.KSI 25.11C automation threshold
 // - fedramp.gov · ConMon Strategy Guide (Rev5) · RA-5(d) SLA compliance
@@ -8620,7 +8680,6 @@ async function runDemo() {
   btn.innerHTML = 'Running... <span class="arrow">⟳</span>';
 
   document.getElementById('idle-state').style.display = 'none';
-  document.getElementById('annual-placeholder').style.display = 'none';
   document.getElementById('run-state').style.display = 'block';
   document.getElementById('log').innerHTML = '';
   document.getElementById('results').classList.remove('show');
@@ -8652,8 +8711,9 @@ document.getElementById('run-btn').addEventListener('click', runDemo);
 // about a specific package as of a specific day; starting one on the visitor's
 // behalf makes that claim for them. The console sits at READY and waits.
 
-// Initialize UI to default state
-syncUCToUI();
+// Initialize UI to default state. A hash from the homepage workflow cards
+// selects that tab; no hash waits at §01.
+if (!applyHashFromLocation()) syncUCToUI();
 
 
 
@@ -9112,8 +9172,15 @@ async function runInitialLive(sample) {
   setStatus('◆ PARSE · reading the package in your browser · nothing leaves this page');
   const corpus = await engineCorpus(sample);
   if (!corpus) {
-    log(ts(), 'stop', 'nothing to assess: no upload and no bundled document set', 'warn');
-    setStatus('◆ STOPPED · nothing to assess');
+    if (sample && !sample.liveEngine) {
+      const named = sample.name || 'this selection';
+      log(ts(), 'stop', '✗ no live evidence package for <span class="key">' + engEsc(named) + '</span> — it is a walkthrough sample. Pick CloudVault, upload a package, or switch to a walkthrough tab', 'warn');
+      setStatus('◆ STOPPED · walkthrough sample — no live evidence package');
+    } else {
+      log(ts(), 'stop', 'nothing to assess: no upload and no bundled document set', 'warn');
+      setStatus('◆ STOPPED · nothing to assess');
+    }
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
   }
   log(ts(), 'init', '<span class="key">live engine</span> · ' + engEsc(corpus.label) + ' · ' + corpus.files.length + ' file(s) received');

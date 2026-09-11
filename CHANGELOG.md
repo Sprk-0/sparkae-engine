@@ -17,6 +17,35 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-12 (live demo paths)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
+
+User-acceptance of the homepage "Nine workflows" section and the demo tabs
+those cards claim to open.
+
+- **Each card opens the tab it names.** All nine linked to `demo-standalone.html`
+  with no hash, so §05 KSI validation landed on §01 Initial Assessment. The demo
+  now honours `#initial` … `#src` (and the §-numbers as aliases), and the
+  homepage cards carry those hashes.
+- **§01 does not call its output a SAR.** The live engine writes automated
+  EXAMINE preparation. The homepage card and the tab subtitle said "SSP → SAR".
+- **MeshGate is the Moderate catalog.** The rail and the fixture said 325
+  controls; FedRAMP Moderate is 323. Selecting it on §01 used to stop with
+  "nothing to assess" as if nothing had been chosen — it is a walkthrough
+  sample, and the idle copy and the stop now say so. CloudVault's annual
+  rotation (52+52+52) is a third of the Low baseline it actually sits in, not
+  140+140+141.
+- **§06 / §08 count the systems they rolled up.** QA still said "4 SSPs and 7
+  use cases" after §08 learned to count; both now use the roster they walk.
+- **Walkthrough export chips are names, not downloads.** They were
+  `<a href="#">` with a check mark, and they jumped to the top of the page.
+- A leftover `#annual-placeholder` labelled "§03 · Preview" / Annual
+  Reassessment / "private preview · Q3 2026" is gone. §02 already runs.
+
+Checks added in `tests/check.mjs`, `tests/browser.mjs` and `tests/pages.mjs`;
+the pages check walks every homepage card onto the tab it names.
+
 ## 2026-09-11 (§09 Data Sources)
 
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged

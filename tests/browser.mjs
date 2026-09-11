@@ -369,6 +369,58 @@ await page.waitForSelector('#results.show', { timeout: 180000 });
 await settleFindings();
 const selectedRunLog = await page.textContent('#log');
 
+// ── each homepage workflow lands on the tab it names ──────────────────────
+// The "Nine workflows" cards all used to point at demo-standalone.html with
+// no hash, so §05 KSI validation opened §01. The hash is the data-uc id;
+// §-numbers are aliases.
+const HASH_LANDINGS = [
+  { hash: '#ksi', uc: 'ksi', btn: 'Run KSI validation' },
+  { hash: '#08', uc: 'portfolio', btn: 'Generate portfolio rollup' },
+  { hash: '#annual', uc: 'annual', btn: 'Run annual reassessment' },
+];
+const hashLandings = [];
+for (const h of HASH_LANDINGS) {
+  await page.goto('file://' + path.join(root, 'demo-standalone.html') + h.hash);
+  await dismissOnboarding();
+  hashLandings.push(Object.assign({ want: h }, await page.evaluate(() => ({
+    uc: (document.querySelector('.uc-tab.active') || {}).getAttribute('data-uc') || '',
+    btn: ((document.getElementById('run-btn') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
+  }))));
+}
+const hashMiss = hashLandings.filter(r => r.uc !== r.want.uc || !r.btn.includes(r.want.btn));
+
+// MeshGate is a walkthrough sample: §01 used to stop with "nothing to assess"
+// as if the visitor had selected nothing.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.evaluate(() => document.querySelector('.ssp-option[data-id="meshgate"]').click());
+const meshIdle = await page.evaluate(() => ({
+  title: (document.getElementById('idle-title') || {}).textContent || '',
+  copy: (document.getElementById('idle-copy') || {}).textContent || '',
+  meta: (document.querySelector('.ssp-option[data-id="meshgate"] .ssp-meta') || {}).textContent || '',
+}));
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /STOPPED|walkthrough sample/.test((document.getElementById('console-status') || {}).textContent || ''),
+  null, { timeout: 30000 }).catch(() => {});
+const meshStop = await page.evaluate(() => ({
+  status: (document.getElementById('console-status') || {}).textContent || '',
+  log: (document.getElementById('log') || {}).textContent || '',
+}));
+
+// Walkthrough export chips used to be <a href="#"> pretending to download.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.evaluate(() => document.querySelector('.uc-tab[data-uc="conmon"]').click());
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /COMPLETE|WALKTHROUGH/.test((document.getElementById('console-status') || {}).textContent || ''),
+  null, { timeout: 180000 });
+const exportBar = await page.evaluate(() => ({
+  hashLinks: document.querySelectorAll('#export-bar a[href="#"]').length,
+  note: (document.querySelector('.export-note') || {}).textContent || '',
+}));
+
 // The rail is position:sticky at top:80. A sticky element taller than the space
 // it sticks in strands its own contents: at 781px in a 720px viewport it pinned
 // at 80 and its last 141px — which is where the Run button sits — could not be
@@ -431,6 +483,21 @@ const checks = [
     railReach.inView,
     'button top ' + railReach.btnTop + ' in viewport ' + railReach.vh +
     '; rail ' + railReach.railH + 'px at top ' + railReach.railTop],
+  ['a hash from the homepage opens the named tab, not §01',
+    hashMiss.length === 0,
+    JSON.stringify(hashMiss.map(r => r.want.hash + ' → ' + r.uc + ' / ' + r.btn))],
+  ['MeshGate is labelled the Moderate catalog (323), not 325',
+    /323/.test(meshIdle.meta) && !/325/.test(meshIdle.meta), meshIdle.meta],
+  ['§01 idle copy names MeshGate as a walkthrough sample',
+    /walkthrough sample/i.test(meshIdle.copy) && /MeshGate/i.test(meshIdle.copy),
+    meshIdle.title + ' — ' + meshIdle.copy.slice(0, 160)],
+  ['running §01 on MeshGate stops as a walkthrough sample, not "nothing to assess"',
+    /walkthrough sample/.test(meshStop.status + meshStop.log) &&
+    !/nothing to assess/.test(meshStop.status + meshStop.log),
+    meshStop.status],
+  ['walkthrough export chips are names, not href="#" downloads',
+    exportBar.hashLinks === 0 && /does not generate files/i.test(exportBar.note),
+    'href#=' + exportBar.hashLinks + ' note=' + exportBar.note.slice(0, 80)],
   ['the seven §02\u2013§08 walkthroughs each say so in the run, not only in the tab badge',
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
