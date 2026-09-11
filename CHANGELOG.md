@@ -17,6 +17,40 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11 (accuracy benchmark)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — nothing here changes a
+determination. It measures them.
+
+- **A labelled case set, scored and published.** `tests/benchmark/cases.json`
+  pairs an objective with a fixed set of documents and records the determination
+  a competent assessor would reach from those documents alone, with the
+  reasoning written down so it can be argued with. `node tests/benchmark.mjs .`
+  scores it and writes `tests/benchmark/results.json`; CI runs it with
+  `--strict` on every push and fails the build on a wrong determination that has
+  no recorded reason. Engine 1.2.0 is right on 11 of 12 cases, with 0 false
+  passes and 1 false fail.
+- **The reviewer's false pass is now a case that fails against the build that
+  produced it.** `at1-account-monitoring-evidence` returns Satisfied under
+  engine 1.1.0 and Other Than Satisfied under 1.2.0, so the benchmark
+  demonstrably reproduces a real defect rather than only recording the fix.
+- **The two populations are scored separately and never merged.** Three cases
+  are the outside reviewer's reproductions, written before and without reference
+  to the fixes that address them. The other nine were written here and test what
+  their author already believed, which is weaker evidence; a single headline
+  number would hide that.
+- **The one current error is in the file rather than excluded from it.**
+  `ac2d2-retrieval-gap` fails: AC-2_d.(2) is answered by a paragraph the
+  retriever does not surface, one of the eight retrieval gaps the tightened
+  gate 2 exposed. `--strict` tolerates it because the reason is on record, so a
+  documented gap does not hold the build red while a new regression still does.
+- **What a score there does not mean** is stated where a reader will meet it:
+  a new *Accuracy* section in the README, and `tests/benchmark/README.md`. It is
+  a measurement against cases someone chose, not field accuracy on real
+  authorization packages, and it supports no claim of assessment readiness.
+  `check.mjs` §16 verifies that the README's figures are the recorded ones, so
+  the numbers in the file most likely to be quoted cannot go stale.
+
 ## 2026-09-11 (attribution and inventory)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
