@@ -42,5 +42,8 @@ check here that touches the network: it asks whether the deployed site is still
 this tree byte-for-byte, which no offline check can see. It is not a merge gate
 — run it after a deploy, or with `--site` against a deploy preview.
 
+Participation is governed by `CODE_OF_CONDUCT.md`. Report conduct concerns
+to info@sparkae.ai, the same address as everything else here.
+
 By submitting a contribution you agree it is licensed under the Apache
 License 2.0 that covers this repository.

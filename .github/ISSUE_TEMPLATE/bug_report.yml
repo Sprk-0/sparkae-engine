@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in the reference build, the exports, or a site page is wrong or broken.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Two things first:
+
+        - **Security reports do not belong here.** A crafted document that
+          evades a gate, or anything else in `SECURITY.md`, goes privately to
+          [info@sparkae.ai](mailto:info@sparkae.ai).
+        - **This repository is generated** from the private product repository.
+          A fix is ported to the source and re-synced rather than committed
+          here directly — the report is still what starts that, so open it.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - The engine (a gate, a score, a determination)
+        - An export (OSCAL, CSV, summary, receipt)
+        - The demo page (§01 live run)
+        - A walkthrough (§02–§09, demo-20x)
+        - A site page (copy, link, layout)
+        - The conformance suite (tests/)
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: package
+    attributes:
+      label: Package
+      description: The bundled sample, or your own upload (do not attach anything you cannot share publicly).
+      placeholder: bundled sample — CloudVault-Federal-SSP.txt
+    validations:
+      required: true
+
+  - type: textarea
+    id: receipt
+    attributes:
+      label: Reproducibility receipt
+      description: |
+        Paste the receipt strip from the run, or the `metadata.props` block from an
+        exported OSCAL document. Without it a verdict cannot be reproduced, so a
+        report that omits it usually cannot be acted on.
+
+        It names: engine version · catalog digest · ruleset digest · evidence
+        digest · assessment date · verdict digest.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 141 on macOS 15 · opened from file://
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: I ran `node tests/check.mjs .` and said above whether it passed.
+          required: false
+        - label: This is not a security report.
+          required: true

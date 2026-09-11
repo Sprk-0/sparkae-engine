@@ -157,6 +157,9 @@ the next sync — so open an issue or a pull request and it will be ported to
 the source and re-synced. Contributions are welcome under the constraints
 in `CONTRIBUTING.md`.
 
+`CHANGELOG.md` records what moved and, for each change, whether the sample's
+verdict digest moved with it.
+
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
 headers, and `_redirects` provides the forced `/demo` short link.

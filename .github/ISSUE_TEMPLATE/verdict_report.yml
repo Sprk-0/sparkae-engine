@@ -1,0 +1,86 @@
+name: Disputed determination
+description: The engine reached a verdict you believe is wrong on evidence you can share.
+labels: ["determination"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most useful report this project can receive, and the one
+        hardest to act on without specifics.
+
+        **If the wrong verdict comes from a document crafted to produce it** —
+        homoglyphs, keyword stuffing, a hidden refutation, a future-dated claim —
+        that is gate evasion, and it goes privately to
+        [info@sparkae.ai](mailto:info@sparkae.ai) instead. See `SECURITY.md`.
+
+        Known limits before you file: retrieval is lexical BM25, contradiction
+        and draft detection are pattern-based indicators, the evidence-support
+        score is not calibrated against independently labelled assessments, and
+        INTERVIEW and TEST are never performed. A verdict that reflects one of
+        those is documented behaviour rather than a defect — though if it reads
+        as a defect, that is worth saying too.
+
+  - type: input
+    id: objective
+    attributes:
+      label: Determination statement
+      description: The objective identifier, as the run reports it.
+      placeholder: AC-2_g
+    validations:
+      required: true
+
+  - type: input
+    id: got
+    attributes:
+      label: Verdict the engine reached
+      placeholder: Other Than Satisfied — Gate 2, concept coverage 33%
+    validations:
+      required: true
+
+  - type: input
+    id: expected
+    attributes:
+      label: Verdict you expected
+      placeholder: Satisfied
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: |
+        Which passage in the package supports your reading, and which gate you
+        believe adjudicated it wrongly. Quote the passage if you can share it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: receipt
+    attributes:
+      label: Reproducibility receipt
+      description: |
+        Required here. A determination is only arguable against the run that
+        produced it: engine version · catalog digest · ruleset digest · evidence
+        digest · assessment date · verdict digest.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: profile
+    attributes:
+      label: Profile and assessment date
+      placeholder: FedRAMP Low · 2026-06-01
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: This is not gate evasion by a crafted document (that goes to email).
+          required: true
+        - label: I can share the supporting passage publicly, or have redacted it.
+          required: true
