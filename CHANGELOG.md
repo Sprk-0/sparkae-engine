@@ -46,6 +46,35 @@ exist. The demo now says what the Integrations page says.
 
 Three browser checks added; all three fail against the previous build.
 
+## 2026-09-12 (attribution and inventory)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
+
+Two of the reviewer's repository recommendations.
+
+- **The artifact inventory no longer claims determinations.** `classifyFile`
+  matches on file *names*, and the upload panel rendered those matches as
+  findings: "OTS finding · CA-5" beside POA&M, "critical · NR finding · PL-2"
+  beside SSP. A package missing a file called `poam.xlsx` was told an objective
+  had been adjudicated. Nothing in that list adjudicates anything — the engine
+  reads document contents when a run starts, and a package can lack a file named
+  like a POA&M and still satisfy CA-5 from an SSP section. Missing artifacts are
+  now reported as missing, with the control each would ordinarily inform, under a
+  heading that says the match is on names rather than contents and that this is
+  not an assessment. The same wording went through §01's walkthrough narration,
+  where an absent artifact was narrated as a finding the engine had emitted.
+- **CSV says who determined what.** The OSCAL exporter has carried
+  `engine-determination`, `assessor-determination` and `determination-source`
+  since the assessor layer landed; CSV collapsed all of it into one cell, so a
+  revised Satisfied was indistinguishable from an engine Satisfied and the
+  assessor's statement was lost entirely. The findings CSV gains four columns —
+  Engine Determination, Assessor Determination, Determination Source, Assessor
+  Statement — beside the effective Determination a consumer acts on. The engine
+  column is the engine's and a revision cannot rewrite it, which is the same rule
+  the reproducibility receipt follows.
+
+Seven checks added, all failing against the previous build.
+
 ## 2026-09-12 (upload re-review)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged

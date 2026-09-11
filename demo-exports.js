@@ -494,7 +494,16 @@ var DEMO_EXPORTS = (function () {
 
   // ── Tabular deliverables ───────────────────────────────────────────────
 
-  var FINDINGS_HEADERS = ['Control ID', 'Objective ID', 'Determination', 'Evidence Description',
+  // 'Determination' is the effective one — what a downstream consumer should act
+  // on — and the three columns after it say where it came from. The OSCAL
+  // exporter has carried engine-determination / assessor-determination /
+  // determination-source since the assessor layer landed; CSV collapsed all of
+  // it into one cell, so a revised Satisfied was indistinguishable from an
+  // engine Satisfied and the assessor's own words were lost entirely. A
+  // determination nobody can attribute is not much of a record.
+  var FINDINGS_HEADERS = ['Control ID', 'Objective ID', 'Determination',
+    'Engine Determination', 'Assessor Determination', 'Determination Source',
+    'Assessor Statement', 'Evidence Description',
     'Evidence References', 'Assessor Notes', 'Weakness Name', 'Weakness Description',
     'Weakness Type', 'Applicable Threats', 'Likelihood (Before)', 'Impact (Before)',
     'Risk Exposure (Before)', 'Risk Statement', 'Mitigating Factors', 'Likelihood (After)',
@@ -509,6 +518,10 @@ var DEMO_EXPORTS = (function () {
       var rev = revisionFor(opts, f);
       return csvRow([
         f.control_id, f.objective_id || f.dif_id, effectiveStatus(f, rev),
+        String(f.status || ''),
+        rev && rev.status ? String(rev.status) : '',
+        rev && rev.status ? 'assessor' : 'engine',
+        rev && rev.statement ? String(rev.statement) : '',
         f.evidence_description || '', (f.evidence_references || []).join('; '), f.assessor_notes || '',
         f.weakness_name || '', f.weakness_description || '', f.weakness_type || '', '',
         f.likelihood_before || '', f.impact_before || '', f.risk_exposure_before || '',
