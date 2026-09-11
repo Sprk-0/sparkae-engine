@@ -428,6 +428,15 @@ html,body{
   background:var(--rule);
   margin:24px 0;
 }
+.rail-note{
+  border-left:2px solid var(--vermillion);
+  padding:10px 12px;
+  margin-bottom:8px;
+  font-size:12px;
+  line-height:1.55;
+  color:var(--ink);
+  background:rgba(178,58,28,0.07);
+}
 
 .rail-stat{
   display:flex;
@@ -1510,6 +1519,12 @@ html,body{
   text-transform:uppercase;
   color:var(--vermillion);
 }
+.filter-groups{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
 .filter-group{
   display:flex;
   gap:6px;
@@ -1537,6 +1552,24 @@ html,body{
 }
 .filter-chip:hover{color:#B8C0CC;border-color:#3A4250}
 .filter-chip.active{color:var(--vermillion);border-color:var(--vermillion)}
+/* A dimension the run holds only one value of: stated, not offered as a
+   selection that cannot change anything. */
+.filter-only{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:#B8C0CC;
+  border:1px solid #2C3540;
+  border-style:dashed;
+  padding:4px 10px;
+}
+.findings-empty td{
+  padding:22px 14px;
+  font-size:12px;
+  line-height:1.6;
+  color:#7A8290;
+}
 .filter-count{
   font-family:'IBM Plex Mono',monospace;
   font-size:10px;
@@ -2354,7 +2387,7 @@ html,body{
         <div class="onb-connector"><span class="onb-conn-name">Tier 2 · GRC peers</span><span class="onb-conn-cat">ServiceNow GRC · Drata · Vanta · ZenGRC · OneTrust · Hyperproof · AuditBoard · Archer</span></div>
         <div class="onb-connector"><span class="onb-conn-name">Tier 3 · Custom</span><span class="onb-conn-cat">JSON · CSV · PDF/OCR · webhook for unstructured / non-conforming tools</span></div>
       </div>
-      <p class="onb-note">Tier 3 uses namespaced extensions (per fedramp.gov OSCAL prop pattern) so vendor-specific data round-trips losslessly without breaking canonical guarantees. Click any connector card to view its schema mapping.</p>
+      <p class="onb-note">Tier 3 uses namespaced extensions (per fedramp.gov OSCAL prop pattern) so vendor-specific data round-trips losslessly without breaking canonical guarantees. Each connector card carries a <strong>▸ View schema mapping</strong> link, which opens that connector's full mapping in a new window.</p>
     </div>
 
     <div class="onb-step" data-onb-step="3">
@@ -2528,9 +2561,13 @@ html,body{
             <div class="ssp-meta" id="cv-meta">FedRAMP Low · 156 controls · 981 objectives · v2.4</div>
             <div class="ssp-meta" id="cv-engine-meta" style="display:none"></div>
           </button>
+          <!-- MeshGate is the subject of the §02–§09 walkthroughs and this
+               build ships no document set for it. The rail listed it as a peer
+               of the sample, so §01 — the tab a visitor lands on — met it with
+               "nothing to assess". It says which sections it is for. -->
           <button class="ssp-option" data-id="meshgate">
-            <div class="ssp-name">MeshGate Identity Service</div>
-            <div class="ssp-meta">FedRAMP Moderate · 325 controls · v3.1</div>
+            <div class="ssp-name">MeshGate Identity Service <span class="uc-badge walk">§02–§09 walkthrough</span></div>
+            <div class="ssp-meta">FedRAMP Moderate · 323 controls · v3.1 · no document set in this build</div>
           </button>
           <button class="ssp-option ssp-upload" id="ssp-upload-btn" type="button">
             <div class="ssp-name">⬆ Upload package · .zip, .docx or text</div>
@@ -2539,6 +2576,10 @@ html,body{
           <input type="file" id="ssp-upload-input" aria-label="Upload your own assessment package (.zip, .docx, .txt, .md, .csv, .json, .xml or .nessus files)" multiple="" accept=".zip,.docx,.csv,.json,.xml,.txt,.md,.nessus" style="display:none">
           <div class="ssp-upload-status" id="ssp-upload-status" style="display:none"></div>
         </div>
+
+        <!-- Said before Run is pressed, not after: §01 needs a document set,
+             and the rail is where the visitor chooses one. -->
+        <div class="rail-note" id="rail-note" style="display:none"></div>
 
         <div class="rail-divider"></div>
 
@@ -2570,14 +2611,6 @@ html,body{
             <p id="idle-copy">Select an SSP from the rail and press <strong style="color:var(--vermillion)">Run assessment</strong>. The deterministic engine will ingest, retrieve, adjudicate, verify, and export.</p>
           </div>
 
-          <!-- Annual preview placeholder -->
-          <div id="annual-placeholder" class="uc-placeholder" style="display:none">
-            <span class="uc-placeholder-tag">§03 · Preview</span>
-            <h3>Annual Reassessment</h3>
-            <p>Re-test ⅓ of the control baseline with full E·I·T method coverage. Tracks aging from prior cycles, applies updated NIST 800-53 baselines, and produces an OSCAL Annual Assessment Report aligned with the FedRAMP ConMon strategy.</p>
-            <p class="coming">▸ In private preview · Q3 2026</p>
-          </div>
-
           <!-- Running / done state -->
           <div id="run-state" style="display:none">
             <div class="stages" id="stages"></div>
@@ -2585,23 +2618,12 @@ html,body{
             <div class="log" id="log"></div>
             <div class="results" id="results">
               <div id="results-summary"></div>
+              <!-- The chips are built from the run that just finished — see
+                   renderFilterChips(). A fixed row of them offered selections
+                   that could not match a row. -->
               <div class="filter-bar" id="filter-bar">
                 <span class="filter-label">Filter</span>
-                <div class="filter-group">
-                  <span class="filter-group-label">Method</span>
-                  <button class="filter-chip active" data-filter="method" data-value="all">All</button>
-                  <button class="filter-chip" data-filter="method" data-value="EXAMINE">Examine</button>
-                  <button class="filter-chip" data-filter="method" data-value="INTERVIEW">Interview</button>
-                  <button class="filter-chip" data-filter="method" data-value="TEST">Test</button>
-                </div>
-                <div class="filter-group">
-                  <span class="filter-group-label">Verdict</span>
-                  <button class="filter-chip active" data-filter="verdict" data-value="all">All</button>
-                  <button class="filter-chip" data-filter="verdict" data-value="SAT">SAT</button>
-                  <button class="filter-chip" data-filter="verdict" data-value="OTS">OTS</button>
-                  <button class="filter-chip" data-filter="verdict" data-value="NR">NR</button>
-                  <button class="filter-chip" data-filter="verdict" data-value="PASS">PASS</button>
-                </div>
+                <div class="filter-groups" id="filter-groups"></div>
                 <span class="filter-count" id="filter-count"></span>
               </div>
               <div class="table-scroll"><table class="findings-table">
@@ -3679,7 +3701,7 @@ const USE_CASES = {
     stages: ['Discover', 'Authenticate', 'Enumerate', 'Sync', 'Map', 'Index'],
     runBtnLabel: 'Sync data sources',
     idleTitle: 'Data source sync is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Sync data sources</strong>. The connector engine spans three tiers: <strong>Tier 1 Evidence Sources</strong> (vulnerability scanners, IdP, cloud posture, ticket trackers, document repositories), <strong>Tier 2 GRC Platforms</strong> (ServiceNow GRC, Drata, Vanta, ZenGRC, OneTrust, Hyperproof, AuditBoard, Archer), and <strong>Tier 3 Custom Connectors</strong> (JSON · CSV · PDF/OCR · webhook for tools without a pre-built schema). Each connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned with namespaced extensions per <strong style="color:var(--vermillion)">fedramp.gov</strong> OSCAL prop pattern), then onward to the FedRAMP authorization deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>. Click any connector to inspect its schema mapping.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Sync data sources</strong>. The connector engine spans three tiers: <strong>Tier 1 Evidence Sources</strong> (vulnerability scanners, IdP, cloud posture, ticket trackers, document repositories), <strong>Tier 2 GRC Platforms</strong> (ServiceNow GRC, Drata, Vanta, ZenGRC, OneTrust, Hyperproof, AuditBoard, Archer), and <strong>Tier 3 Custom Connectors</strong> (JSON · CSV · PDF/OCR · webhook for tools without a pre-built schema). Each connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned with namespaced extensions per <strong style="color:var(--vermillion)">fedramp.gov</strong> OSCAL prop pattern), then onward to the FedRAMP authorization deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>. Each connector card carries a <strong>▸ View schema mapping</strong> link, which opens that connector\'s full mapping in a new window.',
     railOutput: 'Connector Inventory + Schema Map + Validation Pipeline',
     railMode: 'SRC · INGESTION',
     exports: ['Connector Inventory', 'Evidence Coverage Map', 'Schema Mapping Manifest', 'Provenance Trail'],
@@ -3719,13 +3741,91 @@ document.addEventListener('click', e => {
 });
 
 function applyFilters() {
-  const filtered = currentFindings.filter(f => {
-    if (filters.method !== 'all' && f.method !== filters.method) return false;
-    if (filters.verdict !== 'all' && f.verdict !== filters.verdict) return false;
-    return true;
-  });
-  document.getElementById('filter-count').textContent = `${filtered.length} of ${currentFindings.length} findings shown`;
-  paintFindings(filtered);
+  paintFindings(currentFindings.filter(matchesFilters));
+}
+
+function matchesFilters(f) {
+  if (filters.method !== 'all' && f.method !== filters.method) return false;
+  if (filters.verdict !== 'all' && f.verdict !== filters.verdict) return false;
+  return true;
+}
+
+// One sentence with one meaning. The count used to read "120 of 383 findings
+// shown" when the painter capped the rows and "1 of 981 findings shown" when it
+// did not — the same shape saying "painted of matched" in one case and "matched
+// of total" in the other, so a visitor filtering to SAT was told the run held
+// 383 findings.
+function setFilterCount(painted, matched) {
+  const el = document.getElementById('filter-count');
+  if (!el) return;
+  const total = currentFindings.length;
+  const parts = [];
+  if (painted < matched) parts.push(painted + ' shown');
+  parts.push(matched === total
+    ? total + ' finding' + (total === 1 ? '' : 's') + ' in this run'
+    : matched + ' of ' + total + ' match the filter');
+  el.textContent = parts.join(' · ');
+}
+
+// ── Filter chips, built from the run ────────────────────────────────────
+// Every chip on offer has to be able to match a row. This bar used to be a
+// fixed Examine · Interview · Test / SAT · OTS · NR · PASS row whatever the run
+// held, so §01 — which is EXAMINE-only by construction, and says so — offered
+// two method chips that always emptied the table, and §06, whose findings all
+// carry method QA, offered no chip that matched a single one of them.
+const FILTER_DIMS = [
+  { dim: 'method', label: 'Method', order: ['EXAMINE', 'INTERVIEW', 'TEST', 'QA'],
+    text: { EXAMINE: 'Examine', INTERVIEW: 'Interview', TEST: 'Test', QA: 'QA' } },
+  { dim: 'verdict', label: 'Verdict', order: ['SAT', 'OTS', 'NR', 'PASS'], text: {} },
+];
+
+// Built with DOM calls rather than concatenated markup: a verdict and a method
+// are the engine's own vocabulary today, but they arrive here as strings from a
+// findings array and they are about to become an attribute value.
+function renderFilterChips(findings) {
+  const host = document.getElementById('filter-groups');
+  if (!host) return;
+  host.innerHTML = '';
+  for (const spec of FILTER_DIMS) {
+    const counts = new Map();
+    for (const f of findings) {
+      const v = f[spec.dim];
+      if (v) counts.set(v, (counts.get(v) || 0) + 1);
+    }
+    if (!counts.size) continue;
+    const rank = v => { const i = spec.order.indexOf(v); return i < 0 ? spec.order.length : i; };
+    const values = [...counts.keys()].sort((a, b) => rank(a) - rank(b));
+
+    const group = document.createElement('div');
+    group.className = 'filter-group';
+    const label = document.createElement('span');
+    label.className = 'filter-group-label';
+    label.textContent = spec.label;
+    group.appendChild(label);
+
+    // Nothing to choose between: say what the run holds rather than offer a
+    // selection whose only outcome is the table already on screen.
+    if (values.length === 1) {
+      const only = document.createElement('span');
+      only.className = 'filter-only';
+      only.textContent = (spec.text[values[0]] || values[0]) + ' · all ' + counts.get(values[0]);
+      group.appendChild(only);
+      host.appendChild(group);
+      continue;
+    }
+
+    const chip = (value, text, active) => {
+      const b = document.createElement('button');
+      b.className = 'filter-chip' + (active ? ' active' : '');
+      b.dataset.filter = spec.dim;
+      b.dataset.value = value;
+      b.textContent = text;
+      group.appendChild(b);
+    };
+    chip('all', 'All ' + findings.length, true);
+    for (const v of values) chip(v, (spec.text[v] || v) + ' ' + counts.get(v), false);
+    host.appendChild(group);
+  }
 }
 
 // ── Citation click → copy to clipboard ──
@@ -3763,11 +3863,37 @@ function syncUCToUI() {
   document.getElementById('stat-output').textContent = cfg.railOutput;
 
   document.getElementById('run-state').style.display = 'none';
-  document.getElementById('annual-placeholder').style.display = 'none';
   document.getElementById('idle-state').style.display = 'block';
   document.getElementById('idle-title').textContent = cfg.idleTitle;
   document.getElementById('idle-copy').innerHTML = cfg.idleCopy;
   setStatus('◆ READY · Awaiting input');
+  syncRailNote();
+}
+
+// §01 assesses documents. Only the bundled sample and an upload carry any, so
+// every other rail selection is a run that cannot happen — and the rail is
+// where the visitor picks, so this is where it has to be said.
+function syncRailNote() {
+  const note = document.getElementById('rail-note');
+  if (!note) return;
+  const sample = SAMPLES[selected];
+  if (activeUC !== 'initial' || (sample && sample.liveEngine) || uploadedPackageCount()) {
+    note.style.display = 'none';
+    note.textContent = '';
+    return;
+  }
+  note.style.display = 'block';
+  note.innerHTML = '<strong>' + engEsc(sample ? sample.name : 'This system') + '</strong> has no document set in this build, ' +
+    'and §01 reads documents. Choose <strong>CloudVault Storage Platform</strong> or upload your own package to run the engine — ' +
+    'or switch to §02–§09, where ' + engEsc(sample ? sample.name : 'it') + ' is the walkthrough subject.';
+}
+
+// CUSTOM_PKG_FILES is declared with the engine bridge, further down the page,
+// so the first syncRailNote() of the load reaches it before its declaration has
+// run. `typeof` does not soften a let in its temporal dead zone; this does.
+function uploadedPackageCount() {
+  try { return (CUSTOM_PKG_FILES && CUSTOM_PKG_FILES.length) || 0; }
+  catch (e) { return 0; }
 }
 
 // ── SSP selection ──
@@ -3784,6 +3910,7 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
       const el = document.getElementById('assessment-date');
       if (el) el.value = SAMPLE_ASSESSMENT_DATE;
     }
+    syncRailNote();
   });
 });
 
@@ -4477,6 +4604,7 @@ function clearCustomUpload() {
   // assessment date the newly selected sample carried.
   CUSTOM_PKG_FILES = [];
   discardPreviousRun();
+  syncRailNote();
 }
 
 document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
@@ -4487,6 +4615,7 @@ document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
     document.querySelectorAll('.ssp-option').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     selected = 'custom';
+    syncRailNote();
     return;
   }
   document.getElementById('ssp-upload-input').click();
@@ -4565,6 +4694,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
   document.querySelectorAll('.ssp-option').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   selected = 'custom';
+  syncRailNote();
 
   renderUploadStatus(pkg);
 });
@@ -5008,19 +5138,29 @@ function renderFindings(findings) {
   currentFindings = findings;
   // Reset filters
   filters = { method: 'all', verdict: 'all' };
-  document.querySelectorAll('.filter-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.value === 'all');
-  });
+  renderFilterChips(findings);
   applyFilters();
 }
 
 let currentSampleName = '';
 
+// Both painters clear the table and then append rows from timers. Nothing used
+// to cancel the timers of the paint they replaced, so changing a filter while
+// rows were still landing left the previous selection's rows in the table under
+// the new selection's heading — pick SAT, then OTS half a second later, and the
+// table held both. Every scheduled append now carries the generation it was
+// scheduled for and drops itself if a later paint has started.
+let _paintGen = 0;
+
 function paintFindings(findings) {
   const tbody = document.getElementById('findings-body');
+  const gen = ++_paintGen;
   tbody.innerHTML = '';
+  setFilterCount(findings.length, findings.length);
+  if (!findings.length) { tbody.appendChild(emptyFindingsRow()); return; }
   findings.forEach((f, i) => {
     setTimeout(() => {
+      if (gen !== _paintGen) return;
       const tr = document.createElement('tr');
       const statusBadge = f.status ? ` <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;padding:1px 6px;margin-left:6px;border:1px solid #3A4250;color:#7A8290">${f.status}</span>` : '';
       const riskBadge = f.risk ? `<span class="risk-tag ${f.risk.toLowerCase()}">${f.risk}</span>` : '';
@@ -5042,6 +5182,21 @@ function paintFindings(findings) {
       tbody.appendChild(tr);
     }, i * 80);
   });
+}
+
+// An empty table is indistinguishable from a broken one. Name the selection
+// that emptied it.
+function emptyFindingsRow() {
+  const active = FILTER_DIMS
+    .filter(spec => filters[spec.dim] !== 'all')
+    .map(spec => spec.label + ' ' + (spec.text[filters[spec.dim]] || filters[spec.dim]));
+  const tr = document.createElement('tr');
+  tr.className = 'findings-empty';
+  tr.innerHTML = '<td colspan="4">' + (active.length
+    ? 'No finding in this run matches ' + engEsc(active.join(' + ')) +
+      '. Clear a filter to see the other ' + currentFindings.length + '.'
+    : 'This run produced no findings.') + '</td>';
+  return tr;
 }
 
 // ── ConMon scan-type bands renderer (RA-5 categories) ──
@@ -8588,7 +8743,6 @@ async function runDemo() {
   btn.innerHTML = 'Running... <span class="arrow">⟳</span>';
 
   document.getElementById('idle-state').style.display = 'none';
-  document.getElementById('annual-placeholder').style.display = 'none';
   document.getElementById('run-state').style.display = 'block';
   document.getElementById('log').innerHTML = '';
   document.getElementById('results').classList.remove('show');
@@ -9080,8 +9234,14 @@ async function runInitialLive(sample) {
   setStatus('◆ PARSE · reading the package in your browser · nothing leaves this page');
   const corpus = await engineCorpus(sample);
   if (!corpus) {
-    log(ts(), 'stop', 'nothing to assess: no upload and no bundled document set', 'warn');
-    setStatus('◆ STOPPED · nothing to assess');
+    // The rail offers systems the §02–§09 walkthroughs are written about, and
+    // this build ships a document set for exactly one of them. Name the system
+    // and the way forward rather than report the absence of a corpus.
+    const name = (sample && sample.name) || 'the selected system';
+    log(ts(), 'stop', '✗ no document set for <span class="key">' + engEsc(name) + '</span> in this build · §01 assesses documents, and there are none here to read', 'warn');
+    log(ts(), 'next', 'choose <span class="key">CloudVault Storage Platform</span> in the rail or upload your own package and run again — or open §02–§09, where ' + engEsc(name) + ' is the walkthrough subject', 'warn');
+    setStatus('◆ STOPPED · no document set for ' + name);
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
   }
   log(ts(), 'init', '<span class="key">live engine</span> · ' + engEsc(corpus.label) + ' · ' + corpus.files.length + ' file(s) received');
@@ -9237,15 +9397,17 @@ const _paintFindingsCascade = paintFindings;
 paintFindings = function (findings) {
   const tbody = document.getElementById('findings-body');
   const bar = document.getElementById('eng-showall');
-  tbody.innerHTML = '';
   if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
 
   if (findings.length <= 40) return _paintFindingsCascade(findings);
 
+  const gen = ++_paintGen;
+  tbody.innerHTML = '';
   const shown = Math.min(findings.length, window.__engShowAll ? findings.length : ENGINE_ROW_CAP);
   const BATCH = 12, STEP = 55;
   for (let start = 0; start < shown; start += BATCH) {
     setTimeout(() => {
+      if (gen !== _paintGen) return;
       const frag = document.createDocumentFragment();
       for (let i = start; i < Math.min(start + BATCH, shown); i++) {
         frag.appendChild(buildFindingRow(findings[i]));
@@ -9254,12 +9416,7 @@ paintFindings = function (findings) {
     }, (start / BATCH) * STEP);
   }
 
-  const fc = document.getElementById('filter-count');
-  if (fc) {
-    fc.textContent = shown < findings.length
-      ? shown + ' of ' + findings.length + ' findings shown'
-      : findings.length + ' of ' + currentFindings.length + ' findings shown';
-  }
+  setFilterCount(shown, findings.length);
 
   if (bar && shown < findings.length) {
     bar.style.display = 'block';

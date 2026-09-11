@@ -17,6 +17,57 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11 (the console's own controls)
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+An acceptance walk of the live demo, control by control: click everything the
+page offers and ask whether it does what it says. Nine of them did not. No
+verdict, gate or export changed — this is the layer between the visitor and the
+engine.
+
+- **A filter changed while rows were still painting kept the rows it replaced.**
+  Both painters clear the table and then append from timers, and nothing
+  cancelled the timers of the paint they replaced. Choosing Satisfied and then
+  Other-Than-Satisfied half a second later left 60 Satisfied rows sitting under
+  the Other-Than-Satisfied heading — the table contradicting the selection above
+  it. Every scheduled append now carries its paint's generation and drops itself
+  when a later paint has started.
+- **Filter chips that could not match a row.** The bar was a fixed
+  Examine · Interview · Test / SAT · OTS · NR · PASS row whatever the run held.
+  §01 is EXAMINE-only by construction and says so in three places, yet offered
+  Interview and Test, both of which silently emptied the table; §06's findings
+  all carry method QA, which no chip named. The chips are now built from the run
+  that produced them, carry their counts, and a dimension holding one value is
+  stated rather than offered as a choice.
+- **The count beside them meant two things.** "120 of 383 findings shown" when
+  the painter capped the rows and "1 of 981 findings shown" when it did not:
+  painted-of-matched in one case, matched-of-total in the other, so filtering to
+  Satisfied reported a smaller run. One sentence now, and the run total is in
+  every version of it.
+- **An empty table said nothing.** It is indistinguishable from a broken one.
+  A selection that matches nothing now names itself and says how many rows
+  clearing it would bring back.
+- **§01 met the rail's second system with "nothing to assess".** MeshGate is the
+  subject of the §02–§09 walkthroughs and this build ships no document set for
+  it, but the rail listed it as a peer of the sample under "Choose an SSP", so a
+  visitor's second click on the tab they land on ended in *nothing to assess: no
+  upload and no bundled document set* — the absence of a corpus, reported as an
+  outcome. The rail entry now says which sections it is for, the rail says so
+  before Run is pressed, and the run stops by naming the system and the way
+  forward.
+- **The rail disagreed with its own catalog**: FedRAMP Moderate was 325 controls
+  on one line and 323 on the line above it, one authored and one computed. 323.
+- **§09 told visitors to click something that is not clickable.** "Click any
+  connector card to view its schema mapping" — the cards carry no handler and no
+  pointer; the mapping is behind the link inside them, which the copy now names.
+- **A hidden panel labelled §02 as §03.** An "Annual Reassessment · §03 ·
+  Preview · in private preview Q3 2026" block sat in the console markup, never
+  displayed, for a section that is neither §03 nor in preview. Removed.
+
+`tests/selections.mjs` added and wired into CI: seventeen checks over the tabs,
+the rail and the filters. Twelve of them fail against the previous build.
+
 ## 2026-09-11 (§09 Data Sources)
 
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
