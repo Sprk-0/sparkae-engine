@@ -29,7 +29,14 @@ Three constraints, all enforced by `node tests/check.mjs`:
    domain.
 
 Run `node tests/check.mjs .` and `python tests/check_oscal_schema.py`
-before opening a PR; CI runs the same two commands. The identity checks
+before opening a PR; CI runs the same two commands, plus
+`tests/browser.mjs` and `tests/assessor.mjs` in a browser.
+
+A fourth constraint lives in `tests/assessor.mjs`: **an assessor revision
+must never move the reproducibility receipt.** The verdict digest attests
+what the engine derived from the evidence, so a revision changes the
+artifacts — OSCAL state, POA&M, RET, summary counts — and leaves the receipt
+alone. Both determinations stay in the document. The identity checks
 in `check.mjs` fail if a page's canonical, social card or OSCAL namespace
 leaves sparkae.ai, or if a prior company name or domain comes back.
 

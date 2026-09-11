@@ -9,6 +9,11 @@
 # its links, canonical, og:url and sitemap.xml, and the OSCAL Assessment
 # Results validate against the official NIST 1.1.2 schema vendored in
 # tests/schema/.
+#
+# The browser job additionally proves the assessor layer: the examine statement
+# is built from the run rather than asserted, a revision reaches the OSCAL,
+# POA&M, RET and summary, and the reproducibility receipt does not move when an
+# assessor overrides a determination.
 name: conformance
 
 on:
@@ -66,6 +71,9 @@ jobs:
 
       - name: Drive the demo in headless Chromium with all network aborted
         run: node tests/browser.mjs .
+
+      - name: Assessor statements, revisions, and what reaches the exports
+        run: node tests/assessor.mjs .
 
   # Is sparkae.ai this repository? The only check here that uses the network,
   # and the only one that can answer that, so it is kept off pull requests: a

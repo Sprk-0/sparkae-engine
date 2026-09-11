@@ -132,10 +132,15 @@ node tests/check.mjs .                 # node ≥ 18, no dependencies
 pip install jsonschema regex && python tests/check_oscal_schema.py
 ```
 
-There is also a browser-level check — `node tests/browser.mjs .` after
-`npm i playwright && npx playwright install chromium` — which drives the demo
-in headless Chromium with every non-file request aborted and compares what
-the page shows and downloads with the golden fixture (CI's `browser` job).
+There are also two browser-level checks — `node tests/browser.mjs .` and
+`node tests/assessor.mjs .`, after `npm i playwright && npx playwright install
+chromium` — which drive the demo in headless Chromium with every non-file
+request aborted (CI's `browser` job runs both). The first compares what the
+page shows and downloads with the golden fixture. The second covers the
+assessor layer: that each finding's examine statement is built from the run
+rather than asserted, that revising a determination reaches the OSCAL, POA&M,
+RET and summary, and that doing so leaves the reproducibility receipt
+untouched.
 
 `check.mjs` checks: every script parses; the catalog counts above; no
 published file loads or calls a third-party origin and every page's CSP is
