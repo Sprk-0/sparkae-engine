@@ -221,6 +221,38 @@ const xss = await page.evaluate(() => ({
     .some(el => el.textContent.includes('onerror')),
 }));
 
+// ── §09 Data Sources ────────────────────────────────────────────────────
+// The connector matrix used to badge two connectors ● LIVE and print coverage
+// percentages, artifact counts and last-sync timestamps for connections that do
+// not exist — and the run emitted 3PAO-style observations citing them, with a
+// recommendation to "continue current sync cadence". None of it was real, and
+// it contradicted this page's own statement that no connector runs here.
+await page.reload();
+await dismissOnboarding();
+await page.click('.uc-tab[data-uc="src"]');
+await page.click('#run-btn');
+await page.waitForSelector('#results.show', { timeout: 120000 });
+// paintFindings lands rows in staggered batches, so a fixed delay reads a
+// half-painted table and can undercount the very rows this is looking for —
+// a check that passes because it looked too early is worse than no check.
+// Wait for the row count to stop moving instead of for a clock.
+await page.waitForFunction(() => {
+  const n = document.querySelectorAll('.findings-table .verdict-tag').length;
+  const settled = n > 0 && window.__srcSettleCount === n;
+  window.__srcSettleCount = n;
+  return settled;
+}, null, { timeout: 60000, polling: 300 });
+const srcPanel = await page.evaluate(() => ({
+  note: (document.querySelector('.connector-note') || {}).textContent || '',
+  // innerText is what a person reads; innerHTML would include inline script source.
+  text: document.body.innerText,
+  satRows: Array.from(document.querySelectorAll('.findings-table .verdict-tag'))
+    .filter(e => /SAT/.test(e.textContent)).length,
+  totalRows: document.querySelectorAll('.findings-table .verdict-tag').length,
+}));
+const SRC_TEXT = ['● LIVE', '% coverage', 'last sync', 'sync cadence', 'artifacts indexed']
+  .map(needle => ({ needle, present: srcPanel.text.includes(needle) }));
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
@@ -245,6 +277,14 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['§09 shows no telemetry for connectors that do not exist',
+    !SRC_TEXT.some(n => n.present),
+    SRC_TEXT.filter(n => n.present).map(n => n.needle).join(', ')],
+  ['§09 says on the panel itself that none of these connectors run',
+    /None of these connectors run/i.test(srcPanel.note), srcPanel.note.slice(0, 80)],
+  ['§09 gives no connector a Satisfied determination',
+    srcPanel.totalRows > 0 && srcPanel.satRows === 0,
+    'SAT rows=' + srcPanel.satRows + ' of ' + srcPanel.totalRows + ' painted'],
   ['the page does not assess anything until the visitor asks',
     !idle.resultsShown && idle.logLines === 0 && idle.runState !== 'block',
     'results=' + idle.resultsShown + ' log=' + idle.logLines + ' runState=' + idle.runState],
