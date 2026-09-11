@@ -1,0 +1,180 @@
+{
+  "_comment": "Each case pairs ONE objective with a fixed document set and states the determination a competent assessor would reach from those documents alone. `source` records where the case came from. external-review: the evidence documents are an outside reviewer's own uploads, submitted before the fixes existed, so they were not written against this implementation's behaviour; at1-account-monitoring-evidence is the reviewer's reproduction end to end, objective and expected determination included, and the other two pair the reviewer's documents with objectives they do address. engine-repo: documents and labels both written here, which tests what their author already believed and is weaker evidence. `expect` is satisfied | not-satisfied. `rationale` is the argument for the label, and is the thing to dispute if you think a determination is wrong.",
+  "baseline": "Low",
+  "assessment_date": "2026-06-01",
+  "cases": [
+    {
+      "id": "at1-account-monitoring-evidence",
+      "source": "external-review",
+      "control": "AT-1",
+      "objective": "AT-1_a.[01]",
+      "expect": "not-satisfied",
+      "rationale": "Neither document establishes an awareness and training policy. One is about account monitoring, the other about authentication. The objective's generic words — policy, developed, documented — are all present and none of its subject matter is.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. The account management policy is developed and documented and reviewed annually. Most recent scan: 2026-05-28."
+        },
+        {
+          "name": "policy.txt",
+          "text": "IA-2 Identification and Authentication. Multi-factor authentication is enforced for all privileged users per the documented identification and authentication policy, version 2.4, dated 2026-01-15."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-account-monitoring-evidence",
+      "source": "external-review",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "satisfied",
+      "rationale": "The same reviewer's document, against the objective it actually addresses. Account use being monitored continuously, attributed to a role and a document section, with a dated scan, is what AC-2_g asks for. If this fails, the engine is refusing evidence that does the job.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.pdf."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-contradicting-evidence",
+      "source": "external-review",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "The reviewer's contradicting member from the duplicate-name archive. The document states plainly that account monitoring is not implemented; a determination of Satisfied against it would be reading the negation as an affirmation.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. Account monitoring is not implemented. The quarterly review has not been performed and no automated mechanism exists."
+        }
+      ]
+    },
+    {
+      "id": "at1-genuine-policy",
+      "source": "engine-repo",
+      "control": "AT-1",
+      "objective": "AT-1_a.[01]",
+      "expect": "satisfied",
+      "rationale": "An awareness and training policy that is developed, documented, located in a numbered section, versioned and dated. This is the true positive the subject-matter rule must not break: a rule that refuses everything is not an improvement over one that accepts everything.",
+      "documents": [
+        {
+          "name": "at-policy.txt",
+          "text": "AT-1 Awareness and Training Policy and Procedures. The organization-level security awareness and training policy is developed and documented in SSP section 12.1, version 2.4, dated 2026-01-15, and is disseminated to all personnel and roles with system access. The awareness and training procedures are reviewed annually."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-awareness-policy-evidence",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "The subject mismatch in the other direction. A well-formed awareness and training policy says nothing about whether account use is monitored.",
+      "documents": [
+        {
+          "name": "at-policy.txt",
+          "text": "AT-1 Awareness and Training Policy and Procedures. The organization-level security awareness and training policy is developed and documented in SSP section 12.1, version 2.4, dated 2026-01-15, and is disseminated to all personnel and roles with system access. The awareness and training procedures are reviewed annually."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-boilerplate-only",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "Compliance vocabulary with no subject matter. Every word a policy document uses to describe itself is here — developed, documented, approved, reviewed, disseminated, consistent with applicable requirements — and nothing about accounts being monitored.",
+      "documents": [
+        {
+          "name": "boilerplate.txt",
+          "text": "The policy is developed and documented in accordance with applicable organizational requirements. It is reviewed and updated annually, approved by management, and disseminated to organizational personnel. The associated procedures are consistent with the requirements and are maintained by the organization."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-draft-marked",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "Evidence that says on its face it is not final. A draft marker means the organization has not yet asserted the control is in place, whatever the surrounding prose claims.",
+      "documents": [
+        {
+          "name": "draft-ssp.txt",
+          "text": "AC-2 Account Management. DRAFT — To be finalized. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. TBD: confirm with the ISSO before submission."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-draft-marked-homoglyph",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "The same draft marker written with Cyrillic homoglyphs. A marker that can be spelled past the gate is not a gate. This case exists because the defence is cheap to write and cheap to lose.",
+      "documents": [
+        {
+          "name": "draft-ssp.txt",
+          "text": "AC-2 Account Management. DRАFT — Tо bе finаlizеd. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28."
+        }
+      ]
+    },
+    {
+      "id": "ac2f-inflected-match",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_f.[01]",
+      "expect": "satisfied",
+      "rationale": "The objective asks whether accounts are created in accordance with defined criteria; the evidence says account creation requires documented approval and names the approver. Refusing this for the difference between 'created' and 'creation' would be a false negative produced by grammar.",
+      "documents": [
+        {
+          "name": "ac-procedures.txt",
+          "text": "AC-2 Account Management. Account creation requires documented approval from the system owner and follows the account management procedures in SSP section 5.1, version 2.4, dated 2026-01-15. Account creation, modification and deletion are logged."
+        }
+      ]
+    },
+    {
+      "id": "cp2-incident-response-evidence",
+      "source": "engine-repo",
+      "control": "CP-2",
+      "objective": "CP-2_a.(1)",
+      "expect": "not-satisfied",
+      "rationale": "Contingency planning and incident response are adjacent disciplines with overlapping vocabulary — plan, procedures, roles, testing, annual review. An incident response plan does not establish a contingency plan, and the overlap is exactly what makes this worth testing.",
+      "documents": [
+        {
+          "name": "irp.txt",
+          "text": "IR-8 Incident Response Plan. The incident response plan is developed and documented in SSP section 9.2, version 3.1, dated 2026-02-10. It assigns roles and responsibilities, is reviewed annually, and is disseminated to incident response personnel. The most recent tabletop exercise was conducted 2026-04-15."
+        }
+      ]
+    },
+    {
+      "id": "ac2g-empty-evidence",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_g",
+      "expect": "not-satisfied",
+      "rationale": "No evidence at all. A determination of Satisfied from an empty corpus would mean the engine is not reading anything.",
+      "documents": [
+        {
+          "name": "empty.txt",
+          "text": "This document intentionally contains no control implementation statements."
+        }
+      ]
+    },
+    {
+      "id": "ac2d2-retrieval-gap",
+      "source": "engine-repo",
+      "control": "AC-2",
+      "objective": "AC-2_d.(2)",
+      "expect": "satisfied",
+      "known_limitation": "Currently fails. The engine returns Other Than Satisfied because the retriever does not surface the paragraph that answers the objective, not because the document lacks it. Checked directly: running coverage over that paragraph alone gives 1.0. This is one of eight such objectives found when gate 2 was tightened in engine 1.2.0 — the previous rule concealed them by passing on generic vocabulary whatever passage it read. The case is here to hold the count visible rather than let it disappear into a green suite.",
+      "rationale": "The bundled CloudVault SSP states that the organization establishes conditions for group membership and assigns account managers by role. An assessor reading this document would find the objective addressed. A determination of Other Than Satisfied is a false negative — safer than the opposite, and still wrong.",
+      "documents": [
+        {
+          "name": "CloudVault-Federal-SSP.txt",
+          "text": "SYSTEM SECURITY PLAN (SSP)\nCloudVault Federal — FedRAMP Low Baseline\nVersion 3.2 | Effective Date: January 15, 2026\nLast Reviewed: March 10, 2026\n\n1. SYSTEM DESCRIPTION\n\nCloudVault Federal is a cloud-based document management and storage platform\ndesigned for federal agencies. The system processes, stores, and transmits\nfederal information classified at the FIPS 199 Low impact level.\n\nSystem Owner: Jane Martinez, CISO\nAuthorizing Official: Robert Chen, AO\nISSO: Michael Torres\n\n2. ACCESS CONTROL (AC)\n\n2.1 AC-1: Access Control Policy and Procedures\n\nCloudVault maintains a documented Access Control Policy (v3.2, approved\nJanuary 15, 2026). The policy addresses purpose, scope, roles,\nresponsibilities, management commitment, coordination among organizational\nentities, and compliance. The policy is consistent with NIST SP 800-53 Rev 5\nand applicable federal regulations. The access control procedures are reviewed\nannually and updated as needed. Last review: March 10, 2026 by the ISSO. The\npolicy is disseminated to all system administrators and users via the\nCloudVault intranet. Organization-defined frequency for policy review: at\nleast annually. Organization-defined personnel: ISSO, CISO, and System Owner.\n\n2.2 AC-2: Account Management\n\nThe organization manages information system accounts by identifying and\nselecting account types (individual, group, system, service); assigning\naccount managers (System Administrator and ISSO); establishing conditions for\ngroup membership; requiring approval from the AO for account creation\nrequests; and creating, enabling, modifying, disabling, and removing accounts\nper policy. Accounts are reviewed quarterly (organization-defined frequency:\nquarterly). Inactive accounts are disabled after 30 days of inactivity.\nTemporary and emergency accounts are automatically removed after 72 hours.\n\n2.3 AC-3: Access Enforcement\n\nThe system enforces approved authorizations for logical access in accordance\nwith applicable access control policies. Role-based access control (RBAC) is\nimplemented using AWS IAM policies and CloudVault's permission engine. Access\ndecisions are enforced at the application layer (API gateway) and the\ninfrastructure layer (VPC security groups, NACLs). All access attempts are\nlogged per AU-2.\n\n2.4 AC-7: Unsuccessful Logon Attempts\n\nThe system enforces a limit of 5 consecutive invalid logon attempts during a\n15-minute period. After exceeding this threshold, the account is locked for 30\nminutes. The ISSO is notified automatically via email.\n\n3. AUDIT AND ACCOUNTABILITY (AU)\n\n3.1 AU-1: Audit and Accountability Policy and Procedures\n\nCloudVault maintains an Audit and Accountability Policy (v2.8, dated February\n2, 2026). The policy defines the audit requirements, log retention periods,\nand responsibilities for audit review. Policy is reviewed annually by the ISSO.\n\n3.2 AU-2: Event Logging\n\nThe following events are logged: successful and unsuccessful logon attempts;\naccount creation, modification, and deletion; access control changes;\nprivilege escalation; system startup and shutdown; and data export and bulk\ndownload operations. Logs are maintained in AWS CloudWatch and forwarded to\nthe SIEM (Splunk Enterprise).\n\n3.3 AU-3: Content of Audit Records\n\nAudit records contain date/time, event type, user identity, source address,\noutcome (success/failure), and affected resource identifiers. Records are\ngenerated in JSON format with ISO 8601 timestamps.\n\n4. CONFIGURATION MANAGEMENT (CM)\n\n4.1 CM-1: Configuration Management Policy\n\nNot yet fully implemented. The configuration management policy is currently\nbeing drafted. Target completion: Q3 2026.\n\n4.2 CM-2: Baseline Configuration\n\nThe organization maintains a baseline configuration for the information system\nusing AWS Config rules and Terraform infrastructure-as-code. Baselines are\ndocumented in the Configuration Management Database (CMDB). Baseline\nconfiguration last updated: April 1, 2026.\n\n5. IDENTIFICATION AND AUTHENTICATION (IA)\n\n5.1 IA-1: Identification and Authentication Policy\n\nCloudVault has an Identification and Authentication Policy (v2.5, effective\nNovember 1, 2025). Reviewed annually by the CISO.\n\n5.2 IA-2: Identification and Authentication (Organizational Users)\n\nAll users are uniquely identified and authenticated before access is granted.\nMulti-factor authentication (MFA) is required for all privileged and\nnon-privileged users. Authentication mechanisms: SAML 2.0 federation with\nagency IdP; TOTP-based MFA via hardware tokens or authenticator apps; and\nPIV/CAC card authentication for on-premises access. Session timeout: 15\nminutes of inactivity.\n\n6. INCIDENT RESPONSE (IR)\n\n6.1 IR-1: Incident Response Policy and Procedures\n\nCloudVault maintains an Incident Response Plan (v1.9, dated December 15, 2025).\nOrganization-defined frequency for review: at least annually. Responsible\npersonnel: ISSO, CISO, Incident Response Team Lead.\n\n6.2 IR-6: Incident Reporting\n\nSecurity incidents are reported to the ISSO within 1 hour of discovery.\nUS-CERT notification occurs within the timeframes specified in FISMA reporting\nguidance.\n\n7. RISK ASSESSMENT (RA)\n\n7.1 RA-5: Vulnerability Monitoring and Scanning\n\nVulnerability scanning is performed using Tenable Nessus (credentialed scans).\nScans are conducted monthly on all system components. Most recent scan: May\n28, 2026. Critical findings: 0. High findings: 2 (remediation in progress\nwithin SLA). Scan results are reviewed by the ISSO within 5 business days.\n\n8. SYSTEM AND COMMUNICATIONS PROTECTION (SC)\n\n8.1 SC-1: System and Communications Protection Policy\n\n[TBD - To be finalized]\n\n8.2 SC-7: Boundary Protection\n\nThe system implements boundary protection using AWS WAF at the edge; a VPC\nwith public and private subnets; network ACLs restricting inbound/outbound\ntraffic; security groups with least-privilege rules; and CloudFront CDN with\nDDoS protection (AWS Shield). All traffic between system components uses TLS\n1.2 or higher. External API endpoints require mutual TLS for agency\nconnections.\n\n9. SYSTEM AND INFORMATION INTEGRITY (SI)\n\n9.1 SI-1: System and Information Integrity Policy\n\nImplementation is in progress. The policy framework has been developed but\nformal approval and dissemination are pending.\n\n9.2 SI-2: Flaw Remediation\n\nThe organization identifies, reports, and corrects information system flaws.\nPatches are tested in a staging environment before production deployment.\nCritical patches are applied within 30 days per FedRAMP ConMon.\n"
+        }
+      ]
+    }
+  ]
+}

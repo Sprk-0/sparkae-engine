@@ -1,11 +1,12 @@
 # Conformance suite for the SparkAE public reference build.
 #
 # Everything the README claims about this repository is checked here on every
-# push and pull request: the scripts parse, the catalog counts are right, no
-# published file reaches a third-party origin, the engine and exporters read
-# no clock and use no randomness, the gate model is canonical, the sample
-# package is reproducible (golden verdict digest, byte-identical OSCAL), CSV
-# output is formula-injection safe, every page names one address in its
+# pull request and on every push to main: the scripts parse, the catalog counts
+# are right, no published file reaches a third-party origin, the engine and
+# exporters read no clock and use no randomness, the gate model is canonical,
+# the sample package is reproducible (golden verdict digest, byte-identical
+# OSCAL), CSV output is formula-injection safe, the accuracy benchmark's
+# determinations are the ones on record, every page names one address in its
 # canonical, its og:url and sitemap.xml, Netlify's Pretty URLs post-processing
 # is pinned off, and the OSCAL Assessment Results validate against the official
 # NIST 1.1.2 schema vendored in tests/schema/.
@@ -44,6 +45,17 @@ jobs:
 
       - name: Engine, catalog, determinism, network, CSV and address checks
         run: node tests/check.mjs .
+
+      # check.mjs asks whether the engine is reproducible. This asks whether it
+      # is right, against cases whose labels are written down and arguable.
+      # --strict fails the build on a wrong determination that has no recorded
+      # reason, so a documented gap does not hold the build red while a new
+      # regression does. The committed results.json is the published record and
+      # must be regenerated in the same commit as any change that moves it.
+      - name: Accuracy benchmark
+        run: |
+          node tests/benchmark.mjs . --strict
+          git diff --exit-code tests/benchmark/results.json
 
       - uses: actions/setup-python@v5
         with:

@@ -893,5 +893,35 @@ check(col(revised, 'Engine Determination') === attrFindings[0].status,
   'the engine column is the engine\'s, unchanged by the revision over it');
 
 
+// ── 16. the README's accuracy figures are the benchmark's ───────────────────
+// The benchmark runs from its own entry point (tests/benchmark.mjs, run by CI
+// with --strict). What is checked here is the other half: that the numbers the
+// README prints are the numbers on record, so a figure cannot go stale in the
+// one file a reader is most likely to quote from.
+console.log('16. accuracy figures');
+const benchSpec = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'cases.json'), 'utf8'));
+const bench = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'results.json'), 'utf8'));
+const readmeSrc = read('README.md');
+const bo = bench.summary.overall;
+
+check(bo.cases === benchSpec.cases.length,
+  'the recorded results cover every case in cases.json (' + bo.cases + ')');
+
+const plural = (n, word) => n + ' ' + word + (n === 1 ? '' : word === 'false pass' ? 'es' : 's');
+const headline = 'engine ' + bench.summary.engine_version + ' · ' + bo.cases + ' cases · ' +
+  bo.correct + ' correct · ' + plural(bo.false_pass, 'false pass') + ' · ' +
+  plural(bo.false_fail, 'false fail');
+check(readmeSrc.includes(headline), 'README states the recorded score: ' + headline);
+
+const split = Object.entries(bench.summary.by_source)
+  .map(([src, v]) => src + ' ' + v.cases + ' cases · ' + v.correct + ' correct').join(' · ');
+check(readmeSrc.includes(split), 'README states the per-source split: ' + split);
+
+// A benchmark whose cases were all written by the engine's author measures
+// agreement with its author. The README says so; this keeps the split real.
+check((bench.summary.by_source['external-review'] || {}).cases > 0,
+  'at least one case comes from outside this repository');
+
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

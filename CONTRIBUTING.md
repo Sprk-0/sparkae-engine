@@ -5,7 +5,7 @@ them: this repository *is* the public site, so a merged change is what
 https://sparkae.ai serves. The commercial server product is a separate
 private codebase and is not changed from here.
 
-Three constraints, all enforced by `node tests/check.mjs`:
+Four constraints, all enforced by `node tests/check.mjs`:
 
 1. **Determinism is non-negotiable.** No `Date.now()`, no argument-less
    `new Date()`, no `Math.random()`, no dependence on object-key ordering in
@@ -28,9 +28,20 @@ Three constraints, all enforced by `node tests/check.mjs`:
    name that origin. Do not reintroduce a prior company name or a prior
    domain.
 
-Run `node tests/check.mjs .` and `python tests/check_oscal_schema.py`
-before opening a PR; CI runs the same two commands, plus
-`tests/browser.mjs` and `tests/assessor.mjs` in a browser.
+Run `node tests/check.mjs .`, `node tests/benchmark.mjs . --strict` and
+`python tests/check_oscal_schema.py` before opening a PR; CI runs the same
+three commands, plus `tests/browser.mjs`, `tests/assessor.mjs` and
+`tests/pages.mjs` in a browser.
+
+**A determination the benchmark gets wrong is documented, not deleted.** If a
+change moves a case in `tests/benchmark/cases.json`, regenerate
+`tests/benchmark/results.json` in the same commit (CI compares the committed
+record against a fresh run) and say in the PR which determinations moved and
+why. A case that starts failing is either fixed or given a `known_limitation`
+stating what the engine does and why — removing the case, or relabelling it to
+match the new behaviour, turns the benchmark into a record of the engine
+agreeing with itself. Adding cases is welcome; mark them `engine-repo` unless
+the documents came from outside this repository.
 
 A fourth constraint lives in `tests/assessor.mjs`: **an assessor revision
 must never move the reproducibility receipt.** The verdict digest attests
