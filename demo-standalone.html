@@ -1024,9 +1024,10 @@ html,body{
 .dl-toast.err{
   border-left-color:var(--vermillion);
 }
-/* Named, not offered: these are the artifacts a walkthrough step produces in
-   the server product, so they carry no pointer, no hover and no href. */
-.export-item{
+/* Named, not offered: a walkthrough does not generate these, so they carry no
+   href, no pointer and no hover. The dashed border is the same signal the
+   filter bar uses for a value that is stated rather than selectable. */
+.export-btn{
   background:transparent;
   border:1px dashed #2C3540;
   color:#B8C0CC;

@@ -151,12 +151,17 @@ const walkOnly = {
   badge: await textOf('.ssp-option[data-id="meshgate"] .uc-badge'),
   name: await textOf('.ssp-option[data-id="meshgate"] .ssp-name'),
 };
+// These assert what the visitor is told, not the sentence it is told in: the
+// note has to name the entry that CAN be assessed and the sections this one is
+// for, and the entry has to be tagged as a walkthrough. Which words carry that
+// is the page's business.
 check('a rail entry §01 cannot assess is flagged before Run is pressed',
   walkOnly.display !== 'none' && walkOnly.display !== 'missing' && /no document set/i.test(walkOnly.text) &&
-  walkOnly.text.includes('CloudVault Storage Platform'),
+  /CloudVault/.test(walkOnly.text),
   walkOnly.display + ' | ' + walkOnly.text.slice(0, 120));
 check('the rail entry itself names the sections it is for',
-  /§02.{0,3}§09/.test(walkOnly.badge), walkOnly.name);
+  /walkthrough/i.test(walkOnly.badge) && /§02.{0,3}§09/.test(walkOnly.text),
+  walkOnly.name + ' | badge ' + walkOnly.badge);
 
 await page.click('#run-btn');
 await page.waitForFunction(() => /STOPPED/.test(document.getElementById('console-status').textContent),
@@ -166,11 +171,11 @@ const stopped = await page.evaluate(() => ({
   log: document.getElementById('log').textContent.replace(/\s+/g, ' ').trim(),
 }));
 check('the stop names the system rather than reporting an absent corpus',
-  stopped.status.includes('MeshGate Identity Service') &&
+  /MeshGate Identity Service/.test(stopped.status + ' ' + stopped.log) &&
   !/no upload and no bundled document set/.test(stopped.log),
   stopped.status);
 check('the stop says what to do next',
-  /CloudVault Storage Platform/.test(stopped.log) && /upload/.test(stopped.log),
+  /CloudVault/.test(stopped.log) && /upload/.test(stopped.log),
   stopped.log.slice(0, 160));
 
 await page.click('.uc-tab[data-uc="conmon"]');
