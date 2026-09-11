@@ -219,12 +219,40 @@ landing; the site just no longer emits it.
 
 ## Licence
 
-Code in this repository is licensed under the Apache License, Version 2.0 —
-see `LICENSE` and `NOTICE`. The SparkAE server product is separate commercial
-software (licensed, not sold; FAR 12.212 / DFARS 227.7202 terms for federal
-buyers) and is not covered by that licence. SparkAE and the SparkAE marks are
-reserved. Contact: [info@sparkae.ai](mailto:info@sparkae.ai). NIST SP 800-53 /
-800-53A catalog text is a work of the United States Government and is not
-subject to copyright in the United States. The IBM Plex and Fraunces
-typefaces in `static/fonts/` are distributed under the SIL Open Font License
-1.1 — the licence texts travel with the files there.
+**This repository** — the in-browser engine, the 800-53A catalog, the export
+builders, the site pages and the tests — is licensed under the Apache License,
+Version 2.0. See `LICENSE` and `NOTICE`. Contributions are inbound under that
+same licence, by operation of Apache-2.0 section 5, unless a contributor states
+otherwise in writing.
+
+**The SparkAE server product** — the API, the multi-tenant service, the audit
+chain, the integrations and the assessor console — is separate commercial
+software. It is not in this repository, it is not covered by the Apache
+licence, and it is licensed, not sold, under its own written agreement.
+
+### U.S. Government users
+
+Both are **commercial computer software** and **commercial computer software
+documentation** as those terms are defined at FAR 2.101. Consistent with
+FAR 12.212 (civilian agencies) and DFARS 227.7202-1 through 227.7202-4 (DoD),
+the Government acquires each only under the licence customarily provided to the
+public: for this repository, the Apache License 2.0 in `LICENSE`; for the server
+product, its written commercial agreement. Use, duplication, disclosure,
+modification and release are governed by those licences and no others.
+
+Nothing in this README, on sparkae.ai, or in any SparkAE marketing material is
+the licence or modifies it. Where this page and a licence differ, the licence
+governs. A federal acquisition is made under the written agreement executed for
+it, not under this section — read it with your counsel and your contracting
+officer.
+
+### Government and third-party material
+
+NIST SP 800-53 Rev 5 and SP 800-53A Rev 5 catalog text, and the OSCAL 1.1.2
+schema vendored in `tests/schema/`, are works of the United States Government
+and are not subject to copyright in the United States (17 U.S.C. § 105). The
+IBM Plex and Fraunces typefaces in `static/fonts/` are distributed under the SIL
+Open Font License 1.1 — the licence texts travel with the files there.
+
+SparkAE and the SparkAE marks are reserved. Contact:
+[info@sparkae.ai](mailto:info@sparkae.ai).

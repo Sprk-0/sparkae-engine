@@ -16,6 +16,20 @@ under the License.
 SparkAE and the SparkAE marks are reserved. The SparkAE server product is
 separate commercial software and is not covered by this licence.
 
+U.S. GOVERNMENT RIGHTS
+
+This software is "commercial computer software" and this documentation is
+"commercial computer software documentation" as those terms are defined at
+FAR 2.101. Consistent with FAR 12.212 and DFARS 227.7202-1 through 227.7202-4,
+the U.S. Government acquires this software under the licence customarily
+provided to the public — the Apache License, Version 2.0, reproduced in
+LICENSE — and use, duplication, disclosure, modification and release are
+governed by that licence and no other. No rights beyond those the Apache
+License grants are conveyed, and none of the rights it grants are withheld.
+
+The SparkAE server product is licensed separately and is not covered by this
+notice or by the Apache License.
+
 Third-party material:
 
 - NIST SP 800-53 Rev 5 and SP 800-53A Rev 5 catalog text
