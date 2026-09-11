@@ -149,6 +149,25 @@ nav .links a:hover,nav .links a.active{color:var(--vermillion)}
 .btn-vermillion{background:var(--vermillion);color:var(--paper);border-color:var(--vermillion)}
 .btn-vermillion:hover{background:var(--vermillion-dark);border-color:var(--vermillion-dark)}
 
+/* ── Public preview status ──
+   The engine is published and measured on a small public case set, not on real
+   authorization packages. That belongs beside the button that starts a run:
+   a visitor decides what to trust before they click, not in a footnote after. */
+.preview-note{
+  display:flex;align-items:flex-start;gap:14px;max-width:660px;
+  margin-top:20px;padding:13px 16px;
+  border:1px solid var(--rule);border-left:3px solid var(--vermillion);
+  background:var(--paper-warm);
+  font-size:13.5px;line-height:1.55;color:var(--ink-soft);
+}
+.preview-note .tag{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--vermillion);white-space:nowrap;padding-top:3px;
+}
+.preview-note strong{color:var(--ink);font-weight:500}
+.preview-note a{color:var(--vermillion);text-decoration:underline;text-underline-offset:2px}
+@media (max-width:720px){.preview-note{flex-direction:column;gap:8px}}
+
 /* ── Chips / eyebrow ── */
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:40px}
 .chip{
