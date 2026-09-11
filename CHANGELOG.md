@@ -46,6 +46,32 @@ exist. The demo now says what the Integrations page says.
 
 Three browser checks added; all three fail against the previous build.
 
+## 2026-09-11 (later still)
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+A sweep of the other eight use-case tabs, after §09 turned out to be presenting
+an integration estate that does not exist. §09 was not unique in kind, though
+what the others overstate is smaller.
+
+- **Every guided walkthrough says so in the run.** Eight of the nine tabs are
+  walkthroughs over authored sample data, and each carried a `walkthrough` badge
+  in the tab nav — 8px of muted text — then completed with a status a visitor
+  could screenshot as a result: "ConMon package ready for JAB", "AAR ready for
+  Authorizing Official", "SCR package ready for AO disposition". §01's
+  walkthrough did log that its figures are illustrative, but only on the path
+  where the engine script fails to load, so in ordinary use no tab said it. Each
+  run now opens by saying it is a walkthrough over fixed sample data and ends on
+  a status that repeats it.
+- **§08 Portfolio reports the systems it actually rolled up.** It asserted
+  "4 systems" while `SAMPLES` holds two, so its own completion line read
+  "4 systems · 2 ready · 0 minor · 0 material" — a total that disagreed with its
+  parts and with the matrix rendered directly beneath it. The count is computed
+  now.
+
+Two browser checks added, both failing against the previous build; the first
+names every offending status line.
+
 ## 2026-09-11 (later)
 
 - **Nothing runs until the visitor asks.** The demo started the CloudVault
