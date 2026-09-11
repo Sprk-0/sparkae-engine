@@ -40,9 +40,30 @@ alone. Both determinations stay in the document. The identity checks
 in `check.mjs` fail if a page's canonical, social card or OSCAL namespace
 leaves sparkae.ai, or if a prior company name or domain comes back.
 
-GitHub's About box (description, website, topics) is not a file in this
-tree — set it in the repository settings so the listing names
-https://sparkae.ai the way the pages do.
+## Repository settings that are not files
+
+GitHub's About box and two security settings live in repository settings, not
+in this tree, so nothing here can set or check them. They have been lost once
+already — the improvement register records the About box as set on 2026-09-09
+and it was empty again on 2026-09-11. The intended values, so restoring them
+is copy-paste rather than recall:
+
+```text
+Description  Every determination, traced to evidence. An in-browser FedRAMP
+             assessment engine — open one file, no build, no server, no network.
+Website      https://sparkae.ai
+Topics       fedramp · oscal · nist-800-53a · compliance · security-assessment
+             · grc · deterministic · static-site
+```
+
+Also in settings, and currently unset:
+
+- **Private vulnerability reporting** is off. `SECURITY.md` names email as the
+  path that always works and the form only "where enabled", so the two agree
+  today — but the form is the better front door, and turning it on makes that
+  sentence describe a live option rather than a hypothetical one.
+- **Wiki and Projects** are enabled and empty. Either is fine; both being on
+  with nothing in them is two dead tabs on the repository's front page.
 
 `node tests/check_published.mjs` is the exception to constraint 2 and the only
 check here that touches the network: it asks whether the deployed site is still

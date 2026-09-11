@@ -58,8 +58,17 @@ await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 await dropOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
-// Rows paint in batches; wait for the statements rather than for a clock.
-await page.waitForFunction(() => document.querySelectorAll('.ex-block').length > 0, null, { timeout: 60000 });
+// Rows paint in batches on timers, so the table keeps growing for a while
+// after the first statement appears. Wait for the count to stop moving: two
+// consecutive polls agreeing means the painter is done, and the tallies below
+// then describe a table that is no longer changing under them.
+await page.waitForFunction(() => {
+  const n = document.querySelectorAll('.ex-block').length;
+  if (!n) return false;
+  const settled = window.__exSettleCount === n;
+  window.__exSettleCount = n;
+  return settled;
+}, null, { timeout: 60000, polling: 300 });
 
 const download = async (kind) => {
   const [dl] = await Promise.all([
@@ -72,8 +81,13 @@ const download = async (kind) => {
   return Buffer.concat(chunks).toString('utf8');
 };
 
-const blocks = await page.locator('.ex-block').count();
-const collapsed = await page.locator('.ex-block:not([open])').count();
+// Both tallies come from one evaluation, so they cannot disagree because a
+// batch landed between two separate queries — which is exactly how this read
+// 84 collapsed of 72 blocks on a CI runner.
+const { blocks, collapsed } = await page.evaluate(() => ({
+  blocks: document.querySelectorAll('.ex-block').length,
+  collapsed: document.querySelectorAll('.ex-block:not([open])').length,
+}));
 
 const arBefore = JSON.parse(await download('ar'));
 const poamBefore = await download('poam');
