@@ -9,6 +9,7 @@ commercial boundary have to stay true of the reference build.
 ## Checks
 
 - [ ] `node tests/check.mjs .`
+- [ ] `node tests/benchmark.mjs . --strict`
 - [ ] `python tests/check_oscal_schema.py` (needs `jsonschema` and `regex`)
 - [ ] `node tests/browser.mjs .`, `node tests/assessor.mjs .`,
       `node tests/selections.mjs .` and `node tests/pages.mjs .` (needs Playwright)

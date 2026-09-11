@@ -210,8 +210,9 @@ a rail entry §01 cannot assess says so before Run is pressed and names the
 system when it stops, that the rail's control counts are the ones this catalog
 yields, that every chip on offer matches rows of its own value and every value
 in the run is on offer, that changing a filter mid-paint leaves none of the
-previous selection's rows behind, and that a selection matching nothing says
-which selection emptied the table.
+previous selection's rows behind, that a selection matching nothing says
+which selection emptied the table, and that a walkthrough names the exports
+its step would produce without offering them as downloads it cannot make.
 
 `check.mjs` checks: every script parses; the catalog counts above; no
 published file loads or calls a third-party origin and every page's CSP is
@@ -220,7 +221,8 @@ gate model; determinism (same input twice → same verdict digest and
 byte-identical OSCAL; a missing date throws; a different date changes the
 temporal verdicts); the golden fixture; CSV formula-injection safety; the
 OSCAL document's shape and receipt; that every page names one address in its
-`canonical`, its `og:url` and `sitemap.xml`, and that Netlify's Pretty URLs
+`canonical`, its `og:url` and `sitemap.xml`, that every page in `sitemap.xml`
+can be reached by link from the homepage, and that Netlify's Pretty URLs
 post-processing stays pinned off; and that the homepage hero labelled
 “from the sample run” is a finding this engine actually emits for that
 run, shown in the OSCAL shape the exporters write. The GitHub Actions
