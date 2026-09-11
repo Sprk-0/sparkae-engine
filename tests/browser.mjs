@@ -232,13 +232,23 @@ await dismissOnboarding();
 await page.click('.uc-tab[data-uc="src"]');
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 120000 });
-await page.waitForTimeout(800);
+// paintFindings lands rows in staggered batches, so a fixed delay reads a
+// half-painted table and can undercount the very rows this is looking for —
+// a check that passes because it looked too early is worse than no check.
+// Wait for the row count to stop moving instead of for a clock.
+await page.waitForFunction(() => {
+  const n = document.querySelectorAll('.findings-table .verdict-tag').length;
+  const settled = n > 0 && window.__srcSettleCount === n;
+  window.__srcSettleCount = n;
+  return settled;
+}, null, { timeout: 60000, polling: 300 });
 const srcPanel = await page.evaluate(() => ({
   note: (document.querySelector('.connector-note') || {}).textContent || '',
   // innerText is what a person reads; innerHTML would include inline script source.
   text: document.body.innerText,
   satRows: Array.from(document.querySelectorAll('.findings-table .verdict-tag'))
     .filter(e => /SAT/.test(e.textContent)).length,
+  totalRows: document.querySelectorAll('.findings-table .verdict-tag').length,
 }));
 const SRC_TEXT = ['● LIVE', '% coverage', 'last sync', 'sync cadence', 'artifacts indexed']
   .map(needle => ({ needle, present: srcPanel.text.includes(needle) }));
@@ -273,7 +283,8 @@ const checks = [
   ['§09 says on the panel itself that none of these connectors run',
     /None of these connectors run/i.test(srcPanel.note), srcPanel.note.slice(0, 80)],
   ['§09 gives no connector a Satisfied determination',
-    srcPanel.satRows === 0, 'SAT rows=' + srcPanel.satRows],
+    srcPanel.totalRows > 0 && srcPanel.satRows === 0,
+    'SAT rows=' + srcPanel.satRows + ' of ' + srcPanel.totalRows + ' painted'],
   ['the page does not assess anything until the visitor asks',
     !idle.resultsShown && idle.logLines === 0 && idle.runState !== 'block',
     'results=' + idle.resultsShown + ' log=' + idle.logLines + ' runState=' + idle.runState],
