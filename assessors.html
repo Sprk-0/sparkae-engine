@@ -135,7 +135,7 @@
     </div>
     <p class="preview-note fade-up fade-up-3">
       <span class="tag">Public preview</span>
-      <span><strong>Experimental.</strong> Every determination here is automated EXAMINE preparation for an assessor to check — never an authorization decision. Accuracy is measured on a small published case set, not on real authorization packages, and what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark →</a></span>
+      <span><strong>This build runs the engine, not a recording.</strong> It reads the documents you give it and computes every determination in the baseline. Those determinations are automated EXAMINE preparation an assessor checks, not an authorization decision, and their accuracy rests on a small published case set rather than on real authorization packages — what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark →</a>. This describes the public build in this repository, not the commercial server product.</span>
     </p>
   </div>
 </section>
@@ -338,7 +338,7 @@
     <div class="section-label" style="justify-content:center">Market Reality</div>
     <div class="section-title">The OSCAL mandate is <em>rolling out.</em></div>
     <p style="font-size:16px;color:var(--ink-soft);line-height:1.7;margin-bottom:24px">FedRAMP is moving authorization packages toward machine-readable form. RFC-0024, which first proposed the mandate, was <strong>closed</strong> — its requirements were modified and folded into the 2026 Consolidated Rules rather than adopted as drafted, so the specifics are still settling. What does not change is the direction: a Word/Excel-only workflow does not produce structured authorization data, and retrofitting it later is the expensive path. SparkAE exports native OSCAL 1.1.2 assessment-results and POA&amp;M today.</p>
-    <p style="font-size:16px;color:var(--ink-soft);line-height:1.7;margin-bottom:24px">FedRAMP 20x support is in development. What ships today is the Rev5 Examine engine, and the firms that adopt it still own the assessment.</p>
+    <p style="font-size:16px;color:var(--ink-soft);line-height:1.7;margin-bottom:24px">SparkAE does not support FedRAMP 20x. What ships is the Rev5 Examine engine, and the firms that adopt it own the assessment.</p>
     <p style="font-family:var(--font-display);font-style:italic;font-size:20px;color:var(--vermillion);font-weight:400">SparkAE prepares the Examine pass. The recognized assessment service still signs.</p>
   </div>
 </section>
@@ -396,8 +396,8 @@
       SparkAE is independence-preserving assessment infrastructure. It is not a FedRAMP Recognized
       independent assessment service (historically, a 3PAO), it does not replace one, and it does
       not issue the official Security Assessment Report or an Authorization to Operate. It prepares
-      the Examine pass your assessors still own and sign. FedRAMP 20x support is in development
-      and is not sold.
+      the Examine pass your assessors own and sign. FedRAMP 20x support is not part of this
+      product and is not sold.
     </p>
   </div>
 </section>

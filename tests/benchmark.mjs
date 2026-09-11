@@ -13,12 +13,13 @@
 // here does and does not mean — in short: it measures the engine against cases
 // someone chose, and no score here supports a claim of assessment readiness.
 //
-// In a case sourced `external-review` the documents are an outside reviewer's
-// own uploads, submitted before the fixes that address them existed; one of the
-// three is the reviewer's reproduction end to end, and the other two pair those
-// documents with objectives they do address. Cases sourced `engine-repo` are
-// ours in both halves and test what their author already believed. The two
-// populations are scored separately and never merged.
+// In a case sourced `external-review` the scenario and its expected
+// determination come from an outside reviewer's reproduction, reported before
+// the fix that addresses it; the document text is reconstructed here to the
+// review's description, since the reviewer's own files are not in this
+// repository. Cases sourced `engine-repo` are ours in both halves and test what
+// their author already believed. The two populations are scored separately and
+// never merged.
 //
 // Usage:  node tests/benchmark.mjs [site-root] [--strict] [--json]
 //         --strict exits 1 on a wrong determination with no known_limitation,
@@ -42,7 +43,13 @@ for (const f of ['demo-standalone-catalog.js', 'demo-engine.js']) {
 }
 const E = ctx.SparkAEEngine, CATALOG = ctx.CATALOG;
 
-const asOf = new Date(spec.assessment_date + 'T00:00:00Z');
+// The suite's date, unless the case pins its own. A case reproducing a review
+// has to be run on the date that review used: the first version of the PE-2
+// cases below was refused by the temporal gate rather than the subject rule,
+// because documents dated August are in the future on 2026-06-01 — they passed
+// against the engine they were written to catch, for a reason that had nothing
+// to do with the defect.
+const dateOf = (c) => new Date((c.assessment_date || spec.assessment_date) + 'T00:00:00Z');
 
 function runCase(c) {
   const control = CATALOG[c.control];
@@ -52,7 +59,7 @@ function runCase(c) {
   const chunks = c.documents.flatMap(d => E.chunkText(d.text, d.name));
   const retriever = new E.BM25Retriever(chunks);
   const res = E.assessDif(dif, retriever, c.control, control.T, control.F,
-    E.buildRefutationIndex(retriever), asOf);
+    E.buildRefutationIndex(retriever), dateOf(c));
   const gate2 = (res.gates || []).find(g => g.gate === 2) || {};
   return {
     status: res.status,
@@ -75,6 +82,7 @@ const results = spec.cases.map(c => {
   return Object.assign({
     id: c.id, source: c.source, control: c.control, objective: c.objective,
     expect: c.expect, correct,
+    assessment_date: c.assessment_date || spec.assessment_date,
     // A case the engine is known to get wrong, with the reason written down.
     // It still counts against the score — the headline number is what the
     // engine actually does — but --strict tolerates it, so CI catches NEW

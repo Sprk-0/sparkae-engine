@@ -20,18 +20,17 @@ gets right, which it gets wrong, and whether that changed between versions.
 
 Two properties make the number mean anything at all:
 
-**The evidence is not all ours to choose.** Every case records `source`. In a
-case marked `external-review` the documents are an outside reviewer's own
-uploads, submitted before the fixes existed, so they were not written against
-this implementation's behaviour — the engine was changed to satisfy them, not
-the reverse. Be precise about how far that independence goes:
-`at1-account-monitoring-evidence` is the reviewer's reproduction end to end,
-objective and expected determination included; the other two pair the reviewer's
-documents with objectives those documents do address, and that pairing was made
-here. Cases marked `engine-repo` are ours in both halves, documents and label,
-and a passing score on those is weaker evidence: they test what their author
-already believed. The scorer reports the two populations separately and never
-merges them into one headline number.
+**The cases are not all ours to choose.** Every case records `source`. In a case
+marked `external-review` the scenario and its expected determination come from an
+outside reviewer's reproduction, reported before the fix that addresses it — the
+engine was changed to satisfy the case, not the reverse. Be exact about how far
+that independence goes: the **document text is reconstructed here** to the
+review's description, because the reviewer's own files are not in this
+repository. What is independent of this implementation is the case — what was
+tried, and what should have happened — not the bytes. Cases marked `engine-repo`
+are ours in both halves, and a passing score on those is weaker evidence: they
+test what their author already believed. The scorer reports the two populations
+separately and never merges them into one headline number.
 
 **A case is a claim, not a fixture.** `rationale` states why the label is what
 it is, in terms a reader can dispute. If a determination here is wrong, the case

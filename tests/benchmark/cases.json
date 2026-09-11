@@ -1,5 +1,5 @@
 {
-  "_comment": "Each case pairs ONE objective with a fixed document set and states the determination a competent assessor would reach from those documents alone. `source` records where the case came from. external-review: the evidence documents are an outside reviewer's own uploads, submitted before the fixes existed, so they were not written against this implementation's behaviour; at1-account-monitoring-evidence is the reviewer's reproduction end to end, objective and expected determination included, and the other two pair the reviewer's documents with objectives they do address. engine-repo: documents and labels both written here, which tests what their author already believed and is weaker evidence. `expect` is satisfied | not-satisfied. `rationale` is the argument for the label, and is the thing to dispute if you think a determination is wrong.",
+  "_comment": "Each case pairs ONE objective with a fixed document set and states the determination a competent assessor would reach from those documents alone. `source` records where the case came from. external-review: the scenario and its expected determination come from an outside reviewer's reproduction, reported before the fix that addresses it — the engine was changed to satisfy the case, not the reverse. The document text is RECONSTRUCTED here to the review's description, because the reviewer's own files are not in this repository; what is independent of this implementation is the case, not the bytes. engine-repo: scenario, documents and label all written here, which tests what their author already believed and is weaker evidence. `expect` is satisfied | not-satisfied. `assessment_date` overrides the suite's date for a case that has to run on the date its review used. `rationale` is the argument for the label, and is the thing to dispute if you think a determination is wrong.",
   "baseline": "Low",
   "assessment_date": "2026-06-01",
   "cases": [
@@ -173,6 +173,77 @@
         {
           "name": "CloudVault-Federal-SSP.txt",
           "text": "SYSTEM SECURITY PLAN (SSP)\nCloudVault Federal — FedRAMP Low Baseline\nVersion 3.2 | Effective Date: January 15, 2026\nLast Reviewed: March 10, 2026\n\n1. SYSTEM DESCRIPTION\n\nCloudVault Federal is a cloud-based document management and storage platform\ndesigned for federal agencies. The system processes, stores, and transmits\nfederal information classified at the FIPS 199 Low impact level.\n\nSystem Owner: Jane Martinez, CISO\nAuthorizing Official: Robert Chen, AO\nISSO: Michael Torres\n\n2. ACCESS CONTROL (AC)\n\n2.1 AC-1: Access Control Policy and Procedures\n\nCloudVault maintains a documented Access Control Policy (v3.2, approved\nJanuary 15, 2026). The policy addresses purpose, scope, roles,\nresponsibilities, management commitment, coordination among organizational\nentities, and compliance. The policy is consistent with NIST SP 800-53 Rev 5\nand applicable federal regulations. The access control procedures are reviewed\nannually and updated as needed. Last review: March 10, 2026 by the ISSO. The\npolicy is disseminated to all system administrators and users via the\nCloudVault intranet. Organization-defined frequency for policy review: at\nleast annually. Organization-defined personnel: ISSO, CISO, and System Owner.\n\n2.2 AC-2: Account Management\n\nThe organization manages information system accounts by identifying and\nselecting account types (individual, group, system, service); assigning\naccount managers (System Administrator and ISSO); establishing conditions for\ngroup membership; requiring approval from the AO for account creation\nrequests; and creating, enabling, modifying, disabling, and removing accounts\nper policy. Accounts are reviewed quarterly (organization-defined frequency:\nquarterly). Inactive accounts are disabled after 30 days of inactivity.\nTemporary and emergency accounts are automatically removed after 72 hours.\n\n2.3 AC-3: Access Enforcement\n\nThe system enforces approved authorizations for logical access in accordance\nwith applicable access control policies. Role-based access control (RBAC) is\nimplemented using AWS IAM policies and CloudVault's permission engine. Access\ndecisions are enforced at the application layer (API gateway) and the\ninfrastructure layer (VPC security groups, NACLs). All access attempts are\nlogged per AU-2.\n\n2.4 AC-7: Unsuccessful Logon Attempts\n\nThe system enforces a limit of 5 consecutive invalid logon attempts during a\n15-minute period. After exceeding this threshold, the account is locked for 30\nminutes. The ISSO is notified automatically via email.\n\n3. AUDIT AND ACCOUNTABILITY (AU)\n\n3.1 AU-1: Audit and Accountability Policy and Procedures\n\nCloudVault maintains an Audit and Accountability Policy (v2.8, dated February\n2, 2026). The policy defines the audit requirements, log retention periods,\nand responsibilities for audit review. Policy is reviewed annually by the ISSO.\n\n3.2 AU-2: Event Logging\n\nThe following events are logged: successful and unsuccessful logon attempts;\naccount creation, modification, and deletion; access control changes;\nprivilege escalation; system startup and shutdown; and data export and bulk\ndownload operations. Logs are maintained in AWS CloudWatch and forwarded to\nthe SIEM (Splunk Enterprise).\n\n3.3 AU-3: Content of Audit Records\n\nAudit records contain date/time, event type, user identity, source address,\noutcome (success/failure), and affected resource identifiers. Records are\ngenerated in JSON format with ISO 8601 timestamps.\n\n4. CONFIGURATION MANAGEMENT (CM)\n\n4.1 CM-1: Configuration Management Policy\n\nNot yet fully implemented. The configuration management policy is currently\nbeing drafted. Target completion: Q3 2026.\n\n4.2 CM-2: Baseline Configuration\n\nThe organization maintains a baseline configuration for the information system\nusing AWS Config rules and Terraform infrastructure-as-code. Baselines are\ndocumented in the Configuration Management Database (CMDB). Baseline\nconfiguration last updated: April 1, 2026.\n\n5. IDENTIFICATION AND AUTHENTICATION (IA)\n\n5.1 IA-1: Identification and Authentication Policy\n\nCloudVault has an Identification and Authentication Policy (v2.5, effective\nNovember 1, 2025). Reviewed annually by the CISO.\n\n5.2 IA-2: Identification and Authentication (Organizational Users)\n\nAll users are uniquely identified and authenticated before access is granted.\nMulti-factor authentication (MFA) is required for all privileged and\nnon-privileged users. Authentication mechanisms: SAML 2.0 federation with\nagency IdP; TOTP-based MFA via hardware tokens or authenticator apps; and\nPIV/CAC card authentication for on-premises access. Session timeout: 15\nminutes of inactivity.\n\n6. INCIDENT RESPONSE (IR)\n\n6.1 IR-1: Incident Response Policy and Procedures\n\nCloudVault maintains an Incident Response Plan (v1.9, dated December 15, 2025).\nOrganization-defined frequency for review: at least annually. Responsible\npersonnel: ISSO, CISO, Incident Response Team Lead.\n\n6.2 IR-6: Incident Reporting\n\nSecurity incidents are reported to the ISSO within 1 hour of discovery.\nUS-CERT notification occurs within the timeframes specified in FISMA reporting\nguidance.\n\n7. RISK ASSESSMENT (RA)\n\n7.1 RA-5: Vulnerability Monitoring and Scanning\n\nVulnerability scanning is performed using Tenable Nessus (credentialed scans).\nScans are conducted monthly on all system components. Most recent scan: May\n28, 2026. Critical findings: 0. High findings: 2 (remediation in progress\nwithin SLA). Scan results are reviewed by the ISSO within 5 business days.\n\n8. SYSTEM AND COMMUNICATIONS PROTECTION (SC)\n\n8.1 SC-1: System and Communications Protection Policy\n\n[TBD - To be finalized]\n\n8.2 SC-7: Boundary Protection\n\nThe system implements boundary protection using AWS WAF at the edge; a VPC\nwith public and private subnets; network ACLs restricting inbound/outbound\ntraffic; security groups with least-privilege rules; and CloudFront CDN with\nDDoS protection (AWS Shield). All traffic between system components uses TLS\n1.2 or higher. External API endpoints require mutual TLS for agency\nconnections.\n\n9. SYSTEM AND INFORMATION INTEGRITY (SI)\n\n9.1 SI-1: System and Information Integrity Policy\n\nImplementation is in progress. The policy framework has been developed but\nformal approval and dissemination are pending.\n\n9.2 SI-2: Flaw Remediation\n\nThe organization identifies, reports, and corrects information system flaws.\nPatches are tested in a staging environment before production deployment.\nCritical patches are applied within 30 days per FedRAMP ConMon.\n"
+        }
+      ]
+    },
+    {
+      "id": "pe2-facility-access-list",
+      "source": "external-review",
+      "control": "PE-2",
+      "objective": "PE-2_a.[01]",
+      "expect": "not-satisfied",
+      "rationale": "The reviewer's recheck of engine 1.2.0. Neither document says anything about a facility, a data centre, or who may enter one. The objective asks whether a list of individuals with authorized access to the facility where the system resides has been developed; account monitoring is not that list. The engine returned Satisfied at 74% support and 100% concept coverage because `access` is a word in PE-2's title and account documents are full of it. Run on 2026-09-11, the date the review used: on the suite’s own 2026-06-01 the document dates are in the future and the temporal gate refuses it, which would hide what this case is about.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. The ISSO reviews all privileged account access quarterly. Account use is monitored continuously by the SIEM, and inactive accounts are disabled after 35 days. Account creation, modification and removal follow a documented approval workflow recorded in the ticketing system. Most recent account review: 2026-08-28."
+        },
+        {
+          "name": "policy.txt",
+          "text": "IA-2 Identification and Authentication. Multi-factor authentication is required for all privileged users and for remote access to the system. The authentication policy is developed, documented and reviewed annually by the security team. Passwords follow the organization-defined complexity policy."
+        }
+      ],
+      "assessment_date": "2026-09-11"
+    },
+    {
+      "id": "cm5-change-restrictions",
+      "source": "external-review",
+      "control": "CM-5",
+      "objective": "CM-5_obj.[01]",
+      "expect": "not-satisfied",
+      "rationale": "Named in the same recheck. CM-5 asks whether physical access restrictions associated with changes to the system are defined. The documents describe account approval workflow and multi-factor authentication; neither defines a restriction on who may change the system, physically or otherwise. Run on 2026-09-11, the date the review used: on the suite’s own 2026-06-01 the document dates are in the future and the temporal gate refuses it, which would hide what this case is about.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. The ISSO reviews all privileged account access quarterly. Account use is monitored continuously by the SIEM, and inactive accounts are disabled after 35 days. Account creation, modification and removal follow a documented approval workflow recorded in the ticketing system. Most recent account review: 2026-08-28."
+        },
+        {
+          "name": "policy.txt",
+          "text": "IA-2 Identification and Authentication. Multi-factor authentication is required for all privileged users and for remote access to the system. The authentication policy is developed, documented and reviewed annually by the security team. Passwords follow the organization-defined complexity policy."
+        }
+      ],
+      "assessment_date": "2026-09-11"
+    },
+    {
+      "id": "pe8-visitor-records",
+      "source": "engine-repo",
+      "control": "PE-8",
+      "objective": "PE-8a.",
+      "expect": "not-satisfied",
+      "rationale": "Written here while fixing the case above, and it is the reason one sharp term is not enough. After ambient `access` is set aside, PE-8's subject is physical, environmental, visitor, records — and \"follow a documented approval workflow recorded in the ticketing system\" matches `record`. A ticketing system is not a visitor log. Run on 2026-09-11, the date the review used: on the suite’s own 2026-06-01 the document dates are in the future and the temporal gate refuses it, which would hide what this case is about.",
+      "documents": [
+        {
+          "name": "review-ssp.txt",
+          "text": "AC-2 Account Management. The ISSO reviews all privileged account access quarterly. Account use is monitored continuously by the SIEM, and inactive accounts are disabled after 35 days. Account creation, modification and removal follow a documented approval workflow recorded in the ticketing system. Most recent account review: 2026-08-28."
+        },
+        {
+          "name": "policy.txt",
+          "text": "IA-2 Identification and Authentication. Multi-factor authentication is required for all privileged users and for remote access to the system. The authentication policy is developed, documented and reviewed annually by the security team. Passwords follow the organization-defined complexity policy."
+        }
+      ],
+      "assessment_date": "2026-09-11"
+    },
+    {
+      "id": "pe2-genuine-facility-list",
+      "source": "engine-repo",
+      "control": "PE-2",
+      "objective": "PE-2_a.[01]",
+      "expect": "satisfied",
+      "rationale": "The other direction, and the guard against fixing a false pass by refusing everything. This document is what PE-2_a.[01] asks for: a named facility, a developed list of individuals authorized to enter it, an owner, and a review date. If the engine refuses this, the subject rule has been tightened past the evidence it exists to admit.",
+      "documents": [
+        {
+          "name": "physical-security.txt",
+          "text": "PE-2 Physical Access Authorizations. A list of individuals with authorized access to the Ashburn data center facility where the CloudVault system resides has been developed and is maintained by the Physical Security Officer. The facility access list is approved by the System Owner and reviewed quarterly. Physical access authorization credentials are issued to each individual named on the list, and individuals are removed from the facility access list within one business day when access is no longer required. Last review of the physical access list: 2026-05-30."
         }
       ]
     }

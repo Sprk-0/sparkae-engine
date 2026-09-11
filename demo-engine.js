@@ -484,7 +484,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // matches case-insensitively like the per-control refutation checks; evidence
 // dates are UTC calendar dates that must round-trip (no local-time or
 // out-of-range normalisation).
-const ENGINE_VERSION = '1.2.0';
+const ENGINE_VERSION = '1.3.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -585,10 +585,66 @@ function distinguishingTerms(phrase) {
 // The subject a control is about, taken from its family and its title. AT-1 is
 // "Awareness and Training" / "Policy and Procedures", so its subject is
 // awareness and training — the title alone is generic for every -1 control.
-function controlSubjectTerms(controlTitle, familyName) {
+function controlSubjectTermsRaw(controlTitle, familyName) {
   const terms = distinguishingTerms(familyName);
   for (const t of distinguishingTerms(controlTitle)) if (terms.indexOf(t) === -1) terms.push(t);
   return terms;
+}
+
+// ── ambient subject words ────────────────────────────────────────
+// Some words in a control's title name its subject; others are shared across so
+// much of the catalog that they name nothing in particular. "Physical Access
+// Authorizations" carries `access`, and so do 71 of the 447 controls — the whole
+// Access Control family among them. An upload review of engine 1.2.0 reproduced
+// what that costs: two documents about account monitoring and multi-factor
+// authentication satisfied PE-2_a.[01], "a list of individuals with authorized
+// access to the facility where the system resides has been developed", and the
+// rest of the PE family with them, because `access` was accepted as PE-2's
+// subject and account documents are full of it.
+//
+// A term is AMBIENT when it appears in the titles or family names of more than
+// SUBJECT_AMBIENT_MAX_SHARE of the catalog's controls, and an ambient term
+// cannot establish subject on its own. The threshold is published in RULESET
+// and hashed into the ruleset digest; the frequencies themselves come from the
+// catalog, so they move when it does and the catalog digest already covers them.
+//
+// Nothing is ambient when no catalog is in scope — the engine takes titles as
+// arguments and can be driven without one — which is the pre-1.3.0 behaviour.
+const SUBJECT_AMBIENT_MAX_SHARE = 0.10;
+const SUBJECT_TERMS_REQUIRED = 2;
+let _ambientTerms = null;
+
+function ambientSubjectTerms() {
+  if (_ambientTerms) return _ambientTerms;
+  _ambientTerms = new Set();
+  const cat = (typeof CATALOG !== 'undefined' && CATALOG) ||
+    (typeof window !== 'undefined' && window && window.CATALOG) || null;
+  if (!cat) return _ambientTerms;
+  const freq = new Map();
+  let controls = 0;
+  for (const id in cat) {
+    if (!Object.prototype.hasOwnProperty.call(cat, id)) continue;
+    const c = cat[id];
+    if (!c || typeof c.T !== 'string') continue;
+    controls++;
+    // Per control, not per occurrence: a word in both the family and the title
+    // is one control's worth of evidence that it is common, not two.
+    const seen = new Set(controlSubjectTermsRaw(c.T, c.F));
+    seen.forEach(t => freq.set(t, (freq.get(t) || 0) + 1));
+  }
+  const cap = controls * SUBJECT_AMBIENT_MAX_SHARE;
+  freq.forEach((n, t) => { if (n > cap) _ambientTerms.add(t); });
+  return _ambientTerms;
+}
+
+function controlSubjectTerms(controlTitle, familyName) {
+  const raw = controlSubjectTermsRaw(controlTitle, familyName);
+  const ambient = ambientSubjectTerms();
+  const sharp = raw.filter(t => !ambient.has(t));
+  // Every word this control is named with is ambient — rare, and it means the
+  // title distinguishes nothing. Keep the raw terms rather than passing gate 2b
+  // for free: a weak anchor is still an anchor, and gate 2a still has to hold.
+  return sharp.length ? sharp : raw;
 }
 
 // The same subject, spelled as a reader expects rather than as the matcher
@@ -613,14 +669,29 @@ function controlSubjectWords(controlTitle, familyName) {
 // Satisfied for AT-1_a.[01], "an awareness and training policy is developed and
 // documented", because every generic word in the objective was present and
 // neither subject word was needed.
+//
+// One matching word is not enough when the subject is a compound. PE-8 is
+// "Visitor Access Records": after ambient `access` is set aside its subject is
+// physical, environmental, visitor, records — and an account document saying
+// "recorded in the ticketing system" matched `record` and passed. So where the
+// subject has two or more sharp terms, the evidence has to name two of them;
+// where it has one, that one. SUBJECT_TERMS_REQUIRED is published in RULESET.
+//
+// The terms may be named in different affirmative clauses of the same passage.
+// Requiring them in one clause would refuse "Visitor access records are
+// maintained for one year. Physical security reviews them monthly," which is
+// exactly the evidence this gate exists to admit.
 function mentionsSubject(evidenceText, terms) {
   if (!terms.length) return true;           // nothing to anchor on; gate 2a decides
   if (!evidenceText) return false;
+  const need = Math.min(SUBJECT_TERMS_REQUIRED, terms.length);
+  const found = new Set();
   const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
   for (const clause of clauses) {
     if (NEGATION_RE.test(clause)) continue;
     const stems = clauseStems(clause);
-    if (terms.some(t => stems.has(t))) return true;
+    for (const t of terms) if (stems.has(t)) found.add(t);
+    if (found.size >= need) return true;
   }
   return false;
 }
@@ -1390,6 +1461,14 @@ const RULESET = Object.freeze({
   // control's subject cannot satisfy it (gate 2b).
   generic_terms: Array.from(GENERIC_TERMS).sort(),
   subject_required: true,
+  // A title word shared with most of the catalog names no subject of its own:
+  // `access` is in 71 of 447 control titles, so it cannot be what makes evidence
+  // about PE-2. And where a subject has two or more sharp words, evidence has to
+  // name two of them — one match let "recorded in the ticketing system" satisfy
+  // "Visitor Access Records". The frequencies come from the catalog, which the
+  // catalog digest already covers; these are the parameters over them.
+  subject_ambient_max_share: SUBJECT_AMBIENT_MAX_SHARE,
+  subject_terms_required: SUBJECT_TERMS_REQUIRED,
   review_confidence_floor: REVIEW_CONFIDENCE_FLOOR,
   review_coverage_floor: REVIEW_COVERAGE_FLOOR,
   staleness_days: STALENESS,
@@ -1420,6 +1499,8 @@ global.SparkAEEngine = {
   unzip: unzip,
   chunkText: chunkText,
   checkCoverage: checkCoverage,
+  controlSubjectTerms: controlSubjectTerms,
+  mentionsSubject: mentionsSubject,
   extractConcepts: extractConcepts,
   tokenize: tokenize,
   extractControlIds: extractControlIds,
