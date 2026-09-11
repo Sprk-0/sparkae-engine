@@ -1222,6 +1222,26 @@ html,body{
   background:rgba(178,58,28,0.18);
 }
 
+/* ── Assessor statement · the SAR sentence, and revising it ── */
+.ex-block{margin-top:10px;padding:8px 12px;border-left:2px solid #3A4250;background:rgba(255,255,255,0.02)}
+.ex-block>summary{cursor:pointer;list-style:none}
+.ex-block>summary::-webkit-details-marker{display:none}
+.ex-block>summary::before{content:'▸ ';color:#7A8290}
+.ex-block[open]>summary::before{content:'▾ '}
+.ex-block[open]>summary{margin-bottom:6px}
+.ex-block.revised{border-left-color:var(--vermillion)}
+.ex-label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7A8290;margin-bottom:6px}
+.ex-flag{font-style:normal;color:var(--vermillion)}
+.ex-text{display:block;font-size:13px;line-height:1.65;color:#B8C0CC}
+.ex-edit{display:block;width:100%;margin:2px 0 8px;padding:8px;font-family:inherit;font-size:13px;line-height:1.6;color:#D6DCE5;background:#11151B;border:1px solid #3A4250;resize:vertical}
+.ex-edit:focus{outline:none;border-color:var(--vermillion)}
+.ex-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.ex-vlabel{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#7A8290}
+.ex-select{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D6DCE5;background:#11151B;border:1px solid #3A4250;padding:4px 6px}
+.ex-btn{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#B8C0CC;background:transparent;border:1px solid #3A4250;padding:5px 10px;cursor:pointer}
+.ex-btn:hover{color:var(--vermillion);border-color:var(--vermillion)}
+.ex-btn.primary{color:var(--vermillion);border-color:var(--vermillion)}
+
 /* ── Annual placeholder ── */
 .uc-placeholder{
   text-align:center;
@@ -8797,6 +8817,11 @@ function engineFindingToShell(f, corpusLabel) {
     recommendation: engEsc(f.recommendation || ''),
     text: bits.join(' — ') + meta,
     cites,
+    engine: {
+      dif_id: String(f.dif_id || f.control_id || ''),
+      status: String(f.status || ''),
+      statement: examineStatement(f),
+    },
   };
 }
 
@@ -8975,6 +9000,50 @@ function difText(difId) {
   }
   return '';
 }
+
+// ── Assessor statement · SAR EXAMINE phrasing ───────────────────────────────
+// A determination is a verdict; a SAR needs a sentence. These build the
+// examine statement an assessor would otherwise retype, from the run's own
+// data: the documents the retrieval actually hit, the section cited in the
+// passage, and the objective reworded from its "Determine if ..." form into
+// the declarative the statement asserts. Nothing is invented — where the run
+// has no citation the clause is dropped rather than guessed.
+function rewordDif(t) {
+  return String(t || '')
+    .replace(/^\s*Determine\s+if\s+/i, '')
+    .replace(/[;.\s]+$/, '')
+    .trim();
+}
+
+function citedSection(f) {
+  const text = String(f.evidence_description || '');
+  const m = /(?:\u00a7\s*|\bSection\s+)(\d+(?:\.\d+)*)/i.exec(text) ||
+            /(?:^|\n)\s*(\d+\.\d+(?:\.\d+)*)\s+\S/.exec(text);
+  return m ? '\u00a7' + m[1] : '';
+}
+
+function examineStatement(f) {
+  const req = rewordDif(difText(f.dif_id || ''));
+  if (!req) return '';
+  const docs = (f.evidence_references || []).filter(Boolean);
+  if (!docs.length) {
+    return 'During the assessment, the assessor examined the submitted package and found no documentation establishing that ' + req + '.';
+  }
+  const sec = citedSection(f);
+  const per = sec ? ' per ' + sec : '';
+  if (f.status === 'Satisfied') {
+    return 'During the assessment, the assessor examined ' + docs.join(', ') + ', and confirmed' + per + ' that ' + req + '.';
+  }
+  const gap = f.gap_description ? ' ' + String(f.gap_description).replace(/\s*;\s*$/, '') + '.' : '';
+  return 'During the assessment, the assessor examined ' + docs.join(', ') + ', and could not confirm' + per + ' that ' + req + '.' + gap;
+}
+
+// Assessor revisions live here and nowhere else. They are deliberately NOT fed
+// back into the engine, the receipt or the verdict digest: the digest attests
+// what the engine determined from the evidence, and an assessor changing a
+// verdict must not silently rewrite that record. Attribution stays separate,
+// which is the same split the assessors page describes.
+const ASSESSOR_REVISIONS = new Map();
 
 function renderLiveHeadline(run) {
   const host = document.getElementById('results-summary');
@@ -9252,6 +9321,59 @@ paintFindings = function (findings) {
   }
 };
 
+// One delegated listener for every statement block: the painter batches rows
+// in and out, so per-row listeners would leak and miss.
+document.getElementById('findings-body').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('.ex-btn');
+  if (!btn) return;
+  const block = btn.closest('.ex-block');
+  if (!block) return;
+  const id = block.getAttribute('data-dif');
+  const act = btn.getAttribute('data-act');
+
+  if (act === 'revise') {
+    block.open = true;
+    const current = block.querySelector('.ex-text').textContent;
+    const rev = ASSESSOR_REVISIONS.get(id);
+    const verdict = rev ? rev.verdict : (block.closest('tr').querySelector('.verdict-tag') || {}).textContent || 'OTS';
+    const opts = ['SAT', 'OTS', 'NR'].map(v =>
+      '<option value="' + v + '"' + (v === verdict.trim() ? ' selected' : '') + '>' + v + '</option>').join('');
+    block.querySelector('.ex-actions').innerHTML =
+      '<label class="ex-vlabel">Determination</label><select class="ex-select">' + opts + '</select>' +
+      '<button class="ex-btn primary" data-act="save">Save revision</button>' +
+      '<button class="ex-btn" data-act="cancel">Cancel</button>';
+    const ta = document.createElement('textarea');
+    ta.className = 'ex-edit';
+    ta.value = current;
+    ta.rows = 4;
+    block.querySelector('.ex-text').replaceWith(ta);
+    ta.focus();
+    return;
+  }
+
+  if (act === 'cancel') { paintFindings(currentFindings); return; }
+
+  if (act === 'reset') {
+    ASSESSOR_REVISIONS.delete(id);
+    log('—', 'assessor', 'reverted <span class="key">' + engEsc(id) + '</span> to the engine determination', 'warn');
+    paintFindings(currentFindings);
+    return;
+  }
+
+  if (act === 'save') {
+    const ta = block.querySelector('.ex-edit');
+    const sel = block.querySelector('.ex-select');
+    const statement = (ta && ta.value.trim()) || '';
+    const verdict = (sel && sel.value) || 'OTS';
+    if (!statement) { ta && ta.focus(); return; }
+    ASSESSOR_REVISIONS.set(id, { statement, verdict });
+    log('—', 'assessor', 'revised <span class="key">' + engEsc(id) + '</span> · determination recorded as <span class="key">' +
+      engEsc(verdict) + '</span> · attributed to the assessor, engine record and verdict digest unchanged', 'warn');
+    paintFindings(currentFindings);
+    return;
+  }
+});
+
 // Row construction, lifted out of the original painter so both paths agree.
 function buildFindingRow(f) {
   const tr = document.createElement('tr');
@@ -9274,10 +9396,34 @@ function buildFindingRow(f) {
     if (a.scanner) parts.push('<span class="as-label">Scanner</span>' + a.scanner);
     if (parts.length) assetStrip = '<div class="asset-strip">' + parts.join('') + '</div>';
   }
+  // The examine statement, and the assessor's ability to revise it. Only the
+  // live engine path supplies f.engine, so the authored walkthroughs render
+  // exactly as before.
+  let exBlock = '';
+  if (f.engine && f.engine.statement) {
+    const id = f.engine.dif_id;
+    const rev = ASSESSOR_REVISIONS.get(id);
+    const shown = rev ? rev.statement : f.engine.statement;
+    const verdict = rev ? rev.verdict : f.verdict;
+    // Collapsed by default: at ~1,000 findings an always-open statement per row
+    // buries the table. <details> keeps the row scannable and needs no script.
+    // A revised row opens itself, so the assessor's own edit stays in sight.
+    exBlock =
+      '<details class="ex-block' + (rev ? ' revised' : '') + '" data-dif="' + engEsc(id) + '"' + (rev ? ' open' : '') + '>' +
+        '<summary class="ex-label">Assessor statement · SAR §5 EXAMINE' +
+          (rev ? ' <em class="ex-flag">revised by assessor · engine verdict ' + engEsc(f.verdict) + ' → ' + engEsc(verdict) + '</em>' : '') +
+        '</summary>' +
+        '<span class="ex-text">' + engEsc(shown) + '</span>' +
+        '<div class="ex-actions">' +
+          '<button class="ex-btn" data-act="revise">Revise statement</button>' +
+          (rev ? '<button class="ex-btn" data-act="reset">Revert to engine</button>' : '') +
+        '</div>' +
+      '</details>';
+  }
   tr.innerHTML = '<td class="ctrl">' + f.ctrl + statusBadge + '</td>' +
     '<td><span class="verdict-tag ' + f.verdict.toLowerCase() + '">' + f.verdict + '</span>' + riskBadge + implBadge + '</td>' +
     '<td><span class="method-tag ' + f.method.toLowerCase() + '">' + f.method + '</span></td>' +
-    '<td>' + f.text + renderCites(f.cites) + assetStrip + recBlock + '</td>';
+    '<td>' + f.text + renderCites(f.cites) + assetStrip + recBlock + exBlock + '</td>';
   return tr;
 }
 
