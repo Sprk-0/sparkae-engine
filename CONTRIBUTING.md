@@ -1,9 +1,9 @@
 # Contributing
 
-Bug reports and pull requests are welcome. This repository is generated from
-the private product repository (see the README), so a merged change is
-ported to the source and re-synced rather than committed here directly —
-open the PR anyway; the diff is what gets ported.
+Bug reports and pull requests are welcome, and they land where you send
+them: this repository *is* the public site, so a merged change is what
+https://sparkae.ai serves. The commercial server product is a separate
+private codebase and is not changed from here.
 
 Three constraints, all enforced by `node tests/check.mjs`:
 
@@ -41,6 +41,9 @@ https://sparkae.ai the way the pages do.
 check here that touches the network: it asks whether the deployed site is still
 this tree byte-for-byte, which no offline check can see. It is not a merge gate
 — run it after a deploy, or with `--site` against a deploy preview.
+
+Participation is governed by `CODE_OF_CONDUCT.md`. Report conduct concerns
+to info@sparkae.ai, the same address as everything else here.
 
 By submitting a contribution you agree it is licensed under the Apache
 License 2.0 that covers this repository.

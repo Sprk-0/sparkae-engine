@@ -9,8 +9,8 @@ SparkAE reads an assessment package, evaluates every “Determine if”
 objective through seven deterministic gates, and shows precisely what
 the evidence supports, contradicts, or fails to prove. Interview and
 Test stay with the assessor. This repository is served as-is by Netlify
-at **https://sparkae.ai** and is generated from the private product
-repository (see *How this repository is maintained*).
+at **https://sparkae.ai** and is maintained here (see *How this
+repository is maintained*).
 
 ## What is here, and what is not
 
@@ -150,12 +150,21 @@ workflow in `.github/workflows/ci.yml` runs both on every push.
 
 ## How this repository is maintained
 
-**Every file here is generated**, this README included: the private product
-repository builds the site, runs its own suite, and syncs the result here.
-A change made directly to a file in this repository will be overwritten by
-the next sync — so open an issue or a pull request and it will be ported to
-the source and re-synced. Contributions are welcome under the constraints
-in `CONTRIBUTING.md`.
+**This repository is the public face, and it is authoritative for it.**
+What is here is what https://sparkae.ai serves: changes are made, reviewed
+and merged here, and the deploy follows from `main`. Open an issue or a pull
+request and it lands in the thing you are looking at. Contributions are
+welcome under the constraints in `CONTRIBUTING.md`.
+
+The SparkAE server product is developed in a separate private repository and
+is not published. That is a different codebase, not an upstream of this one —
+the table at the top of this README says which capabilities live where. Early
+commits here were seeded from that tree, which is why the history carries a
+few *Sync site from…* messages; the public site is no longer maintained that
+way.
+
+`CHANGELOG.md` records what moved and, for each change, whether the sample's
+verdict digest moved with it.
 
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security

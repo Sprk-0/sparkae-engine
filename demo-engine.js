@@ -173,8 +173,11 @@ async function parseFile(file) {
   }
   if (ext === 'docx') return await parseDocx(file);
   if (ext === 'zip') return (await parseZipReport(file)).chunks;
-  if (UNSUPPORTED_EXTENSIONS.includes(ext)) {
+  if (SERVER_PRODUCT_EXTENSIONS.includes(ext)) {
     throw unsupported(name, '.' + ext + ' text extraction is not available in the browser build (server product only)');
+  }
+  if (UNSUPPORTED_EXTENSIONS.includes(ext)) {
+    throw unsupported(name, '.' + ext + ' text extraction is not available in this build — supported: ' + SUPPORTED_EXTENSIONS.map(e => '.' + e).join(' '));
   }
   throw unsupported(name, 'unrecognised file type .' + ext + ' — supported: ' + SUPPORTED_EXTENSIONS.map(e => '.' + e).join(' '));
 }
@@ -335,6 +338,11 @@ const ENGINE_VERSION = '1.1.0';
 // evidence. PDF and XLSX text extraction is a server-product feature.
 const SUPPORTED_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'xml', 'nessus', 'docx', 'zip'];
 const UNSUPPORTED_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'doc', 'pptx', 'ppt'];
+// Of those, the only two the server product actually claims to extract (see
+// the boundary table in README.md). The rest are recognised well enough to
+// refuse precisely, but naming the server product for them would advertise a
+// capability nothing here backs.
+const SERVER_PRODUCT_EXTENSIONS = ['pdf', 'xlsx'];
 
 // ── Gate 2: Concept Extraction & Coverage ──
 
