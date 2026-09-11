@@ -4506,8 +4506,14 @@ function renderUploadStatus(pkg) {
 
   // Show top 12 files; collapse remainder into a count
   const showFiles = pkg.inventory.slice(0, 12);
+  // A file name is attacker-controlled text — the visitor did not write it, the
+  // package author did, and a ZIP member path arrives the same way (see the
+  // `path` values unzipExpand builds). It is rendered as element text, so
+  // engEsc's textContent round-trip is the right escape. f.tag comes from a
+  // fixed allowlist and is escaped for the same reason the next reader should
+  // not have to check where it came from.
   const fileRows = showFiles.map(f =>
-    '<div class="upload-file"><span class="file-tag">' + f.tag + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + f.name + ' · ' + fmtBytes(f.size) + '</div>'
+    '<div class="upload-file"><span class="file-tag">' + engEsc(f.tag) + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + engEsc(f.name) + ' · ' + fmtBytes(f.size) + '</div>'
   ).join('') + (pkg.inventory.length > showFiles.length ? '<div class="upload-file" style="opacity:.6">… and ' + (pkg.inventory.length - showFiles.length) + ' more</div>' : '');
 
   const scanLine = scanHasContent(pkg)
@@ -4528,7 +4534,7 @@ function renderUploadStatus(pkg) {
       ' · ' + (oscal.controlsCited ? oscal.controlsCited.length : 0) + ' controls cited</span></div>'
     : '';
   const ctrlLine = (pkg.controlsCited && pkg.controlsCited.length)
-    ? '<div class="upload-row"><span class="upload-label">Controls cited in text</span><span class="upload-value">' + pkg.controlsCited.length + ' distinct (e.g. ' + pkg.controlsCited.slice(0, 4).join(', ') + (pkg.controlsCited.length > 4 ? ', …' : '') + ')</span></div>'
+    ? '<div class="upload-row"><span class="upload-label">Controls cited in text</span><span class="upload-value">' + pkg.controlsCited.length + ' distinct (e.g. ' + engEsc(pkg.controlsCited.slice(0, 4).join(', ')) + (pkg.controlsCited.length > 4 ? ', …' : '') + ')</span></div>'
     : '';
   const cryptoBits = [];
   if (ts.fips140) cryptoBits.push('FIPS 140');
