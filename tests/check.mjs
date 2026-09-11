@@ -570,15 +570,41 @@ check(!!dupDif &&
   dupVerdict(dupZip.chunks) === 'Not Reviewed',
   'the two members disagree on AC-2_g, so the archive is read as neither rather than as the later one');
 
-// unzip() returns an array precisely so a duplicate survives to be refused;
-// a name-keyed object cannot represent one.
+// The name census is taken from the central directory, before anything is
+// read, and this is why: here the first of two same-named members is a corrupt
+// deflate stream. A census of successfully read members would count one, call
+// it unique, and parse it — which is the behaviour the section exists to stop,
+// arrived at by a different route. The expansion budget would make it worse
+// still: whether a duplicate survived would depend on its predecessors' size.
+const halfCorrupt = await E.parseZipReport(asFile(buildZip([
+  { name: 'review-ssp.txt', bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 142, crc: 0 },
+  { name: 'review-ssp.txt', text: IMPLEMENTED },
+]), 'half-corrupt.zip'));
+check(halfCorrupt.parsed.length === 0 && halfCorrupt.chunks.length === 0 &&
+  halfCorrupt.skipped.length === 2 && halfCorrupt.skipped.every(s => /ambiguous/.test(s.reason)),
+  'a duplicate name is refused even when its twin would not have inflated — ' +
+  JSON.stringify(refusals(halfCorrupt)));
+
+// The refusal happens in unzip(), against the central directory, so every
+// caller gets it — parseZipReport and parseDocx alike. The old reader could
+// not even express this: an object keyed by name has one slot per name, so the
+// second member overwrote the first before any caller could object.
 const dupFailures = [];
 const dupMembers = await E.unzip((await asFile(buildZip([
   { name: 'a.txt', text: 'one' }, { name: 'a.txt', text: 'two' },
 ]), 'x.zip').arrayBuffer()), dupFailures);
-check(Array.isArray(dupMembers) && dupMembers.length === 2 &&
-  dupMembers[0].text === 'one' && dupMembers[1].text === 'two',
-  'unzip() preserves both same-named members rather than resolving them');
+check(Array.isArray(dupMembers) && dupMembers.length === 0 &&
+  dupFailures.length === 2 && dupFailures.every(f => f.name === 'a.txt' && /ambiguous/.test(f.reason)),
+  'unzip() itself returns neither same-named member and names both as refused');
+
+// A unique name is unaffected by a duplicate elsewhere in the same archive.
+const mixedFailures = [];
+const mixedMembers = await E.unzip((await asFile(buildZip([
+  { name: 'a.txt', text: 'one' }, { name: 'a.txt', text: 'two' }, { name: 'b.txt', text: 'three' },
+]), 'mixed.zip').arrayBuffer()), mixedFailures);
+check(mixedMembers.length === 1 && mixedMembers[0].name === 'b.txt' &&
+  mixedMembers[0].text === 'three' && mixedFailures.length === 2,
+  'a duplicate name refuses its own members only, not the rest of the archive');
 
 // The array change above is invisible to a ZIP of text files but breaks DOCX,
 // which looks its one member up by name.
@@ -594,6 +620,19 @@ try {
 } catch (e) { docxErr = e.message || String(e); }
 check(docxChunks.length === 1 && /Account Management/.test(docxChunks[0].text),
   'a DOCX still parses: its word/document.xml is found in the member array' + (docxErr ? ' — ' + docxErr : ''));
+
+// A DOCX whose body is present but unreadable is not a DOCX with no body:
+// saying so sends the assessor looking for the wrong problem.
+let brokenDocx = '';
+try {
+  await E.parseFile(asFile(buildZip([{
+    name: 'word/document.xml',
+    bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 500, crc: 0,
+  }]), 'broken.docx'));
+} catch (e) { brokenDocx = e.message || String(e); }
+check(/could not be read/.test(brokenDocx) && !/has no word\/document\.xml/.test(brokenDocx),
+  'a DOCX whose word/document.xml will not inflate says so, rather than that it has none — ' +
+  JSON.stringify(brokenDocx));
 
 let dupDocx = null;
 try {

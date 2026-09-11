@@ -208,13 +208,20 @@ async function parseDocx(file) {
   // DOCX is a ZIP containing XML. We use JSZip-like manual parsing.
   try {
     const buf = await file.arrayBuffer();
-    // unzip() returns an array so that duplicate names survive to be refused
-    // rather than silently resolved. A DOCX carrying two word/document.xml
-    // members is two documents claiming to be one; reading either is a guess.
-    const entries = await unzip(buf);
-    const docParts = entries.filter(m => m.name === 'word/document.xml' && !m.directory);
-    if (docParts.length > 1) throw unsupported(file.name, 'DOCX carries ' + docParts.length + ' members named word/document.xml — ambiguous, so none of them is read');
-    const docXml = docParts.length ? docParts[0].text : null;
+    // unzip() returns an array, and refuses every member of a name the archive
+    // uses twice — a DOCX carrying two word/document.xml is two documents
+    // claiming to be one. The refusals come back through `refused` so that a
+    // member which is present but unreadable is reported as what it is, rather
+    // than as a DOCX with no body at all.
+    const refused = [];
+    const entries = await unzip(buf, refused);
+    const body = entries.find(m => m.name === 'word/document.xml' && !m.directory);
+    if (!body) {
+      const why = refused.find(r => r.name === 'word/document.xml');
+      throw unsupported(file.name, why ? 'DOCX word/document.xml could not be read: ' + why.reason
+                                       : 'DOCX has no word/document.xml');
+    }
+    const docXml = body.text;
     if (!docXml) throw unsupported(file.name, 'DOCX has no word/document.xml');
     const text = docXml
       .replace(/<w:br[^>]*\/>/gi, '\n')
@@ -320,28 +327,51 @@ async function unzip(buffer, failures) {
     if (failures) failures.push({ name: '(archive)', reason: 'archive declares ' + count + ' members, above the ' + ZIP_MAX_MEMBERS + ' limit' });
     return members;
   }
+  // Pass one is the inventory, and nothing else. Names are counted from the
+  // central directory itself, before a single member is read, because a count
+  // taken after reading is a count of the members that happened to succeed: if
+  // one of two members named review-ssp.txt fails to inflate, the other looks
+  // unique and gets parsed, which is the behaviour this reader exists to stop.
+  // The expansion budget would make it worse — whether a duplicate survives
+  // would depend on how large its predecessors were.
+  const entries = [];
+  const nameCount = Object.create(null);
   for (let i = 0; i < count; i++) {
     if (cd + 46 > bytes.length || view.getUint32(cd, true) !== 0x02014b50) {
       if (failures) failures.push({ name: '(archive)', reason: 'central directory ends after ' + i + ' of ' + count + ' declared members' });
       break;
     }
-    const method = view.getUint16(cd + 10, true);
-    const compSize = view.getUint32(cd + 20, true);
     const nameLen = view.getUint16(cd + 28, true);
     const extraLen = view.getUint16(cd + 30, true);
     const commentLen = view.getUint16(cd + 32, true);
-    const localAt = view.getUint32(cd + 42, true);
     const name = new TextDecoder().decode(bytes.slice(cd + 46, cd + 46 + nameLen));
+    entries.push({
+      name,
+      method: view.getUint16(cd + 10, true),
+      compSize: view.getUint32(cd + 20, true),
+      localAt: view.getUint32(cd + 42, true),
+    });
+    if (!name.endsWith('/')) nameCount[name] = (nameCount[name] || 0) + 1;
     cd += 46 + nameLen + extraLen + commentLen;
+  }
 
+  // Pass two reads what the inventory says is unambiguous.
+  for (const { name, method, compSize, localAt } of entries) {
+    if (name.endsWith('/')) { members.push({ name, text: '', directory: true }); continue; }
+    // Two members of one name are two documents claiming to be the same one.
+    // Reading either is a guess about which the author meant, and the two may
+    // contradict each other, so neither is read and both are named.
+    if (nameCount[name] > 1) {
+      if (failures) failures.push({ name, reason: 'archive carries ' + nameCount[name] + ' members named this — ambiguous, so none of them is read' });
+      continue;
+    }
     // 0xFFFFFFFF is the ZIP64 sentinel; the real value lives in an extra field
     // this reader does not parse. Refuse it rather than read the sentinel.
     if (compSize === 0xFFFFFFFF || localAt === 0xFFFFFFFF) {
       if (failures) failures.push({ name, reason: 'ZIP64 archive members are not read in the browser build' });
       continue;
     }
-    if (name.endsWith('/')) { members.push({ name, text: '', directory: true }); continue; }
-    if (view.getUint32(localAt, true) !== 0x04034b50) {
+    if (localAt + 30 > bytes.length || view.getUint32(localAt, true) !== 0x04034b50) {
       if (failures) failures.push({ name, reason: 'central directory points at no local header for this member' });
       continue;
     }
@@ -368,19 +398,11 @@ async function parseZipReport(file) {
   const skipped = [];
   const members = await unzip(buf, skipped);
   const chunks = [], parsed = [];
-  // A name that appears twice describes two different documents claiming to be
-  // the same one. Reading either is a guess about which the author meant, and
-  // the two may contradict each other, so neither is read and both are named.
-  const seen = Object.create(null);
-  for (const m of members) if (!m.directory) seen[m.name] = (seen[m.name] || 0) + 1;
-  const ambiguous = Object.keys(seen).filter(n => seen[n] > 1);
-  // Member order is the archive's own order, which is fixed for a given file.
+  // unzip() has already refused every member of an ambiguous name, counted from
+  // the central directory, so everything here is a member the archive names
+  // once. Member order is the archive's own order, fixed for a given file.
   for (const { name, text: content, directory } of members) {
     if (directory) continue;
-    if (ambiguous.indexOf(name) !== -1) {
-      skipped.push({ name, reason: 'archive carries ' + seen[name] + ' members named this — ambiguous, so none of them is read' });
-      continue;
-    }
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
       if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); }
