@@ -148,7 +148,7 @@ for (const file of pages) {
       card.href,
     ]);
     await page.goto(origin + '/' + card.href, { waitUntil: 'load' });
-    await page.waitForTimeout(400);
+  await page.waitForSelector('.uc-tab.active[data-uc="' + want.uc + '"]', { timeout: 5000 });
     await page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
     const landed = await page.evaluate(() => ({
       uc: ((document.querySelector('.uc-tab.active') || {}).getAttribute('data-uc')) || '',
