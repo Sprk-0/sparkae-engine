@@ -9061,7 +9061,15 @@ async function runInitialLive(sample) {
   for (const sk of corpus.skipped) log(ts(), 'read', '✗ refused <span class="key">' + engEsc(sk.name) + '</span> · ' + engEsc(sk.reason), 'warn');
   if (!corpus.chunks.length) {
     log(ts(), 'stop', 'no readable evidence: every file was refused · the run stops here rather than adjudicate against nothing', 'warn');
-    setStatus('◆ STOPPED · no readable evidence in the package');
+    // A refusal that names no way forward is a dead end, and the format most
+    // real packages arrive in — PDF — lands here every time. Say what this
+    // build does read, where the other formats are handled, and what to do
+    // next. The extension list comes from the engine so it cannot drift.
+    const readable = ((window.SparkAEEngine && SparkAEEngine.SUPPORTED_EXTENSIONS) ||
+      ['txt', 'md', 'csv', 'json', 'xml', 'nessus', 'docx', 'zip']).map(e => '.' + e).join(' ');
+    log(ts(), 'next', 'this build reads <span class="key">' + readable + '</span> · PDF and XLSX extraction runs in the SparkAE server product, not in the browser', 'warn');
+    log(ts(), 'next', 'to have a PDF or XLSX package assessed, email <span class="key">info@sparkae.ai</span> — or pick the bundled sample above to see a full assessment right now', 'warn');
+    setStatus('◆ STOPPED · nothing readable — see the log for what this build accepts');
     document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
   }
