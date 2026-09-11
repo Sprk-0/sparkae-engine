@@ -271,5 +271,39 @@ check(/related-risks/.test(plainHome) && /risk-uuid/.test(plainHome),
 check(/server product/.test(home) && /pip install/.test(home) && /will not work/.test(home),
   'homepage says pip install is the server product and will not work from this tree');
 
+// ── 11. one address per page, and the pin that keeps it ─────────────────────
+// README.md and netlify.toml both state that this suite fails if the Pretty
+// URLs pin is dropped, and the CI workflow header states that every page keeps
+// a single address across canonical, og:url and sitemap.xml. Neither check
+// existed: `pretty_urls` appeared nowhere here, and neither did `canonical`.
+// The guard against the exact regression that motivated the served-as-is work
+// was described in three files and written in none, which is the one kind of
+// defect this repository cannot afford. Both are checks now.
+console.log('11. one address per page');
+
+const toml = read('netlify.toml');
+check(/\[build\.processing\.html\]/.test(toml) && /^\s*pretty_urls\s*=\s*false\s*$/m.test(toml),
+  'netlify.toml: Pretty URLs pinned off — the rewrite that served every page at an address its own canonical disclaims');
+
+// 404.html is noindex and Disallow-ed in robots.txt and is deliberately absent
+// from the sitemap; every other published page must name one address, and the
+// same one, in all three places a reader or a crawler would look.
+const ORIGIN = 'https://sparkae.ai';
+const sitemapLocs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+const indexable = published.filter(f => f.endsWith('.html') && f !== '404.html');
+for (const f of indexable) {
+  const text = read(f);
+  const want = f === 'index.html' ? ORIGIN + '/' : ORIGIN + '/' + f;
+  const canonical = (/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i.exec(text) || [])[1];
+  const ogUrl = (/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i.exec(text) || [])[1];
+  const agree = canonical === want && ogUrl === want && sitemapLocs.includes(want);
+  check(agree, `${f}: canonical, og:url and sitemap.xml all say ${want}` + (agree ? '' :
+    ` — canonical ${canonical || 'missing'} · og:url ${ogUrl || 'missing'} · sitemap ${sitemapLocs.includes(want) ? 'ok' : 'missing'}`));
+}
+check(sitemapLocs.length === indexable.length,
+  `sitemap.xml lists exactly the ${indexable.length} indexable page(s) (found ${sitemapLocs.length})`);
+check(!sitemapLocs.some(l => /\/404\.html$/.test(l)), 'sitemap.xml does not list the error page');
+check(/Disallow:\s*\/404\.html/.test(read('robots.txt')), 'robots.txt disallows the error page');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

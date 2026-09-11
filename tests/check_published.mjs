@@ -50,6 +50,19 @@ const check = (cond, msg) => (cond ? ok(msg) : fail(msg));
 // and a few local-only directories (.git, .github, node_modules, out), so the
 // file list below is “the public tree we intend to publish”, not just “the pages”.
 const NOT_SERVED = ['netlify.toml', '_headers', '_redirects'];
+
+// Paths deliberately unpublished. The comparison below walks the REPOSITORY,
+// so it can only ask whether a file that exists here is served correctly — a
+// file live on the site but deleted from this tree is invisible to it, and
+// unpublishing something is therefore unverifiable unless its path is named
+// here. These two carried internal review notes, were reachable at these
+// addresses with robots.txt at `Allow: /`, and were removed on 2026-09-11.
+// A Netlify deploy is an atomic snapshot so they should be gone; "should be"
+// is the assumption this suite exists to replace.
+const MUST_NOT_BE_SERVED = [
+  'docs/hygiene/2026-09-10-path-inventory.md',
+  'docs/reviews/2026-09-09-sparkae-engine-public-rebaseline.md',
+];
 const SKIP_DIRS = new Set(['.git', '.github', 'node_modules', 'out']);
 
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -65,7 +78,12 @@ const files = walk(root)
 
 const get = async (urlPath, redirect = 'follow') => {
   const res = await fetch(site + urlPath, { redirect });
-  return { status: res.status, location: res.headers.get('location'), body: Buffer.from(await res.arrayBuffer()) };
+  return {
+    status: res.status,
+    location: res.headers.get('location'),
+    header: (n) => res.headers.get(n) || '',
+    body: Buffer.from(await res.arrayBuffer()),
+  };
 };
 
 // Where a text file differs, the byte count alone does not say what happened —
@@ -124,12 +142,54 @@ if (!only) {
 
   // Netlify's own config is not content. If these ever answer 200 the publish
   // root is being served by something that does not know that.
-  console.log('\n3. the host configuration is not served as content');
+  console.log('\n3. what must not be served is not served');
   for (const f of NOT_SERVED) {
     try {
       const r = await get('/' + f);
       check(r.status === 404, `${f} is not published (${r.status})`);
     } catch (e) { fail(`${f}: ${e.message}`); }
+  }
+  for (const f of MUST_NOT_BE_SERVED) {
+    // A path listed here and present in the tree is a contradiction: it is
+    // published by the walk above and forbidden by this list at the same time.
+    if (fs.existsSync(path.join(root, f))) {
+      fail(`${f} is in MUST_NOT_BE_SERVED but exists in this tree — one of the two is wrong`);
+      continue;
+    }
+    try {
+      const r = await get('/' + f);
+      check(r.status === 404, `${f} is gone from the site (${r.status})`);
+    } catch (e) { fail(`${f}: ${e.message}`); }
+  }
+
+  // The per-page Content-Security-Policy and the security headers are the
+  // site's loudest claims, and until now they were only ever checked as the
+  // CONTENT of _headers. Whether the host applies them is a different
+  // question, and the only place it can be asked is the wire. Both route
+  // forms are checked because Netlify answers `/x` as well as `/x.html` and
+  // header rules match the REQUESTED path — the case _headers calls out.
+  console.log('\n4. the security headers the host actually applies');
+  const REQUIRED = [
+    ['content-security-policy', /default-src 'self'/, "default-src 'self'"],
+    ['content-security-policy', /connect-src 'self'/, "connect-src 'self'"],
+    ['x-frame-options', /^deny$/i, 'DENY'],
+    ['x-content-type-options', /^nosniff$/i, 'nosniff'],
+    ['strict-transport-security', /max-age=\d+/, 'max-age'],
+  ];
+  const routes = [];
+  for (const f of files.filter((x) => x.endsWith('.html'))) {
+    routes.push('/' + f);
+    routes.push(f === 'index.html' ? '/' : '/' + f.replace(/\.html$/, ''));
+  }
+  for (const route of routes) {
+    try {
+      const r = await get(route);
+      const missing = REQUIRED
+        .filter(([name, re]) => !re.test(r.header(name)))
+        .map(([name, , what]) => `${name}: ${what}`);
+      check(missing.length === 0,
+        `${route} carries the security headers` + (missing.length ? ` — missing ${missing.join(', ')}` : ''));
+    } catch (e) { fail(`${route}: ${e.message}`); }
   }
 }
 
