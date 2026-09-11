@@ -32,7 +32,7 @@ a number from it.
 | `demo-standalone-catalog.js` — NIST SP 800-53A Rev 5 determination statements with FedRAMP baseline tags | PDF and XLSX text extraction; Nessus / ZAP scan ingestion into POA&M |
 | `demo-exports.js` — six builders: OSCAL 1.1.2 Assessment Results (JSON), findings CSV, RET CSV, POA&M CSV, TCW CSV, executive summary (text) — plus the reproducibility receipt | SAR / SAP DOCX, SRTM / CIS / CRM XLSX, OSCAL POA&M and the other server-side export formats |
 | `demo-standalone.html` — the live demo (§01 runs the engine above; §02–§09 are labelled walkthroughs), `demo-20x.html`, the site pages, self-hosted fonts, per-page CSP | Optional LLM modes, integrations, the assessor console, ten analytical services |
-| `tests/` — the conformance suite that CI runs on every push | The product test suite and Postgres/RLS suites (private; not a published count) |
+| `tests/` — the conformance suite CI runs on every pull request and on every push to `main` | The product test suite and Postgres/RLS suites (private; not a published count) |
 
 This repository is **not** the SparkAE server product. There is no package
 to install: no `pyproject.toml`, no Docker image, no `/v1` API.
@@ -127,8 +127,9 @@ is right.
 `tests/benchmark/cases.json` pairs an objective with a fixed set of documents
 and records the determination a competent assessor would reach from those
 documents alone, with the reasoning written down. `node tests/benchmark.mjs .`
-runs them and writes `tests/benchmark/results.json`; CI runs it on every push
-and fails the build on a wrong determination that has no recorded reason.
+runs them and writes `tests/benchmark/results.json`; CI runs it on every pull
+request and on every push to `main`, and fails the build on a wrong
+determination that has no recorded reason.
 
 ```text
 engine 1.2.0 · 12 cases · 11 correct · 0 false passes · 1 false fail
@@ -214,7 +215,8 @@ OSCAL document's shape and receipt; that every page names one address in its
 post-processing stays pinned off; and that the homepage hero labelled
 “from the sample run” is a finding this engine actually emits for that
 run, shown in the OSCAL shape the exporters write. The GitHub Actions
-workflow in `.github/workflows/ci.yml` runs both on every push.
+workflow in `.github/workflows/ci.yml` runs both on every pull request and on
+every push to `main`.
 
 ## How this repository is maintained
 

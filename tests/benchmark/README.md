@@ -54,8 +54,8 @@ confusion matrix so the asymmetry stays visible rather than being averaged away.
 
 Writes `tests/benchmark/results.json` — the per-case outcomes and the aggregate,
 for publication alongside the reproducibility receipt. CI runs `--strict` on
-every push and then checks that the committed `results.json` is what the run
-produced, so the published record cannot drift from the engine that made it;
+every pull request and on every push to `main`, and then checks that the
+committed `results.json` is what the run produced, so the published record cannot drift from the engine that made it;
 regenerate it in the same commit as any change that moves a determination.
 
 `--strict` fails on a wrong determination that carries no `known_limitation`.

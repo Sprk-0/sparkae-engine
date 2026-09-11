@@ -20,7 +20,10 @@
 // ours in both halves and test what their author already believed. The two
 // populations are scored separately and never merged.
 //
-// Usage:  node tests/benchmark.mjs [site-root] [--json]
+// Usage:  node tests/benchmark.mjs [site-root] [--strict] [--json]
+//         --strict exits 1 on a wrong determination with no known_limitation,
+//         which is how CI fails on new wrongness without a documented gap
+//         holding the build red. --json writes the whole result to stdout.
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';

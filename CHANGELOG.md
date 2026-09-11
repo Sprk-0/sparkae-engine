@@ -27,8 +27,8 @@ determination. It measures them.
   a competent assessor would reach from those documents alone, with the
   reasoning written down so it can be argued with. `node tests/benchmark.mjs .`
   scores it and writes `tests/benchmark/results.json`; CI runs it with
-  `--strict` on every push and fails the build on a wrong determination that has
-  no recorded reason. Engine 1.2.0 is right on 11 of 12 cases, with 0 false
+  `--strict` on every pull request and on every push to `main`, and fails the
+  build on a wrong determination that has no recorded reason. Engine 1.2.0 is right on 11 of 12 cases, with 0 false
   passes and 1 false fail.
 - **The reviewer's false pass is now a case that fails against the build that
   produced it.** `at1-account-monitoring-evidence` returns Satisfied under
