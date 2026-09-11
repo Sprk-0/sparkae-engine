@@ -836,5 +836,62 @@ check(Array.isArray(E.RULESET.generic_terms) && E.RULESET.generic_terms.length >
   'the generic-term list and the subject requirement are published in the ruleset');
 
 
+
+// ── 15. the CSV says who determined what ────────────────────────────────────
+// The OSCAL exporter has carried engine-determination / assessor-determination /
+// determination-source since the assessor layer landed. CSV collapsed all three
+// into one cell, so a revised Satisfied was indistinguishable from an engine
+// Satisfied, and the assessor's own words were lost. A determination nobody can
+// attribute is not much of a record.
+console.log('15. determination attribution in CSV');
+
+const csvParse = (line) => {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur); return out;
+};
+const attrFindings = [
+  { control_id: 'AC-2', objective_id: 'AC-2_g', status: 'Other Than Satisfied' },
+  { control_id: 'AT-1', objective_id: 'AT-1_a.[01]', status: 'Other Than Satisfied' },
+];
+const ASSESSOR_TEXT = 'during the assessment the assessor examined the SSP, and confirmed per section 5.2 that account use is monitored';
+const attrRevs = new Map([['AC-2_g', { status: 'Satisfied', statement: ASSESSOR_TEXT }]]);
+const attrCsv = EX.buildFindingsCSV(
+  { findings: attrFindings, baseline: 'Low', assessment_date: SAMPLE_DATE }, { revisions: attrRevs });
+const attrLines = attrCsv.split('\n');
+const attrHead = csvParse(attrLines[0]);
+const attrRows = attrLines.slice(1).map(csvParse);
+const col = (row, name) => row[attrHead.indexOf(name)];
+
+check(attrRows.every(r => r.length === attrHead.length),
+  'every findings row has exactly as many cells as the header (' + attrHead.length + ')');
+
+const revised = attrRows.find(r => col(r, 'Objective ID') === 'AC-2_g');
+check(revised && col(revised, 'Determination') === 'Satisfied' &&
+  col(revised, 'Engine Determination') === 'Other Than Satisfied' &&
+  col(revised, 'Assessor Determination') === 'Satisfied' &&
+  col(revised, 'Determination Source') === 'assessor' &&
+  col(revised, 'Assessor Statement') === ASSESSOR_TEXT,
+  'a revised finding keeps the engine verdict, the assessor verdict, the source and the statement');
+
+const untouched = attrRows.find(r => col(r, 'Objective ID') === 'AT-1_a.[01]');
+check(untouched && col(untouched, 'Determination') === 'Other Than Satisfied' &&
+  col(untouched, 'Engine Determination') === 'Other Than Satisfied' &&
+  col(untouched, 'Assessor Determination') === '' &&
+  col(untouched, 'Determination Source') === 'engine',
+  'an unrevised finding is attributed to the engine and carries no assessor verdict');
+
+// The receipt attests the engine run. An assessor may override a determination;
+// they may not rewrite what the engine derived from the evidence.
+check(col(revised, 'Engine Determination') === attrFindings[0].status,
+  'the engine column is the engine\'s, unchanged by the revision over it');
+
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

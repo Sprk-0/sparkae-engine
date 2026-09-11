@@ -369,6 +369,25 @@ await page.waitForSelector('#results.show', { timeout: 180000 });
 await settleFindings();
 const selectedRunLog = await page.textContent('#log');
 
+// ── the artifact inventory is an inventory ─────────────────────────────────
+// classifyFile matches on file NAMES. The panel rendered those matches as
+// determinations — "OTS finding · CA-5" against POA&M, "critical · NR finding ·
+// PL-2" against SSP — so a package missing a file called poam.xlsx was told an
+// objective had been adjudicated. Nothing there adjudicates anything.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(1000);
+const inventory = await page.evaluate(() => {
+  const t = (document.getElementById('ssp-upload-status') || {}).textContent || '';
+  return {
+    claimsFinding: /(OTS|NR)\s+finding/i.test(t),
+    saysNotFound: /not found/.test(t),
+    saysWouldInform: /would inform/.test(t),
+    disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
+  };
+});
+
 // The rail is position:sticky at top:80. A sticky element taller than the space
 // it sticks in strands its own contents: at 781px in a 720px viewport it pinned
 // at 80 and its last 141px — which is where the Run button sits — could not be
@@ -413,6 +432,12 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the artifact inventory claims no determination',
+    !inventory.claimsFinding, 'panel still says "OTS/NR finding"'],
+  ['a missing artifact is reported as missing, with the control it would inform',
+    inventory.saysNotFound && inventory.saysWouldInform, JSON.stringify(inventory)],
+  ['the inventory says how presence was decided and that it is not an assessment',
+    inventory.disclaims, JSON.stringify(inventory)],
   ['a REFUSED member name cannot execute: no handler ran',
     refusedXss.fired === null, 'data-refused-audit=' + refusedXss.fired],
   ['a REFUSED member name cannot execute: no element was injected',
