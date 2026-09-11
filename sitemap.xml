@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Kept in step with build.sh's PUBLISH allowlist by
-  tests/test_imp988_site_discoverability.py: a page that ships without a <loc>
-  here fails that test rather than quietly going unindexed. 404.html is excluded
-  on purpose (it is noindex and Disallow-ed in robots.txt).
+  Kept in step with the published pages by tests/check.mjs: a page that ships
+  without a <loc> here fails that check rather than quietly going unindexed,
+  and a <loc> here whose page no visitor can reach by link fails it too.
+  404.html is excluded on purpose (it is noindex and Disallow-ed in robots.txt).
 
   No <lastmod>: a hand-maintained date that does not move when the page changes
   is worse than no date at all, and nothing in this static build computes one.
