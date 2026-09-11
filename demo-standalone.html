@@ -7466,41 +7466,29 @@ function renderConnectorMatrix(sample) {
   const evidenceCards = CONNECTORS.map(c => {
     const isActive = activeConnectorIds.includes(c.id);
     if (!isActive) return '';
-    const tierClass = c.mode === 'real' ? 'live' : 'mock';
-    const covPct = Math.round(c.coverage * 100);
-    const covClass = covPct >= 90 ? 'high' : (covPct >= 75 ? 'med' : 'low');
-    let liveAction = '';
-    if (c.mode === 'real') {
-      const oauthUrl = c.id === 'gdrive'
-        ? 'https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/drive.readonly&response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT'
-        : 'https://github.com/apps/sparkae-fedramp/installations/new';
-      const flowName = c.id === 'gdrive' ? 'Google OAuth 2.0 consent flow' : 'GitHub App installation';
-      liveAction = `<div class="connector-action" onclick="event.stopPropagation(); openLiveConnector('${c.id}', '${oauthUrl}', '${flowName}')">▸ View live ${c.id === 'gdrive' ? 'OAuth' : 'install'} URL</div>`;
-    }
+    // Every connector here is a walkthrough. Two of these cards used to read
+    // ● LIVE with a coverage percentage, an artifact count and a last-sync
+    // timestamp — operational telemetry for connections that do not exist,
+    // which also contradicted this page's own statement that none of these run
+    // in the browser build. What the walkthrough has to show is the mapping;
+    // the numbers only made it look like a console onto a running system.
     const schemaAction = CONNECTOR_SCHEMAS[c.id]
       ? `<div class="connector-action" onclick="event.stopPropagation(); openSchemaDetail('evidence', '${c.id}')">▸ View schema mapping</div>`
       : '';
-    return `<div class="connector-card ${tierClass}" data-connector="${c.id}">
+    return `<div class="connector-card mock" data-connector="${c.id}">
       <div class="connector-header">
         <div class="connector-name">${c.name}</div>
-        <span class="connector-tier ${tierClass}">${c.mode === 'real' ? '● LIVE' : '◇ MOCK'}</span>
+        <span class="connector-tier mock">◇ WALKTHROUGH</span>
       </div>
       <div class="connector-cat">${c.category}</div>
       <div class="connector-auth">${c.auth}</div>
-      <div class="connector-stats">
-        <span class="connector-cov ${covClass}">${covPct}% coverage</span>
-        <span class="connector-count">${c.artifactCount.toLocaleString()} artifacts</span>
-      </div>
-      <div class="connector-sync">last sync · ${c.lastSync}</div>
+      <div class="connector-sync">${c.artifactKinds.join(' · ')}</div>
       ${schemaAction}
-      ${liveAction}
     </div>`;
   }).filter(x => x).join('');
 
   // Tier 2: GRC peer connectors (always shown · pilot may have any of these)
   const grcCards = GRC_CONNECTORS.map(c => {
-    const covPct = Math.round(c.coverage * 100);
-    const covClass = covPct >= 80 ? 'high' : (covPct >= 70 ? 'med' : 'low');
     return `<div class="connector-card mock grc" data-connector="${c.id}">
       <div class="connector-header">
         <div class="connector-name">${c.name}</div>
@@ -7508,10 +7496,6 @@ function renderConnectorMatrix(sample) {
       </div>
       <div class="connector-cat">${c.category}</div>
       <div class="connector-auth">${c.auth}</div>
-      <div class="connector-stats">
-        <span class="connector-cov ${covClass}">${covPct}% mapping</span>
-        <span class="connector-count">${c.artifactCount.toLocaleString()} controls</span>
-      </div>
       <div class="connector-sync">${c.importMode}</div>
       <div class="connector-action" onclick="event.stopPropagation(); openSchemaDetail('grc', '${c.id}')">▸ View schema mapping</div>
     </div>`;
@@ -7536,7 +7520,14 @@ function renderConnectorMatrix(sample) {
     </div>`;
   }).join('');
 
-  return `<div class="connector-tier-label">
+  return `<div class="connector-note">
+      <strong>None of these connectors run.</strong> This tab is a guided
+      walkthrough of how evidence sources and GRC platforms would map into an
+      OSCAL-aligned record. There is no connector in this build, no credentials
+      are requested, and nothing is fetched from any of these systems — see the
+      <a href="integrations.html">Integrations</a> page for what exists today.
+    </div>
+    <div class="connector-tier-label">
       <span class="ctl-num">Tier 1</span>
       <span class="ctl-name">Evidence Sources</span>
       <span class="ctl-ref">vulnerability scanners · IdP · cloud posture · doc repositories · ticket trackers</span>
@@ -7681,44 +7672,6 @@ function openSchemaDetail(tier, connectorId) {
   w.document.close();
 }
 
-function openLiveConnector(id, url, flowName) {
-  const name = id === 'gdrive' ? 'Google Drive' : 'GitHub';
-  const product = id === 'gdrive' ? 'Drive API v3 (drive.readonly scope)' : 'GitHub Apps · contents:read · metadata:read · pull_requests:read';
-  const fedrampRef = id === 'gdrive'
-    ? 'fedramp.gov/documents-templates · SSP appendices · Cryptographic Modules Table (Appendix Q)'
-    : 'fedramp.gov · KSI-MLA-05 Infrastructure as Code · KSI-PIY-04 CISA Secure By Design';
-  const w = window.open('', '_blank', 'width=720,height=720');
-  if (!w) { alert('Allow pop-ups to view the connector flow.'); return; }
-  const css = "body{font-family:'Georgia',serif;background:#FFFEF8;color:#0F1419;padding:32px;max-width:680px;margin:0 auto}"
-    + "h1{font-size:22px;color:#B23A1C;margin:0 0 4px 0;letter-spacing:-0.02em}"
-    + ".sub{font-family:'Courier New',monospace;font-size:10px;color:#5A6270;letter-spacing:0.06em;margin-bottom:18px}"
-    + ".box{border:1px solid #D1CFC8;padding:16px;background:rgba(178,58,28,0.04);margin-bottom:14px}"
-    + ".label{font-family:'Courier New',monospace;font-size:9.5px;color:#B23A1C;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}"
-    + ".url{font-family:'Courier New',monospace;font-size:11px;color:#0F1419;background:white;padding:10px;border:1px solid #D1CFC8;word-break:break-all;line-height:1.5}"
-    + ".note{font-size:13px;line-height:1.55;color:#0F1419;margin-bottom:10px}"
-    + ".kv{display:flex;padding:6px 0;border-bottom:1px dotted #D1CFC8;font-size:12px}"
-    + ".kv b{min-width:140px;color:#5A6270;font-weight:normal;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.04em;text-transform:uppercase}"
-    + ".cta{display:inline-block;background:#B23A1C;color:white;padding:10px 18px;text-decoration:none;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;margin-top:8px;cursor:pointer}";
-  const doc = '<!DOCTYPE html>'
-    + '<html><head><title>' + name + ' · Live Connector Flow · SPARKAE</title>'
-    + '<style>' + css + '</style></head><body>'
-    + '<h1>' + name + ' · Live Connector Flow</h1>'
-    + '<div class="sub">' + flowName + ' · production OAuth path</div>'
-    + '<div class="box"><div class="label">Production Connect URL</div><div class="url">' + url + '</div></div>'
-    + '<div class="box">'
-    + '<div class="kv"><b>Auth flow</b><span>' + flowName + '</span></div>'
-    + '<div class="kv"><b>Scopes</b><span>' + product + '</span></div>'
-    + '<div class="kv"><b>FedRAMP role</b><span>' + fedrampRef + '</span></div>'
-    + '<div class="kv"><b>Pilot status</b><span>Live-API ready · awaiting client ID + redirect endpoint registration</span></div>'
-    + '</div>'
-    + '<p class="note"><strong>What this is:</strong> the production OAuth URL pattern your team would visit to authorize SPARKAE to read ' + name + ' on your behalf. Once your team registers a client ID and redirect endpoint during onboarding, this becomes a live connect flow.</p>'
-    + '<p class="note"><strong>What this isn\'t:</strong> a working sign-in for the pilot demo. The demo uses representative mock data so pilots can see the platform end-to-end without granting production credentials. Real connections happen during onboarding kickoff.</p>'
-    + '<p class="note"><strong>References per fedramp.gov:</strong> ' + fedrampRef + '</p>'
-    + '<a class="cta" onclick="window.close()">Close</a>'
-    + '</body></html>';
-  w.document.write(doc);
-  w.document.close();
-}
 
 function setConnector(id, active) {
   const el = document.querySelector('.connector-card[data-connector="' + id + '"]');
@@ -7773,7 +7726,7 @@ async function runDataSources(sample) {
   for (let i = 0; i < activeConnectors.length; i++) {
     const c = activeConnectors[i];
     setConnector(c.id, true);
-    log(fmt(4 + i) + '.0', 'auth', c.name + ' · ' + c.auth + (c.mode === 'real' ? ' · live' : ' · mock'), 'ok');
+    log(fmt(4 + i) + '.0', 'auth', c.name + ' · ' + c.auth + ' · walkthrough, not a connection', 'ok');
     await wait(180);
     setConnector(c.id, false);
   }
@@ -7785,7 +7738,7 @@ async function runDataSources(sample) {
     const c = activeConnectors[i];
     setConnector(c.id, true);
     const fedrampLink = '<span class="key">' + c.fedrampRef + '</span>';
-    log(fmt(11 + i) + '.4', 'enum', 'Tier 1 · ' + c.name + ' · ' + c.artifactCount.toLocaleString() + ' artifacts · feeds ' + fedrampLink);
+    log(fmt(11 + i) + '.4', 'enum', 'Tier 1 · ' + c.name + ' · would feed ' + fedrampLink);
     await wait(180);
     setConnector(c.id, false);
   }
@@ -7794,13 +7747,10 @@ async function runDataSources(sample) {
 
   // Stage 4 — Sync
   setStage(4);
-  setStatus('◆ SYNC · fetching artifacts and computing integrity hashes');
-  const totalEvidence = activeConnectors.reduce((a, c) => a + c.artifactCount, 0);
-  const totalGrc = grcConnectors.reduce((a, g) => a + g.artifactCount, 0);
-  const totalArtifacts = totalEvidence + totalGrc;
-  log('00:21.0', 'sync', 'Tier 1 · fetching ' + totalEvidence.toLocaleString() + ' artifacts from ' + activeConnectors.length + ' evidence sources');
+  setStatus('◆ SYNC · how artifacts would be fetched and integrity-hashed');
+  log('00:21.0', 'sync', 'Tier 1 · a sync would fetch from ' + activeConnectors.length + ' evidence sources · nothing is fetched here');
   await wait(400);
-  log('00:22.0', 'sync', 'Tier 2 · pulling ' + totalGrc.toLocaleString() + ' control + evidence records from ' + grcConnectors.length + ' GRC peer platforms');
+  log('00:22.0', 'sync', 'Tier 2 · a sync would pull control and evidence records from ' + grcConnectors.length + ' GRC peer platforms');
   await wait(450);
   log('00:23.4', 'sync', 'computing SHA-256 integrity hash per record for OSCAL provenance trail (KSI-MLA-04 alignment)', 'ok');
   await wait(400);
@@ -7845,29 +7795,28 @@ async function runDataSources(sample) {
   // Stage 6 — Index
   setStage(6);
   setStatus('◆ INDEX · building searchable canonical evidence catalog');
-  log('00:34.0', 'idx', 'canonical evidence catalog · ' + totalArtifacts.toLocaleString() + ' indexed records · all entries provenance-tagged via integrity_hash');
+  log('00:34.0', 'idx', 'canonical evidence catalog · every record provenance-tagged via integrity_hash · no record was created here');
   await wait(400);
   log('00:35.0', 'idx', 'GRC peer migrations: import modes — ' + grcConnectors.filter(g => g.importMode.startsWith('two-way')).length + ' two-way · ' + grcConnectors.filter(g => g.importMode.startsWith('one-way')).length + ' one-way (re-export to FedRAMP OSCAL)');
   await wait(400);
-  log('00:36.4', 'done', 'connector sync complete · ' + activeConnectors.length + ' evidence + ' + grcConnectors.length + ' GRC peers · canonical records ready for all use cases', 'ok');
+  log('00:36.4', 'done', 'walkthrough complete · ' + activeConnectors.length + ' evidence + ' + grcConnectors.length + ' GRC peers mapped · no sync ran and no record was produced', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · ' + activeConnectors.length + ' evidence · ' + grcConnectors.length + ' GRC peers · ' + totalArtifacts.toLocaleString() + ' canonical records · ' + coveredCats + '/' + totalCats + ' FedRAMP categories covered');
+  setStatus('◆ WALKTHROUGH COMPLETE · ' + activeConnectors.length + ' evidence · ' + grcConnectors.length + ' GRC peers · ' + coveredCats + '/' + totalCats + ' FedRAMP categories mapped · no system contacted');
   document.getElementById('results').classList.add('show');
 
   // Build summary
-  const liveConnectors = activeConnectors.filter(c => c.mode === 'real').length;
   const fullPct = Math.round(100 * fullyCoveredCats / totalCats);
   document.getElementById('results-summary').innerHTML = `
     <div class="sar-section-label">
       <span class="sar-section-num">§1</span>
       <span class="sar-section-title">Connector Inventory · Evidence Sources</span>
       <span class="sar-section-ref">per fedramp.gov/documents-templates · authorization artifact taxonomy</span>
-      <span class="sar-section-total">${activeConnectors.length} connectors · ${totalArtifacts.toLocaleString()} artifacts indexed</span>
+      <span class="sar-section-total">${activeConnectors.length} connectors mapped · walkthrough</span>
     </div>
     <div class="verdict-summary">
-      <div class="verdict-cell sat"><div class="num">${activeConnectors.length}</div><div class="lbl">Connectors</div><div class="sub">${liveConnectors} live · ${activeConnectors.length - liveConnectors} mock</div></div>
-      <div class="verdict-cell def"><div class="num" style="font-size:24px">${totalArtifacts.toLocaleString()}</div><div class="lbl">Artifacts Indexed</div><div class="sub">SHA-256 provenance</div></div>
+      <div class="verdict-cell sat"><div class="num">${activeConnectors.length}</div><div class="lbl">Connectors</div><div class="sub">mapped · none configured</div></div>
+      <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">Walkthrough</div><div class="lbl">Not a sync</div><div class="sub">no system was contacted</div></div>
       <div class="verdict-cell ${fullPct === 100 ? 'sat' : (fullPct >= 70 ? 'nr' : 'ots')}"><div class="num">${fullyCoveredCats}</div><div class="lbl">FedRAMP Categories</div><div class="sub">${totalCats} total · ${fullPct}% fully sourced</div></div>
       <div class="verdict-cell ra"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">OAuth · API</div><div class="lbl">Auth Methods</div><div class="sub">RFC 6749 · token-based</div></div>
     </div>
@@ -7909,18 +7858,18 @@ async function runDataSources(sample) {
   }
   // Per-connector PASS observations
   for (const c of activeConnectors) {
-    const covPct = Math.round(c.coverage * 100);
     findings.push({
       ctrl: 'SRC·' + c.id.toUpperCase(),
-      verdict: covPct >= 90 ? 'SAT' : 'NR',
-      method: 'EXAMINE', risk: covPct >= 90 ? 'Low' : 'Moderate', implStatus: 'implemented',
-      recommendation: covPct >= 90
-        ? 'Continue current sync cadence; ' + c.name + ' is providing comprehensive evidence to its FedRAMP artifact categories.'
-        : 'The CSP should investigate the ' + (100 - covPct) + '% gap in ' + c.name + ' coverage to determine whether scope expansion or alternative sources are required.',
-      text: 'The 3PAO examined the ' + c.name + ' connector configuration, and found that it authenticates via ' + c.auth + ' and feeds ' + c.feeds.length + ' FedRAMP artifact types: ' + c.feeds.slice(0, 2).join('; ') + (c.feeds.length > 2 ? '; et al.' : '') + '.',
+      // Not Reviewed, and every one of them. A connector that does not exist
+      // cannot be examined, so it cannot earn a Satisfied determination — and
+      // a coverage percentage for a connection nobody made cannot decide one.
+      verdict: 'NR',
+      method: 'EXAMINE', risk: 'Moderate', implStatus: 'planned',
+      recommendation: 'To feed these categories from ' + c.name + ', a connector would have to be built and configured. None exists in this build; evidence for these categories is uploaded by hand.',
+      text: 'This walkthrough shows how ' + c.name + ' would map into an OSCAL-aligned record: authenticating via ' + c.auth + ' and feeding ' + c.feeds.length + ' FedRAMP artifact types: ' + c.feeds.slice(0, 2).join('; ') + (c.feeds.length > 2 ? '; et al.' : '') + '. No connector was contacted and no evidence was fetched.',
       cites: [
         { kind: 'POLICY', title: c.fedrampRef, version: '', date: '2025-12-01', section: c.category + ' · ' + c.auth },
-        { kind: 'CONFIG', title: 'SPARKAE ' + c.name + ' connector configuration', version: '', date: '2026-04-28', section: c.artifactCount.toLocaleString() + ' artifacts · ' + covPct + '% coverage · last sync ' + c.lastSync },
+        { kind: 'EVIDENCE', title: 'SPARKAE connector mapping · ' + c.name + ' (illustrative)', version: '', date: '', section: c.artifactKinds.join(' · ') + ' → canonical evidence record' },
       ]
     });
   }
