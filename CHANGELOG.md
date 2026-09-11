@@ -46,6 +46,94 @@ exist. The demo now says what the Integrations page says.
 
 Three browser checks added; all three fail against the previous build.
 
+## 2026-09-12 (upload re-review)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
+
+The reviewer rechecked the build and found two more, both reproduced here
+before being changed.
+
+- **A refused member name could execute.** The upload panel has escaped file
+  names on the success path since the first XSS fix. The error path did not:
+  `err.message` went into `innerHTML`, and that message names the member that
+  could not be read. A package whose members are all refused therefore executed
+  its own filename — and the message carrying it was the one added the day
+  before to report that nothing in the upload was readable. Fixing one defect
+  opened another.
+- **Selecting a bundled sample assessed the previous upload.** The uploaded
+  package stayed bound when a sample was selected, and `engineCorpus` prefers it
+  over the selection, so choosing CloudVault re-assessed the visitor's evidence
+  under CloudVault's pinned date. `discardPreviousRun` ran on upload, on clear
+  and at run start — not on selection, which is the path this missed. Selecting
+  a sample now releases the package, resets the upload panel and discards the
+  previous run.
+
+Seven browser checks added; six fail against the previous build, reporting the
+reviewer's findings verbatim (`data-refused-audit=1`, `img count=2`, upload
+still bound after selecting CloudVault).
+
+## 2026-09-12
+
+**Engine 1.2.0** · verdict digest `3dd76f5f3083` → `355a46a6abb3`
+· ruleset digest `7609e9bfacb7` → `ceb3e3d50fa6`
+· bundled sample **383 → 284 Satisfied**
+
+Finding 2 of the 2026-09-11 upload review, the one this build had acknowledged
+and not fixed. Determinations move, which is the point: the previous ones were
+wrong.
+
+**Gate 2 reads subject matter, not compliance vocabulary.** The reviewer showed
+that two documents about account monitoring and multi-factor authentication
+returned Satisfied for `AT-1_a.[01]` — "an awareness and training policy is
+developed and documented". The objective split into three concepts, and two of
+them were carried by words that appear in every SSP ever written:
+
+    "awareness"                     uncovered
+    "training policy is developed"  covered by "the account management
+                                     policy is developed"
+    "documented"                    covered by "and documented"
+                                     → 67%, over the 40% floor
+
+A concept is now covered only by a term that is not generic compliance
+vocabulary, and a concept made entirely of such vocabulary — "documented" — is
+set aside rather than counted. The list of generic terms is published in the
+ruleset and hashed into the ruleset digest, so a determination can be audited
+against the rule rather than taken on trust.
+
+**Gate 2b: evidence that never names a control's subject cannot satisfy it.**
+The subject comes from the control's family and title — AT-1 is "Awareness and
+Training", so evidence that mentions neither fails, whatever else it says.
+
+**Terms match as stems of whole words.** `clause.includes(kw)` matched "train"
+inside "constrained"; a plain word boundary would refuse "account creation" for
+an objective about accounts being created. Both are errors. And organization-
+defined parameters are no longer extracted as concepts: no SSP says
+"organization-defined", and counting `[organization-defined policy, procedures,
+prerequisites, and criteria]` as four concepts made objectives uncoverable.
+
+**What moved, and why.** 106 objectives lost Satisfied. 98 are correct — the
+subject is absent from the sample SSP entirely, and the awareness-and-training
+family accounts for most of them, because that document contains no awareness or
+training content at all. 8 are false negatives: the document covers the subject
+but the retriever did not surface the passage. That is a retrieval weakness the
+old rule hid by passing on generic words regardless of which passage it read.
+7 objectives gained Satisfied, from stemming that the old reader could not do —
+including `AC-2_g`, where "monitored" never matched "monitoring".
+
+The homepage hero showed `AC-2_g` as Other Than Satisfied. It is Satisfied now,
+so the hero is a different finding: `AT-1_a.[01]`, where the engine retrieves a
+strong, well-formed Access Control Policy for an awareness-and-training
+objective and refuses it. The conformance suite checks the hero against the run,
+which is how the stale one was caught.
+
+**Also: the Run button could not be reached after a run.** `.rail` is
+`position:sticky; top:80px` and grows to 781px; in a 720px viewport it pins at
+80 and its last 141px — where the Run button sits — could not be scrolled to by
+anything, `scrollIntoView` included. A visitor on a laptop could not press Run
+again. Present on main before this change, and unrelated to it: the browser
+suite had been clicking before the page reached that state. The rail is bounded
+to the visible space and scrolls internally.
+
 ## 2026-09-11 (later still)
 
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged

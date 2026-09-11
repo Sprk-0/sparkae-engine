@@ -759,5 +759,82 @@ check(notZip.parsed.length === 0 && refusals(notZip).some(r => /central director
   JSON.stringify(refusals(notZip)));
 
 
+
+// ── 14. subject matter, not compliance vocabulary ───────────────────────────
+// Finding 2 of the 2026-09-11 upload review. Two documents about account
+// monitoring and multi-factor authentication returned Satisfied for AT-1_a.[01]
+// — "an awareness and training policy is developed and documented" — because
+// gate 2 accepted an objective's generic words on their own. "policy",
+// "developed" and "documented" were all present; "awareness" and "training"
+// were not needed.
+console.log('14. subject matter');
+
+const AT_OBJ = 'AT-1_a.[01]';
+const atDif = (CATALOG['AT-1'].d || []).find(d => d.i === AT_OBJ);
+const asOfDate = new Date(SAMPLE_DATE + 'T00:00:00Z');
+const verdictFor = (docs, cid, dif) => {
+  const chunks = docs.flatMap(([n, t]) => E.chunkText(t, n));
+  const r = new E.BM25Retriever(chunks);
+  return E.assessDif(dif, r, cid, CATALOG[cid].T, CATALOG[cid].F, E.buildRefutationIndex(r), asOfDate);
+};
+const gate = (res, n) => (res.gates || []).find(g => g.gate === n) || {};
+const sub = (res, n, id) => ((gate(res, n).checks) || []).reduce((a, c) => a || (c.id === id ? c.pass : null), null);
+
+// The reviewer's own case, as reported.
+const OFF_SUBJECT = [
+  ['review-ssp.txt', 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. The account management policy is developed and documented and reviewed annually. Most recent scan: 2026-05-28.'],
+  ['policy.txt', 'IA-2 Identification and Authentication. Multi-factor authentication is enforced for all privileged users per the documented identification and authentication policy, version 2.4, dated 2026-01-15.'],
+];
+const atOff = verdictFor(OFF_SUBJECT, 'AT-1', atDif);
+check(!!atDif && atOff.status === 'Other Than Satisfied' && sub(atOff, 2, '2b') === false,
+  'evidence about account monitoring does not satisfy an awareness-and-training objective — ' +
+  atOff.status + ' / gate 2b ' + sub(atOff, 2, '2b'));
+
+// The other half of the claim: a real awareness-and-training policy still passes.
+// A rule that refuses everything is not an improvement.
+const ON_SUBJECT = [['at-policy.txt',
+  'AT-1 Awareness and Training Policy and Procedures. The organization-level security awareness and training policy is developed and documented in SSP section 12.1, version 2.4, dated 2026-01-15, and is disseminated to all personnel and roles with system access. The awareness and training procedures are reviewed annually.']];
+const atOn = verdictFor(ON_SUBJECT, 'AT-1', atDif);
+check(atOn.status === 'Satisfied' && sub(atOn, 2, '2a') === true && sub(atOn, 2, '2b') === true,
+  'a real awareness-and-training policy still satisfies that objective — ' + atOn.status);
+
+// And the mismatch is symmetric: an AT policy does not satisfy an AC objective.
+const acDif = (CATALOG['AC-2'].d || []).find(d => d.i === 'AC-2_g');
+const acOff = verdictFor(ON_SUBJECT, 'AC-2', acDif);
+const acOn = verdictFor([['ac.txt',
+  'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.pdf.']], 'AC-2', acDif);
+check(acOff.status !== 'Satisfied' && acOn.status === 'Satisfied',
+  'the subject test runs both ways: AT evidence fails AC-2_g, AC evidence passes it — ' +
+  acOff.status + ' / ' + acOn.status);
+
+// The mechanism, stated directly: generic compliance words cannot carry a
+// concept, and a concept made only of them is not counted at all.
+const covGeneric = E.checkCoverage(['training policy is developed', 'documented'],
+  'The account management policy is developed and documented and reviewed annually.');
+check(covGeneric.ratio === 0 && covGeneric.uncovered.indexOf('training policy is developed') !== -1 &&
+  covGeneric.generic.indexOf('documented') !== -1,
+  'policy/developed/documented cover nothing; a wholly generic concept is set aside — ' +
+  JSON.stringify(covGeneric));
+
+// Stems match across inflection, so "accounts are created" reads "account
+// creation". Refusing that would trade one error for another.
+const covStem = E.checkCoverage(E.extractConcepts('Determine if accounts are created in accordance with [organization-defined policy];'),
+  'Account creation requires documented approval from the system owner.');
+check(covStem.ratio > 0, 'an objective about accounts being created is covered by "account creation" — ' + JSON.stringify(covStem));
+
+// Organization-defined parameters are placeholders, not subject matter: no SSP
+// says "organization-defined", and counting them made objectives uncoverable.
+check(E.extractConcepts('Determine if accounts are created in accordance with [organization-defined policy, procedures, prerequisites, and criteria];')
+  .every(c => !/organization-defined|prerequisites|criteria/.test(c)),
+  'ODP placeholders are not extracted as concepts — ' +
+  JSON.stringify(E.extractConcepts('Determine if accounts are created in accordance with [organization-defined policy, procedures, prerequisites, and criteria];')));
+
+// The rule is published, so a determination can be audited against it rather
+// than taken on trust — and the ruleset digest moves when the list moves.
+check(Array.isArray(E.RULESET.generic_terms) && E.RULESET.generic_terms.length > 20 &&
+  E.RULESET.generic_terms.indexOf('policy') !== -1 && E.RULESET.subject_required === true,
+  'the generic-term list and the subject requirement are published in the ruleset');
+
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
