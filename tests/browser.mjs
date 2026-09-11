@@ -320,6 +320,50 @@ const pf = walkResults.find(r => r.uc === 'portfolio') || {};
 const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
 const pfConsistent = !!pfM && (+pfM[1] === +pfM[2] + +pfM[3] + +pfM[4]);
 
+// ── a refused member name is text ──────────────────────────────────────────
+// The success path has escaped file names since the first XSS fix. The ERROR
+// path did not: err.message went into innerHTML, and that message names the
+// member that could not be read. So a package whose members are all refused
+// executed its own filename — and the message carrying it was the one added to
+// report that nothing was readable. Two members of one name are refused as
+// ambiguous, which is the cheapest way to reach that path.
+const XSS_MEMBER = '<img src=x onerror="document.documentElement.setAttribute(\'data-refused-audit\',\'1\')">.bin';
+fs.writeFileSync(path.join(tmp, 'hostile-refused.zip'), zipOf([
+  { name: XSS_MEMBER, text: 'a' }, { name: XSS_MEMBER, text: 'b' },
+]));
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'hostile-refused.zip')]);
+await page.waitForTimeout(1200);
+const refusedXss = await page.evaluate(() => ({
+  fired: document.documentElement.getAttribute('data-refused-audit'),
+  injected: document.querySelectorAll('#ssp-upload-status img, .upload-file img').length,
+  shownAsText: /img src=x onerror/.test((document.getElementById('ssp-upload-status') || {}).textContent || ''),
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+}));
+
+// ── selecting a sample means assessing that sample ─────────────────────────
+// The uploaded package stayed bound when a bundled sample was selected, and
+// engineCorpus prefers it, so choosing CloudVault re-assessed the upload under
+// CloudVault's pinned date: the visitor's evidence, dated to a document they
+// did not choose.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(900);
+const boundAfterUpload = await page.evaluate(() => (typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length));
+await page.evaluate(() => document.querySelector('.ssp-option[data-id="cloudvault"]').click());
+await page.waitForTimeout(400);
+const afterSelect = await page.evaluate(() => ({
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+  date: document.getElementById('assessment-date').value,
+  panelHidden: ((document.getElementById('ssp-upload-status') || {}).style || {}).display === 'none',
+}));
+await page.click('#run-btn');
+await page.waitForSelector('#results.show', { timeout: 180000 });
+await settleFindings();
+const selectedRunLog = await page.textContent('#log');
+
 // The rail is position:sticky at top:80. A sticky element taller than the space
 // it sticks in strands its own contents: at 781px in a 720px viewport it pinned
 // at 80 and its last 141px — which is where the Run button sits — could not be
@@ -364,6 +408,20 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['a REFUSED member name cannot execute: no handler ran',
+    refusedXss.fired === null, 'data-refused-audit=' + refusedXss.fired],
+  ['a REFUSED member name cannot execute: no element was injected',
+    refusedXss.injected === 0, 'img count=' + refusedXss.injected],
+  ['a refused member name is still shown, as text', refusedXss.shownAsText, ''],
+  ['an upload nothing could be read from binds nothing', refusedXss.bound === 0, String(refusedXss.bound)],
+  ['selecting a bundled sample releases the uploaded package',
+    boundAfterUpload === 1 && afterSelect.bound === 0,
+    'bound after upload ' + boundAfterUpload + ', after selecting ' + afterSelect.bound],
+  ['selecting CloudVault restores its pinned date and clears the upload panel',
+    afterSelect.date === golden.assessment_date && afterSelect.panelHidden,
+    'date ' + afterSelect.date + ', panel hidden ' + afterSelect.panelHidden],
+  ['a run after selecting CloudVault reads CloudVault, not the upload',
+    /CloudVault-Federal-SSP\.txt/.test(selectedRunLog) && !/Uploaded package/.test(selectedRunLog), ''],
   ['the Run button can be scrolled to after a run — the sticky rail does not strand it',
     railReach.inView,
     'button top ' + railReach.btnTop + ' in viewport ' + railReach.vh +

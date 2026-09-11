@@ -46,6 +46,32 @@ exist. The demo now says what the Integrations page says.
 
 Three browser checks added; all three fail against the previous build.
 
+## 2026-09-12 (upload re-review)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
+
+The reviewer rechecked the build and found two more, both reproduced here
+before being changed.
+
+- **A refused member name could execute.** The upload panel has escaped file
+  names on the success path since the first XSS fix. The error path did not:
+  `err.message` went into `innerHTML`, and that message names the member that
+  could not be read. A package whose members are all refused therefore executed
+  its own filename — and the message carrying it was the one added the day
+  before to report that nothing in the upload was readable. Fixing one defect
+  opened another.
+- **Selecting a bundled sample assessed the previous upload.** The uploaded
+  package stayed bound when a sample was selected, and `engineCorpus` prefers it
+  over the selection, so choosing CloudVault re-assessed the visitor's evidence
+  under CloudVault's pinned date. `discardPreviousRun` ran on upload, on clear
+  and at run start — not on selection, which is the path this missed. Selecting
+  a sample now releases the package, resets the upload panel and discards the
+  previous run.
+
+Seven browser checks added; six fail against the previous build, reporting the
+reviewer's findings verbatim (`data-refused-audit=1`, `img count=2`, upload
+still bound after selecting CloudVault).
+
 ## 2026-09-12
 
 **Engine 1.2.0** · verdict digest `3dd76f5f3083` → `355a46a6abb3`

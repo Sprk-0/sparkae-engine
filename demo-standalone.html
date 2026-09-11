@@ -3785,6 +3785,25 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
     btn.classList.add('selected');
     selected = btn.dataset.id;
     window.__lastRunWasReal = false;
+    // Choosing a bundled sample means assessing that sample. The uploaded
+    // package stayed bound here, and engineCorpus prefers it over the selection,
+    // so picking CloudVault re-assessed the upload under CloudVault's pinned
+    // date — the visitor's evidence, dated to a document they did not choose.
+    // discardPreviousRun ran on upload, on clear and at run start, and not here,
+    // which is the path this missed.
+    CUSTOM_PKG_FILES = [];
+    discardPreviousRun();
+    const uploadBtn = document.getElementById('ssp-upload-btn');
+    if (uploadBtn) {
+      uploadBtn.classList.remove('has-files', 'selected');
+      uploadBtn.removeAttribute('data-id');
+      uploadBtn.querySelector('.ssp-name').textContent = '⬆ Upload your security package';
+      uploadBtn.querySelector('.ssp-meta').textContent = 'SSP · scans · POA&M · plans · policies';
+    }
+    const upStatus = document.getElementById('ssp-upload-status');
+    if (upStatus) { upStatus.style.display = 'none'; upStatus.innerHTML = ''; }
+    delete SAMPLES['custom'];
+    delete window.CUSTOM_BASELINE;
     // The bundled sample is a fixed document: restore its pinned assessment
     // date (an upload may have moved the field to the visitor's own date).
     if (btn.dataset.id === 'cloudvault') {
@@ -4548,7 +4567,13 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
     console.warn('Upload could not be read:', err);
     nameEl.textContent = '⚠ Upload failed';
     metaEl.textContent = String(err && err.message || err);
-    status.innerHTML = '<div class="upload-row"><span class="upload-label">Error</span><span class="upload-warn">' + (err && err.message || String(err)) + '</span></div>' +
+    // The message names the member that could not be read, and a member name is
+    // written by whoever built the archive. The success path has escaped names
+    // since the first XSS fix; this path did not, so a package whose members are
+    // all REFUSED executed its own filename — and the message carrying it is the
+    // one added to report that nothing was readable. A refusal is still text.
+    status.innerHTML = '<div class="upload-row"><span class="upload-label">Error</span><span class="upload-warn">' +
+                       engEsc(String((err && err.message) || err)) + '</span></div>' +
                        '<button class="upload-clear" onclick="clearCustomUpload()">Clear upload</button>';
     return;
   }
