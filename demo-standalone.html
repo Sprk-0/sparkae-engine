@@ -4462,21 +4462,50 @@ function renderUploadStatus(pkg) {
   const ts = pkg.textSig || {};
   const oscal = pkg.oscal || {};
 
-  const checks = [
-    { lbl: 'SSP',                       ok: present('SSP') || oscal.ssp > 0,    miss: 'critical · NR finding · PL-2' },
-    { lbl: 'POA&M',                     ok: present('POAM') || oscal.poam > 0, miss: 'OTS finding · CA-5' },
-    { lbl: 'Vulnerability scans',       ok: present('SCAN') || pkg.scanRows > 0, miss: 'NR finding · RA-5' },
-    { lbl: 'Incident Response Plan',    ok: present('IR') || ts.incidentResponse, miss: 'OTS finding · IR-4' },
-    { lbl: 'Contingency Plan',          ok: present('CP') || ts.contingency, miss: 'OTS finding · CP-2' },
-    { lbl: 'Authorization Boundary',    ok: present('ABD'), miss: 'OTS finding · CA-3' },
-    { lbl: 'Inventory workbook',        ok: present('INV'), miss: 'OTS finding · CM-8' },
-    { lbl: 'Penetration test',          ok: present('PT'),  miss: 'optional · advisory only' },
-    { lbl: 'Policies / procedures',     ok: present('POLICY') || present('PROC'), miss: 'optional · advisory' },
+  // This list is an ARTIFACT INVENTORY. It used to render as determinations —
+  // "OTS finding · CA-5" against POA&M, "critical · NR finding · PL-2" against
+  // SSP — which said an objective had been adjudicated because no uploaded file
+  // was named like a POA&M.
+  //
+  // Nothing here adjudicates anything. The engine reads document text and
+  // decides every objective on evidence when a run starts; a package can be
+  // missing a file called poam.xlsx and still satisfy CA-5 from an SSP section,
+  // or contain one and fail. A missing artifact is a gap in the package, and
+  // the control it would ordinarily inform is worth naming — as context, not as
+  // a verdict.
+  //
+  // How presence is decided matters too, and the first version of this fix got
+  // it wrong in the other direction by calling the list name-only. It is not:
+  // classifyFile matches file names, and parseJSONOscal, parseScanCSV and
+  // parseTextDoc read contents, so oscal.ssp, pkg.scanRows and textSig all
+  // carry weight here. A shallow content scan is still not an adjudication, but
+  // saying "names, not contents" was a false claim of its own.
+  const artifacts = [
+    { lbl: 'SSP',                    ok: present('SSP') || oscal.ssp > 0,      informs: 'PL-2', primary: true },
+    { lbl: 'POA&M',                  ok: present('POAM') || oscal.poam > 0,    informs: 'CA-5', primary: true },
+    { lbl: 'Vulnerability scans',    ok: present('SCAN') || pkg.scanRows > 0,  informs: 'RA-5', primary: true },
+    { lbl: 'Incident Response Plan', ok: present('IR') || ts.incidentResponse, informs: 'IR-4' },
+    { lbl: 'Contingency Plan',       ok: present('CP') || ts.contingency,      informs: 'CP-2' },
+    { lbl: 'Authorization Boundary', ok: present('ABD'),                       informs: 'CA-3' },
+    { lbl: 'Inventory workbook',     ok: present('INV'),                       informs: 'CM-8' },
+    { lbl: 'Penetration test',       ok: present('PT'),                        informs: 'CA-8' },
+    { lbl: 'Policies / procedures',  ok: present('POLICY') || present('PROC'), informs: 'the -1 controls' },
   ];
-  const checkRows = checks.map(c =>
-    '<div class="upload-row"><span class="upload-label">' + c.lbl + '</span>' +
-    '<span class="' + (c.ok ? 'upload-value' : 'upload-warn') + '">' + (c.ok ? '✓' : '⚠ ' + c.miss) + '</span></div>'
-  ).join('');
+  const missingCount = artifacts.filter(a => !a.ok).length;
+  const checkRows =
+    '<div class="upload-row"><span class="upload-label" style="color:var(--vermillion)">Artifact inventory</span>' +
+    '<span class="upload-value">' + (artifacts.length - missingCount) + ' of ' + artifacts.length +
+    ' present</span></div>' +
+    artifacts.map(a =>
+      '<div class="upload-row"><span class="upload-label">' + engEsc(a.lbl) + '</span>' +
+      '<span class="' + (a.ok ? 'upload-value' : 'upload-warn') + '">' +
+      (a.ok ? 'present' : 'not found · would inform ' + engEsc(a.informs)) + '</span></div>'
+    ).join('') +
+    '<div class="upload-row" style="display:block;opacity:.72;line-height:1.5;padding-top:6px">' +
+    'Found by file name and by a shallow scan of contents — OSCAL document type, scan rows, ' +
+    'text markers. This is what the package appears to contain; <strong>it is not an ' +
+    'assessment</strong>. Every objective is adjudicated from document text when you run, and a ' +
+    'missing artifact here does not by itself produce a finding.</div>';
 
   // Show top 12 files; collapse remainder into a count
   const showFiles = pkg.inventory.slice(0, 12);
@@ -5437,7 +5466,7 @@ async function runInitialWalkthrough(sample) {
   await wait(400);
   if (isCustom) {
     if (sspMissing) {
-      log('00:02.4', 'ssp', '✗ no SSP artifact in upload · §1 / §2 / §8 narrative cannot be verified · PL-2 NR finding emitted', 'warn');
+      log('00:02.4', 'ssp', '✗ no SSP artifact in upload · §1 / §2 / §8 narrative cannot be verified · PL-2 evidence absent from the package', 'warn');
     } else {
       log('00:02.4', 'ssp', '✓ SSP artifact detected in upload · §1 / §2 / §8 narrative present · row-level review deferred to manual SAR step', 'ok');
     }
@@ -5487,7 +5516,7 @@ async function runInitialWalkthrough(sample) {
   log('00:13.0', 'plan', 'reviewing Appendix G · Information System Contingency Plan (ISCP) per NIST SP 800-34');
   await wait(400);
   if (cpMissing) {
-    log('00:14.4', 'plan', '✗ no Contingency Plan artifact in uploaded package · CP-2 OTS finding emitted', 'warn');
+    log('00:14.4', 'plan', '✗ no Contingency Plan artifact in uploaded package · CP-2 evidence absent from the package', 'warn');
   } else {
     log('00:14.4', 'plan', 'CP-4 functional test report on file · CSP test current cycle · 3PAO verified', 'ok');
   }
@@ -5495,9 +5524,9 @@ async function runInitialWalkthrough(sample) {
   log('00:16.0', 'plan', 'reviewing Appendix I · Incident Response Plan (IRP) per NIST SP 800-61');
   await wait(400);
   if (irMissing) {
-    log('00:17.4', 'plan', '✗ no Incident Response Plan artifact in uploaded package · IR-4 OTS finding emitted', 'warn');
+    log('00:17.4', 'plan', '✗ no Incident Response Plan artifact in uploaded package · IR-4 evidence absent from the package', 'warn');
   } else if (irTestMissing) {
-    log('00:17.4', 'plan', '⚠ IRP present but no record of recent IR-3 functional test · IR-3 OTS finding emitted', 'warn');
+    log('00:17.4', 'plan', '⚠ IRP present but no record of recent IR-3 functional test · IR-3 evidence incomplete', 'warn');
   } else {
     log('00:17.4', 'plan', 'IR-3 functional test report on file · CSP exercise current cycle · 3PAO verified', 'ok');
   }
@@ -5549,7 +5578,7 @@ async function runInitialWalkthrough(sample) {
     log('00:33.0', 'inv', 'reviewing Appendix M · Integrated Inventory Workbook · per <span class="key">fedramp.gov · IIW Template</span>');
     await wait(400);
     if (invMissing) {
-      log('00:34.4', 'inv', '✗ no Integrated Inventory Workbook in upload · CM-8 OTS finding emitted · component count cannot be established', 'warn');
+      log('00:34.4', 'inv', '✗ no Integrated Inventory Workbook in upload · CM-8 evidence absent · component count cannot be established', 'warn');
     } else {
       log('00:34.4', 'inv', '✓ Integrated Inventory Workbook artifact detected in upload · row-level validation deferred to manual SAR step', 'ok');
     }
@@ -5557,7 +5586,7 @@ async function runInitialWalkthrough(sample) {
     log('00:36.0', 'inv', 'cross-referencing inventory against Authorization Boundary Diagram (ABD) · per CSP Authorization Playbook §boundary validation');
     await wait(500);
     if (abdMissing) {
-      log('00:37.4', 'inv', '✗ no Authorization Boundary Diagram in upload · CA-3 OTS finding emitted', 'warn');
+      log('00:37.4', 'inv', '✗ no Authorization Boundary Diagram in upload · CA-3 evidence absent from the package', 'warn');
     } else {
       log('00:37.4', 'inv', '✓ ABD artifact detected · diagram-to-inventory reconciliation deferred to manual SAR step', 'ok');
     }
@@ -5610,7 +5639,7 @@ async function runInitialWalkthrough(sample) {
     const sevTotal = (sf.critical && sf.critical.total || 0) + (sf.high && sf.high.total || 0) + (sf.moderate && sf.moderate.total || 0) + (sf.low && sf.low.total || 0);
     const scanMissing = fIds.some(c => /^RA-5\.a/.test(c));
     if (scanMissing) {
-      log('00:45.4', 'scan', '✗ no vulnerability scan artifact in upload · RA-5 NR finding emitted', 'warn');
+      log('00:45.4', 'scan', '✗ no vulnerability scan artifact in upload · RA-5 evidence absent from the package', 'warn');
       await wait(400);
     } else {
       log('00:45.4', 'scan', 'parsed customer-uploaded scan output · ' + sevTotal + ' total findings · C:' + (sf.critical && sf.critical.total || 0) + ' H:' + (sf.high && sf.high.total || 0) + ' M:' + (sf.moderate && sf.moderate.total || 0) + ' L:' + (sf.low && sf.low.total || 0), 'ok');

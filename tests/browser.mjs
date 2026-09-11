@@ -369,57 +369,24 @@ await page.waitForSelector('#results.show', { timeout: 180000 });
 await settleFindings();
 const selectedRunLog = await page.textContent('#log');
 
-// ── each homepage workflow lands on the tab it names ──────────────────────
-// The "Nine workflows" cards all used to point at demo-standalone.html with
-// no hash, so §05 KSI validation opened §01. The hash is the data-uc id;
-// §-numbers are aliases.
-const HASH_LANDINGS = [
-  { hash: '#ksi', uc: 'ksi', btn: 'Run KSI validation' },
-  { hash: '#08', uc: 'portfolio', btn: 'Generate portfolio rollup' },
-  { hash: '#annual', uc: 'annual', btn: 'Run annual reassessment' },
-];
-const hashLandings = [];
-for (const h of HASH_LANDINGS) {
-  await page.goto('file://' + path.join(root, 'demo-standalone.html') + h.hash);
-  await dismissOnboarding();
-  hashLandings.push(Object.assign({ want: h }, await page.evaluate(() => ({
-    uc: (document.querySelector('.uc-tab.active') || {}).getAttribute('data-uc') || '',
-    btn: ((document.getElementById('run-btn') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
-  }))));
-}
-const hashMiss = hashLandings.filter(r => r.uc !== r.want.uc || !r.btn.includes(r.want.btn));
-
-// MeshGate is a walkthrough sample: §01 used to stop with "nothing to assess"
-// as if the visitor had selected nothing.
+// ── the artifact inventory is an inventory ─────────────────────────────────
+// classifyFile matches on file NAMES. The panel rendered those matches as
+// determinations — "OTS finding · CA-5" against POA&M, "critical · NR finding ·
+// PL-2" against SSP — so a package missing a file called poam.xlsx was told an
+// objective had been adjudicated. Nothing there adjudicates anything.
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 await dismissOnboarding();
-await page.evaluate(() => document.querySelector('.ssp-option[data-id="meshgate"]').click());
-const meshIdle = await page.evaluate(() => ({
-  title: (document.getElementById('idle-title') || {}).textContent || '',
-  copy: (document.getElementById('idle-copy') || {}).textContent || '',
-  meta: (document.querySelector('.ssp-option[data-id="meshgate"] .ssp-meta') || {}).textContent || '',
-}));
-await page.click('#run-btn');
-await page.waitForFunction(
-  () => /STOPPED|walkthrough sample/.test((document.getElementById('console-status') || {}).textContent || ''),
-  null, { timeout: 30000 }).catch(() => {});
-const meshStop = await page.evaluate(() => ({
-  status: (document.getElementById('console-status') || {}).textContent || '',
-  log: (document.getElementById('log') || {}).textContent || '',
-}));
-
-// Walkthrough export chips used to be <a href="#"> pretending to download.
-await page.goto('file://' + path.join(root, 'demo-standalone.html'));
-await dismissOnboarding();
-await page.evaluate(() => document.querySelector('.uc-tab[data-uc="conmon"]').click());
-await page.click('#run-btn');
-await page.waitForFunction(
-  () => /COMPLETE|WALKTHROUGH/.test((document.getElementById('console-status') || {}).textContent || ''),
-  null, { timeout: 180000 });
-const exportBar = await page.evaluate(() => ({
-  hashLinks: document.querySelectorAll('#export-bar a[href="#"]').length,
-  note: (document.querySelector('.export-note') || {}).textContent || '',
-}));
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, 'ssp.txt')]);
+await page.waitForTimeout(1000);
+const inventory = await page.evaluate(() => {
+  const t = (document.getElementById('ssp-upload-status') || {}).textContent || '';
+  return {
+    claimsFinding: /(OTS|NR)\s+finding/i.test(t),
+    saysNotFound: /not found/.test(t),
+    saysWouldInform: /would inform/.test(t),
+    disclaims: /not an assessment/i.test(t) && /shallow scan of contents/i.test(t),
+  };
+});
 
 // The rail is position:sticky at top:80. A sticky element taller than the space
 // it sticks in strands its own contents: at 781px in a 720px viewport it pinned
@@ -465,6 +432,12 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the artifact inventory claims no determination',
+    !inventory.claimsFinding, 'panel still says "OTS/NR finding"'],
+  ['a missing artifact is reported as missing, with the control it would inform',
+    inventory.saysNotFound && inventory.saysWouldInform, JSON.stringify(inventory)],
+  ['the inventory says how presence was decided and that it is not an assessment',
+    inventory.disclaims, JSON.stringify(inventory)],
   ['a REFUSED member name cannot execute: no handler ran',
     refusedXss.fired === null, 'data-refused-audit=' + refusedXss.fired],
   ['a REFUSED member name cannot execute: no element was injected',

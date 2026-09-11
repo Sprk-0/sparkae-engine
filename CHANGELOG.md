@@ -17,65 +17,36 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-12 (live demo paths)
+## 2026-09-11 (attribution and inventory)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
 
-User-acceptance of the homepage "Nine workflows" section and the demo tabs
-those cards claim to open.
+Two of the reviewer's repository recommendations.
 
-- **Each card opens the tab it names.** All nine linked to `demo-standalone.html`
-  with no hash, so §05 KSI validation landed on §01 Initial Assessment. The demo
-  now honours `#initial` … `#src` (and the §-numbers as aliases), and the
-  homepage cards carry those hashes.
-- **§01 does not call its output a SAR.** The live engine writes automated
-  EXAMINE preparation. The homepage card and the tab subtitle said "SSP → SAR".
-- **MeshGate is the Moderate catalog.** The rail and the fixture said 325
-  controls; FedRAMP Moderate is 323. Selecting it on §01 used to stop with
-  "nothing to assess" as if nothing had been chosen — it is a walkthrough
-  sample, and the idle copy and the stop now say so. CloudVault's annual
-  rotation (52+52+52) is a third of the Low baseline it actually sits in, not
-  140+140+141.
-- **§06 / §08 count the systems they rolled up.** QA still said "4 SSPs and 7
-  use cases" after §08 learned to count; both now use the roster they walk.
-- **Walkthrough export chips are names, not downloads.** They were
-  `<a href="#">` with a check mark, and they jumped to the top of the page.
-- A leftover `#annual-placeholder` labelled "§03 · Preview" / Annual
-  Reassessment / "private preview · Q3 2026" is gone. §02 already runs.
+- **The artifact inventory no longer claims determinations.** `classifyFile`
+  matches on file *names*, and the upload panel rendered those matches as
+  findings: "OTS finding · CA-5" beside POA&M, "critical · NR finding · PL-2"
+  beside SSP. A package missing a file called `poam.xlsx` was told an objective
+  had been adjudicated. Nothing in that list adjudicates anything — the engine
+  reads document contents when a run starts, and a package can lack a file named
+  like a POA&M and still satisfy CA-5 from an SSP section. Missing artifacts are
+  now reported as missing, with the control each would ordinarily inform, under a
+  heading that says the match is on names rather than contents and that this is
+  not an assessment. The same wording went through §01's walkthrough narration,
+  where an absent artifact was narrated as a finding the engine had emitted.
+- **CSV says who determined what.** The OSCAL exporter has carried
+  `engine-determination`, `assessor-determination` and `determination-source`
+  since the assessor layer landed; CSV collapsed all of it into one cell, so a
+  revised Satisfied was indistinguishable from an engine Satisfied and the
+  assessor's statement was lost entirely. The findings CSV gains four columns —
+  Engine Determination, Assessor Determination, Determination Source, Assessor
+  Statement — beside the effective Determination a consumer acts on. The engine
+  column is the engine's and a revision cannot rewrite it, which is the same rule
+  the reproducibility receipt follows.
 
-Checks added in `tests/check.mjs`, `tests/browser.mjs` and `tests/pages.mjs`;
-the pages check walks every homepage card onto the tab it names.
+Seven checks added, all failing against the previous build.
 
-## 2026-09-11 (§09 Data Sources)
-
-Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
-
-The connector walkthrough claimed a running integration estate that does not
-exist. The demo now says what the Integrations page says.
-
-- Two connectors were badged **● LIVE** with a "View live OAuth URL" action,
-  while the page's own onboarding text said none of these connectors run in
-  this browser build. Both statements cannot be true. Every card now reads
-  ◇ WALKTHROUGH, and the OAuth modal behind that action — 38 lines pointing at
-  a placeholder client id and a GitHub App install URL — is gone.
-- Coverage percentages, artifact counts and **last-sync timestamps** are gone
-  from the cards, the log, the summary and the finding citations. A sync that
-  never ran has no last-sync time, and a connection nobody made has no coverage.
-- The run emitted assessor-style observations citing a
-  "SPARKAE <connector> connector configuration · 47 artifacts · 92% coverage ·
-  last sync 2026-04-28", and recommended continuing a sync cadence that does not
-  exist. Those observations now describe the mapping and say plainly that no
-  system was contacted.
-- **Five connectors were receiving Satisfied determinations**, decided by a
-  coverage figure attached to a connection that was never made. A connector that
-  does not exist cannot be examined, so every one is Not Reviewed.
-- The disclosure moved out of the opt-in onboarding tour and onto the panel
-  itself, where a visitor who never opens the tour will read it, with a link to
-  the Integrations page for what exists today.
-
-Three browser checks added; all three fail against the previous build.
-
-## 2026-09-12 (upload re-review)
+## 2026-09-11 (upload re-review)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged
 
@@ -101,7 +72,7 @@ Seven browser checks added; six fail against the previous build, reporting the
 reviewer's findings verbatim (`data-refused-audit=1`, `img count=2`, upload
 still bound after selecting CloudVault).
 
-## 2026-09-12
+## 2026-09-11 (subject matter · engine 1.2.0)
 
 **Engine 1.2.0** · verdict digest `3dd76f5f3083` → `355a46a6abb3`
 · ruleset digest `7609e9bfacb7` → `ceb3e3d50fa6`
@@ -162,6 +133,35 @@ anything, `scrollIntoView` included. A visitor on a laptop could not press Run
 again. Present on main before this change, and unrelated to it: the browser
 suite had been clicking before the page reached that state. The rail is bounded
 to the visible space and scrolls internally.
+
+## 2026-09-11 (§09 Data Sources)
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+The connector walkthrough claimed a running integration estate that does not
+exist. The demo now says what the Integrations page says.
+
+- Two connectors were badged **● LIVE** with a "View live OAuth URL" action,
+  while the page's own onboarding text said none of these connectors run in
+  this browser build. Both statements cannot be true. Every card now reads
+  ◇ WALKTHROUGH, and the OAuth modal behind that action — 38 lines pointing at
+  a placeholder client id and a GitHub App install URL — is gone.
+- Coverage percentages, artifact counts and **last-sync timestamps** are gone
+  from the cards, the log, the summary and the finding citations. A sync that
+  never ran has no last-sync time, and a connection nobody made has no coverage.
+- The run emitted assessor-style observations citing a
+  "SPARKAE <connector> connector configuration · 47 artifacts · 92% coverage ·
+  last sync 2026-04-28", and recommended continuing a sync cadence that does not
+  exist. Those observations now describe the mapping and say plainly that no
+  system was contacted.
+- **Five connectors were receiving Satisfied determinations**, decided by a
+  coverage figure attached to a connection that was never made. A connector that
+  does not exist cannot be examined, so every one is Not Reviewed.
+- The disclosure moved out of the opt-in onboarding tour and onto the panel
+  itself, where a visitor who never opens the tour will read it, with a link to
+  the Integrations page for what exists today.
+
+Three browser checks added; all three fail against the previous build.
 
 ## 2026-09-11 (later still)
 
