@@ -101,6 +101,23 @@ await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
 const log2 = await page.textContent('#log');
 const refused = await page.textContent('.live-refused').catch(() => '');
+
+// A file name is text the visitor did not write. The upload inventory renders
+// it, and rendered it by string concatenation into innerHTML until a package
+// named like an <img> with an error handler ran that handler on the live site.
+// Escaped, the name must still be shown — a hostile name is worth seeing — but
+// as text, never as markup.
+const XSS_NAME = '<img src=x onerror="document.documentElement.setAttribute(\'data-upload-audit\',\'1\')">.txt';
+fs.writeFileSync(path.join(tmp, XSS_NAME), 'AC-2 Account Management. Accounts are reviewed quarterly.');
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, XSS_NAME)]);
+await page.waitForTimeout(1200);
+const xss = await page.evaluate(() => ({
+  fired: document.documentElement.getAttribute('data-upload-audit'),
+  injected: document.querySelectorAll('#ssp-upload-status img, .upload-file img').length,
+  shownAsText: Array.from(document.querySelectorAll('.upload-file'))
+    .some(el => el.textContent.includes('onerror')),
+}));
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
@@ -122,6 +139,9 @@ const checks = [
   ['upload defaults the date field to today', uploadDate === new Date().toISOString().slice(0, 10), uploadDate],
   ['upload: PDF refusal logged', /refused scan\.pdf/.test(log2), ''],
   ['upload: refusal shown in the results', /scan\.pdf/.test(refused), ''],
+  ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
+  ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
+  ['a hostile file name is still shown, as text', xss.shownAsText, ''],
 ];
 let failures = 0;
 for (const [msg, pass, detail] of checks) {

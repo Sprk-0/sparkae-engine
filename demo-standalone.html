@@ -4506,8 +4506,14 @@ function renderUploadStatus(pkg) {
 
   // Show top 12 files; collapse remainder into a count
   const showFiles = pkg.inventory.slice(0, 12);
+  // A file name is attacker-controlled text — the visitor did not write it, the
+  // package author did, and a ZIP member path arrives the same way (see the
+  // `path` values unzipExpand builds). It is rendered as element text, so
+  // engEsc's textContent round-trip is the right escape. f.tag comes from a
+  // fixed allowlist and is escaped for the same reason the next reader should
+  // not have to check where it came from.
   const fileRows = showFiles.map(f =>
-    '<div class="upload-file"><span class="file-tag">' + f.tag + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + f.name + ' · ' + fmtBytes(f.size) + '</div>'
+    '<div class="upload-file"><span class="file-tag">' + engEsc(f.tag) + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + engEsc(f.name) + ' · ' + fmtBytes(f.size) + '</div>'
   ).join('') + (pkg.inventory.length > showFiles.length ? '<div class="upload-file" style="opacity:.6">… and ' + (pkg.inventory.length - showFiles.length) + ' more</div>' : '');
 
   const scanLine = scanHasContent(pkg)
@@ -4528,7 +4534,7 @@ function renderUploadStatus(pkg) {
       ' · ' + (oscal.controlsCited ? oscal.controlsCited.length : 0) + ' controls cited</span></div>'
     : '';
   const ctrlLine = (pkg.controlsCited && pkg.controlsCited.length)
-    ? '<div class="upload-row"><span class="upload-label">Controls cited in text</span><span class="upload-value">' + pkg.controlsCited.length + ' distinct (e.g. ' + pkg.controlsCited.slice(0, 4).join(', ') + (pkg.controlsCited.length > 4 ? ', …' : '') + ')</span></div>'
+    ? '<div class="upload-row"><span class="upload-label">Controls cited in text</span><span class="upload-value">' + pkg.controlsCited.length + ' distinct (e.g. ' + engEsc(pkg.controlsCited.slice(0, 4).join(', ')) + (pkg.controlsCited.length > 4 ? ', …' : '') + ')</span></div>'
     : '';
   const cryptoBits = [];
   if (ts.fips140) cryptoBits.push('FIPS 140');
@@ -4570,6 +4576,12 @@ function clearCustomUpload() {
     document.querySelector('.ssp-option[data-id="cloudvault"]').classList.add('selected');
   }
   document.getElementById('ssp-upload-input').value = '';
+  // The raw File objects are what engineCorpus prefers over the selected
+  // sample, so leaving them here made Clear upload cosmetic: the panel reset
+  // and the next run still assessed the cleared package, under whatever
+  // assessment date the newly selected sample carried.
+  CUSTOM_PKG_FILES = [];
+  discardPreviousRun();
 }
 
 document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
@@ -9045,6 +9057,19 @@ function examineStatement(f) {
 // which is the same split the assessors page describes.
 const ASSESSOR_REVISIONS = new Map();
 
+// Everything that belongs to one run and must not outlive it. A determination
+// is derived from a specific corpus, baseline and assessment date; an assessor
+// revision is a judgement about one such determination. Carrying either into
+// the next run attaches a human conclusion, or an export, to evidence it was
+// never made against — which an upload review reproduced by revising an
+// objective on one package and finding that revision on the next.
+function discardPreviousRun() {
+  ASSESSOR_REVISIONS.clear();
+  ENGINE_LAST_RUN = null;              // exports have nothing to build from
+  const res = document.getElementById('results');
+  if (res) res.classList.remove('show');
+}
+
 // Revisions as the exporters want them: objective id → { status, statement },
 // with the UI's SAT/OTS/NR translated to the determination strings the engine
 // and OSCAL use. Returns null when nothing was revised, so the builders take
@@ -9115,6 +9140,9 @@ function liveClock() {
 
 async function runInitialLive(sample) {
   const ts = liveClock();
+  // Before anything is read: a run re-derives every determination, so the
+  // previous run's revisions and export binding are void from here.
+  discardPreviousRun();
   const baseline = engineBaseline();
   const asOfDay = engineAssessmentDate();
   renderStages(USE_CASES.initial.liveStages);
@@ -9275,6 +9303,9 @@ function renderInitialSummaryLive(run) {
 let CUSTOM_PKG_FILES = [];
 document.getElementById('ssp-upload-input').addEventListener('change', (ev) => {
   CUSTOM_PKG_FILES = Array.from(ev.target.files || []);
+  // New evidence: whatever is on screen and whatever an assessor concluded
+  // belongs to the package that was here before it.
+  discardPreviousRun();
   // An upload carries the visitor's real evidence, so the default assessment
   // date becomes their own — read once, here, into a visible field they can
   // edit. The engine itself never reads the clock.
