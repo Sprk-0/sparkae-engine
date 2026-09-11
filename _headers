@@ -159,8 +159,19 @@
 /static/og-card.png
   Cache-Control: public, max-age=86400
 
+# The same hour for the rest of the static assets, and for the same reason as
+# the card: these keep their names when their contents change, so an hour is
+# what a correction has to wait. The demo page loads three scripts and every
+# page loads one stylesheet — a rule that covers some of them caches half a
+# release, which is worse than caching none of it.
 /demo-standalone-catalog.js
   Cache-Control: public, max-age=3600
 
+/demo-engine.js
+  Cache-Control: public, max-age=3600
+
 /demo-exports.js
+  Cache-Control: public, max-age=3600
+
+/ae-editorial.css
   Cache-Control: public, max-age=3600
