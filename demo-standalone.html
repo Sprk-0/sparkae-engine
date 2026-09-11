@@ -5656,7 +5656,10 @@ async function runConMon(sample) {
   await wait(400);
   log('00:46.8', 'out', `VDR bundle · ${d.vdr} candidates packaged for adjudication`, 'ok');
   await wait(400);
-  log('00:50.2', 'done', 'ConMon cycle complete · ready for JAB submission', 'ok');
+  // The JAB was retired under the FedRAMP Authorization Act and replaced by the
+  // FedRAMP Board; ConMon deliverables go to the authorizing agency. "Ready for
+  // JAB submission" names a body that no longer takes submissions.
+  log('00:50.2', 'done', 'ConMon cycle complete · ready for submission to the authorizing agency', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
   setStatus('◆ COMPLETE · walkthrough · ConMon package shape');
