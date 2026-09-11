@@ -239,6 +239,30 @@ var DEMO_EXPORTS = (function () {
   // Neutralize spreadsheet formula injection: a leading =+-@ (or a leading
   // tab/CR, which Excel strips before parsing) turns a data cell into a
   // formula on open.
+  // ── Assessor revisions ──────────────────────────────────────────────────
+  // opts.revisions maps an objective id to { status, statement } recorded by a
+  // human. The engine's own determination is never discarded: it travels in
+  // the props beside the revised one, and the reproducibility receipt keeps
+  // attesting the engine run, because the digest is a claim about what the
+  // engine derived from the evidence and an assessor must not be able to
+  // rewrite it. With no revisions every builder below emits exactly what it
+  // emitted before.
+  function revisionFor(opts, f) {
+    var revs = (opts && opts.revisions) || null;
+    if (!revs) return null;
+    var key = f.objective_id || f.dif_id || '';
+    var r = (typeof revs.get === 'function') ? revs.get(key) : revs[key];
+    if (!r || !r.status) return null;
+    if (String(r.status) === String(f.status) && !r.statement) return null;
+    return r;
+  }
+
+  // The determination a downstream artifact should act on: the assessor's
+  // where one was recorded, the engine's otherwise.
+  function effectiveStatus(f, rev) {
+    return rev && rev.status ? String(rev.status) : String(f.status || '');
+  }
+
   function csvSafe(v) {
     var s = String(v == null ? '' : v);
     return s && '=+-@\t\r'.indexOf(s[0]) !== -1 ? "'" + s : s;
@@ -302,8 +326,14 @@ var DEMO_EXPORTS = (function () {
       status: { state: 'operational' }
     };
 
+    var revisedCount = 0;
     findings.forEach(function (f) {
+      // Observations and risks below stay keyed to what the ENGINE determined —
+      // they record what was examined, which a revision does not change — so
+      // the uuid sequence is identical whether or not anything was revised.
+      var rev = revisionFor(opts, f);
       var satisfied = f.status === 'Satisfied';
+      var effective = effectiveStatus(f, rev);
       var objectiveId = f.objective_id || f.dif_id || '';
       var findingUuid = uuid();
       var description = (satisfied ? f.evidence_description : f.weakness_description) ||
@@ -316,19 +346,30 @@ var DEMO_EXPORTS = (function () {
         target: {
           type: 'objective-id',
           'target-id': toOscalToken(objectiveId),
-          status: { state: satisfied ? 'satisfied' : 'not-satisfied' }
+          status: { state: (effective === 'Satisfied') ? 'satisfied' : 'not-satisfied' }
         },
         props: [
           { name: 'control-id', ns: FEDRAMP_NS, value: toOscalControlId(f.control_id) }
         ]
       };
 
+      // A revised objective carries both determinations and the assessor's
+      // sentence, so a reader can see what the engine derived, what the
+      // assessor concluded, and that the two differ.
+      if (rev) {
+        revisedCount++;
+        finding.props.push({ name: 'engine-determination', ns: SPARKAE_NS, value: String(f.status || '') });
+        finding.props.push({ name: 'assessor-determination', ns: SPARKAE_NS, value: effective });
+        finding.props.push({ name: 'determination-source', ns: SPARKAE_NS, value: 'assessor-revision' });
+        if (rev.statement) finding.remarks = String(rev.statement);
+      }
+
       // "Not Reviewed" is not an OSCAL objective state — it collapses to
       // not-satisfied above, so record the real determination as a prop
       // rather than silently presenting an untested objective as a
       // tested-and-failed one.
-      if (!satisfied && f.status !== 'Other Than Satisfied') {
-        finding.props.push({ name: 'determination', ns: FEDRAMP_NS, value: String(f.status || '') });
+      if (effective !== 'Satisfied' && effective !== 'Other Than Satisfied') {
+        finding.props.push({ name: 'determination', ns: FEDRAMP_NS, value: effective });
       }
 
       if (satisfied) {
@@ -465,8 +506,9 @@ var DEMO_EXPORTS = (function () {
     opts = opts || {};
     var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || []).map(function (f) {
+      var rev = revisionFor(opts, f);
       return csvRow([
-        f.control_id, f.objective_id || f.dif_id, f.status,
+        f.control_id, f.objective_id || f.dif_id, effectiveStatus(f, rev),
         f.evidence_description || '', (f.evidence_references || []).join('; '), f.assessor_notes || '',
         f.weakness_name || '', f.weakness_description || '', f.weakness_type || '', '',
         f.likelihood_before || '', f.impact_before || '', f.risk_exposure_before || '',
@@ -491,7 +533,7 @@ var DEMO_EXPORTS = (function () {
     opts = opts || {};
     var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || [])
-      .filter(function (f) { return f.status === 'Other Than Satisfied'; })
+      .filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) === 'Other Than Satisfied'; })
       .map(function (f, i) {
         return csvRow([
           'RET-' + String(i + 1).padStart(4, '0'), f.control_id, f.weakness_name || f.finding,
@@ -516,7 +558,7 @@ var DEMO_EXPORTS = (function () {
     opts = opts || {};
     var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || [])
-      .filter(function (f) { return f.status !== 'Satisfied'; })
+      .filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) !== 'Satisfied'; })
       .map(function (f, i) {
         return csvRow([
           'POAM-' + String(i + 1).padStart(4, '0'), f.control_id, f.weakness_name || f.finding,
@@ -535,13 +577,15 @@ var DEMO_EXPORTS = (function () {
     'Control Origination', 'Assessment Status', 'Testing Performed', 'Evidence Description',
     'Citations', 'Assessor Notes'];
 
-  function buildTCW(state) {
+  function buildTCW(state, opts) {
+    opts = opts || {};
     var rows = (state.findings || []).map(function (f) {
+      var st = effectiveStatus(f, revisionFor(opts, f));
       return csvRow([
         f.control_id, f.objective_id || f.dif_id, f.assessment_method || 'EXAMINE',
-        f.status === 'Satisfied' ? 'implemented' : f.status === 'Not Reviewed' ? 'planned' : 'partial',
+        st === 'Satisfied' ? 'implemented' : st === 'Not Reviewed' ? 'planned' : 'partial',
         'Service Provider Corporate',
-        f.status === 'Satisfied' ? 'SAT' : f.status === 'Not Reviewed' ? 'NR' : 'OTS',
+        st === 'Satisfied' ? 'SAT' : st === 'Not Reviewed' ? 'NR' : 'OTS',
         'Deterministic 7-gate engine assessment (EXAMINE method)',
         f.evidence_description || '', (f.evidence_references || []).join('; '),
         f.assessor_notes || ''
@@ -557,7 +601,12 @@ var DEMO_EXPORTS = (function () {
     var gradeFn = opts.grade || function () { return '—'; };
     var findings = state.findings || [];
     var total = findings.length;
-    var by = function (s) { return findings.filter(function (f) { return f.status === s; }); };
+    // Counts follow the assessor where one revised, so the summary matches the
+    // artifacts beside it. The revision tally is stated outright below.
+    var revisedList = findings.filter(function (f) { return !!revisionFor(opts, f); });
+    var by = function (s) {
+      return findings.filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) === s; });
+    };
     var sat = by('Satisfied').length;
     var otsList = by('Other Than Satisfied');
     var ots = otsList.length;
@@ -580,6 +629,10 @@ var DEMO_EXPORTS = (function () {
       'Baseline: FedRAMP ' + (state.baseline || 'Low') + ' (NIST SP 800-53 Rev 5)',
       'Engine: SparkAE reference engine' + (r.engine_version ? ' v' + r.engine_version : '') + ' (in-browser, 7 deterministic gates)',
       'Assessment method: automated EXAMINE preparation per NIST SP 800-53A Rev 5.',
+      (revisedList.length
+        ? 'Assessor revisions: ' + revisedList.length + ' objective(s) recorded by the assessor, overriding the engine determination. ' +
+          'Counts below reflect them; the reproducibility receipt continues to attest the engine run.'
+        : 'Assessor revisions: none — every determination below is the engine\'s.'),
       'INTERVIEW and TEST were not performed; they remain with the assessor.',
       '',
       'REPRODUCIBILITY RECEIPT',

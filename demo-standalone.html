@@ -8617,12 +8617,12 @@ function liveExportState() {
 }
 
 const LIVE_EXPORTS = {
-  ar:       { build: st => JSON.stringify(DEMO_EXPORTS.buildAssessmentResults(st, { systemName: st.receipt.system_name }), null, 2), ext: 'oscal-ar.json', mime: 'application/json' },
-  findings: { build: st => DEMO_EXPORTS.buildFindingsCSV(st), ext: 'findings.csv', mime: 'text/csv' },
-  ret:      { build: st => DEMO_EXPORTS.buildRET(st), ext: 'ret.csv', mime: 'text/csv' },
-  poam:     { build: st => DEMO_EXPORTS.buildPOAM(st), ext: 'poam.csv', mime: 'text/csv' },
-  tcw:      { build: st => DEMO_EXPORTS.buildTCW(st), ext: 'tcw.csv', mime: 'text/csv' },
-  summary:  { build: st => DEMO_EXPORTS.buildSummary(st, { grade: SparkAEEngine.grade }), ext: 'summary.txt', mime: 'text/plain' },
+  ar:       { build: st => JSON.stringify(DEMO_EXPORTS.buildAssessmentResults(st, { systemName: st.receipt.system_name, revisions: assessorRevisionsForExport() }), null, 2), ext: 'oscal-ar.json', mime: 'application/json' },
+  findings: { build: st => DEMO_EXPORTS.buildFindingsCSV(st, { revisions: assessorRevisionsForExport() }), ext: 'findings.csv', mime: 'text/csv' },
+  ret:      { build: st => DEMO_EXPORTS.buildRET(st, { revisions: assessorRevisionsForExport() }), ext: 'ret.csv', mime: 'text/csv' },
+  poam:     { build: st => DEMO_EXPORTS.buildPOAM(st, { revisions: assessorRevisionsForExport() }), ext: 'poam.csv', mime: 'text/csv' },
+  tcw:      { build: st => DEMO_EXPORTS.buildTCW(st, { revisions: assessorRevisionsForExport() }), ext: 'tcw.csv', mime: 'text/csv' },
+  summary:  { build: st => DEMO_EXPORTS.buildSummary(st, { grade: SparkAEEngine.grade, revisions: assessorRevisionsForExport() }), ext: 'summary.txt', mime: 'text/plain' },
   receipt:  { build: st => JSON.stringify(st.receipt, null, 2), ext: 'receipt.json', mime: 'application/json' },
 };
 
@@ -9044,6 +9044,20 @@ function examineStatement(f) {
 // verdict must not silently rewrite that record. Attribution stays separate,
 // which is the same split the assessors page describes.
 const ASSESSOR_REVISIONS = new Map();
+
+// Revisions as the exporters want them: objective id → { status, statement },
+// with the UI's SAT/OTS/NR translated to the determination strings the engine
+// and OSCAL use. Returns null when nothing was revised, so the builders take
+// exactly the path they took before this existed.
+function assessorRevisionsForExport() {
+  if (!ASSESSOR_REVISIONS.size) return null;
+  const STATUS = { SAT: 'Satisfied', OTS: 'Other Than Satisfied', NR: 'Not Reviewed' };
+  const out = {};
+  ASSESSOR_REVISIONS.forEach((rev, id) => {
+    out[id] = { status: STATUS[rev.verdict] || String(rev.verdict || ''), statement: rev.statement };
+  });
+  return out;
+}
 
 function renderLiveHeadline(run) {
   const host = document.getElementById('results-summary');
