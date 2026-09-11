@@ -60,14 +60,32 @@
 .hx-three code{font-family:var(--font-mono);font-size:12.5px;color:var(--ink)}
 .hx-boundary{margin-top:18px;padding:14px 18px;border-left:3px solid var(--vermillion);background:var(--paper-warm);font-size:14px;line-height:1.55;color:var(--ink-soft)}
 .hx-boundary strong{color:var(--ink)}
-.hx-do{display:grid;grid-template-columns:3fr 2fr 3fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+/* ── The one section that runs, and the eight that illustrate ──
+   §01 used to sit in the grid as one tile of nine, distinguished only by a
+   badge. It is the only thing on this page a visitor can actually run, so it
+   gets its own block above the walkthroughs rather than equal billing inside
+   them. */
+.hx-live{display:grid;grid-template-columns:auto 1fr auto;gap:26px;align-items:center;
+  padding:22px 26px;margin-bottom:24px;background:var(--paper);
+  border:1px solid var(--rule);border-left:3px solid var(--vermillion);
+  color:var(--ink);text-decoration:none;transition:background .2s}
+.hx-live:hover{background:var(--paper-warm)}
+.hx-live .n{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--vermillion)}
+.hx-live .t{font-family:var(--font-display);font-size:23px;font-weight:500;line-height:1.15;display:inline-block;margin-bottom:6px}
+.hx-live .s{font-size:14px;color:var(--ink-soft);line-height:1.5;display:block;max-width:680px}
+.hx-live .badge{display:inline-block;margin-left:10px;font-family:var(--font-mono);font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--vermillion);color:var(--vermillion);
+  vertical-align:middle}
+.hx-live .go{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:var(--vermillion);white-space:nowrap}
+@media (max-width:760px){.hx-live{grid-template-columns:1fr;gap:10px;padding:18px}}
+.hx-do{display:grid;grid-template-columns:2fr 2fr 3fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
 .hx-do .grp{background:var(--paper);padding:0}
 .hx-do .grp-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 16px;background:var(--paper-warm);border-bottom:1px solid var(--rule)}
 .hx-do .grp-h b{font-family:var(--font-display);font-size:16px;font-weight:500;color:var(--vermillion)}
 .hx-do .grp-h span{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
 .hx-do .items{display:grid}
-.hx-do .grp:first-child .items,.hx-do .grp:nth-child(3) .items{grid-template-columns:repeat(3,1fr)}
-.hx-do .grp:nth-child(2) .items{grid-template-columns:repeat(2,1fr)}
+.hx-do .grp:nth-child(3) .items{grid-template-columns:repeat(3,1fr)}
+.hx-do .grp:first-child .items,.hx-do .grp:nth-child(2) .items{grid-template-columns:repeat(2,1fr)}
 .hx-do a.it{display:block;padding:16px 16px 18px;border-left:1px solid var(--rule-soft);color:var(--ink);text-decoration:none;transition:background .2s}
 .hx-do a.it:first-child{border-left:none}
 .hx-do a.it:hover{background:var(--paper-warm)}
@@ -202,10 +220,14 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <h1 class="fade-up fade-up-1">Every determination, traced to evidence. <em>Minutes, not weeks.</em></h1>
       <p class="lede fade-up fade-up-2">SparkAE reads an assessment package, evaluates every &ldquo;Determine if&rdquo; objective through seven deterministic gates, and shows precisely what the evidence supports, contradicts, or fails to prove. Interview and Test stay with the assessor. <strong>Runs entirely inside your environment. No black box. No evidence leaves your network.</strong></p>
       <div class="ctas fade-up fade-up-3">
-        <a class="btn btn-primary" href="demo-standalone.html">Watch SparkAE find a hidden blocker →</a>
+        <a class="btn btn-primary" href="demo-standalone.html">Run the engine on the sample package →</a>
         <a class="btn btn-ghost" href="#cta">Request a fit call</a>
       </div>
       <p class="fine fade-up fade-up-3">Sample package · no signup · nothing uploaded · result in about 15 seconds</p>
+      <p class="preview-note fade-up fade-up-3">
+        <span class="tag">Public preview</span>
+        <span><strong>Experimental.</strong> Every determination here is automated EXAMINE preparation for an assessor to check — never an authorization decision. Accuracy is measured on a small published case set, not on real authorization packages, and what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark →</a></span>
+      </p>
       <div class="chips fade-up fade-up-4">
         <span class="chip accent">NIST SP 800-53A Rev 5</span>
         <span class="chip">FedRAMP Rev5 profile</span>
@@ -303,6 +325,29 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div><h4>Review</h4><p>Per-objective verdicts with the passage cited, confidence (0–1.0), defensibility (A–F), gap type, and the correction — ranked by what blocks authorization first.</p></div>
       <div><h4>Export</h4><p>This build: OSCAL 1.1.2 assessment-results, findings / RET / POA&amp;M / TCW CSV, summary, and the receipt. SAR/SAP DOCX, XLSX workbooks, and OSCAL POA&amp;M ship only in the server product.</p></div>
     </div>
+  </div>
+</section>
+
+<!-- ══ THE PART THAT RUNS ══
+     §01 is the only thing on this site a visitor can actually run, and it used
+     to be reachable only by opening "Under the hood" and finding one tile of
+     nine. The engine belongs on the page, not behind an engineering
+     disclosure. -->
+<section class="hx-sec" id="run-it">
+  <div class="container">
+    <div class="hx-head">
+      <div class="section-title">The part you can run. <em>Right now, in this tab.</em></div>
+      <div class="section-sub">Everything above describes what the engine does. This is the engine: it reads the documents you give it and computes every determination in the baseline, in your browser.</div>
+    </div>
+    <a class="hx-live" href="demo-standalone.html#initial">
+      <span class="n">§01</span>
+      <span>
+        <span class="t">Initial assessment</span><span class="badge">Live engine</span>
+        <span class="s">SSP → determinations. Seven gates over every objective in the baseline, each verdict citing the passage it came from, and OSCAL 1.1.2 plus CSV exports built from that run. Runs in your browser on the sample package or one you drop in — nothing is uploaded.</span>
+      </span>
+      <span class="go">Run it →</span>
+    </a>
+    <p style="margin-top:14px;font-size:13px;color:var(--ink-soft)">The demo's other eight sections are guided walkthroughs of the rest of the FedRAMP lifecycle. They do not run the engine, they are labelled on the page, and they are listed under <a href="#engineering" style="color:var(--vermillion)">Under the hood</a>.</p>
   </div>
 </section>
 
@@ -405,14 +450,13 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
         <p class="hx-boundary"><strong>This repository is the browser demo, not that install.</strong> Open <a href="demo-standalone.html">demo-standalone.html</a>. There is no Docker image and no <code>/v1</code> API here.</p>
 
         <div class="hx-head" style="margin-top:44px">
-          <div class="section-title">Nine workflows. <em>Try each one in the browser.</em></div>
-          <div class="section-sub">The demo follows the FedRAMP lifecycle. Initial assessment runs the real engine on your machine; the rest are guided walkthroughs, labelled as such.</div>
+          <div class="section-title">Eight guided walkthroughs. <em>None of them run the engine.</em></div>
+          <div class="section-sub">The demo follows the FedRAMP lifecycle. §01 Initial Assessment is the engine and is above; these eight illustrate the rest with scripted figures, and each says so on the page.</div>
         </div>
         <div class="hx-do">
           <div class="grp">
             <div class="grp-h"><b>Authorization</b><span>Authorization process</span></div>
             <div class="items">
-              <a class="it" href="demo-standalone.html#initial"><span class="n">§01</span><span class="t">Initial assessment</span><span class="s">SSP → determinations. Seven gates over every objective in the baseline, each verdict citing its evidence.</span><span class="badge live">Live engine</span></a>
               <a class="it" href="demo-standalone.html#annual"><span class="n">§02</span><span class="t">Annual reassessment</span><span class="s">One-third of controls re-tested; carry-forward for the rest with the prior evidence trace.</span><span class="badge walk">Walkthrough</span></a>
               <a class="it" href="demo-standalone.html#scr"><span class="n">§03</span><span class="t">Significant change</span><span class="s">Change request → impact assessment → the delta of objectives that need re-examining.</span><span class="badge walk">Walkthrough</span></a>
             </div>

@@ -91,6 +91,17 @@ for (const file of pages) {
       .filter(Boolean),
   }));
 
+  // A disclosure the visitor never opens is not a primary demo, and a status
+  // they have to expand is not a status. Both have to be on the page as it
+  // loads — which is where the live-engine block was NOT: it sat inside the
+  // collapsed "Under the hood" details as one tile of nine.
+  const onLoad = await page.evaluate(() => {
+    const shown = (el) => !!(el && el.getClientRects().length && !el.closest('details:not([open])'));
+    const live = document.querySelector('.hx-live');
+    const note = document.querySelector('.preview-note');
+    return { hasLive: !!live, live: shown(live), hasNote: !!note, note: shown(note) };
+  });
+
   const dead = [...new Set(seen.links)]
     .filter((href) => !fs.existsSync(path.join(root, href.replace(/^\/+/, ''))));
 
@@ -101,6 +112,8 @@ for (const file of pages) {
     [`${file}: rendered visible text`, seen.text > 200, seen.text + ' chars'],
     [`${file}: every internal link resolves`, dead.length === 0, dead.slice(0, 4).join(', ')],
   );
+  if (onLoad.hasLive) checks.push([`${file}: the live-engine block is on the page, not behind a disclosure`, onLoad.live, '']);
+  if (onLoad.hasNote) checks.push([`${file}: the preview status shows without opening anything`, onLoad.note, '']);
   await page.close();
 }
 
@@ -115,7 +128,10 @@ for (const file of pages) {
     return route.abort();
   });
   await page.goto(origin + '/index.html', { waitUntil: 'load' });
-  const cards = await page.$$eval('.hx-do a.it', (els) => els.map((a) => ({
+  // §01 is the one section that runs, so it sits in its own block above the
+  // walkthrough grid rather than as one tile of nine. Both are workflow links
+  // and both have to open the tab they name.
+  const cards = await page.$$eval('a.hx-live, .hx-do a.it', (els) => els.map((a) => ({
     n: ((a.querySelector('.n') || {}).textContent || '').trim(),
     t: ((a.querySelector('.t') || {}).textContent || '').trim(),
     href: a.getAttribute('href') || '',
@@ -132,7 +148,7 @@ for (const file of pages) {
     '§09': { uc: 'src', btn: 'Sync data sources' },
   };
   checks.push(
-    ['index.html workflow cards: nine distinct paths',
+    ['index.html workflow links: nine distinct paths',
       cards.length === 9 && new Set(cards.map((c) => c.href)).size === 9,
       JSON.stringify(cards.map((c) => c.n + ' ' + c.href))],
   );

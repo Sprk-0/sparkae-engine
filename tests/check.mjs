@@ -28,7 +28,12 @@
 //  13. archive integrity: no member of an uploaded ZIP is lost, overwritten
 //      or silently resolved when two carry the same name
 //  14. gate 2 covers subject matter, not generic compliance vocabulary
-//  15. homepage workflow cards deep-link to the demo tab they name
+//  15. homepage workflow links deep-link to the demo tab they name
+//  16. the findings CSV attributes each determination to the engine or to the
+//      assessor who revised it
+//  17. the README's accuracy figures are the ones the benchmark recorded
+//  18. the preview status sits beside every button that starts a run, and the
+//      one section that runs is on the page rather than behind a disclosure
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -872,10 +877,13 @@ const WANT_WORKFLOWS = [
   ['§08', 'Portfolio', 'portfolio'],
   ['§09', 'Data sources', 'src'],
 ];
-const homeCards = [...home.matchAll(/<a class="it" href="([^"]+)"[\s\S]*?<span class="n">([^<]+)<\/span><span class="t">([^<]+)<\/span>/g)]
+// §01 is the one section that runs, so it is presented on its own above the
+// walkthrough grid rather than as one tile of nine (see section 18). What has
+// to hold is the same either way: nine links, each opening the tab it names.
+const homeCards = [...home.matchAll(/<a class="(?:it|hx-live)" href="([^"]+)"[\s\S]*?<span class="n">([^<]+)<\/span>[\s\S]*?<span class="t">([^<]+)</g)]
   .map(m => ({ href: m[1], n: m[2], t: m[3] }));
 check(homeCards.length === WANT_WORKFLOWS.length,
-  'homepage has nine workflow cards (found ' + homeCards.length + ')');
+  'homepage links to all nine workflows (found ' + homeCards.length + ')');
 check(new Set(homeCards.map(c => c.href)).size === homeCards.length,
   'each homepage workflow card has a distinct href');
 for (const [n, t, uc] of WANT_WORKFLOWS) {
@@ -899,13 +907,13 @@ check(!/<a href="#"[^>]*class="export-btn"/.test(page) && !/class="export-btn"><
   'walkthrough export chips are not href="#" download pretenders');
 
 
-// ── 15. the CSV says who determined what ────────────────────────────────────
+// ── 16. the CSV says who determined what ────────────────────────────────────
 // The OSCAL exporter has carried engine-determination / assessor-determination /
 // determination-source since the assessor layer landed. CSV collapsed all three
 // into one cell, so a revised Satisfied was indistinguishable from an engine
 // Satisfied, and the assessor's own words were lost. A determination nobody can
 // attribute is not much of a record.
-console.log('15. determination attribution in CSV');
+console.log('16. determination attribution in CSV');
 
 const csvParse = (line) => {
   const out = []; let cur = '', q = false;
@@ -955,12 +963,12 @@ check(col(revised, 'Engine Determination') === attrFindings[0].status,
   'the engine column is the engine\'s, unchanged by the revision over it');
 
 
-// ── 16. the README's accuracy figures are the benchmark's ───────────────────
+// ── 17. the README's accuracy figures are the benchmark's ───────────────────
 // The benchmark runs from its own entry point (tests/benchmark.mjs, run by CI
 // with --strict). What is checked here is the other half: that the numbers the
 // README prints are the numbers on record, so a figure cannot go stale in the
 // one file a reader is most likely to quote from.
-console.log('16. accuracy figures');
+console.log('17. accuracy figures');
 const benchSpec = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'cases.json'), 'utf8'));
 const bench = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'results.json'), 'utf8'));
 const readmeSrc = read('README.md');
@@ -984,6 +992,51 @@ check(readmeSrc.includes(split), 'README states the per-source split: ' + split)
 check((bench.summary.by_source['external-review'] || {}).cases > 0,
   'at least one case comes from outside this repository');
 
+
+// ── 18. the preview status is where a run starts ────────────────────────
+// A visitor decides what to trust before they click, not after. Any page that
+// offers a button into the engine has to say what the engine is: an
+// experimental preview whose accuracy is measured on a published case set and
+// not on real authorization packages. The check is written against the button
+// rather than against a list of pages, so a new page with a run button fails
+// until it carries the note too.
+console.log('18. preview status beside the run button');
+// Attribute order is not a property of the page. The first spelling of this
+// required class before href, so `<a href="demo-standalone.html" class="btn
+// btn-ghost">` — which assessors.html already carries — was invisible to it,
+// and a page whose only run button was spelled that way would have passed with
+// no preview status at all. Lookaheads, so either order matches.
+const runButton = /<a\b(?=[^>]*\bhref="demo-standalone\.html(?:#[a-z0-9-]+)?")(?=[^>]*\bclass="[^"]*\bbtn\b)[^>]*>/g;
+for (const f of fs.readdirSync(root).filter(x => /\.html$/.test(x))) {
+  const html = read(f);
+  const buttons = [...html.matchAll(runButton)];
+  const isDemo = f === 'demo-standalone.html';
+  if (!buttons.length && !isDemo) continue;
+  // The note carries animation classes on some pages, so match the class name
+  // rather than the whole attribute.
+  const noteAt = html.indexOf('class="preview-note');
+  if (noteAt === -1) { fail(f + ': offers a run button with no preview status'); continue; }
+  const saysIt = /Public preview/.test(html) && /<strong>Experimental\.<\/strong>/.test(html) &&
+    /not on real authorization packages/.test(html) &&
+    /automated EXAMINE preparation for an assessor to check/.test(html);
+  if (!saysIt) { fail(f + ': the preview status does not say what it needs to'); continue; }
+  // Beside the button, not buried: the demo page carries it in its own hero,
+  // and elsewhere it sits within a screenful of markup of the first run button.
+  check(isDemo || Math.abs(noteAt - buttons[0].index) < 2000,
+    f + ': the preview status sits with the run button');
+}
+
+// §01 is the only section that runs, and the homepage presents it that way:
+// its own block above the walkthrough grid, with no live badge left inside it.
+const homeHtml = read('index.html');
+const liveAt = homeHtml.indexOf('class="hx-live"');
+const gridAt = homeHtml.indexOf('class="hx-do"');
+check(liveAt !== -1 && liveAt < gridAt,
+  'the homepage puts the live engine above the walkthrough grid');
+const gridHtml = homeHtml.slice(gridAt, homeHtml.indexOf('<div class="hx-head"', gridAt));
+check(!/badge live/.test(gridHtml), 'nothing in the walkthrough grid claims to be the live engine');
+check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml),
+  'the walkthrough grid holds §02–§09 and no longer holds §01');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
