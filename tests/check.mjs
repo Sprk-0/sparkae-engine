@@ -284,8 +284,8 @@ check(/"target"\s*:\s*\{/.test(plainHome) && !/"target"\s*:\s*"/.test(plainHome)
   'homepage OSCAL target is the object form with target-id, not a bare string');
 check(/related-risks/.test(plainHome) && /risk-uuid/.test(plainHome),
   'Other Than Satisfied hero shows related-risks as a risk-uuid pointer');
-check(/server product/.test(home) && /pip install/.test(home) && /will not work/.test(home),
-  'homepage says pip install is the server product and will not work from this tree');
+check(/server product/.test(home) && /pip install/.test(home) && /does not work/.test(home),
+  'homepage says pip install is the server product and does not work from this tree');
 
 // ── 11. one address per page, and the pin that keeps it ─────────────────────
 // README.md and netlify.toml both state that this suite fails if the Pretty
@@ -320,6 +320,24 @@ check(sitemapLocs.length === indexable.length,
   `sitemap.xml lists exactly the ${indexable.length} indexable page(s) (found ${sitemapLocs.length})`);
 check(!sitemapLocs.some(l => /\/404\.html$/.test(l)), 'sitemap.xml does not list the error page');
 check(/Disallow:\s*\/404\.html/.test(read('robots.txt')), 'robots.txt disallows the error page');
+
+// Being in the sitemap is a claim that the page is part of the site. A page
+// no visitor can walk to is not, whatever the sitemap says: demo-20x.html sat
+// at priority 0.6 with its only inbound link deleted by a homepage redesign,
+// and status.html was reachable only from that orphan. Crawl the link graph
+// from the homepage the way a visitor would and require it to cover every
+// page that claims to be indexable. 404.html is excluded here for the same
+// reason it is excluded from the sitemap — nothing should link to it.
+const linksOf = (f) => [...read(f).matchAll(/<a[^>]+href=["']([^"']+)["']/gi)]
+  .map(m => m[1].split('#')[0].split('?')[0].replace(/^\/+/, ''))
+  .map(h => h === '' ? 'index.html' : h)
+  .filter(h => indexable.includes(h));
+const reached = new Set(['index.html']);
+for (const f of reached) linksOf(f).forEach(h => reached.add(h));
+const orphans = indexable.filter(f => !reached.has(f));
+check(orphans.length === 0,
+  'every indexable page is reachable by link from the homepage' +
+  (orphans.length ? ` — unreachable: ${orphans.join(', ')}` : ''));
 
 // ── 12. adversarial evidence, and the date arithmetic under it ──────────────
 // Ported from the private product repository, where these were the only tests

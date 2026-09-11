@@ -14,9 +14,9 @@
 <meta property="og:title" content="SparkAE Integrations — Export Into Your Existing GRC Stack">
 <meta property="og:description" content="SparkAE exports JSON, CSV, or OSCAL into the GRC tool you already run. Same 7-gate engine as the 3PAO UI. Not a certified two-way Drata/Vanta sync.">
 <!-- The social card is a real 1200x630 image: a link shared to LinkedIn or Slack
-     otherwise renders as a bare text row. Regenerate from og-card.src.html
-     (see website/README.md); its numbers mirror the homepage stat row, so a
-     catalog change has to update both. -->
+     otherwise renders as a bare text row. It is rendered from og-card.src.html
+     in the private repository and copied into static/ here; its numbers mirror
+     the homepage stat row, so a catalog change has to update both. -->
 <meta property="og:image" content="https://sparkae.ai/static/og-card.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
@@ -281,7 +281,7 @@
           <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3E6E4B"/></svg></div>
           <div><h3>JCAM</h3><div class="int-type">Federal system of record</div></div>
         </div>
-        <p>DOJ's assessment and management platform ingests OSCAL and exposes an API. SparkAE writes <strong>NIST OSCAL 1.1.2 assessment-results</strong>, validated against NIST's published schema on every build, plus POA&amp;M as CSV &mdash; so findings arrive as structured data with the evidence trace intact, not as a document somebody re-keys. <strong>There is no JCAM-specific connector today.</strong> The path is the OSCAL file and the CSV; the API is what a direct one would be built on. Confirm which OSCAL models and version your instance accepts before planning around it.</p>
+        <p>DOJ's assessment and management platform ingests OSCAL and exposes an API. SparkAE writes <strong>NIST OSCAL 1.1.2 assessment-results</strong>, validated against NIST's published schema on every build, plus POA&amp;M as CSV &mdash; so findings arrive as structured data with the evidence trace intact, not as a document somebody re-keys. <strong>There is no JCAM-specific connector today.</strong> The path is the OSCAL file and the CSV. Confirm which OSCAL models and version your instance accepts before planning around it.</p>
         <div class="int-method">
           <span class="int-tag purple">OSCAL 1.1.2 AR</span>
           <span class="int-tag moss">CSV Import</span>
@@ -507,9 +507,11 @@
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="assessors.html">For Assessors</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
-      <a href="demo-standalone.html">Demo</a>
+      <a href="demo-standalone.html">Live Demo</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="integrations.html">Integrations</a>
+      <span style="margin:0 8px;color:#2C3540">·</span>
+      <a href="status.html">Status</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="privacy.html">Privacy</a>
       <span style="margin:0 8px;color:#2C3540">·</span>

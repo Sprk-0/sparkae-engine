@@ -26,8 +26,9 @@ The runtime has none: `demo-engine.js`, `demo-exports.js` and the pages load
 no third-party script, stylesheet or font from another origin, and the
 conformance suite (`tests/check.mjs`) fails if one appears. The only
 dependencies are development-time and pinned in `.github/workflows/ci.yml`:
-Playwright (headless Chromium for `tests/browser.mjs`), and `jsonschema` +
-`regex` for the OSCAL schema check. There is nothing else to inventory.
+Playwright (headless Chromium for `tests/browser.mjs`, `tests/assessor.mjs`,
+`tests/selections.mjs` and `tests/pages.mjs`), and `jsonschema` + `regex` for
+the OSCAL schema check. There is nothing else to inventory.
 
 ## Reporting
 

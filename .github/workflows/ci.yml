@@ -14,7 +14,9 @@
 # The browser job additionally proves the assessor layer: the examine statement
 # is built from the run rather than asserted, a revision reaches the OSCAL,
 # POA&M, RET and summary, and the reproducibility receipt does not move when an
-# assessor overrides a determination.
+# assessor overrides a determination. It also walks the console's own controls —
+# every tab, every rail entry, every filter chip — and asks of each whether it
+# does what its label says.
 name: conformance
 
 on:
@@ -86,6 +88,9 @@ jobs:
 
       - name: Assessor statements, revisions, and what reaches the exports
         run: node tests/assessor.mjs .
+
+      - name: Every selection the console offers does what it says
+        run: node tests/selections.mjs .
 
       - name: Every published page loads clean when served
         run: node tests/pages.mjs .

@@ -9,8 +9,10 @@ commercial boundary have to stay true of the reference build.
 ## Checks
 
 - [ ] `node tests/check.mjs .`
+- [ ] `node tests/benchmark.mjs . --strict`
 - [ ] `python tests/check_oscal_schema.py` (needs `jsonschema` and `regex`)
-- [ ] `node tests/browser.mjs .` and `node tests/assessor.mjs .` (needs Playwright)
+- [ ] `node tests/browser.mjs .`, `node tests/assessor.mjs .`,
+      `node tests/selections.mjs .` and `node tests/pages.mjs .` (needs Playwright)
 - [ ] No leftover third-party origin or prior-company identity
 - [ ] If a threshold, pattern, or scoring formula moved: `ENGINE_VERSION`
       bumped and the golden fixture regenerated in the same change

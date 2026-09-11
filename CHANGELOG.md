@@ -122,6 +122,52 @@ engine.
   “SSP → SAR”, which the same merge had removed from the homepage for the right
   reason: the live engine does not write a SAR.
 
+## 2026-09-11 (site and repository crawl)
+
+Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — nothing here touches a
+determination.
+
+A walk across every published page and then across the repository, asking of
+each claim whether the thing beside it agrees.
+
+- **Two pages were in `sitemap.xml` and reachable from nowhere.**
+  `demo-20x.html` sat at priority 0.6 with its only inbound link deleted by the
+  homepage density redesign, and `status.html` was linked only from that
+  orphan's footer, so it went down with it. The homepage links the 20x
+  walkthrough from the paragraph that already makes the claim it illustrates,
+  Status joins the footer link row everywhere, and `tests/check.mjs` now crawls
+  the link graph from the homepage and fails on an indexable page no visitor
+  can walk to.
+- **The footers disagreed with the navigation and with each other.** Every nav
+  says "Live Demo"; six footers said "Demo". `demo-20x.html`'s footer was built
+  from a `.colophon-links` class that no stylesheet defines, so its seven links
+  rendered with no separation at all, and `status.html` had no site footer —
+  only a local row missing Live Demo and Status. One footer now, on every page.
+- **A walkthrough offered downloads it cannot produce.** §02–§09 filled the
+  export bar with `<a href="#">` carrying a pointer cursor and a green ✓;
+  clicking one jumped to the top of the page. It is a manifest now, and says
+  the walkthrough does not generate files.
+- **The post-demo CTA reported a run that may not have happened.** "The engine
+  just ran on a sample package" is rendered at page load, with nothing gating
+  it on a run.
+- **`assessors.html` claimed XLSX export** with no server-product marker, where
+  `index.html`, `integrations.html`, `README.md` and the demo all carry one —
+  as does the bullet directly above it.
+- **Comments pointed at files this repository does not contain.**
+  `sitemap.xml` cited a `build.sh` allowlist and a
+  `test_imp988_site_discoverability.py`; `_redirects` cited `build.sh`; eight
+  pages said to regenerate the social card from `og-card.src.html` "(see
+  `website/README.md`)". All of those live in the private repository, which
+  `_headers` already said correctly and the rest now do too.
+- **Half the demo's scripts were cached and half were not.**
+  `demo-standalone-catalog.js` and `demo-exports.js` carried a one-hour
+  `Cache-Control` rule, `demo-engine.js` and `ae-editorial.css` carried none.
+  The files are not content-hashed, so a mix can pair an old engine with a new
+  catalog.
+- **`CONTRIBUTING.md`, `SECURITY.md` and the PR template named the wrong set of
+  checks** — between them they omitted `selections.mjs`, `pages.mjs` and the
+  `--strict` accuracy benchmark that CI runs on every pull request.
+
 ## 2026-09-11 (accuracy benchmark)
 
 Engine 1.2.0 · verdict digest `355a46a6abb3` unchanged — nothing here changes a
@@ -272,6 +318,57 @@ anything, `scrollIntoView` included. A visitor on a laptop could not press Run
 again. Present on main before this change, and unrelated to it: the browser
 suite had been clicking before the page reached that state. The rail is bounded
 to the visible space and scrolls internally.
+
+## 2026-09-11 (the console's own controls)
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+An acceptance walk of the live demo, control by control: click everything the
+page offers and ask whether it does what it says. Nine of them did not. No
+verdict, gate or export changed — this is the layer between the visitor and the
+engine.
+
+- **A filter changed while rows were still painting kept the rows it replaced.**
+  Both painters clear the table and then append from timers, and nothing
+  cancelled the timers of the paint they replaced. Choosing Satisfied and then
+  Other-Than-Satisfied half a second later left 60 Satisfied rows sitting under
+  the Other-Than-Satisfied heading — the table contradicting the selection above
+  it. Every scheduled append now carries its paint's generation and drops itself
+  when a later paint has started.
+- **Filter chips that could not match a row.** The bar was a fixed
+  Examine · Interview · Test / SAT · OTS · NR · PASS row whatever the run held.
+  §01 is EXAMINE-only by construction and says so in three places, yet offered
+  Interview and Test, both of which silently emptied the table; §06's findings
+  all carry method QA, which no chip named. The chips are now built from the run
+  that produced them, carry their counts, and a dimension holding one value is
+  stated rather than offered as a choice.
+- **The count beside them meant two things.** "120 of 383 findings shown" when
+  the painter capped the rows and "1 of 981 findings shown" when it did not:
+  painted-of-matched in one case, matched-of-total in the other, so filtering to
+  Satisfied reported a smaller run. One sentence now, and the run total is in
+  every version of it.
+- **An empty table said nothing.** It is indistinguishable from a broken one.
+  A selection that matches nothing now names itself and says how many rows
+  clearing it would bring back.
+- **§01 met the rail's second system with "nothing to assess".** MeshGate is the
+  subject of the §02–§09 walkthroughs and this build ships no document set for
+  it, but the rail listed it as a peer of the sample under "Choose an SSP", so a
+  visitor's second click on the tab they land on ended in *nothing to assess: no
+  upload and no bundled document set* — the absence of a corpus, reported as an
+  outcome. The rail entry now says which sections it is for, the rail says so
+  before Run is pressed, and the run stops by naming the system and the way
+  forward.
+- **The rail disagreed with its own catalog**: FedRAMP Moderate was 325 controls
+  on one line and 323 on the line above it, one authored and one computed. 323.
+- **§09 told visitors to click something that is not clickable.** "Click any
+  connector card to view its schema mapping" — the cards carry no handler and no
+  pointer; the mapping is behind the link inside them, which the copy now names.
+- **A hidden panel labelled §02 as §03.** An "Annual Reassessment · §03 ·
+  Preview · in private preview Q3 2026" block sat in the console markup, never
+  displayed, for a section that is neither §03 nor in preview. Removed.
+
+`tests/selections.mjs` added and wired into CI: seventeen checks over the tabs,
+the rail and the filters. Twelve of them fail against the previous build.
 
 ## 2026-09-11 (§09 Data Sources)
 
