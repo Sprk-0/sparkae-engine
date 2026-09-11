@@ -644,6 +644,40 @@ try {
 check(dupDocx && /ambiguous/.test(dupDocx),
   'a DOCX carrying two word/document.xml is refused, not resolved to the last one');
 
+// A DOCX inside a package is the ordinary shape of a real submission: the SSP
+// is a Word file and the package is a ZIP. Refusing it meant the one document
+// the assessment most depends on was the one left out, and a run reached
+// Complete having read the README and not the SSP.
+const nestedDocx = buildZip([
+  { name: '[Content_Types].xml', text: '<Types/>' },
+  { name: 'word/document.xml',
+    bytes: new Uint8Array(zlib.deflateRawSync(Buffer.from(docxBody, 'utf8'), { level: 9 })),
+    method: 8, uncompSize: Buffer.byteLength(docxBody) },
+]);
+const packageZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'README.txt', text: 'This package contains the system security plan.' },
+  { name: 'CloudVault-SSP.docx', bytes: nestedDocx },
+]), 'office-package.zip'));
+check(packageZip.parsed.length === 2 && packageZip.parsed.indexOf('CloudVault-SSP.docx') !== -1 &&
+  packageZip.skipped.length === 0 &&
+  packageZip.chunks.some(c => c.filename === 'CloudVault-SSP.docx' && /monitored continuously/.test(c.text)),
+  'a DOCX inside a package is read, and its text reaches the corpus under its own name — ' +
+  JSON.stringify(packageZip.parsed) + ' refused ' + JSON.stringify(refusals(packageZip)));
+
+// The nested reader shares the enclosing archive's allowance, so a package of
+// many DOCX members cannot expand past the limit one member at a time.
+const nestedBomb = buildZip([{
+  name: 'word/document.xml',
+  bytes: new Uint8Array(zlib.deflateRawSync(Buffer.alloc(70 * 1024 * 1024), { level: 9 })),
+  method: 8, uncompSize: 70 * 1024 * 1024, crc: 0,
+}]);
+const nestedBombZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'big.docx', bytes: nestedBomb },
+]), 'nested-bomb.zip'));
+check(nestedBombZip.parsed.length === 0 && refusals(nestedBombZip).some(r => /MB limit/.test(r)),
+  'a nested DOCX expands against the package\'s allowance, not its own — ' +
+  JSON.stringify(refusals(nestedBombZip)));
+
 // Resource limits: an archive may not be trusted about its own size.
 const manyZip = await E.parseZipReport(asFile(buildZip(
   [{ name: 'a.txt', text: 'x' }], { declare: 4096 }), 'many.zip'));

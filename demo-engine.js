@@ -204,35 +204,45 @@ async function parsePackage(files) {
   return { chunks, parsed, skipped };
 }
 
+// The text of a DOCX, from its bytes. A DOCX is a ZIP holding XML, and the
+// bytes are all this needs — so the same reader serves a .docx the visitor
+// selected and a .docx sitting inside an uploaded package. Taking a buffer
+// rather than a File is the whole reason the nested case is now readable.
+//
+// `budget` is the enclosing archive's remaining expansion allowance, passed in
+// for a nested DOCX so that a package of many DOCX members cannot expand past
+// the limit one member at a time.
+async function docxText(buf, label, budget) {
+  // unzip() returns an array, and refuses every member of a name the archive
+  // uses twice — a DOCX carrying two word/document.xml is two documents
+  // claiming to be one. The refusals come back through `refused` so that a
+  // member which is present but unreadable is reported as what it is, rather
+  // than as a DOCX with no body at all.
+  const refused = [];
+  const entries = await unzip(buf, refused, budget);
+  const body = entries.find(m => m.name === 'word/document.xml' && !m.directory);
+  if (!body) {
+    const why = refused.find(r => r.name === 'word/document.xml');
+    throw unsupported(label, why ? 'DOCX word/document.xml could not be read: ' + why.reason
+                                 : 'DOCX has no word/document.xml');
+  }
+  const docXml = body.text;
+  if (!docXml) throw unsupported(label, 'DOCX has no word/document.xml');
+  const text = docXml
+    .replace(/<w:br[^>]*\/>/gi, '\n')
+    .replace(/<\/w:p>/gi, '\n\n')
+    .replace(/<\/w:r>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (!text) throw unsupported(label, 'DOCX contains no text');
+  return text;
+}
+
 async function parseDocx(file) {
-  // DOCX is a ZIP containing XML. We use JSZip-like manual parsing.
   try {
-    const buf = await file.arrayBuffer();
-    // unzip() returns an array, and refuses every member of a name the archive
-    // uses twice — a DOCX carrying two word/document.xml is two documents
-    // claiming to be one. The refusals come back through `refused` so that a
-    // member which is present but unreadable is reported as what it is, rather
-    // than as a DOCX with no body at all.
-    const refused = [];
-    const entries = await unzip(buf, refused);
-    const body = entries.find(m => m.name === 'word/document.xml' && !m.directory);
-    if (!body) {
-      const why = refused.find(r => r.name === 'word/document.xml');
-      throw unsupported(file.name, why ? 'DOCX word/document.xml could not be read: ' + why.reason
-                                       : 'DOCX has no word/document.xml');
-    }
-    const docXml = body.text;
-    if (!docXml) throw unsupported(file.name, 'DOCX has no word/document.xml');
-    const text = docXml
-      .replace(/<w:br[^>]*\/>/gi, '\n')
-      .replace(/<\/w:p>/gi, '\n\n')
-      .replace(/<\/w:r>/gi, ' ')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-    if (!text) throw unsupported(file.name, 'DOCX contains no text');
-    return chunkText(text, file.name);
+    return chunkText(await docxText(await file.arrayBuffer(), file.name), file.name);
   } catch(e) {
     if (e && e.code === 'UNSUPPORTED') throw e;
     throw unsupported(file.name, 'DOCX could not be parsed: ' + (e && e.message ? e.message : e));
@@ -268,6 +278,12 @@ async function parseDocx(file) {
 // be refused rather than silently resolved.
 const ZIP_MAX_MEMBERS = 512;
 const ZIP_MAX_BYTES = 64 * 1024 * 1024;
+// Member types a reader parses from bytes rather than from decoded text.
+// Decoding these to text destroys them. The engine reads DOCX itself; XLSX is
+// a server-product format the engine still refuses for the corpus, but the
+// upload panel classifies it, and it can only do that from the bytes.
+const BINARY_MEMBER_EXTENSIONS = ['docx', 'xlsx'];
+const extensionOf = (name) => (name.split('.').pop() || '').toLowerCase();
 
 // `budget` is the archive's remaining expansion allowance, shared across its
 // members: a cap applied per member would let a 512-member archive expand to
@@ -277,7 +293,7 @@ async function inflateMember(data, method, budget) {
     budget.left -= n;
     if (budget.left < 0) throw new Error('the archive expands past the ' + (ZIP_MAX_BYTES / 1048576) + ' MB limit');
   };
-  if (method === 0) { spend(data.length); return new TextDecoder().decode(data); }  // stored
+  if (method === 0) { spend(data.length); return data; }  // stored
   if (method !== 8) throw new Error('unsupported compression method ' + method);
   const ds = new DecompressionStream('deflate-raw');
   const writer = ds.writable.getWriter();
@@ -298,7 +314,7 @@ async function inflateMember(data, method, budget) {
   const out = new Uint8Array(total);
   let pos = 0;
   chunks.forEach(c => { out.set(c, pos); pos += c.length; });
-  return new TextDecoder().decode(out);
+  return out;
 }
 
 // Scan back for the End of Central Directory record. The comment it may carry
@@ -311,11 +327,14 @@ function findEOCD(view, len) {
   return -1;
 }
 
-async function unzip(buffer, failures) {
+// `budget` is optional: a nested archive is handed the enclosing archive's
+// remaining allowance, so a package of many DOCX members cannot expand past the
+// limit one member at a time. Omitted, an archive gets a fresh allowance.
+async function unzip(buffer, failures, sharedBudget) {
   const view = new DataView(buffer);
   const bytes = new Uint8Array(buffer);
   const members = [];
-  const budget = { left: ZIP_MAX_BYTES };
+  const budget = sharedBudget || { left: ZIP_MAX_BYTES };
   const eocd = findEOCD(view, bytes.length);
   if (eocd < 0) {
     if (failures) failures.push({ name: '(archive)', reason: 'no ZIP central directory found — the file is not a ZIP, or is truncated' });
@@ -385,7 +404,14 @@ async function unzip(buffer, failures) {
       continue;
     }
     try {
-      members.push({ name, text: await inflateMember(bytes.slice(dataAt, dataAt + compSize), method, budget) });
+      const raw = await inflateMember(bytes.slice(dataAt, dataAt + compSize), method, budget);
+      // A member is decoded as text for the text readers and kept as bytes for
+      // the binary ones. Holding both for every member would double an
+      // archive's memory, so the bytes are retained only where a reader needs
+      // them — a nested DOCX is a ZIP, and decoding it to text destroys it.
+      const member = { name, text: new TextDecoder().decode(raw) };
+      if (BINARY_MEMBER_EXTENSIONS.indexOf(extensionOf(name)) !== -1) member.bytes = raw;
+      members.push(member);
     } catch (e) {
       if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
     }
@@ -396,21 +422,35 @@ async function unzip(buffer, failures) {
 async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
   const skipped = [];
-  const members = await unzip(buf, skipped);
+  // One allowance for the package and everything nested inside it.
+  const budget = { left: ZIP_MAX_BYTES };
+  const members = await unzip(buf, skipped, budget);
   const chunks = [], parsed = [];
   // unzip() has already refused every member of an ambiguous name, counted from
   // the central directory, so everything here is a member the archive names
   // once. Member order is the archive's own order, fixed for a given file.
-  for (const { name, text: content, directory } of members) {
+  for (const { name, text: content, bytes, directory } of members) {
     if (directory) continue;
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
       if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); }
       else skipped.push({ name, reason: 'archive member is empty' });
     } else if (ext === 'docx') {
-      // unzip() decodes members as text, so a nested DOCX cannot be re-parsed
-      // here. Refuse it visibly rather than emit a placeholder chunk.
-      skipped.push({ name, reason: 'DOCX inside a ZIP is not parsed in the browser build — upload the .docx directly' });
+      // A DOCX inside a package is the ordinary shape of a real submission: the
+      // SSP is a Word file and the package is a ZIP. Refusing it meant the one
+      // document the assessment most depends on was the one excluded, so a run
+      // reached Complete having read the README and not the SSP.
+      if (!bytes) {
+        skipped.push({ name, reason: 'DOCX member could not be read as binary content' });
+      } else {
+        try {
+          const text = await docxText(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget);
+          chunks.push(...chunkText(text, name));
+          parsed.push(name);
+        } catch (e) {
+          skipped.push({ name, reason: (e && e.message) ? e.message : String(e) });
+        }
+      }
     } else {
       skipped.push({ name, reason: 'unsupported archive member type .' + ext });
     }
@@ -1254,6 +1294,7 @@ global.SparkAEEngine = {
   parseZip: parseZip,
   parseZipReport: parseZipReport,
   parseDocx: parseDocx,
+  docxText: docxText,
   unzip: unzip,
   chunkText: chunkText,
   tokenize: tokenize,

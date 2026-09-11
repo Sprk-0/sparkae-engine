@@ -3866,44 +3866,51 @@ function fmtBytes(n) {
 }
 
 // ── Zip-aware file expansion ──────────────────────────────────────────
-// Returns a flat array of {path, blob, size} entries. Recursively
-// unpacks any .zip encountered (up to 2 levels deep).
-async function expandFiles(files, maxDepth) {
-  if (typeof maxDepth !== 'number') maxDepth = 2;
+// Returns a flat array of {path, blob, size} entries, one per archive member.
+//
+// This used to unpack with JSZip, which this page never loads — so it never
+// unpacked anything, and the upload handler turned that into a fatal "JSZip
+// library failed to load" while the engine, which has its own reader, went on
+// to assess the very same package successfully. One ZIP reader is the fix: the
+// panel now expands with SparkAEEngine.unzip, so the members it lists and the
+// members the run reads are the same members, and a refusal is a refusal on
+// both sides rather than a disagreement between two ingestion paths.
+//
+// Members the engine refuses come back as entries with no blob, carrying the
+// engine's own reason, so the panel reports them instead of omitting them.
+async function expandFiles(files) {
   const out = [];
   for (const f of files) {
-    if (/\.zip$/i.test(f.name) && typeof JSZip !== 'undefined' && maxDepth > 0) {
-      try {
-        const zip = await JSZip.loadAsync(f);
-        const entries = [];
-        zip.forEach((path, entry) => { if (!entry.dir) entries.push({ path, entry }); });
-        for (const { path, entry } of entries) {
-          // Skip OS junk
-          if (/__MACOSX|\.DS_Store|Thumbs\.db/i.test(path)) continue;
-          const blob = await entry.async('blob');
-          if (/\.zip$/i.test(path) && maxDepth > 1) {
-            // Nested zip — recurse
-            const nestedFile = new File([blob], path.split('/').pop(), { type: 'application/zip' });
-            const nested = await expandFiles([nestedFile], maxDepth - 1);
-            for (const n of nested) {
-              out.push({ path: f.name + '!/' + path + '!/' + n.path, blob: n.blob, size: n.size, fromZip: f.name });
-            }
-          } else {
-            out.push({ path: f.name + '!/' + path, blob, size: blob.size, fromZip: f.name });
-          }
-        }
-      } catch (e) {
-        console.warn('Zip expansion failed for', f.name, e);
-        out.push({ path: f.name, blob: f, size: f.size, fromZip: null, error: 'zip_unreadable' });
-      }
-    } else {
+    if (!/\.zip$/i.test(f.name)) {
       out.push({ path: f.name, blob: f, size: f.size, fromZip: null });
+      continue;
+    }
+    const refused = [];
+    let members;
+    try {
+      members = await window.SparkAEEngine.unzip(await f.arrayBuffer(), refused);
+    } catch (e) {
+      out.push({ path: f.name, blob: null, size: f.size, fromZip: null,
+                 refusedReason: 'archive could not be read: ' + ((e && e.message) || String(e)) });
+      continue;
+    }
+    for (const m of members) {
+      if (m.directory) continue;
+      if (/__MACOSX|\.DS_Store|Thumbs\.db/i.test(m.name)) continue;
+      // A member kept as bytes is binary and must stay binary; one kept as text
+      // was decoded from UTF-8 and re-encoding it here is lossless for the
+      // formats that reach this point.
+      const blob = m.bytes ? new Blob([m.bytes]) : new Blob([m.text]);
+      out.push({ path: f.name + '!/' + m.name, blob, size: blob.size, fromZip: f.name });
+    }
+    for (const r of refused) {
+      out.push({ path: f.name + '!/' + r.name, blob: null, size: 0, fromZip: f.name,
+                 refusedReason: r.reason });
     }
   }
   return out;
 }
 
-// ── Content parsers ──────────────────────────────────────────────────
 async function parseScanCSV(blob) {
   try {
     const text = await readTextBlob(blob, 4 * 1024 * 1024);
@@ -4023,14 +4030,12 @@ async function parseTextDoc(blob, maxBytes) {
 }
 
 async function parseDocxText(blob) {
-  // .docx is a zip — read word/document.xml as text and strip tags.
+  // One DOCX reader, the engine's — the same one the run uses, so the panel
+  // cannot claim a Word document is unreadable while the assessment reads it,
+  // or the reverse. The JSZip path this replaces always returned null, because
+  // the page does not load JSZip.
   try {
-    if (typeof JSZip === 'undefined') return null;
-    const zip = await JSZip.loadAsync(blob);
-    const docXml = zip.file('word/document.xml');
-    if (!docXml) return null;
-    const xml = await docXml.async('string');
-    const text = xml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    const text = await window.SparkAEEngine.docxText(await blob.arrayBuffer(), 'upload');
     return scanTextSignals(text.slice(0, 1 * 1024 * 1024));
   } catch (e) { return null; }
 }
@@ -4128,117 +4133,6 @@ function scanTextSignals(text) {
 }
 
 // ── Main ingestion ────────────────────────────────────────────────────
-async function processUploads(files) {
-  const expanded = await expandFiles(files, 2);
-  const inventory = [];
-  let totalBytes = 0;
-  const tagCounts = {};
-  const scanFindings = { critical: 0, high: 0, moderate: 0, low: 0 };
-  let scanRows = 0;
-  const allCVEs = new Set(), allHosts = new Set();
-  let poamItems = 0, poamPastSLA = 0, poamHasVNNN = 0;
-  const poamSev = { critical: 0, high: 0, moderate: 0, low: 0 };
-  const poamStatus = { open: 0, closed: 0, ongoing: 0 };
-  const oscal = { ssp: 0, poam: 0, sar: 0, sap: 0, component: 0, catalog: 0, profile: 0, controlsCited: new Set() };
-  const textSig = {
-    fips140: false, tls13: false, tls12: false, mfaWebauthn: false, mfaSms: false,
-    mentionsKEV: false, rev5: false, rev4: false, govcloud: false,
-    incidentResponse: false, contingency: false, tabletopRecent: false,
-  };
-  const controlsCited = new Set();
-  let rev5Hits = 0, rev4Hits = 0;
-
-  // Order matters here: SSP/POAM/SAR are highest-priority kinds, so they win when
-  // multiple kindHint flags fire on the same document.
-  const KIND_PRIORITY = ['SSP','POAM','SAR','SAP','PT','IR','CP','CMP','INV','ABD','DFLOW','SCR','POLICY','PROC'];
-  function promoteFromHints(invItem, hints) {
-    if (!hints) return;
-    if (invItem.tag !== 'EVID') return; // only promote unclassified files
-    for (const k of KIND_PRIORITY) {
-      if (hints[k]) {
-        // Look up label from UPLOAD_PATTERNS
-        const p = UPLOAD_PATTERNS.find(x => x.tag === k);
-        if (p) { invItem.tag = k; invItem.label = p.label + ' (content-detected)'; }
-        return;
-      }
-    }
-  }
-
-  for (const f of expanded) {
-    const display = f.path.split('!/').pop();
-    const cls = classifyFile(display);
-    const inv = { name: display, fullPath: f.path, size: f.size, tag: cls.tag, label: cls.label, fromZip: f.fromZip };
-    inventory.push(inv);
-    totalBytes += f.size;
-
-    // Content parse by extension
-    const ext = (display.match(/\.([a-z0-9]+)$/i) || [, ''])[1].toLowerCase();
-
-    if (ext === 'csv' && (cls.tag === 'SCAN' || /scan|nessus|qualys|tenable|rapid7|wiz|prowler|trivy/i.test(display))) {
-      const r = await parseScanCSV(f.blob);
-      if (r) {
-        scanRows += r.rows || 0;
-        if (r.sevs) {
-          scanFindings.critical += r.sevs.critical;
-          scanFindings.high     += r.sevs.high;
-          scanFindings.moderate += r.sevs.moderate;
-          scanFindings.low      += r.sevs.low;
-        }
-        (r.cves || []).forEach(c => allCVEs.add(c));
-        (r.hosts || []).forEach(h => allHosts.add(h));
-      }
-    }
-    if (ext === 'xlsx' && (cls.tag === 'POAM' || /poa[_-]?m/i.test(display))) {
-      const r = await parsePoamXlsx(f.blob);
-      if (r) {
-        poamItems += r.items;
-        poamPastSLA += r.pastSLA || 0;
-        poamHasVNNN += r.hasVNNN || 0;
-        if (r.sevCounts) for (const k in poamSev) poamSev[k] += r.sevCounts[k] || 0;
-        if (r.statusCounts) for (const k in poamStatus) poamStatus[k] += r.statusCounts[k] || 0;
-      }
-    }
-    if (ext === 'json') {
-      const r = await parseJSONOscal(f.blob);
-      if (r) {
-        if (r.kind === 'SSP') { oscal.ssp++; if (inv.tag === 'EVID') { inv.tag = 'SSP'; inv.label = 'System Security Plan (OSCAL)'; } }
-        else if (r.kind === 'POAM') { oscal.poam++; if (inv.tag === 'EVID') { inv.tag = 'POAM'; inv.label = 'POA&M (OSCAL)'; } }
-        else if (r.kind === 'SAR') oscal.sar++;
-        else if (r.kind === 'SAP') oscal.sap++;
-        else if (r.kind === 'COMPONENT') oscal.component++;
-        else if (r.kind === 'CATALOG') oscal.catalog++;
-        else if (r.kind === 'PROFILE') oscal.profile++;
-        (r.citedControls || []).forEach(c => { oscal.controlsCited.add(c); controlsCited.add(c); });
-      }
-    }
-    if (['txt', 'md', 'xml', 'yaml', 'yml', 'log', 'json'].includes(ext)) {
-      const sig = await parseTextDoc(f.blob, 512 * 1024);
-      if (sig) { mergeSignals(textSig, sig, controlsCited, c => { if (sig.rev5) rev5Hits++; if (sig.rev4) rev4Hits++; }); promoteFromHints(inv, sig.kindHints); }
-    }
-    if (ext === 'docx') {
-      const sig = await parseDocxText(f.blob);
-      if (sig) { mergeSignals(textSig, sig, controlsCited, c => { if (sig.rev5) rev5Hits++; if (sig.rev4) rev4Hits++; }); promoteFromHints(inv, sig.kindHints); }
-    }
-    if (ext === 'pdf') {
-      const sig = await parsePdfText(f.blob);
-      if (sig) { mergeSignals(textSig, sig, controlsCited, c => { if (sig.rev5) rev5Hits++; if (sig.rev4) rev4Hits++; }); promoteFromHints(inv, sig.kindHints); }
-    }
-
-    // Tally tagCounts AFTER content-based promotion so SSP/POAM/etc count correctly
-    tagCounts[inv.tag] = (tagCounts[inv.tag] || 0) + 1;
-  }
-
-  return {
-    inventory, totalBytes, tagCounts,
-    scanFindings, scanRows,
-    cves: Array.from(allCVEs), hosts: Array.from(allHosts),
-    poamItems, poamPastSLA, poamHasVNNN, poamSev, poamStatus,
-    oscal: { ...oscal, controlsCited: Array.from(oscal.controlsCited) },
-    controlsCited: Array.from(controlsCited),
-    textSig, rev5Hits, rev4Hits,
-  };
-}
-
 function mergeSignals(acc, sig, ctrlSet, perFileFn) {
   acc.fips140 = acc.fips140 || sig.fips140 || sig.fipsValidated;
   acc.tls13 = acc.tls13 || sig.tls13;
@@ -4597,9 +4491,17 @@ document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
   document.getElementById('ssp-upload-input').click();
 });
 
+// The one ingestion handler. It reads the upload once, through the engine's
+// readers, and everything the visitor then sees — the inventory, the refusals,
+// the selected input and the corpus a run assesses — comes out of that single
+// read. Nothing is bound to the engine until the read succeeds.
 document.getElementById('ssp-upload-input').addEventListener('change', async (ev) => {
   const files = Array.from(ev.target.files || []);
   if (!files.length) return;
+  // New evidence: whatever is on screen, whatever an assessor concluded, and
+  // whatever package was loaded belongs to the run that was here before it.
+  discardPreviousRun();
+  CUSTOM_PKG_FILES = [];
   const btn = document.getElementById('ssp-upload-btn');
   const nameEl = btn.querySelector('.ssp-name');
   const metaEl = btn.querySelector('.ssp-meta');
@@ -4619,19 +4521,39 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
 
   let pkg, sample;
   try {
-    if (files.some(f => /\.zip$/i.test(f.name)) && typeof JSZip === 'undefined') {
-      throw new Error('JSZip library failed to load — cannot unpack .zip packages');
-    }
     pkg = await processUploadsWithProgress(files);
+    // The panel's verdict on an upload is the engine's verdict. If the readers
+    // could not open a single artifact, the upload failed — reporting it as a
+    // package of N files that happen to all be unreadable is the same lie in a
+    // politer voice, and it is what leaves an unusable package selected and
+    // runnable.
+    const readable = pkg.inventory.filter(i => !i.refusedReason);
+    if (!readable.length) {
+      const why = pkg.inventory.map(i => i.name + ': ' + i.refusedReason).slice(0, 3).join(' · ');
+      throw new Error('nothing in this upload could be read — ' + (why || 'no readable artifacts'));
+    }
     sample = synthesizeCustomSample(pkg);
   } catch (err) {
-    console.error('Upload pipeline error:', err);
+    // A package that cannot be read is the visitor's input, fully handled and
+    // shown to them below — not a fault in this page. console.error would say
+    // otherwise, and the browser suite reads console.error as a defect.
+    console.warn('Upload could not be read:', err);
     nameEl.textContent = '⚠ Upload failed';
     metaEl.textContent = String(err && err.message || err);
     status.innerHTML = '<div class="upload-row"><span class="upload-label">Error</span><span class="upload-warn">' + (err && err.message || String(err)) + '</span></div>' +
                        '<button class="upload-clear" onclick="clearCustomUpload()">Clear upload</button>';
     return;
   }
+
+  // The read succeeded, so this package is now the one a run assesses. Binding
+  // it here rather than in a listener of its own is what keeps a failed parse
+  // from leaving runnable evidence behind.
+  CUSTOM_PKG_FILES = files;
+  // An upload carries the visitor's real evidence, so the default assessment
+  // date becomes their own — read once, here, into a visible field they can
+  // edit. The engine itself never reads the clock.
+  const dateEl = document.getElementById('assessment-date');
+  if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
 
   btn.classList.add('has-files');
   btn.dataset.id = 'custom';
@@ -4655,7 +4577,7 @@ async function processUploadsWithProgress(files) {
   // Mirror processUploads but with progress hooks. To avoid duplicating logic, we patch
   // processUploads via a thread-local closure. Simpler: re-run expandFiles ourselves and
   // then iterate visibly.
-  const expanded = await expandFiles(files, 2);
+  const expanded = await expandFiles(files);
   setStageMsg('Classifying ' + expanded.length + ' artifacts…');
 
   const inventory = [];
@@ -4690,6 +4612,17 @@ async function processUploadsWithProgress(files) {
     const display = f.path.split('!/').pop();
     const cls = classifyFile(display);
     const inv = { name: display, fullPath: f.path, size: f.size, tag: cls.tag, label: cls.label, fromZip: f.fromZip };
+    // A member the engine refused has no bytes to classify. It is still listed,
+    // with the engine's own reason, because an artifact that vanished from the
+    // inventory reads as evidence that was never supplied.
+    if (f.refusedReason) {
+      inv.refusedReason = f.refusedReason;
+      inv.tag = 'UNREAD';
+      inv.label = 'refused — ' + f.refusedReason;
+      inventory.push(inv);
+      tagCounts[inv.tag] = (tagCounts[inv.tag] || 0) + 1;
+      continue;
+    }
     inventory.push(inv);
     totalBytes += f.size;
     setCurrent('[' + (i + 1) + '/' + expanded.length + '] ' + cls.tag + ' · ' + display.slice(0, 60));
@@ -9297,23 +9230,12 @@ function renderInitialSummaryLive(run) {
   animateNum('live-r-def', d.def);
 }
 
-// Capture the raw File objects for the engine. The shell's own change handler
-// still runs (listeners are additive) and keeps driving its heuristic
-// inventory; the engine just needs the unprocessed files.
+// The raw File objects the engine assesses. There is one change listener on the
+// upload input (see the ingestion handler above) and it sets this; a second
+// listener used to set it independently of whether the panel's own ingestion
+// succeeded, so a package the panel had just called a failure was still sitting
+// here, runnable, and Run Again assessed it under the next sample's date.
 let CUSTOM_PKG_FILES = [];
-document.getElementById('ssp-upload-input').addEventListener('change', (ev) => {
-  CUSTOM_PKG_FILES = Array.from(ev.target.files || []);
-  // New evidence: whatever is on screen and whatever an assessor concluded
-  // belongs to the package that was here before it.
-  discardPreviousRun();
-  // An upload carries the visitor's real evidence, so the default assessment
-  // date becomes their own — read once, here, into a visible field they can
-  // edit. The engine itself never reads the clock.
-  if (CUSTOM_PKG_FILES.length) {
-    const el = document.getElementById('assessment-date');
-    if (el) el.value = new Date().toISOString().slice(0, 10);
-  }
-});
 document.getElementById('engine-profile').addEventListener('change', () => {
   const b = engineBaseline();
   const c = profileCounts(b);

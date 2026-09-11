@@ -17,6 +17,44 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11 (later)
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+Findings 5 and 7 of the outside upload review, both reproduced against the
+deployed files before anything was changed.
+
+- **One ingestion, not two.** The upload panel expanded archives with JSZip,
+  which this page has never loaded. So an ordinary package produced a fatal
+  "JSZip library failed to load — cannot unpack .zip packages" while a second
+  change listener handed the same file to the engine, which has its own reader,
+  and assessed it successfully. The panel now expands with the engine's reader:
+  the members it lists and the members a run assesses are the same members, and
+  a refusal is a refusal on both sides. The panel's verdict on an upload is the
+  engine's verdict — a package nothing could be read from is reported as a
+  failure rather than as N unreadable files.
+- **A failed upload leaves nothing runnable.** The second listener bound the
+  raw files whether or not the ingestion succeeded, so a package the panel had
+  just called a failure sat there, selected, and Run Again assessed it. There is
+  one listener now, and it binds the package only after the read succeeds.
+- **A Word SSP inside a package is read.** A DOCX is a ZIP, and the archive
+  reader decoded every member to text, which destroys one. A package whose SSP
+  was a .docx therefore reached Complete having read the README and not the SSP
+  — the one document the assessment most depends on was the one excluded. The
+  reader keeps the bytes for member types that need them, and the same DOCX
+  reader now serves a Word file selected directly and one nested in a package.
+  A nested archive spends the enclosing package's expansion allowance, so a
+  package of many DOCX members cannot expand past the limit one member at a
+  time.
+- Roughly 150 lines of unreachable ingestion code removed with them, including
+  a `processUploads` that nothing had called and a PDF reader for a library the
+  page does not load.
+
+Seven browser checks and two engine checks added. Five of the browser checks
+and both engine checks fail against the previous build; the fault injection
+reproduces the reviewer's two findings verbatim, including the literal
+"JSZip library failed to load" label.
+
 ## 2026-09-11
 
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
