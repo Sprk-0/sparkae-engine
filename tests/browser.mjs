@@ -61,6 +61,20 @@ const dismissOnboarding = () => page.evaluate(() => { const o = document.getElem
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));
 const date = await page.inputValue('#assessment-date');
 const mode = await page.textContent('#stat-mode');
+
+// An assessment is a claim about a specific package as of a specific day. This
+// page used to start one half a second after load, so a visitor arriving from
+// anywhere met a finished assessment of a package they had not chosen. Give it
+// well past that old half-second and confirm the engine is still idle.
+await page.waitForTimeout(1500);
+const idle = await page.evaluate(() => ({
+  status: (document.getElementById('console-status') || {}).textContent || '',
+  resultsShown: !!document.querySelector('#results.show'),
+  runState: ((document.getElementById('run-state') || {}).style || {}).display || '',
+  logLines: (document.getElementById('log') || { children: [] }).children.length,
+  btn: (document.getElementById('run-btn') || {}).textContent || '',
+}));
+
 await dismissOnboarding();
 await page.click('#run-btn');
 await page.waitForSelector('#results.show', { timeout: 180000 });
@@ -121,10 +135,16 @@ function zipOf(members) {
   let offset = 0;
   for (const m of members) {
     const name = Buffer.from(m.name, 'utf8');
-    const data = m.bytes || Buffer.from(m.text, 'utf8');
-    const method = m.method || 0;
-    const uncomp = m.uncompSize === undefined ? data.length : m.uncompSize;
-    const crc = crc32b(data);
+    // A ZIP's CRC-32 covers a member's UNCOMPRESSED bytes, so those are what
+    // this takes and it compresses them itself. Handing it a ready-made
+    // deflate stream and recording a CRC of that produces an archive no
+    // conforming reader accepts — a fixture that passes here and nowhere else.
+    const source = m.bytes || Buffer.from(m.text, 'utf8');
+    const deflate = !!m.deflate;
+    const data = deflate ? zlib.deflateRawSync(source, { level: 9 }) : source;
+    const method = deflate ? 8 : 0;
+    const uncomp = source.length;
+    const crc = crc32b(source);
     const lh = Buffer.alloc(30 + name.length);
     lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6);
     lh.writeUInt16LE(method, 8); lh.writeUInt16LE(0, 10); lh.writeUInt16LE(0x21, 12);
@@ -153,8 +173,7 @@ const SSP_BODY = 'AC-2 Account Management. Account use is monitored continuously
 const DOCX_XML = '<?xml version="1.0"?><w:document xmlns:w="x"><w:body><w:p><w:r><w:t>' + SSP_BODY + '</w:t></w:r></w:p></w:body></w:document>';
 const docxBytes = zipOf([
   { name: '[Content_Types].xml', text: '<Types/>' },
-  { name: 'word/document.xml', bytes: zlib.deflateRawSync(Buffer.from(DOCX_XML, 'utf8'), { level: 9 }),
-    method: 8, uncompSize: Buffer.byteLength(DOCX_XML) },
+  { name: 'word/document.xml', text: DOCX_XML, deflate: true },
 ]);
 // The ordinary shape of a real submission: the SSP is a Word file, in a ZIP.
 fs.writeFileSync(path.join(tmp, 'package.zip'), zipOf([
@@ -226,6 +245,12 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['the page does not assess anything until the visitor asks',
+    !idle.resultsShown && idle.logLines === 0 && idle.runState !== 'block',
+    'results=' + idle.resultsShown + ' log=' + idle.logLines + ' runState=' + idle.runState],
+  ['the console waits at READY rather than reporting a run nobody started',
+    /READY|Awaiting input/i.test(idle.status) && !/Run again/.test(idle.btn),
+    idle.status + ' | btn=' + idle.btn.trim()],
   ['an ordinary ZIP does not report an upload failure',
     !/Upload failed|failed to load/i.test(zipPanel.name + ' ' + zipPanel.meta + ' ' + zipPanel.status),
     zipPanel.name + ' | ' + zipPanel.meta],

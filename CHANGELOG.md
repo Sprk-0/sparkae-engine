@@ -19,6 +19,13 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-11 (later)
 
+- **Nothing runs until the visitor asks.** The demo started the CloudVault
+  assessment by itself half a second after load, so a visitor arriving from the
+  Integrations page — or anywhere else — met a running assessment of a package
+  they had not chosen, over a date they had not set. An assessment is a claim
+  about a specific package as of a specific day, and starting one unbidden makes
+  that claim on the visitor's behalf. The console now sits at READY and waits.
+
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
 
 Findings 5 and 7 of the outside upload review, both reproduced against the

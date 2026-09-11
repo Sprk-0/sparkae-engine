@@ -405,13 +405,13 @@ async function unzip(buffer, failures, sharedBudget) {
     }
     try {
       const raw = await inflateMember(bytes.slice(dataAt, dataAt + compSize), method, budget);
-      // A member is decoded as text for the text readers and kept as bytes for
-      // the binary ones. Holding both for every member would double an
-      // archive's memory, so the bytes are retained only where a reader needs
-      // them — a nested DOCX is a ZIP, and decoding it to text destroys it.
-      const member = { name, text: new TextDecoder().decode(raw) };
-      if (BINARY_MEMBER_EXTENSIONS.indexOf(extensionOf(name)) !== -1) member.bytes = raw;
-      members.push(member);
+      // A member is either text or bytes, never both. A binary member's reader
+      // parses the bytes — decoding it to a string would destroy it anyway —
+      // so decoding it here would spend the time and hold a second copy of the
+      // member for a string nothing ever reads.
+      members.push(BINARY_MEMBER_EXTENSIONS.indexOf(extensionOf(name)) !== -1
+        ? { name, bytes: raw }
+        : { name, text: new TextDecoder().decode(raw) });
     } catch (e) {
       if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
     }

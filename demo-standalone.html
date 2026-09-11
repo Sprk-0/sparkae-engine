@@ -2965,7 +2965,8 @@ window.addEventListener('DOMContentLoaded', function() {
   } catch(e) {}
   // The tour is opt-in ("How this works" in the masthead). Opening it on
   // first load put a modal in front of the engine the visitor had just come to
-  // see; the sample now auto-runs instead (see runDemo below).
+  // see, so it no longer opens by itself. Nothing else starts by itself either:
+  // the visitor selects a package and presses Run.
 });
 // Re-trigger via console for demos
 window.showOnboarding = showOnboarding;
@@ -8624,17 +8625,12 @@ async function runDemo() {
 
 document.getElementById('run-btn').addEventListener('click', runDemo);
 
-// First screen is a finished assessment, not an idle engine: run the bundled
-// sample as soon as the page is ready. ?autorun=0 keeps the engine idle for
-// anyone who wants to upload first; the run button works either way.
-window.addEventListener('DOMContentLoaded', function () {
-  let wanted = true;
-  try { wanted = new URLSearchParams(window.location.search).get('autorun') !== '0'; } catch (e) {}
-  if (!wanted) return;
-  setTimeout(function () {
-    if (!running && activeUC === 'initial' && selected === 'cloudvault') runDemo();
-  }, 500);
-});
+// Nothing runs until the visitor asks. This page used to start the CloudVault
+// assessment by itself half a second after load, so a visitor arriving from the
+// Integrations page — or anywhere else — met a running assessment of a package
+// they had not chosen, over a date they had not set. An assessment is a claim
+// about a specific package as of a specific day; starting one on the visitor's
+// behalf makes that claim for them. The console sits at READY and waits.
 
 // Initialize UI to default state
 syncUCToUI();
