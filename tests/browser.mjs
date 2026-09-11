@@ -253,6 +253,40 @@ const srcPanel = await page.evaluate(() => ({
 const SRC_TEXT = ['● LIVE', '% coverage', 'last sync', 'sync cadence', 'artifacts indexed']
   .map(needle => ({ needle, present: srcPanel.text.includes(needle) }));
 
+// ── every walkthrough says it is one ───────────────────────────────────────
+// Eight of the nine tabs are guided walkthroughs over authored sample data, and
+// each completed with a status a visitor could screenshot as a result: "ConMon
+// package ready for JAB", "AAR ready for Authorizing Official". The only
+// disclosure was an 8px badge in the tab nav. §08 also asserted "4 systems"
+// against a SAMPLES map holding two, contradicting the matrix beside it and its
+// own "2 ready" in the same line.
+const WALKTHROUGH_TABS = ['conmon', 'annual', 'scr', 'qa', 'ksi', 'pkg', 'portfolio'];
+const walkResults = [];
+for (const uc of WALKTHROUGH_TABS) {
+  await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+  await dismissOnboarding();
+  const found = await page.evaluate(u => {
+    const t = document.querySelector(`.uc-tab[data-uc="${u}"]`);
+    if (!t) return false; t.click(); return true;
+  }, uc);
+  if (!found) { walkResults.push({ uc, missing: true }); continue; }
+  await page.click('#run-btn');
+  await page.waitForFunction(
+    () => /COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
+    null, { timeout: 180000 });
+  walkResults.push(Object.assign({ uc }, await page.evaluate(() => ({
+    status: document.getElementById('console-status').textContent.trim(),
+    log: document.getElementById('log').textContent,
+  }))));
+}
+const undisclosed = walkResults.filter(r => r.missing ||
+  !/authored, not computed from evidence/.test(r.log || '') ||
+  !/walkthrough/i.test(r.status || ''));
+// §08's own numbers have to agree with each other.
+const pf = walkResults.find(r => r.uc === 'portfolio') || {};
+const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
+const pfConsistent = !!pfM && (+pfM[1] === +pfM[2] + +pfM[3] + +pfM[4]);
+
 await browser.close();
 fs.rmSync(tmp, { recursive: true, force: true });
 
@@ -277,6 +311,11 @@ const checks = [
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],
   ['a file name cannot execute: no element was injected', xss.injected === 0, 'img count=' + xss.injected],
   ['a hostile file name is still shown, as text', xss.shownAsText, ''],
+  ['every guided walkthrough says so in the run, not only in the tab badge',
+    walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
+    'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
+  ['\u00a708 reports the systems it actually rolled up',
+    pfConsistent, pf.status || '(no status)'],
   ['§09 shows no telemetry for connectors that do not exist',
     !SRC_TEXT.some(n => n.present),
     SRC_TEXT.filter(n => n.present).map(n => n.needle).join(', ')],

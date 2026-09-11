@@ -5128,12 +5128,23 @@ function renderKSISummary(sample) {
 }
 
 // ── KSI runner (20x Phase 2 · RFC-0017 PVA) ──
+// Eight of the nine tabs are guided walkthroughs over fixed sample data: their
+// figures are authored, not computed from evidence. Each tab carries a
+// `walkthrough` badge in the nav, but the badge is 8px of muted text and the
+// run that follows reads like a finished assessment — "ConMon package ready for
+// JAB" is a sentence a visitor can screenshot and a buyer can misread. The run
+// says it too, at the start and in the status it ends on.
+function logWalkthroughNotice() {
+  log('00:00.0', 'init', '<span class="key">walkthrough</span> · guided walkthrough over fixed sample data · figures are authored, not computed from evidence · §01 Initial Assessment is the live engine', 'warn');
+}
+
 async function runKSI(sample) {
   if (!sample.ksi) {
     setStatus('◆ ERROR · KSI data not available for this SSP');
     return;
   }
   renderStages(USE_CASES.ksi.stages);
+  logWalkthroughNotice();
   document.getElementById('matrix-container').innerHTML = renderKSIMatrix(sample);
 
   const k = sample.ksi;
@@ -5205,7 +5216,7 @@ async function runKSI(sample) {
   log('00:32.4', 'done', 'KSI assessment complete · 20x Phase 2 evidence package ready', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · KSI Package · ' + autoPct + '% automated · ' + passed + '/' + total + ' pass');
+  setStatus('◆ COMPLETE · walkthrough · KSI Package · ' + autoPct + '% automated · ' + passed + '/' + total + ' pass');
   document.getElementById('results').classList.add('show');
   document.getElementById('results-summary').innerHTML = renderKSISummary(sample);
   renderExportBar();
@@ -5585,6 +5596,7 @@ async function runInitialWalkthrough(sample) {
 async function runConMon(sample) {
   const d = sample.conmon;
   renderStages(USE_CASES.conmon.stages);
+  logWalkthroughNotice();
   renderSLAMatrix(d.severities, sample);
 
   setStage(1);
@@ -5647,7 +5659,7 @@ async function runConMon(sample) {
   log('00:50.2', 'done', 'ConMon cycle complete · ready for JAB submission', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · ConMon package ready for JAB');
+  setStatus('◆ COMPLETE · walkthrough · ConMon package shape');
   document.getElementById('results').classList.add('show');
   renderConMonSummary(d);
   renderExportBar();
@@ -5658,6 +5670,7 @@ async function runConMon(sample) {
 async function runAnnual(sample) {
   const d = sample.annual;
   renderStages(USE_CASES.annual.stages);
+  logWalkthroughNotice();
   renderRotationMatrix(d);
 
   setStage(1);
@@ -5748,7 +5761,7 @@ async function runAnnual(sample) {
   log('00:55.2', 'done', 'annual reassessment complete · ready for AO review', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · AAR ready for Authorizing Official');
+  setStatus('◆ COMPLETE · walkthrough · Annual Assessment Report shape');
   document.getElementById('results').classList.add('show');
   renderAnnualSummary(d);
   renderExportBar();
@@ -5759,6 +5772,7 @@ async function runAnnual(sample) {
 async function runSCR(sample) {
   const d = sample.scr;
   renderStages(USE_CASES.scr.stages);
+  logWalkthroughNotice();
   renderImpactMatrix(d);
 
   setStage(1);
@@ -5819,7 +5833,7 @@ async function runSCR(sample) {
   log('00:48.8', 'done', 'SCR review complete · ready for AO disposition', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · SCR package ready for AO disposition');
+  setStatus('◆ COMPLETE · walkthrough · SCR package shape');
   document.getElementById('results').classList.add('show');
   renderSCRSummary(d);
   renderExportBar();
@@ -6216,6 +6230,7 @@ function renderQASummary(report) {
 // ── QA runner ──
 async function runQA() {
   renderStages(USE_CASES.qa.stages);
+  logWalkthroughNotice();
   const report = computeQAReport();
   renderQAMatrix(report);
 
@@ -6304,7 +6319,7 @@ async function runQA() {
   log('00:35.4', 'done', 'QA audit complete · portfolio quality validated', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · QA Report ready · ' + report.score + '/100');
+  setStatus('◆ COMPLETE · walkthrough · QA Report · ' + report.score + '/100');
   document.getElementById('results').classList.add('show');
   renderQASummary(report);
   renderExportBar();
@@ -6739,6 +6754,7 @@ function renderPackagePreview(sarObj, poamObj, ksiObj) {
 // ── Package validator runner ──
 async function runPackageValidator(sample) {
   renderStages(USE_CASES.pkg.stages);
+  logWalkthroughNotice();
 
   // Stage 1 — Assemble
   setStage(1);
@@ -6811,7 +6827,7 @@ async function runPackageValidator(sample) {
   log('00:16.4', 'done', 'OSCAL SAR + POA&M + KSI package · SVRL report emitted', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · ' + passes + ' pass · ' + warns + ' warn · ' + errors + ' error');
+  setStatus('◆ COMPLETE · walkthrough · ' + passes + ' pass · ' + warns + ' warn · ' + errors + ' error');
   document.getElementById('results').classList.add('show');
   // Build summary
   const totalChecks = passes + warns + errors;
@@ -8339,13 +8355,14 @@ function setPortfolioCard(shortName, active) {
 
 async function runPortfolio() {
   renderStages(USE_CASES.portfolio.stages);
+  logWalkthroughNotice();
   const systems = computePortfolioMetrics();
   document.getElementById('matrix-container').innerHTML = renderPortfolioMatrix(systems);
 
   // Stage 1 — Aggregate
   setStage(1);
   setStatus('◆ AGGREGATE · pulling Authorization · Operations · Quality results');
-  log('00:00.0', 'init', 'cross-portfolio rollup · 4 systems · 3 lifecycle phases');
+  log('00:00.0', 'init', 'cross-portfolio rollup · ' + systems.length + ' system' + (systems.length === 1 ? '' : 's') + ' · 3 lifecycle phases');
   await wait(400);
   log('00:01.4', 'agg', 'pulling SAR §5 results from Initial · ConMon SLA from Operations · KSI from 20x Phase 2');
   await wait(450);
@@ -8404,7 +8421,7 @@ async function runPortfolio() {
   log('00:22.4', 'done', 'portfolio rollup complete · ready for AO presentation', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-  setStatus('◆ COMPLETE · 4 systems · ' + ready + ' ready · ' + minor + ' minor · ' + material + ' material remediation');
+  setStatus('◆ COMPLETE · walkthrough · ' + systems.length + ' system' + (systems.length === 1 ? '' : 's') + ' · ' + ready + ' ready · ' + minor + ' minor · ' + material + ' material remediation');
   document.getElementById('results').classList.add('show');
 
   // Build summary
