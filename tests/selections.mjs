@@ -230,7 +230,7 @@ for (const uc of TABS) {
       await settle();
       const after = await table();
       const wrong = after.rows.filter(r => !r.empty && r[spec.dim].trim() !== v);
-      if (!after.rows.length) chipFaults.push(`${uc}/${spec.dim}=${v}: painted nothing`);
+      if (!after.rows.some(r => !r.empty)) chipFaults.push(`${uc}/${spec.dim}=${v}: painted no matching rows`);
       if (wrong.length) chipFaults.push(`${uc}/${spec.dim}=${v}: ${wrong.length} row(s) of another value`);
     }
     await page.click(`.filter-chip[data-filter="${spec.dim}"][data-value="all"]`);
