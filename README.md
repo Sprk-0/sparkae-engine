@@ -114,9 +114,11 @@ pins its counts and digests, and CI fails on any drift.
 | FedRAMP Moderate profile | 323 | 1,307 |
 | FedRAMP Low profile | 156 | 981 |
 
-Generated 2026-07-21 from the product catalog. The catalog digest in every
-receipt is the SHA-1 of the catalog object's canonical JSON, so a regenerated
-catalog is visible in every artifact it produced.
+Catalog version `2026-07-21` · digest `91ad1b17138f`. Both travel in the
+reproducibility receipt of every artifact the engine emits, and the digest is
+the SHA-1 of the catalog object's canonical JSON, so a regenerated catalog is
+visible in everything it produced. The golden fixture pins both, and CI fails
+on either drifting.
 
 OSCAL: the exporter emits **NIST OSCAL 1.1.2** and CI validates the output
 against the official NIST 1.1.2 assessment-results schema vendored in
@@ -171,10 +173,7 @@ welcome under the constraints in `CONTRIBUTING.md`.
 
 The SparkAE server product is developed in a separate private repository and
 is not published. That is a different codebase, not an upstream of this one —
-the table at the top of this README says which capabilities live where. Early
-commits here were seeded from that tree, which is why the history carries a
-few *Sync site from…* messages; the public site is no longer maintained that
-way.
+the table at the top of this README says which capabilities live where.
 
 `CHANGELOG.md` records what moved and, for each change, whether the sample's
 verdict digest moved with it.
