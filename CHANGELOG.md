@@ -3,9 +3,9 @@
 Notable changes to the public reference build.
 
 Entries are dated. Tags mark states worth citing rather than numbering every
-change: a tag is named `v<engine version>`, its GitHub release is marked
-**pre-release**, and it names a tree that passed the whole suite and was verified byte for
-byte against the deployed site. `ENGINE_VERSION` in `demo-engine.js` moves only
+change: a tag is named `v<engine version>`, the GitHub release attached to it is
+marked **pre-release**, and it names a tree that passed the whole suite and was
+verified byte for byte against the deployed site. `ENGINE_VERSION` in `demo-engine.js` moves only
 when the engine does. Because every artifact this build produces carries a
 reproducibility receipt, an entry records whichever of these moved:
 
@@ -38,9 +38,9 @@ the tag is the tree the site was serving.
 What it does not assert: that the determinations are accurate enough to rely on.
 The accuracy evidence is sixteen cases someone chose — 15 correct, 0 false
 passes, 1 documented false fail — which is a published, re-runnable record and
-not a measurement of field accuracy. That is why every release here is a
-pre-release: the evidence behind these determinations is a case set its own
-authors mostly wrote.
+not a measurement of field accuracy. That is why the GitHub release attached to every
+tag here is marked pre-release: the evidence behind these determinations is a
+case set its own authors mostly wrote.
 
 ## 2026-09-11 (ambient subject terms · engine 1.3.0)
 

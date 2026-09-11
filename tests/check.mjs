@@ -1046,8 +1046,10 @@ check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml)
 
 // ── 19. a tag is a claim too ─────────────────────────────────────
 // The tag scheme is `v<engine version>`, so the tag this build ships is derivable
-// from the engine — and a tag the README cites but the changelog never records
-// is a state nobody can look up.
+// from the engine rather than taken on trust: it has to be the one the README
+// names, and the changelog has to record it. Older tags cited as history are not
+// held to that — v1.1.0 predates every entry in the file, and a heading written
+// now to satisfy a check would be a record of something that did not happen.
 console.log('19. released states');
 // The tag this build ships is `v` + ENGINE_VERSION. The README has to name it
 // and the changelog has to have an entry for it; older tags cited as history
