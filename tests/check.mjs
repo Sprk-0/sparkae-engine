@@ -22,11 +22,17 @@
 //      check (tests/check_oscal_schema.py)
 //  10. the homepage hero labelled as the sample run is a finding this engine
 //      emits for that run, shown in the OSCAL shape the exporters write
+//  11. every page names one address in its canonical, its og:url and
+//      sitemap.xml, and Netlify's Pretty URLs post-processing is pinned off
+//  12. adversarial evidence and date arithmetic
+//  13. archive integrity: no member of an uploaded ZIP is lost, overwritten
+//      or silently resolved when two carry the same name
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -52,7 +58,10 @@ const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 
 // ── 1. everything parses ────────────────────────────────────────────────────
 console.log('1. syntax');
-const ctx = { module: { exports: {} }, console };
+// TextDecoder/TextEncoder and DecompressionStream are host globals, not
+// ECMAScript intrinsics, so a bare vm context does not have them. The ZIP
+// and DOCX readers need them (section 13).
+const ctx = { module: { exports: {} }, console, TextDecoder, TextEncoder, DecompressionStream };
 ctx.window = ctx; ctx.globalThis = ctx;
 vm.createContext(ctx);
 for (const f of ['demo-standalone-catalog.js', 'demo-engine.js', 'demo-exports.js']) {
@@ -391,6 +400,294 @@ const refRetriever = new E.BM25Retriever(E.chunkText(
 const refIdx = E.buildRefutationIndex(refRetriever);
 check(!!refIdx['AC-2'] && refIdx['AC-2'].some(h => /not/i.test(h) && /implemented/i.test(h)),
   'the refutation index matches a capitalised refutation, not only a lowercase one');
+
+
+// ── 13. archive integrity ───────────────────────────────────────────────────
+// An uploaded package is a ZIP, and the reader decides what evidence the
+// engine ever sees. Two real archives broke the previous reader: one using
+// data descriptors (sizes written after the data, zeroes in the local header)
+// lost every member, and one carrying two members named review-ssp.txt kept
+// only the last — turning an Other Than Satisfied into a Satisfied with no
+// refusal shown. Both are pinned here, with the archives built byte by byte
+// rather than fetched, so the fixtures cannot drift.
+console.log('13. archive integrity');
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+const crc32 = (b) => {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+};
+
+// A member is STORED (method 0) from its `text` unless it carries ready-made
+// `bytes` with a `method` and `uncompSize`, which is how the deflated case is
+// built. Storing by default keeps each test about the reader's structure
+// handling rather than about deflate.
+// `streaming` writes the sizes in a trailing data descriptor and leaves the
+// local header zeroed, which is what a ZIP written to a pipe looks like.
+// `declare` overstates the member count in the EOCD; `patch` gets the finished
+// central-directory record to corrupt.
+function buildZip(members, opts = {}) {
+  const enc = new TextEncoder();
+  const local = [];
+  const central = [];
+  let offset = 0;
+  for (const m of members) {
+    const name = enc.encode(m.name);
+    const data = m.bytes || enc.encode(m.text);
+    const method = m.method || 0;
+    const uncompSize = m.uncompSize === undefined ? data.length : m.uncompSize;
+    const crc = m.crc === undefined ? crc32(data) : m.crc;
+    const flags = opts.streaming ? 0x08 : 0;
+    const lh = new Uint8Array(30 + name.length);
+    const lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true);
+    lv.setUint16(4, 20, true); lv.setUint16(6, flags, true); lv.setUint16(8, method, true);
+    lv.setUint16(10, 0, true); lv.setUint16(12, 0x0021, true);
+    lv.setUint32(14, opts.streaming ? 0 : crc, true);
+    lv.setUint32(18, opts.streaming ? 0 : data.length, true);
+    lv.setUint32(22, opts.streaming ? 0 : uncompSize, true);
+    lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true);
+    lh.set(name, 30);
+    local.push(lh, data);
+    let size = lh.length + data.length;
+    if (opts.streaming) {
+      const dd = new Uint8Array(16);
+      const dv = new DataView(dd.buffer);
+      dv.setUint32(0, 0x08074b50, true);
+      dv.setUint32(4, crc, true);
+      dv.setUint32(8, data.length, true);
+      dv.setUint32(12, uncompSize, true);
+      local.push(dd);
+      size += dd.length;
+    }
+    const ch = new Uint8Array(46 + name.length);
+    const cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, flags, true); cv.setUint16(10, method, true);
+    cv.setUint16(12, 0, true); cv.setUint16(14, 0x0021, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, data.length, true);
+    cv.setUint32(24, uncompSize, true);
+    cv.setUint16(28, name.length, true);
+    cv.setUint16(30, 0, true); cv.setUint16(32, 0, true); cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true); cv.setUint32(38, 0, true);
+    cv.setUint32(42, offset, true);
+    ch.set(name, 46);
+    if (opts.patch) opts.patch(cv, members.indexOf(m));
+    central.push(ch);
+    offset += size;
+  }
+  const cdSize = central.reduce((s, c) => s + c.length, 0);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, opts.declare ?? members.length, true);
+  ev.setUint16(10, opts.declare ?? members.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, offset, true);
+  ev.setUint16(20, 0, true);
+  const parts = [...local, ...central, eocd];
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const p of parts) { out.set(p, pos); pos += p.length; }
+  return out;
+}
+
+const asFile = (bytes, name) => ({
+  name,
+  size: bytes.length,
+  arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+});
+const refusals = (rep) => (rep.skipped || []).map(s => s.name + ': ' + s.reason);
+
+// Two accounts of AC-2_g that cannot both be true. Dated relative to
+// SAMPLE_DATE so the temporal gates read it as current.
+const IMPLEMENTED = 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.pdf.';
+const NOT_IMPLEMENTED = 'AC-2 Account Management. Account monitoring is not implemented. The quarterly review has not been performed and no automated mechanism exists.';
+
+// Data descriptors: the local headers say the members are zero bytes long.
+// Reading those zeroes refused the first member as a truncated stream and then
+// advanced by zero bytes, so the second member was never seen or reported.
+const streamingZip = await E.parseZipReport(asFile(buildZip(
+  [{ name: 'policy.txt', text: IMPLEMENTED }, { name: 'review-ssp.txt', text: NOT_IMPLEMENTED }],
+  { streaming: true }), 'streaming.zip'));
+check(streamingZip.parsed.length === 2 &&
+  streamingZip.parsed[0] === 'policy.txt' && streamingZip.parsed[1] === 'review-ssp.txt' &&
+  streamingZip.skipped.length === 0 && streamingZip.chunks.length === 2,
+  'a streaming ZIP (sizes in data descriptors) yields both members, not zero — ' +
+  JSON.stringify(streamingZip.parsed));
+
+// The ordinary case: a deflated member round-trips through the reader.
+const deflatedText = IMPLEMENTED + '\n\n' + NOT_IMPLEMENTED;
+const deflatedZip = await E.parseZipReport(asFile(buildZip([{
+  name: 'review-ssp.txt',
+  bytes: new Uint8Array(zlib.deflateRawSync(Buffer.from(deflatedText, 'utf8'), { level: 9 })),
+  method: 8,
+  uncompSize: Buffer.byteLength(deflatedText),
+}]), 'deflated.zip'));
+check(deflatedZip.parsed.length === 1 && deflatedZip.skipped.length === 0 &&
+  deflatedZip.chunks.length > 0 && /monitored continuously/.test(deflatedZip.chunks[0].text),
+  'a deflated member inflates to its text — ' + JSON.stringify(refusals(deflatedZip)));
+
+// Two members of the same name are two documents claiming to be one. Keeping
+// the last silently is what let the archive below report Satisfied.
+const dupZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'review-ssp.txt', text: NOT_IMPLEMENTED },
+  { name: 'review-ssp.txt', text: IMPLEMENTED },
+]), 'duplicate.zip'));
+check(dupZip.parsed.length === 0 && dupZip.chunks.length === 0 &&
+  dupZip.skipped.length === 2 && dupZip.skipped.every(s => /ambiguous/.test(s.reason)),
+  'an archive carrying two members named the same reads neither and names both — ' +
+  JSON.stringify(refusals(dupZip)));
+
+// The point of refusing: the member that would have been dropped is the one
+// that contradicts the other, and dropping it moves the verdict.
+// The dif is the catalog's own AC-2_g, not a hand-written stand-in, so the
+// verdict this asserts is the one a run of this build would actually produce.
+const dupDif = (CATALOG['AC-2'].d || []).find(d => d.i === 'AC-2_g');
+const dupVerdict = (chunks) => {
+  const r = new E.BM25Retriever(chunks);
+  return E.assessDif(dupDif, r, 'AC-2', CATALOG['AC-2'].T, CATALOG['AC-2'].F,
+    E.buildRefutationIndex(r), new Date(SAMPLE_DATE + 'T00:00:00Z')).status;
+};
+// Each member alone gives a different verdict — that is what makes silently
+// keeping one of them a result-integrity failure rather than a parsing nit.
+check(!!dupDif &&
+  dupVerdict(E.chunkText(NOT_IMPLEMENTED, 'review-ssp.txt')) === 'Other Than Satisfied' &&
+  dupVerdict(E.chunkText(IMPLEMENTED, 'review-ssp.txt')) === 'Satisfied' &&
+  dupVerdict(dupZip.chunks) === 'Not Reviewed',
+  'the two members disagree on AC-2_g, so the archive is read as neither rather than as the later one');
+
+// The name census is taken from the central directory, before anything is
+// read, and this is why: here the first of two same-named members is a corrupt
+// deflate stream. A census of successfully read members would count one, call
+// it unique, and parse it — which is the behaviour the section exists to stop,
+// arrived at by a different route. The expansion budget would make it worse
+// still: whether a duplicate survived would depend on its predecessors' size.
+const halfCorrupt = await E.parseZipReport(asFile(buildZip([
+  { name: 'review-ssp.txt', bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 142, crc: 0 },
+  { name: 'review-ssp.txt', text: IMPLEMENTED },
+]), 'half-corrupt.zip'));
+check(halfCorrupt.parsed.length === 0 && halfCorrupt.chunks.length === 0 &&
+  halfCorrupt.skipped.length === 2 && halfCorrupt.skipped.every(s => /ambiguous/.test(s.reason)),
+  'a duplicate name is refused even when its twin would not have inflated — ' +
+  JSON.stringify(refusals(halfCorrupt)));
+
+// The refusal happens in unzip(), against the central directory, so every
+// caller gets it — parseZipReport and parseDocx alike. The old reader could
+// not even express this: an object keyed by name has one slot per name, so the
+// second member overwrote the first before any caller could object.
+const dupFailures = [];
+const dupMembers = await E.unzip((await asFile(buildZip([
+  { name: 'a.txt', text: 'one' }, { name: 'a.txt', text: 'two' },
+]), 'x.zip').arrayBuffer()), dupFailures);
+check(Array.isArray(dupMembers) && dupMembers.length === 0 &&
+  dupFailures.length === 2 && dupFailures.every(f => f.name === 'a.txt' && /ambiguous/.test(f.reason)),
+  'unzip() itself returns neither same-named member and names both as refused');
+
+// A unique name is unaffected by a duplicate elsewhere in the same archive.
+const mixedFailures = [];
+const mixedMembers = await E.unzip((await asFile(buildZip([
+  { name: 'a.txt', text: 'one' }, { name: 'a.txt', text: 'two' }, { name: 'b.txt', text: 'three' },
+]), 'mixed.zip').arrayBuffer()), mixedFailures);
+check(mixedMembers.length === 1 && mixedMembers[0].name === 'b.txt' &&
+  mixedMembers[0].text === 'three' && mixedFailures.length === 2,
+  'a duplicate name refuses its own members only, not the rest of the archive');
+
+// The array change above is invisible to a ZIP of text files but breaks DOCX,
+// which looks its one member up by name.
+const docxBody = '<?xml version="1.0"?><w:document xmlns:w="x"><w:body><w:p><w:r><w:t>' +
+  IMPLEMENTED + '</w:t></w:r></w:p></w:body></w:document>';
+let docxChunks = [];
+let docxErr = '';
+try {
+  docxChunks = await E.parseFile(asFile(buildZip([
+    { name: '[Content_Types].xml', text: '<Types/>' },
+    { name: 'word/document.xml', text: docxBody },
+  ]), 'ssp.docx'));
+} catch (e) { docxErr = e.message || String(e); }
+check(docxChunks.length === 1 && /Account Management/.test(docxChunks[0].text),
+  'a DOCX still parses: its word/document.xml is found in the member array' + (docxErr ? ' — ' + docxErr : ''));
+
+// A DOCX whose body is present but unreadable is not a DOCX with no body:
+// saying so sends the assessor looking for the wrong problem.
+let brokenDocx = '';
+try {
+  await E.parseFile(asFile(buildZip([{
+    name: 'word/document.xml',
+    bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), method: 8, uncompSize: 500, crc: 0,
+  }]), 'broken.docx'));
+} catch (e) { brokenDocx = e.message || String(e); }
+check(/could not be read/.test(brokenDocx) && !/has no word\/document\.xml/.test(brokenDocx),
+  'a DOCX whose word/document.xml will not inflate says so, rather than that it has none — ' +
+  JSON.stringify(brokenDocx));
+
+let dupDocx = null;
+try {
+  await E.parseFile(asFile(buildZip([
+    { name: 'word/document.xml', text: docxBody.replace('is implemented', 'is not implemented') },
+    { name: 'word/document.xml', text: docxBody },
+  ]), 'two-bodies.docx'));
+} catch (e) { dupDocx = e.message || String(e); }
+check(dupDocx && /ambiguous/.test(dupDocx),
+  'a DOCX carrying two word/document.xml is refused, not resolved to the last one');
+
+// Resource limits: an archive may not be trusted about its own size.
+const manyZip = await E.parseZipReport(asFile(buildZip(
+  [{ name: 'a.txt', text: 'x' }], { declare: 4096 }), 'many.zip'));
+check(manyZip.parsed.length === 0 && refusals(manyZip).some(r => /limit/.test(r)),
+  'an archive declaring more members than the limit is refused up front');
+
+// 0xFFFFFFFF is the ZIP64 sentinel; the real value lives in an extra field this
+// reader does not parse, so reading the sentinel would slice nonsense.
+const z64 = await E.parseZipReport(asFile(buildZip(
+  [{ name: 'a.txt', text: 'x' }], { patch: (cv) => cv.setUint32(20, 0xFFFFFFFF, true) }), 'z64.zip'));
+check(z64.parsed.length === 0 && refusals(z64).some(r => /ZIP64/.test(r)),
+  'a ZIP64 member is refused by name rather than read from the sentinel');
+
+// A member whose declared size runs past the end of the file is a truncated
+// upload; it must be named, not quietly shortened.
+const short = await E.parseZipReport(asFile(buildZip(
+  [{ name: 'a.txt', text: 'x' }], { patch: (cv) => cv.setUint32(20, 0x00100000, true) }), 'short.zip'));
+check(short.parsed.length === 0 && refusals(short).some(r => /past the end/.test(r)),
+  'a member extending past the end of the file is refused by name');
+
+// A deflated member declares its expanded size, and nothing stops it lying.
+// This one is 70 MB of zeroes in about 70 KB on disk; the reader must stop
+// spending memory at its own limit rather than at the archive's word.
+const BOMB_BYTES = 70 * 1024 * 1024;
+const bombZip = await E.parseZipReport(asFile(buildZip([{
+  name: 'bomb.txt',
+  bytes: new Uint8Array(zlib.deflateRawSync(Buffer.alloc(BOMB_BYTES), { level: 9 })),
+  method: 8,
+  uncompSize: BOMB_BYTES,
+  crc: 0,
+}]), 'bomb.zip'));
+check(bombZip.parsed.length === 0 && refusals(bombZip).some(r => /MB limit/.test(r)),
+  'a member that expands past the archive-wide limit is refused by name — ' +
+  JSON.stringify(refusals(bombZip)));
+
+// Without a central directory there is no inventory, so there is nothing to be
+// complete about: say so rather than report an archive with no evidence in it.
+let notZip = null;
+try { notZip = await E.parseZipReport(asFile(new TextEncoder().encode('this is not a zip at all'), 'nope.zip')); }
+catch (e) { notZip = { parsed: [], skipped: [{ name: '(threw)', reason: e.message || String(e) }] }; }
+check(notZip.parsed.length === 0 && refusals(notZip).some(r => /central directory/.test(r)),
+  'a file with no central directory is refused as not-a-ZIP, not read as empty — ' +
+  JSON.stringify(refusals(notZip)));
+
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

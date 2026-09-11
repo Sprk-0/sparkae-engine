@@ -17,6 +17,41 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## 2026-09-11
+
+Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
+
+An outside reviewer uploaded adversarial packages to the published demo and
+wrote up what happened. Every item below is one of their findings, reproduced
+here against the deployed files before it was changed.
+
+- **No member of an uploaded archive is lost, overwritten, or silently
+  resolved.** The ZIP reader walked local file headers and kept members in an
+  object keyed by name. A streaming archive — sizes written after the data,
+  zeroes in the local header — lost every member: the first was refused as a
+  truncated stream and the scan then advanced by zero bytes. An archive with
+  two members named `review-ssp.txt` kept only the last; the earlier one said
+  account monitoring was not implemented, and dropping it turned AC-2_g from
+  Other Than Satisfied into Satisfied with no refusal shown. The reader now
+  takes its inventory from the central directory and returns members as a list,
+  so a duplicate name survives to be refused by name rather than resolved to
+  one of its members. ZIP64, truncated members, and archives that expand past
+  64 MB or declare more than 512 members are refused by name as well.
+- **A file name cannot execute in the assessment page.** The inventory renderer
+  concatenated the uploaded file name into `innerHTML`, so a name containing an
+  element with an error handler ran that handler on the site. Names, tags, and
+  cited controls are escaped now; the hostile name is still displayed, as text.
+- **A run no longer leaks into the next.** Clear Upload reset the panel but left
+  the raw files in place, so a cleared package kept being assessed under the
+  next sample's date, and assessor revisions keyed only by objective carried
+  into a different package. Uploading, clearing, and starting a run each discard
+  the previous run's files, revisions, and displayed results.
+- **The ungrounded-Satisfied claim is withdrawn.** Five places on the site said
+  a Satisfied determination cannot rest on evidence that does not address the
+  objective. The reviewer showed one that does — `AT-1_a.[01]` returned
+  Satisfied from two documents that establish no awareness and training policy.
+  The claim is off the site; the coverage rule that produced it is still open.
+
 ## 2026-09-10
 
 Engine 1.1.0 · verdict digest `3dd76f5f3083` unchanged
