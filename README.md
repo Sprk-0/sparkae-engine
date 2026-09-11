@@ -12,6 +12,18 @@ Test stay with the assessor. This repository is served as-is by Netlify
 at **https://sparkae.ai** and is maintained here (see *How this
 repository is maintained*).
 
+**What it gets wrong is published, not only fixed.** On 2026-09-11 an outside
+review uploaded two documents about account monitoring and multi-factor
+authentication against AT-1_a.[01] — *an awareness and training policy is
+developed and documented* — and the engine returned **Satisfied**. The words
+“policy”, “developed” and “documented” were all present, and nothing required
+the evidence to be about awareness or training. That is a **false pass**: it
+tells an assessor nothing is wrong. It is fixed in engine 1.2.0, and the
+reviewer's reproduction is now a case in `tests/benchmark/` that runs on every
+push, alongside the determinations this engine still gets wrong today. See
+*Accuracy* below — including what a score there does not mean — before quoting
+a number from it.
+
 ## What is here, and what is not
 
 | Ships in this repository (Apache-2.0) | Ships only in the SparkAE server product (commercial) |
@@ -20,7 +32,7 @@ repository is maintained*).
 | `demo-standalone-catalog.js` — NIST SP 800-53A Rev 5 determination statements with FedRAMP baseline tags | PDF and XLSX text extraction; Nessus / ZAP scan ingestion into POA&M |
 | `demo-exports.js` — six builders: OSCAL 1.1.2 Assessment Results (JSON), findings CSV, RET CSV, POA&M CSV, TCW CSV, executive summary (text) — plus the reproducibility receipt | SAR / SAP DOCX, SRTM / CIS / CRM XLSX, OSCAL POA&M and the other server-side export formats |
 | `demo-standalone.html` — the live demo (§01 runs the engine above; §02–§09 are labelled walkthroughs), `demo-20x.html`, the site pages, self-hosted fonts, per-page CSP | Optional LLM modes, integrations, the assessor console, ten analytical services |
-| `tests/` — the conformance suite that CI runs on every push | The product test suite and Postgres/RLS suites (private; not a published count) |
+| `tests/` — the conformance suite CI runs on every pull request and on every push to `main` | The product test suite and Postgres/RLS suites (private; not a published count) |
 
 This repository is **not** the SparkAE server product. There is no package
 to install: no `pyproject.toml`, no Docker image, no `/v1` API.
@@ -105,6 +117,47 @@ The bundled sample (`CloudVault-Federal-SSP.txt`, FedRAMP Low profile,
 assessed as of 2026-06-01) is the golden fixture: `tests/golden/sample-ssp.expected.json`
 pins its counts and digests, and CI fails on any drift.
 
+## Accuracy
+
+Determinism is not accuracy. A build can be perfectly reproducible and return
+the same wrong determination every time, which is what the review above found.
+`tests/check.mjs` asks whether the engine is reproducible; this asks whether it
+is right.
+
+`tests/benchmark/cases.json` pairs an objective with a fixed set of documents
+and records the determination a competent assessor would reach from those
+documents alone, with the reasoning written down. `node tests/benchmark.mjs .`
+runs them and writes `tests/benchmark/results.json`; CI runs it on every pull
+request and on every push to `main`, and fails the build on a wrong
+determination that has no recorded reason.
+
+```text
+engine 1.2.0 · 12 cases · 11 correct · 0 false passes · 1 false fail
+external-review 3 cases · 3 correct · engine-repo 9 cases · 8 correct
+```
+
+**What that is not.** It is a measurement against cases someone chose, not a
+measurement of field accuracy on real authorization packages, and it supports
+no claim of assessment readiness. Three cases are built on the outside
+reviewer's own uploads — documents submitted before the fixes existed, so they
+were not written against this engine's behaviour; one of the three is the
+reviewer's reproduction end to end, and in the other two those documents are
+paired with objectives they do address, a pairing made here. The other nine
+cases are ours in both halves, documents and label, and test what their author
+already believed, which is weaker evidence. The two populations are scored
+separately and never merged into one headline number.
+
+The one current error is a false fail, and it is in the file rather than
+excluded from it: AC-2_d.(2), where the document does answer the objective but
+the retriever does not surface the paragraph that does. Eight objectives like
+it were found when gate 2 was tightened in 1.2.0 — the previous rule had
+concealed them by passing on generic vocabulary whatever passage it read.
+
+A false pass and a false fail are not the same error and are never averaged:
+the runner prints them as a 2×2 so the asymmetry stays visible. If a
+determination in that file is wrong, the case is what you argue with — open an
+issue with the documents and the determination you expected.
+
 ## Catalog
 
 | Scope | Controls | Determination statements |
@@ -131,6 +184,7 @@ or later.
 
 ```bash
 node tests/check.mjs .                 # node ≥ 18, no dependencies
+node tests/benchmark.mjs .             # the accuracy cases above
 pip install jsonschema regex && python tests/check_oscal_schema.py
 ```
 
@@ -170,7 +224,8 @@ OSCAL document's shape and receipt; that every page names one address in its
 post-processing stays pinned off; and that the homepage hero labelled
 “from the sample run” is a finding this engine actually emits for that
 run, shown in the OSCAL shape the exporters write. The GitHub Actions
-workflow in `.github/workflows/ci.yml` runs both on every push.
+workflow in `.github/workflows/ci.yml` runs both on every pull request and on
+every push to `main`.
 
 ## How this repository is maintained
 

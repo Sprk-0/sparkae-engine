@@ -27,6 +27,8 @@
 //  12. adversarial evidence and date arithmetic
 //  13. archive integrity: no member of an uploaded ZIP is lost, overwritten
 //      or silently resolved when two carry the same name
+//  14. gate 2 covers subject matter, not generic compliance vocabulary
+//  15. homepage workflow cards deep-link to the demo tab they name
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -835,6 +837,48 @@ check(Array.isArray(E.RULESET.generic_terms) && E.RULESET.generic_terms.length >
   E.RULESET.generic_terms.indexOf('policy') !== -1 && E.RULESET.subject_required === true,
   'the generic-term list and the subject requirement are published in the ruleset');
 
+// ── 15. live-demo user paths ────────────────────────────────────────────────
+// The homepage says "Try each one in the browser." Each card has to name a
+// distinct hash the demo honours, §01 cannot call its output a SAR, MeshGate
+// is the Moderate catalog, and the walkthroughs cannot hard-code a portfolio
+// of four SSPs when two are on the page.
+console.log('15. live-demo user paths');
+const WANT_WORKFLOWS = [
+  ['§01', 'Initial assessment', 'initial'],
+  ['§02', 'Annual reassessment', 'annual'],
+  ['§03', 'Significant change', 'scr'],
+  ['§04', 'Monthly ConMon', 'conmon'],
+  ['§05', 'KSI validation', 'ksi'],
+  ['§06', 'QA audit', 'qa'],
+  ['§07', 'Package validator', 'pkg'],
+  ['§08', 'Portfolio', 'portfolio'],
+  ['§09', 'Data sources', 'src'],
+];
+const homeCards = [...home.matchAll(/<a class="it" href="([^"]+)"[\s\S]*?<span class="n">([^<]+)<\/span><span class="t">([^<]+)<\/span>/g)]
+  .map(m => ({ href: m[1], n: m[2], t: m[3] }));
+check(homeCards.length === WANT_WORKFLOWS.length,
+  'homepage has nine workflow cards (found ' + homeCards.length + ')');
+check(new Set(homeCards.map(c => c.href)).size === homeCards.length,
+  'each homepage workflow card has a distinct href');
+for (const [n, t, uc] of WANT_WORKFLOWS) {
+  const card = homeCards.find(c => c.n === n);
+  check(!!card && card.t === t && card.href === 'demo-standalone.html#' + uc,
+    'homepage ' + n + ' ' + t + ' → #' + uc + (card ? ' (got ' + card.href + ')' : ' missing'));
+}
+check(!/SSP → SAR/.test(home) && !/SSP → SAR/.test(page),
+  '§01 does not call the live-engine output a SAR');
+check(/FedRAMP Moderate · 323 controls/.test(page) && !/325 controls/.test(page) && !/\bcontrols: 325\b/.test(page),
+  'MeshGate is the Moderate catalog (323), not 325');
+check(/\{ label: 'Year 1 \(FY24\)', controls: 52,/.test(page),
+  'CloudVault annual cohorts are a third of the Low baseline (52+52+52)');
+check(!/4 SSPs/.test(page) && !/all 4 SSPs/.test(page),
+  'QA and portfolio do not hard-code four SSPs');
+check(/ucFromHash|UC_HASH_ALIASES/.test(page),
+  'the demo honours a hash so a homepage card can open the tab it names');
+check(!/id="annual-placeholder"/.test(page),
+  'the leftover §03-labelled Annual Reassessment preview is gone');
+check(!/<a href="#"[^>]*class="export-btn"/.test(page) && !/class="export-btn"><span class="check">✓/.test(page),
+  'walkthrough export chips are not href="#" download pretenders');
 
 
 // ── 15. the CSV says who determined what ────────────────────────────────────
@@ -891,6 +935,36 @@ check(untouched && col(untouched, 'Determination') === 'Other Than Satisfied' &&
 // they may not rewrite what the engine derived from the evidence.
 check(col(revised, 'Engine Determination') === attrFindings[0].status,
   'the engine column is the engine\'s, unchanged by the revision over it');
+
+
+// ── 16. the README's accuracy figures are the benchmark's ───────────────────
+// The benchmark runs from its own entry point (tests/benchmark.mjs, run by CI
+// with --strict). What is checked here is the other half: that the numbers the
+// README prints are the numbers on record, so a figure cannot go stale in the
+// one file a reader is most likely to quote from.
+console.log('16. accuracy figures');
+const benchSpec = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'cases.json'), 'utf8'));
+const bench = JSON.parse(fs.readFileSync(path.join(here, 'benchmark', 'results.json'), 'utf8'));
+const readmeSrc = read('README.md');
+const bo = bench.summary.overall;
+
+check(bo.cases === benchSpec.cases.length,
+  'the recorded results cover every case in cases.json (' + bo.cases + ')');
+
+const plural = (n, word) => n + ' ' + word + (n === 1 ? '' : word === 'false pass' ? 'es' : 's');
+const headline = 'engine ' + bench.summary.engine_version + ' · ' + bo.cases + ' cases · ' +
+  bo.correct + ' correct · ' + plural(bo.false_pass, 'false pass') + ' · ' +
+  plural(bo.false_fail, 'false fail');
+check(readmeSrc.includes(headline), 'README states the recorded score: ' + headline);
+
+const split = Object.entries(bench.summary.by_source)
+  .map(([src, v]) => src + ' ' + v.cases + ' cases · ' + v.correct + ' correct').join(' · ');
+check(readmeSrc.includes(split), 'README states the per-source split: ' + split);
+
+// A benchmark whose cases were all written by the engine's author measures
+// agreement with its author. The README says so; this keeps the split real.
+check((bench.summary.by_source['external-review'] || {}).cases > 0,
+  'at least one case comes from outside this repository');
 
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');

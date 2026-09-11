@@ -103,6 +103,65 @@ for (const file of pages) {
   );
   await page.close();
 }
+
+// Homepage "Nine workflows. Try each one in the browser." — each card has to
+// open the tab it names. They all used to be demo-standalone.html with no hash.
+{
+  const page = await browser.newPage();
+  page.on('pageerror', (e) => checks.push([`workflow UAT: ${e}`, false, String(e)]));
+  await page.route('**/*', (route) => {
+    const u = route.request().url();
+    if (u.startsWith(origin)) return route.continue();
+    return route.abort();
+  });
+  await page.goto(origin + '/index.html', { waitUntil: 'load' });
+  const cards = await page.$$eval('.hx-do a.it', (els) => els.map((a) => ({
+    n: ((a.querySelector('.n') || {}).textContent || '').trim(),
+    t: ((a.querySelector('.t') || {}).textContent || '').trim(),
+    href: a.getAttribute('href') || '',
+  })));
+  const WANT = {
+    '§01': { uc: 'initial', btn: 'Run assessment' },
+    '§02': { uc: 'annual', btn: 'Run annual reassessment' },
+    '§03': { uc: 'scr', btn: 'Run SCR review' },
+    '§04': { uc: 'conmon', btn: 'Run ConMon cycle' },
+    '§05': { uc: 'ksi', btn: 'Run KSI validation' },
+    '§06': { uc: 'qa', btn: 'Run QA audit' },
+    '§07': { uc: 'pkg', btn: 'Validate OSCAL package' },
+    '§08': { uc: 'portfolio', btn: 'Generate portfolio rollup' },
+    '§09': { uc: 'src', btn: 'Sync data sources' },
+  };
+  checks.push(
+    ['index.html workflow cards: nine distinct paths',
+      cards.length === 9 && new Set(cards.map((c) => c.href)).size === 9,
+      JSON.stringify(cards.map((c) => c.n + ' ' + c.href))],
+  );
+  for (const card of cards) {
+    const want = WANT[card.n];
+    if (!want) {
+      checks.push([`index.html ${card.n}: known workflow`, false, card.t]);
+      continue;
+    }
+    checks.push([
+      `index.html ${card.n} ${card.t} links to #${want.uc}`,
+      card.href === 'demo-standalone.html#' + want.uc,
+      card.href,
+    ]);
+    await page.goto(origin + '/' + card.href, { waitUntil: 'load' });
+  await page.waitForSelector('.uc-tab.active[data-uc="' + want.uc + '"]', { timeout: 5000 });
+    await page.evaluate(() => { const o = document.getElementById('onb-overlay'); if (o) o.remove(); });
+    const landed = await page.evaluate(() => ({
+      uc: ((document.querySelector('.uc-tab.active') || {}).getAttribute('data-uc')) || '',
+      btn: ((document.getElementById('run-btn') || {}).textContent || '').replace(/\s+/g, ' ').trim(),
+    }));
+    checks.push(
+      [`${card.n} lands on the ${want.uc} tab`, landed.uc === want.uc, 'tab=' + landed.uc],
+      [`${card.n} run button is "${want.btn}"`, landed.btn.includes(want.btn), landed.btn],
+    );
+  }
+  await page.close();
+}
+
 await browser.close();
 await new Promise((r) => server.close(r));
 
