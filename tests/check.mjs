@@ -1054,21 +1054,33 @@ check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml)
 // It was written against tags that exist only in one local clone: GitHub has
 // none, and v1.1.0 was never pushed. A check cannot make a claim true.
 console.log('19. the README cites this state correctly');
+// Every part the README quotes, not just the ones that were easy to check: the
+// catalog version and the assessment date drift as readily as a digest, and the
+// fixture holds both.
 const golden19 = JSON.parse(fs.readFileSync(goldenPath, 'utf8'));
+// Scoped to the tuple block itself, not the whole file. Checking the README for
+// these strings anywhere passes on a corrupted block: the catalog version and
+// the assessment date both appear in other sections, so fault injection showed
+// the first version of this check green on a README it should have rejected.
+const citeSection = readmeSrc.slice(readmeSrc.indexOf('### Citing a state'));
+const tuple19 = (citeSection.match(/```text\n([\s\S]*?)```/) || [])[1] || '';
 const cited = {
-  engine: new RegExp('engine ' + E.ENGINE_VERSION.replace(/\./g, '\\.')).test(readmeSrc),
-  catalog: readmeSrc.includes(golden19.catalog_digest.slice(0, 12)),
-  ruleset: readmeSrc.includes(golden19.ruleset_digest.slice(0, 12)),
-  verdict: readmeSrc.includes(golden19.verdict_digest.slice(0, 12)),
+  engine: new RegExp('engine ' + E.ENGINE_VERSION.replace(/\./g, '\\.')).test(tuple19),
+  catalog_version: tuple19.includes(golden19.catalog_version),
+  catalog: tuple19.includes(golden19.catalog_digest.slice(0, 12)),
+  ruleset: tuple19.includes(golden19.ruleset_digest.slice(0, 12)),
+  verdict: tuple19.includes(golden19.verdict_digest.slice(0, 12)),
+  assessment_date: tuple19.includes(golden19.assessment_date),
 };
-check(cited.engine && cited.catalog && cited.ruleset && cited.verdict,
-  'the README quotes this build\'s tuple: engine ' + E.ENGINE_VERSION + ' · catalog ' +
-  golden19.catalog_digest.slice(0, 12) + ' · ruleset ' + golden19.ruleset_digest.slice(0, 12) +
+check(Object.values(cited).every(Boolean),
+  'the README quotes every part of this build\'s tuple: engine ' + E.ENGINE_VERSION +
+  ' · catalog ' + golden19.catalog_version + ' / ' + golden19.catalog_digest.slice(0, 12) +
+  ' · ruleset ' + golden19.ruleset_digest.slice(0, 12) + ' · ' + golden19.assessment_date +
   ' → verdict ' + golden19.verdict_digest.slice(0, 12) + ' (' + JSON.stringify(cited) + ')');
 
-// And it does not claim a tag this repository does not have.
-check(!/`v\d+\.\d+\.\d+`/.test(readmeSrc),
-  'the README names no release tag while the repository carries none');
+// What this can see is the README; whether the remote carries tags is not
+// knowable from a file on disk, and the message says only what was read.
+check(!/`v\d+\.\d+\.\d+`/.test(readmeSrc), 'the README names no release tag');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

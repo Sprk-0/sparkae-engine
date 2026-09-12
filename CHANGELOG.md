@@ -29,19 +29,17 @@ The tuple above is how to cite this build — the same tree as the entries below
 identified by what it decided rather than by a label, so it can be reproduced,
 disputed and returned to.
 
-What the tag asserts: the full suite passed on this tree (`check.mjs`, the
+What the tuple carries: the full suite passed on this tree (`check.mjs`, the
 accuracy benchmark under `--strict`, the OSCAL 1.1.2 schema validation, and the
-three browser suites); the reproducibility tuple above produced that verdict
-digest on the bundled sample, so anyone can rerun it and compare; and
-`tests/check_published.mjs` ran against https://sparkae.ai for this commit, so
-the tag is the tree the site was serving.
+browser suites); and those five parts produced that verdict digest on the
+bundled sample, so anyone can rerun it and compare.
 
-What it does not assert: that the determinations are accurate enough to rely on.
-The accuracy evidence is sixteen cases someone chose — 15 correct, 0 false
-passes, 1 documented false fail — which is a published, re-runnable record and
-not a measurement of field accuracy. That is why the GitHub release attached to every
-tag here is marked pre-release: the evidence behind these determinations is a
-case set its own authors mostly wrote.
+What it does not carry: any claim that the determinations are accurate enough to
+rely on. The accuracy evidence is sixteen cases someone chose — 15 correct, 0
+false passes, 1 documented false fail — which is a published, re-runnable record
+and not a measurement of field accuracy. Read a determination here as work an
+assessor checks, because the evidence behind these determinations is a case set
+its own authors mostly wrote.
 
 ## 2026-09-11 (ambient subject terms · engine 1.3.0)
 
