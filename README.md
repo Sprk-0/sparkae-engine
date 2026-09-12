@@ -244,27 +244,27 @@ the table at the top of this README says which capabilities live where.
 `CHANGELOG.md` records what moved and, for each change, whether the sample's
 verdict digest moved with it.
 
-### Released states
+### Citing a state
 
-Work lands continuously on `main`, and `main` is what sparkae.ai serves. A tag
-marks a state worth citing and is named for the engine it ships. The current
-one is **`v1.3.0`**; `v1.1.0` came before it.
+Work lands continuously on `main`, and `main` is what sparkae.ai serves. **This
+repository carries no release tags**, so what identifies a state worth citing is
+the reproducibility tuple rather than a label:
 
-A tag asserts three things:
+```text
+engine 1.3.0 · catalog 2026-07-21 / 91ad1b17138f · ruleset b39ee143bdfe
+  → verdict digest 04b1f79d6f44   (CloudVault sample, FedRAMP Low, 2026-06-01)
+```
 
-- the full suite passed on that tree — `check.mjs`, the accuracy benchmark under
-  `--strict`, the OSCAL 1.1.2 schema validation, and the three browser suites;
-- the reproducibility tuple it names produced the verdict digest it names, so
-  anyone can rerun the bundled sample and compare;
-- `tests/check_published.mjs` ran against `https://sparkae.ai` for that commit,
-  so the tag is the tree the site was serving, byte for byte.
+Those five parts are in every artifact the engine emits and in
+`tests/golden/sample-ssp.expected.json`, and `check.mjs` §19 fails if the figures
+quoted here and the ones in the fixture disagree. Rerun the bundled sample and
+compare: a matching verdict digest means the determinations are the same ones,
+byte for byte. A commit hash pins the tree; the tuple pins what the tree decided.
 
-Each tag has a GitHub release, and every one of those releases is marked
-**pre-release**. That describes the evidence rather than the build: the
-determinations are reproducible and the suite is real, and the accuracy evidence
-behind them is sixteen cases someone chose, described under *Accuracy* above. A
-pre-release is the honest shape for something you are invited to examine and
-argue with rather than to depend on.
+What none of that establishes is accuracy. The determinations are reproducible
+and the suite is real; the accuracy evidence behind them is sixteen cases someone
+chose, described under *Accuracy* above. That is the honest shape of something
+you are invited to examine and argue with rather than to depend on.
 
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security

@@ -2,12 +2,12 @@
 
 Notable changes to the public reference build.
 
-Entries are dated. Tags mark states worth citing rather than numbering every
-change: a tag is named `v<engine version>`, the GitHub release attached to it is
-marked **pre-release**, and it names a tree that passed the whole suite and was
-verified byte for byte against the deployed site. `ENGINE_VERSION` in `demo-engine.js` moves only
-when the engine does. Because every artifact this build produces carries a
-reproducibility receipt, an entry records whichever of these moved:
+Entries are dated rather than numbered, and this repository carries no release
+tags: a state is cited by its reproducibility tuple, which identifies what the
+tree decided rather than only which tree it was. `ENGINE_VERSION` in
+`demo-engine.js` moves only when the engine does. Because every artifact this
+build produces carries a reproducibility receipt, an entry records whichever of
+these moved:
 
 ```text
 engine version · catalog digest · ruleset digest · evidence digest · assessment date
@@ -20,13 +20,14 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-11 — v1.3.0
+## 2026-09-11 (the state this build is in)
 
 Engine 1.3.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `b39ee143bdfe` ·
 verdict digest `04b1f79d6f44`
 
-The first tagged state of the public reference build — the same tree as the
-entries below, given a name so it can be cited, disputed and returned to.
+The tuple above is how to cite this build — the same tree as the entries below,
+identified by what it decided rather than by a label, so it can be reproduced,
+disputed and returned to.
 
 What the tag asserts: the full suite passed on this tree (`check.mjs`, the
 accuracy benchmark under `--strict`, the OSCAL 1.1.2 schema validation, and the

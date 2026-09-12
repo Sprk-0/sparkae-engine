@@ -1044,24 +1044,31 @@ check(!/badge live/.test(gridHtml), 'nothing in the walkthrough grid claims to b
 check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml),
   'the walkthrough grid holds §02–§09 and no longer holds §01');
 
-// ── 19. a tag is a claim too ─────────────────────────────────────
-// The tag scheme is `v<engine version>`, so the tag this build ships is derivable
-// from the engine rather than taken on trust: it has to be the one the README
-// names, and the changelog has to record it. Older tags cited as history are not
-// held to that — v1.1.0 predates every entry in the file, and a heading written
-// now to satisfy a check would be a record of something that did not happen.
-console.log('19. released states');
-// The tag this build ships is `v` + ENGINE_VERSION. The README has to name it
-// and the changelog has to have an entry for it; older tags cited as history
-// (v1.1.0 predates these entries) are left alone rather than backfilled with a
-// heading nobody wrote at the time.
-const shipped = 'v' + E.ENGINE_VERSION;
-const taggedInReadme = [...new Set([...readmeSrc.matchAll(/`v\d+\.\d+\.\d+`/g)].map(m => m[0].replace(/`/g, '')))];
-const changelogSrc = read('CHANGELOG.md');
-check(taggedInReadme.indexOf(shipped) !== -1,
-  'the README names the tag this build ships, ' + shipped + ' (names: ' + taggedInReadme.join(', ') + ')');
-check(new RegExp('^## .*' + shipped.replace(/\./g, '\\.') + '\\s*$', 'm').test(changelogSrc),
-  shipped + ' has a changelog entry');
+// ── 19. the figures the README quotes are the fixture's ─────────────────
+// This repository carries no release tags, so the README tells a reader to cite
+// a state by its reproducibility tuple. That only works while the tuple printed
+// there is the one the fixture holds — a digest copied into prose is exactly the
+// kind of figure that goes stale the first time the engine moves.
+//
+// The earlier version of this section checked a tag name against the changelog.
+// It was written against tags that exist only in one local clone: GitHub has
+// none, and v1.1.0 was never pushed. A check cannot make a claim true.
+console.log('19. the README cites this state correctly');
+const golden19 = JSON.parse(fs.readFileSync(goldenPath, 'utf8'));
+const cited = {
+  engine: new RegExp('engine ' + E.ENGINE_VERSION.replace(/\./g, '\\.')).test(readmeSrc),
+  catalog: readmeSrc.includes(golden19.catalog_digest.slice(0, 12)),
+  ruleset: readmeSrc.includes(golden19.ruleset_digest.slice(0, 12)),
+  verdict: readmeSrc.includes(golden19.verdict_digest.slice(0, 12)),
+};
+check(cited.engine && cited.catalog && cited.ruleset && cited.verdict,
+  'the README quotes this build\'s tuple: engine ' + E.ENGINE_VERSION + ' · catalog ' +
+  golden19.catalog_digest.slice(0, 12) + ' · ruleset ' + golden19.ruleset_digest.slice(0, 12) +
+  ' → verdict ' + golden19.verdict_digest.slice(0, 12) + ' (' + JSON.stringify(cited) + ')');
+
+// And it does not claim a tag this repository does not have.
+check(!/`v\d+\.\d+\.\d+`/.test(readmeSrc),
+  'the README names no release tag while the repository carries none');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
