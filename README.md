@@ -268,7 +268,19 @@ you are invited to examine and argue with rather than to depend on.
 
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
-headers, and `_redirects` provides the forced `/demo` short link.
+headers, and `_redirects` provides the forced `/demo` short link. `script-src`
+carries no `'unsafe-inline'`: the four pages that inline a script list that
+script's `sha256` and nothing else, so the policy admits the code in the file
+and refuses anything a page grew afterwards. That is why the site sets its
+behaviour through delegated `data-action` listeners rather than `onclick`
+attributes — under this policy an attribute handler does not run. A control
+carrying one is a `<button>` or an anchor with an `href`, because moving the
+behaviour out of the markup is not a reason for a `<div>` to keep acting like a
+button. `tests/check.mjs`
+§20 recomputes each hash from the page, compares the two sets for equality, and
+rejects a `data-action` on anything a keyboard cannot reach;
+`tests/pages.mjs` then loads every page in a browser holding its published
+policy and fails on a violation.
 
 **Served as-is** is meant literally, and it is a claim about the deployed site
 rather than about these files, so it has its own check:
@@ -282,7 +294,12 @@ bytes with the working tree, then confirms `/` is `index.html`, that `/demo`
 and `/3pao.html` are still 301s, that Netlify's own config files are not
 served as content, and that the security headers and the per-page
 Content-Security-Policy are the ones the host actually returns — `_headers` is
-a statement of intent, and this is the only check that reads the wire.
+a statement of intent, and this is the only check that reads the wire. It
+compares each route's served `script-src` against the `_headers` rule for that
+route, token for token, because that directive now carries a per-page hash: a
+hash that is right in the file and stale on the wire is invisible to every
+offline check here, and so is an `'unsafe-inline'` added through the host's own
+UI, where no commit records it.
 
 It also asks whether anything *unpublished* is really gone. The file comparison
 walks this repository, so it can only ask whether a file that exists here is
