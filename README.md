@@ -290,7 +290,12 @@ bytes with the working tree, then confirms `/` is `index.html`, that `/demo`
 and `/3pao.html` are still 301s, that Netlify's own config files are not
 served as content, and that the security headers and the per-page
 Content-Security-Policy are the ones the host actually returns — `_headers` is
-a statement of intent, and this is the only check that reads the wire.
+a statement of intent, and this is the only check that reads the wire. It
+compares each route's served `script-src` against the `_headers` rule for that
+route, token for token, because that directive now carries a per-page hash: a
+hash that is right in the file and stale on the wire is invisible to every
+offline check here, and so is an `'unsafe-inline'` added through the host's own
+UI, where no commit records it.
 
 It also asks whether anything *unpublished* is really gone. The file comparison
 walks this repository, so it can only ask whether a file that exists here is

@@ -77,6 +77,14 @@ hand-written one would, and removing ours changed nothing a browser enforces.
   refuses an attribute handler when it is invoked, not when the page loads, so
   an `onclick=` added to privacy.html left all of pages.mjs green. That case is
   the static check's.
+- **And a third, for the wire.** `check_published.mjs` compared only
+  `default-src` and `connect-src`, which are the same string on every page.
+  `script-src` is not any more, so it now compares each route's served
+  directive against the `_headers` rule for that route, token for token, and
+  fails on an `'unsafe-inline'` in the served policy. Neither offline check can
+  see a stale hash the host is still serving, or one added through Netlify's UI
+  with no commit behind it. Fault-injected both through a local stand-in for the
+  host, since this environment's network policy blocks the deploy preview.
 
 ## 2026-09-11 (ambient subject terms · engine 1.3.0)
 
