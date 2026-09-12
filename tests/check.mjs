@@ -1044,24 +1044,43 @@ check(!/badge live/.test(gridHtml), 'nothing in the walkthrough grid claims to b
 check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml),
   'the walkthrough grid holds §02–§09 and no longer holds §01');
 
-// ── 19. a tag is a claim too ─────────────────────────────────────
-// The tag scheme is `v<engine version>`, so the tag this build ships is derivable
-// from the engine rather than taken on trust: it has to be the one the README
-// names, and the changelog has to record it. Older tags cited as history are not
-// held to that — v1.1.0 predates every entry in the file, and a heading written
-// now to satisfy a check would be a record of something that did not happen.
-console.log('19. released states');
-// The tag this build ships is `v` + ENGINE_VERSION. The README has to name it
-// and the changelog has to have an entry for it; older tags cited as history
-// (v1.1.0 predates these entries) are left alone rather than backfilled with a
-// heading nobody wrote at the time.
-const shipped = 'v' + E.ENGINE_VERSION;
-const taggedInReadme = [...new Set([...readmeSrc.matchAll(/`v\d+\.\d+\.\d+`/g)].map(m => m[0].replace(/`/g, '')))];
-const changelogSrc = read('CHANGELOG.md');
-check(taggedInReadme.indexOf(shipped) !== -1,
-  'the README names the tag this build ships, ' + shipped + ' (names: ' + taggedInReadme.join(', ') + ')');
-check(new RegExp('^## .*' + shipped.replace(/\./g, '\\.') + '\\s*$', 'm').test(changelogSrc),
-  shipped + ' has a changelog entry');
+// ── 19. the figures the README quotes are the fixture's ─────────────────
+// This repository carries no release tags, so the README tells a reader to cite
+// a state by its reproducibility tuple. That only works while the tuple printed
+// there is the one the fixture holds — a digest copied into prose is exactly the
+// kind of figure that goes stale the first time the engine moves.
+//
+// The earlier version of this section checked a tag name against the changelog.
+// It was written against tags that exist only in one local clone: GitHub has
+// none, and v1.1.0 was never pushed. A check cannot make a claim true.
+console.log('19. the README cites this state correctly');
+// Every part the README quotes, not just the ones that were easy to check: the
+// catalog version and the assessment date drift as readily as a digest, and the
+// fixture holds both.
+const golden19 = JSON.parse(fs.readFileSync(goldenPath, 'utf8'));
+// Scoped to the tuple block itself, not the whole file. Checking the README for
+// these strings anywhere passes on a corrupted block: the catalog version and
+// the assessment date both appear in other sections, so fault injection showed
+// the first version of this check green on a README it should have rejected.
+const citeSection = readmeSrc.slice(readmeSrc.indexOf('### Citing a state'));
+const tuple19 = (citeSection.match(/```text\n([\s\S]*?)```/) || [])[1] || '';
+const cited = {
+  engine: new RegExp('engine ' + E.ENGINE_VERSION.replace(/\./g, '\\.')).test(tuple19),
+  catalog_version: tuple19.includes(golden19.catalog_version),
+  catalog: tuple19.includes(golden19.catalog_digest.slice(0, 12)),
+  ruleset: tuple19.includes(golden19.ruleset_digest.slice(0, 12)),
+  verdict: tuple19.includes(golden19.verdict_digest.slice(0, 12)),
+  assessment_date: tuple19.includes(golden19.assessment_date),
+};
+check(Object.values(cited).every(Boolean),
+  'the README quotes every part of this build\'s tuple: engine ' + E.ENGINE_VERSION +
+  ' · catalog ' + golden19.catalog_version + ' / ' + golden19.catalog_digest.slice(0, 12) +
+  ' · ruleset ' + golden19.ruleset_digest.slice(0, 12) + ' · ' + golden19.assessment_date +
+  ' → verdict ' + golden19.verdict_digest.slice(0, 12) + ' (' + JSON.stringify(cited) + ')');
+
+// What this can see is the README; whether the remote carries tags is not
+// knowable from a file on disk, and the message says only what was read.
+check(!/`v\d+\.\d+\.\d+`/.test(readmeSrc), 'the README names no release tag');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
