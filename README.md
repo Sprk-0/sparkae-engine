@@ -268,7 +268,15 @@ you are invited to examine and argue with rather than to depend on.
 
 Hosting: `netlify.toml` publishes the repository root with no build step,
 `_headers` sets a per-page Content-Security-Policy and the usual security
-headers, and `_redirects` provides the forced `/demo` short link.
+headers, and `_redirects` provides the forced `/demo` short link. `script-src`
+carries no `'unsafe-inline'`: the four pages that inline a script list that
+script's `sha256` and nothing else, so the policy admits the code in the file
+and refuses anything a page grew afterwards. That is why the site sets its
+behaviour through delegated `data-action` listeners rather than `onclick`
+attributes — under this policy an attribute handler does not run. `tests/check.mjs`
+§20 recomputes each hash from the page and compares the two sets for equality;
+`tests/pages.mjs` then loads every page in a browser holding its published
+policy and fails on a violation.
 
 **Served as-is** is meant literally, and it is a claim about the deployed site
 rather than about these files, so it has its own check:

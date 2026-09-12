@@ -40,6 +40,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import zlib from 'node:zlib';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -1081,6 +1082,69 @@ check(Object.values(cited).every(Boolean),
 // What this can see is the README; whether the remote carries tags is not
 // knowable from a file on disk, and the message says only what was read.
 check(!/`v\d+\.\d+\.\d+`/.test(readmeSrc), 'the README names no release tag');
+
+// ── 20. inline script runs by hash, and nothing else runs at all ────────────
+// script-src used to carry 'unsafe-inline', which is the directive that lets an
+// `onclick=` attribute run. Removing it was the last open item from the upload
+// review's first finding, and it only holds while two things stay true: no page
+// grows a handler attribute back, and every inline <script> is listed in its own
+// page's policy by hash. A stale hash is silent on disk — the page works from a
+// file:// open and is refused on the wire — so the hashes are recomputed here
+// from the pages themselves rather than trusted.
+console.log('20. inline script runs by hash');
+// HTML comments are stripped before scanning. This is not cosmetic:
+// demo-standalone.html discusses `<script src>` inside a comment, and a scan
+// that does not strip comments hashes from there to the next `</script>`.
+// _headers carried exactly that hash — a span no browser ever executes — until
+// this check compared the two sets for equality.
+const EXEC_TYPE = /^(?:text\/javascript|application\/javascript|module)$/i;
+const inlineHashes = (src) => {
+  const out = [];
+  for (const m of src.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+    if (/\bsrc\s*=/.test(m[1])) continue; // a same-origin file; 'self' covers it
+    const type = (/\btype\s*=\s*["']([^"']*)["']/.exec(m[1]) || [])[1];
+    // demo-standalone.html's embedded sample SSP is markup-delimited data, not
+    // script. A browser never runs it, so a hash for it would widen the policy
+    // to admit that exact body as code — for nothing.
+    if (type && !EXEC_TYPE.test(type)) continue;
+    out.push('sha256-' + crypto.createHash('sha256').update(m[2], 'utf8').digest('base64'));
+  }
+  return out;
+};
+// Script and style bodies are cut out before looking for a handler attribute:
+// `el.onclick = fn` is a property assignment, which the policy has no quarrel
+// with, and the site now sets its behaviour that way (a delegated listener on
+// `data-action`). What must not come back is the attribute form.
+const HANDLER = /<[a-z][^>]*?\son[a-z]+\s*=/gi;
+for (const f of published.filter(f => f.endsWith('.html'))) {
+  const src = read(f);
+  const markup = src
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, '');
+  const handlers = markup.match(HANDLER) || [];
+  check(!handlers.length, f + ': no inline event-handler attribute' +
+    (handlers.length ? ` — ${handlers.length}, first ${JSON.stringify(handlers[0].trim().slice(-40))}` : ''));
+
+  // Both route forms, because Netlify keys header rules on the requested path
+  // and a page is reachable at `/foo` as well as `/foo.html`. A hash listed on
+  // one and missing from the other is a page that runs from one URL and not the
+  // other, which is worse than failing outright.
+  const want = inlineHashes(src);
+  for (const route of ['/' + f, f === 'index.html' ? '/' : '/' + f.replace(/\.html$/, '')]) {
+    const policy = (cspRules.find(([pth]) => pth === route) || [])[1] || '';
+    const scriptSrc = (/script-src ([^;]*)/.exec(policy) || [])[1] || '';
+    check(!!policy && !/'unsafe-inline'/.test(scriptSrc),
+      route + ": script-src carries no 'unsafe-inline'");
+    const listed = scriptSrc.match(/sha256-[A-Za-z0-9+/=]+/g) || [];
+    // Equality, not containment. A missing hash breaks the page; a surplus one
+    // is an allowlist entry for code that is not in the file, which is the
+    // quieter of the two faults and the reason this is a set comparison.
+    const same = listed.length === want.length && want.every((h) => listed.includes(h));
+    check(same, `${route}: script-src lists exactly this page's ${want.length} inline script hash(es)` +
+      (same ? '' : ` — page has ${JSON.stringify(want)}, policy has ${JSON.stringify(listed)}`));
+  }
+}
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

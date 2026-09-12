@@ -2394,7 +2394,7 @@ html,body{
         <span class="onb-dot" data-step="3"></span>
         <span class="onb-dot" data-step="4"></span>
       </div>
-      <button class="onb-skip" onclick="skipOnboarding()">Skip tour</button>
+      <button class="onb-skip" data-action="onboarding-skip">Skip tour</button>
     </div>
 
     <div class="onb-step active" data-onb-step="1">
@@ -2451,9 +2451,9 @@ html,body{
     </div>
 
     <div class="onb-footer">
-      <button class="onb-btn-secondary" onclick="onbBack()" id="onb-back">← Back</button>
+      <button class="onb-btn-secondary" data-action="onboarding-back" id="onb-back">← Back</button>
       <span class="onb-step-counter"><span id="onb-current">1</span> / 4</span>
-      <button class="onb-btn-primary" onclick="onbNext()" id="onb-next">Next →</button>
+      <button class="onb-btn-primary" data-action="onboarding-next" id="onb-next">Next →</button>
     </div>
   </div>
 </div>
@@ -2478,7 +2478,7 @@ html,body{
     <div class="masthead-right">
       <span class="fw-chip">NIST 800-53 Rev5</span>
       <span class="fw-chip">FedRAMP Rev5</span>
-      <button type="button" class="fw-chip fw-chip-btn" onclick="showOnboarding()">How this works</button>
+      <button type="button" class="fw-chip fw-chip-btn" data-action="onboarding-show">How this works</button>
     </div>
   </div>
 </header>
@@ -2683,7 +2683,7 @@ html,body{
                       <span class="dl-card-desc">Assessment Results · OSCAL 1.1.2</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download OSCAL 1.1.2 assessment results as .json" onclick="downloadLive('ar')">⬇ .json</button>
+                      <button class="dl-fmt-btn" aria-label="Download OSCAL 1.1.2 assessment results as .json" data-action="download" data-arg="ar">⬇ .json</button>
                     </div>
                   </div>
                   <div class="dl-card">
@@ -2692,7 +2692,7 @@ html,body{
                       <span class="dl-card-desc">Per-objective determinations</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download findings as .csv" onclick="downloadLive('findings')">⬇ .csv</button>
+                      <button class="dl-fmt-btn" aria-label="Download findings as .csv" data-action="download" data-arg="findings">⬇ .csv</button>
                     </div>
                   </div>
                   <div class="dl-card">
@@ -2701,8 +2701,8 @@ html,body{
                       <span class="dl-card-desc">Risk Exposure Table · Plan of Action</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download risk exposure table as .csv" onclick="downloadLive('ret')">⬇ RET .csv</button>
-                      <button class="dl-fmt-btn" aria-label="Download plan of action and milestones as .csv" onclick="downloadLive('poam')">⬇ POA&amp;M .csv</button>
+                      <button class="dl-fmt-btn" aria-label="Download risk exposure table as .csv" data-action="download" data-arg="ret">⬇ RET .csv</button>
+                      <button class="dl-fmt-btn" aria-label="Download plan of action and milestones as .csv" data-action="download" data-arg="poam">⬇ POA&amp;M .csv</button>
                     </div>
                   </div>
                   <div class="dl-card">
@@ -2711,7 +2711,7 @@ html,body{
                       <span class="dl-card-desc">Test Case Workbook · EXAMINE rows</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download test case workbook as .csv" onclick="downloadLive('tcw')">⬇ .csv</button>
+                      <button class="dl-fmt-btn" aria-label="Download test case workbook as .csv" data-action="download" data-arg="tcw">⬇ .csv</button>
                     </div>
                   </div>
                   <div class="dl-card">
@@ -2720,8 +2720,8 @@ html,body{
                       <span class="dl-card-desc">Executive summary · reproducibility receipt</span>
                     </div>
                     <div class="dl-card-formats">
-                      <button class="dl-fmt-btn" aria-label="Download executive summary as .txt" onclick="downloadLive('summary')">⬇ .txt</button>
-                      <button class="dl-fmt-btn" aria-label="Download reproducibility receipt as .json" onclick="downloadLive('receipt')">⬇ receipt .json</button>
+                      <button class="dl-fmt-btn" aria-label="Download executive summary as .txt" data-action="download" data-arg="summary">⬇ .txt</button>
+                      <button class="dl-fmt-btn" aria-label="Download reproducibility receipt as .json" data-action="download" data-arg="receipt">⬇ receipt .json</button>
                     </div>
                   </div>
                 </div>
@@ -2980,6 +2980,38 @@ Critical patches are applied within 30 days per FedRAMP ConMon.
 // SPARKAE Demo Engine — multi-use-case deterministic simulation
 // Every finding cites its sources with title · version · date · section.
 // ════════════════════════════════════════════════════════
+
+// ── Controls, bound rather than written into markup ──────────────────
+// Every control on this page used to carry an onclick attribute. That is script
+// in an attribute, and a page can only run it if its Content-Security-Policy
+// says script-src 'unsafe-inline' — the same permission an INJECTED handler
+// needs, and this page put an unescaped upload file name into innerHTML twice
+// (the inventory renderer, then the upload error path). Both are escaped now.
+// This removes the permission those injections were reaching for, rather than
+// only the paths that reached it. One listener, actions named in data-action,
+// and nothing left in the markup that a browser will execute.
+//
+// Actions resolve at click time, so the handlers below can be defined anywhere
+// in this file.
+const UI_ACTIONS = {
+  'onboarding-skip':  () => skipOnboarding(),
+  'onboarding-back':  () => onbBack(),
+  'onboarding-next':  () => onbNext(),
+  'onboarding-show':  () => showOnboarding(),
+  'exec-one-pager':   () => openExecOnePager(),
+  'clear-upload':     () => clearCustomUpload(),
+  'download':         (el) => downloadLive(el.dataset.arg),
+  'pick-package':     (el, ev) => { ev.preventDefault(); document.getElementById('ssp-upload-input').click(); },
+  // Stops here rather than bubbling to the card, which has its own click.
+  'schema-detail':    (el, ev) => { ev.stopPropagation(); openSchemaDetail(el.dataset.tier, el.dataset.schema); },
+};
+
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-action]');
+  if (!el) return;
+  const run = UI_ACTIONS[el.dataset.action];
+  if (typeof run === 'function') run(el, ev);
+});
 
 // ── Onboarding wizard state ──
 let onbStep = 1;
@@ -4719,7 +4751,7 @@ function renderUploadStatus(pkg) {
     '<div style="height:6px"></div>' +
     checkRows +
     '<div class="upload-files">' + fileRows + '</div>' +
-    '<button class="upload-clear" onclick="clearCustomUpload()">Clear upload</button>';
+    '<button class="upload-clear" data-action="clear-upload">Clear upload</button>';
   status.style.display = 'block';
 }
 
@@ -4821,7 +4853,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
     // one added to report that nothing was readable. A refusal is still text.
     status.innerHTML = '<div class="upload-row"><span class="upload-label">Error</span><span class="upload-warn">' +
                        engEsc(String((err && err.message) || err)) + '</span></div>' +
-                       '<button class="upload-clear" onclick="clearCustomUpload()">Clear upload</button>';
+                       '<button class="upload-clear" data-action="clear-upload">Clear upload</button>';
     return;
   }
 
@@ -7828,7 +7860,7 @@ function renderConnectorMatrix(sample) {
     // in the browser build. What the walkthrough has to show is the mapping;
     // the numbers only made it look like a console onto a running system.
     const schemaAction = CONNECTOR_SCHEMAS[c.id]
-      ? `<div class="connector-action" onclick="event.stopPropagation(); openSchemaDetail('evidence', '${c.id}')">▸ View schema mapping</div>`
+      ? `<div class="connector-action" data-action="schema-detail" data-tier="evidence" data-schema="${c.id}">▸ View schema mapping</div>`
       : '';
     return `<div class="connector-card mock" data-connector="${c.id}">
       <div class="connector-header">
@@ -7852,7 +7884,7 @@ function renderConnectorMatrix(sample) {
       <div class="connector-cat">${c.category}</div>
       <div class="connector-auth">${c.auth}</div>
       <div class="connector-sync">${c.importMode}</div>
-      <div class="connector-action" onclick="event.stopPropagation(); openSchemaDetail('grc', '${c.id}')">▸ View schema mapping</div>
+      <div class="connector-action" data-action="schema-detail" data-tier="grc" data-schema="${c.id}">▸ View schema mapping</div>
     </div>`;
   }).join('');
 
@@ -7871,7 +7903,7 @@ function renderConnectorMatrix(sample) {
         <span class="connector-count">${c.fieldMappings.length} mapping rules</span>
       </div>
       <div class="connector-sync">${c.extensionFields.length} extension fields preserved</div>
-      <div class="connector-action" onclick="event.stopPropagation(); openSchemaDetail('custom', '${c.id}')">▸ View custom mapping</div>
+      <div class="connector-action" data-action="schema-detail" data-tier="custom" data-schema="${c.id}">▸ View custom mapping</div>
     </div>`;
   }).join('');
 
@@ -8021,10 +8053,15 @@ function openSchemaDetail(tier, connectorId) {
     + '\n}</pre>'
     + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
-    + '<a class="cta" onclick="window.close()">Close</a>'
+    + '<a class="cta" id="schema-close">Close</a>'
     + '</body></html>';
   w.document.write(html);
   w.document.close();
+  // The child is about:blank, so it inherits this page's CSP — an onclick
+  // attribute in the markup written into it needs 'unsafe-inline' exactly as one
+  // here would. Same origin, so the opener can bind it directly instead.
+  const closeBtn = w.document.getElementById('schema-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => w.close());
 }
 
 
@@ -8486,7 +8523,7 @@ function renderExecOnePager(systems) {
   </style>
 </head>
 <body>
-  <button class="op-print-bar" onclick="window.print()">⎙ Print / Save PDF</button>
+  <button class="op-print-bar" id="op-print">⎙ Print / Save PDF</button>
   <div class="op-header">
     <div>
       <span class="op-brand">SPARKAE</span>
@@ -8579,6 +8616,10 @@ function openExecOnePager() {
   }
   w.document.write(html);
   w.document.close();
+  // Bound from here rather than as an onclick in the written markup: the new
+  // window is about:blank and inherits this page's CSP.
+  const printBtn = w.document.getElementById('op-print');
+  if (printBtn) printBtn.addEventListener('click', () => w.print());
 }
 
 
@@ -8792,7 +8833,7 @@ async function runPortfolio() {
       <div class="verdict-cell nr"><div class="num">${totalAging}</div><div class="lbl">Past SLA</div><div class="sub">RA-5(d) aging</div></div>
       <div class="verdict-cell ${totalKev > 0 ? 'fp' : 'sat'}"><div class="num">${totalKev}</div><div class="lbl">CISA KEV</div><div class="sub">BOD 22-01 priority</div></div>
     </div>
-    <div class="def-strip" style="cursor:pointer" onclick="openExecOnePager()">
+    <div class="def-strip" style="cursor:pointer" data-action="exec-one-pager">
       <span class="def-label">▸ Generate AO Briefing · printable PDF · references fedramp.gov</span>
       <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:var(--vermillion)">⎙ OPEN ONE-PAGER</span>
       <span class="def-max"></span>
@@ -9346,7 +9387,7 @@ function renderLiveHeadline(run) {
       </div>`;
   }
   const after = run.bundled
-    ? `This was <strong>CloudVault Federal</strong>, a synthetic sample. <a href="#" onclick="document.getElementById('ssp-upload-input').click();return false;">Drop your own package</a> — it never leaves this browser. Or <a href="index.html#cta">talk to the founder →</a>`
+    ? `This was <strong>CloudVault Federal</strong>, a synthetic sample. <a href="#" data-action="pick-package">Drop your own package</a> — it never leaves this browser. Or <a href="index.html#cta">talk to the founder →</a>`
     : `Your package was assessed in this browser and nothing was uploaded. <a href="index.html#cta">Talk to the founder →</a>`;
   const panel = document.createElement('div');
   panel.className = 'lead-panel';

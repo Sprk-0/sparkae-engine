@@ -112,8 +112,8 @@
     <h1 class="fade-up fade-up-1">SparkAE is <em>Tenable for SSPs.</em></h1>
     <p class="sub fade-up fade-up-2">It scans the authorization package, finds the gaps, and exports the findings &mdash; JSON, CSV, or OSCAL &mdash; into the GRC tool you already run. Not another platform: the engine inside yours. Package &rarr; SparkAE &rarr; ServiceNow, RegScale, Archer, Jira.</p>
     <div class="ctas fade-up fade-up-3">
-      <button class="btn btn-primary" onclick="document.getElementById('api').scrollIntoView({behavior:'smooth'})">View the API →</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See How It Fits</button>
+      <a class="btn btn-primary" href="#api">View the API →</a>
+      <a class="btn btn-ghost" href="#how">See How It Fits</a>
     </div>
   </div>
 </section>
@@ -323,11 +323,11 @@
     <div class="section-sub">Upload documents, create an assessment job, poll for results, export deliverables. Your GRC tool does the rest.</div>
 
     <div class="code-tabs">
-      <div class="code-tab active" onclick="showTab('upload')">Upload</div>
-      <div class="code-tab" onclick="showTab('assess')">Assess</div>
-      <div class="code-tab" onclick="showTab('results')">Results</div>
-      <div class="code-tab" onclick="showTab('export')">Export</div>
-      <div class="code-tab" onclick="showTab('webhook')">Webhook</div>
+      <div class="code-tab active" data-tab="upload">Upload</div>
+      <div class="code-tab" data-tab="assess">Assess</div>
+      <div class="code-tab" data-tab="results">Results</div>
+      <div class="code-tab" data-tab="export">Export</div>
+      <div class="code-tab" data-tab="webhook">Webhook</div>
     </div>
 
     <div class="code-block active" id="tab-upload"><span class="cm"># Upload an SSP (multipart, 50 MB max, MIME-allowlisted, magic-byte checked)</span>
@@ -533,12 +533,19 @@
 </footer>
 
 <script>
-function showTab(id) {
+// Delegated rather than inline: an onclick attribute is script the CSP has to
+// allow with 'unsafe-inline', which is the same permission an injected handler
+// needs. The tab a click selects is read from data-tab, and the element that
+// was clicked is the listener's own argument rather than the global `event`.
+document.addEventListener('click', (ev) => {
+  const tab = ev.target.closest('.code-tab[data-tab]');
+  if (!tab) return;
   document.querySelectorAll('.code-block').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  event.target.classList.add('active');
-}
+  const panel = document.getElementById('tab-' + tab.dataset.tab);
+  if (panel) panel.classList.add('active');
+  tab.classList.add('active');
+});
 </script>
 </body>
 </html>

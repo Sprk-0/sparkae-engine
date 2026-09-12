@@ -41,6 +41,43 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-09-12 (script-src drops 'unsafe-inline')
+
+No part of the tuple moves: this is the site's policy and the markup that runs
+under it, not the engine.
+
+The upload review's first finding asked for inline event handlers to be removed
+and the deployed CSP tightened. The handlers went earlier; the directive that
+made them possible did not, so the finding was only half closed — with
+`script-src 'unsafe-inline'` in place, an injected `onclick=` runs exactly as a
+hand-written one would, and removing ours changed nothing a browser enforces.
+
+- **29 inline handlers, three pages, none left.** demo-standalone.html had 20:
+  18 now go through a `UI_ACTIONS` table behind one delegated listener keyed on
+  `data-action`, and the other 2 belong to child windows it opens — those are
+  `about:blank`, which inherits the opener's policy, so an attribute there needs
+  `'unsafe-inline'` exactly as one here would; same origin, so the opener binds
+  them after writing the document. integrations.html had 7: five tab headers,
+  now delegated on `data-tab`, and two buttons that only scrolled to an anchor,
+  now anchors (`html{scroll-behavior:smooth}` was already doing the animating).
+  assessors.html had the same two scroll buttons.
+- **`script-src` is `'self'` plus a hash.** Four pages inline a script; each
+  rule lists that script's `sha256` and nothing else. `'unsafe-inline'` remains
+  in `style-src` alone, where it buys appearance and not behaviour.
+- **A hash that was never a script.** demo-standalone.html discusses
+  `<script src>` inside an HTML comment, and the scan that produced these
+  hashes read from there to the next `</script>` — so the policy carried a hash
+  for a span no browser executes. Comparing the file's hashes against the
+  policy's *for equality* is what found it; containment would have passed.
+- **Two checks, because neither sees the other's fault.** `check.mjs` §20
+  recomputes every page's hashes, rejects a surplus or stale one, an
+  `on<event>=` attribute, and an `'unsafe-inline'` that comes back. `pages.mjs`
+  now serves each page under its published policy and fails on a browser CSP
+  violation — which catches a stale hash on the wire, but not a handler: Chromium
+  refuses an attribute handler when it is invoked, not when the page loads, so
+  an `onclick=` added to privacy.html left all of pages.mjs green. That case is
+  the static check's.
+
 ## 2026-09-11 (ambient subject terms · engine 1.3.0)
 
 Engine 1.2.0 → **1.3.0** · ruleset `ceb3e3d50fa6` → `b39ee143bdfe` · verdict
