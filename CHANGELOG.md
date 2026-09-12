@@ -77,6 +77,24 @@ hand-written one would, and removing ours changed nothing a browser enforces.
   refuses an attribute handler when it is invoked, not when the page loads, so
   an `onclick=` added to privacy.html left all of pages.mjs green. That case is
   the static check's.
+- **Removing a handler is not the same as keeping a control.** Review on the PR
+  pointed out that some of the rewritten controls are `<div>`s, which no
+  `data-action` makes keyboard-reachable — and that this change made it less
+  obvious, because the behaviour moved out of the markup. Eleven of them are
+  `<button>`s now: the five API tab headers, the AO-briefing strip, three
+  connector schema links, and the Close control in the schema window, which was
+  an `<a>` with no `href`. All three re-tagged groups render pixel-identical to
+  the divs they replace (screenshot comparison, plus computed geometry against
+  the previous commit), and Tab/Enter/Space were driven in a browser to confirm
+  they do reach and fire. `check.mjs` §20 now fails any `data-action` or
+  `data-tab` on an element that is not a button, an anchor with an `href`, or
+  carrying `tabindex` — scanning the whole source, since half these controls are
+  written into template literals.
+- **The documented way to regenerate a hash disagreed with the check.** Also
+  from the review: the one-liner in `_headers` skipped only `type="text/plain"`,
+  while §20 skips any non-executable type. Following the docs for an
+  `application/json` block would have produced a surplus hash the check then
+  rejects. The one-liner is §20's rule now.
 - **And a third, for the wire.** `check_published.mjs` compared only
   `default-src` and `connect-src`, which are the same string on every page.
   `script-src` is not any more, so it now compares each route's served

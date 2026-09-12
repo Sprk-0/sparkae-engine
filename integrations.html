@@ -72,7 +72,10 @@
 
 /* Code samples */
 .code-tabs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:0}
-.code-tab{padding:10px 18px;font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--rule);border-bottom:none;cursor:pointer;background:var(--paper-warm);color:var(--ink-soft);transition:all .2s}
+/* A <button>, so Tab reaches it and Enter/Space activate it: these select
+   which API sample is shown, and as <div>s they were unreachable without a
+   mouse. The resets below are what a button brings and a div does not. */
+.code-tab{padding:10px 18px;font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--rule);border-bottom:none;cursor:pointer;background:var(--paper-warm);color:var(--ink-soft);transition:all .2s;margin:0;border-radius:0;line-height:inherit;-webkit-appearance:none;appearance:none}
 .code-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .code-block{background:var(--ink);border:1px solid var(--ink);padding:22px;font-family:var(--font-mono);font-size:12.5px;line-height:1.85;color:#B8C0CC;overflow-x:auto;display:none;white-space:pre}
 .code-block.active{display:block}
@@ -323,11 +326,11 @@
     <div class="section-sub">Upload documents, create an assessment job, poll for results, export deliverables. Your GRC tool does the rest.</div>
 
     <div class="code-tabs">
-      <div class="code-tab active" data-tab="upload">Upload</div>
-      <div class="code-tab" data-tab="assess">Assess</div>
-      <div class="code-tab" data-tab="results">Results</div>
-      <div class="code-tab" data-tab="export">Export</div>
-      <div class="code-tab" data-tab="webhook">Webhook</div>
+      <button type="button" class="code-tab active" data-tab="upload">Upload</button>
+      <button type="button" class="code-tab" data-tab="assess">Assess</button>
+      <button type="button" class="code-tab" data-tab="results">Results</button>
+      <button type="button" class="code-tab" data-tab="export">Export</button>
+      <button type="button" class="code-tab" data-tab="webhook">Webhook</button>
     </div>
 
     <div class="code-block active" id="tab-upload"><span class="cm"># Upload an SSP (multipart, 50 MB max, MIME-allowlisted, magic-byte checked)</span>

@@ -1126,6 +1126,25 @@ for (const f of published.filter(f => f.endsWith('.html'))) {
   check(!handlers.length, f + ': no inline event-handler attribute' +
     (handlers.length ? ` — ${handlers.length}, first ${JSON.stringify(handlers[0].trim().slice(-40))}` : ''));
 
+  // Every control that acts has to be reachable without a mouse. Removing the
+  // handlers made this worse before it made it better: an `onclick=` on a div
+  // was already mouse-only, but rewriting it as `data-action` moved the
+  // behaviour somewhere a reader is less likely to notice the div. So the tag
+  // is checked, not the handler — a button, or an anchor with somewhere to go.
+  // The whole source is scanned rather than the markup alone, because half of
+  // these controls are written by the page into template literals.
+  const FOCUSABLE = /^(?:button|select|textarea|input)$/i;
+  const unreachable = [];
+  for (const m of src.matchAll(/<([a-z]+)((?:[^>"']|"[^"]*"|'[^']*')*?\sdata-(?:action|tab)=(?:"[^"]*"|'[^']*')(?:[^>"']|"[^"]*"|'[^']*')*)>/gi)) {
+    const [tag, attrs] = [m[1], m[2]];
+    if (FOCUSABLE.test(tag)) continue;
+    if (/^a$/i.test(tag) && /\shref=/.test(attrs)) continue;
+    if (/\stabindex=/.test(attrs)) continue;
+    unreachable.push(m[0].slice(0, 80));
+  }
+  check(!unreachable.length, f + ': every data-action / data-tab control is keyboard-reachable' +
+    (unreachable.length ? ` — ${unreachable.length}, first ${JSON.stringify(unreachable[0])}` : ''));
+
   // Both route forms, because Netlify keys header rules on the requested path
   // and a page is reachable at `/foo` as well as `/foo.html`. A hash listed on
   // one and missing from the other is a page that runs from one URL and not the

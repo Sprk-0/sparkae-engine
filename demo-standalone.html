@@ -759,6 +759,12 @@ html,body{
   border:1px solid #2C3540;
   margin-bottom:24px;
 }
+/* One of the five .def-strip rows opens the AO one-pager, so that one is a
+   <button> rather than a div with a click handler — the other four are labels
+   and stay divs. These resets are the difference between the two elements:
+   a button shrinks to fit, centres its text, and does not inherit type. */
+.def-strip-btn{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+
 .def-label{
   font-family:'IBM Plex Mono',monospace;
   font-size:10px;
@@ -1913,15 +1919,27 @@ html,body{
   color:#7A8290;
   letter-spacing:0.02em;
 }
+/* A <button> for the same reason as .def-strip-btn: it opens the schema
+   mapping, and as a div it was unreachable without a mouse. Everything after
+   `cursor` is what the element brings and the div did not. */
 .connector-action{
-  margin-top:8px;
-  padding-top:6px;
+  margin:8px 0 0;
+  padding:6px 0 0;
+  border:none;
   border-top:1px dotted #2C3540;
   font-family:'IBM Plex Mono',monospace;
   font-size:9.5px;
   color:var(--vermillion);
   letter-spacing:0.04em;
   cursor:pointer;
+  display:block;
+  width:100%;
+  text-align:left;
+  background:none;
+  line-height:inherit;
+  border-radius:0;
+  -webkit-appearance:none;
+  appearance:none;
 }
 .connector-action:hover{color:#FF8A6B}
 .connector-card.grc{border-left:2px solid #8B7BAE}
@@ -7860,7 +7878,7 @@ function renderConnectorMatrix(sample) {
     // in the browser build. What the walkthrough has to show is the mapping;
     // the numbers only made it look like a console onto a running system.
     const schemaAction = CONNECTOR_SCHEMAS[c.id]
-      ? `<div class="connector-action" data-action="schema-detail" data-tier="evidence" data-schema="${c.id}">▸ View schema mapping</div>`
+      ? `<button type="button" class="connector-action" data-action="schema-detail" data-tier="evidence" data-schema="${c.id}">▸ View schema mapping</button>`
       : '';
     return `<div class="connector-card mock" data-connector="${c.id}">
       <div class="connector-header">
@@ -7884,7 +7902,7 @@ function renderConnectorMatrix(sample) {
       <div class="connector-cat">${c.category}</div>
       <div class="connector-auth">${c.auth}</div>
       <div class="connector-sync">${c.importMode}</div>
-      <div class="connector-action" data-action="schema-detail" data-tier="grc" data-schema="${c.id}">▸ View schema mapping</div>
+      <button type="button" class="connector-action" data-action="schema-detail" data-tier="grc" data-schema="${c.id}">▸ View schema mapping</button>
     </div>`;
   }).join('');
 
@@ -7903,7 +7921,7 @@ function renderConnectorMatrix(sample) {
         <span class="connector-count">${c.fieldMappings.length} mapping rules</span>
       </div>
       <div class="connector-sync">${c.extensionFields.length} extension fields preserved</div>
-      <div class="connector-action" data-action="schema-detail" data-tier="custom" data-schema="${c.id}">▸ View custom mapping</div>
+      <button type="button" class="connector-action" data-action="schema-detail" data-tier="custom" data-schema="${c.id}">▸ View custom mapping</button>
     </div>`;
   }).join('');
 
@@ -7995,7 +8013,7 @@ function openSchemaDetail(tier, connectorId) {
     + "code{font-family:'Courier New',monospace;font-size:11px;background:rgba(178,58,28,0.06);padding:1px 5px;color:#0F1419}"
     + "pre{font-family:'Courier New',monospace;font-size:10px;color:#0F1419;background:white;padding:12px;border:1px solid #D1CFC8;overflow:auto;white-space:pre-wrap;word-break:break-all;line-height:1.45}"
     + ".dest{padding:10px 14px;background:rgba(178,58,28,0.04);border-left:3px solid #B23A1C;margin-top:6px;font-size:12px}"
-    + ".cta{display:inline-block;background:#B23A1C;color:white;padding:10px 18px;text-decoration:none;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;margin-top:14px;cursor:pointer;border:none}";
+    + ".cta{display:inline-block;background:#B23A1C;color:white;padding:10px 18px;text-decoration:none;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;margin-top:14px;cursor:pointer;border:none;border-radius:0;-webkit-appearance:none;appearance:none}";
 
   const tierLabel = tier === 'evidence' ? 'Evidence Source' : (tier === 'grc' ? 'GRC Peer Platform' : 'Custom Connector · Unstructured / Non-Conforming');
 
@@ -8053,7 +8071,10 @@ function openSchemaDetail(tier, connectorId) {
     + '\n}</pre>'
     + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
-    + '<a class="cta" id="schema-close">Close</a>'
+    // A <button>, not an <a> without an href: this closes the window, and an
+    // anchor with nothing to navigate to is neither focusable nor the right
+    // element for an action.
+    + '<button type="button" class="cta" id="schema-close">Close</button>'
     + '</body></html>';
   w.document.write(html);
   w.document.close();
@@ -8833,11 +8854,11 @@ async function runPortfolio() {
       <div class="verdict-cell nr"><div class="num">${totalAging}</div><div class="lbl">Past SLA</div><div class="sub">RA-5(d) aging</div></div>
       <div class="verdict-cell ${totalKev > 0 ? 'fp' : 'sat'}"><div class="num">${totalKev}</div><div class="lbl">CISA KEV</div><div class="sub">BOD 22-01 priority</div></div>
     </div>
-    <div class="def-strip" style="cursor:pointer" data-action="exec-one-pager">
+    <button type="button" class="def-strip def-strip-btn" data-action="exec-one-pager">
       <span class="def-label">▸ Generate AO Briefing · printable PDF · references fedramp.gov</span>
       <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:var(--vermillion)">⎙ OPEN ONE-PAGER</span>
       <span class="def-max"></span>
-    </div>`;
+    </button>`;
   renderExportBar();
 
   // Build findings list (one per system, ranked, with full SRTM structure)

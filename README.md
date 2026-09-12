@@ -273,8 +273,12 @@ carries no `'unsafe-inline'`: the four pages that inline a script list that
 script's `sha256` and nothing else, so the policy admits the code in the file
 and refuses anything a page grew afterwards. That is why the site sets its
 behaviour through delegated `data-action` listeners rather than `onclick`
-attributes — under this policy an attribute handler does not run. `tests/check.mjs`
-§20 recomputes each hash from the page and compares the two sets for equality;
+attributes — under this policy an attribute handler does not run. A control
+carrying one is a `<button>` or an anchor with an `href`, because moving the
+behaviour out of the markup is not a reason for a `<div>` to keep acting like a
+button. `tests/check.mjs`
+§20 recomputes each hash from the page, compares the two sets for equality, and
+rejects a `data-action` on anything a keyboard cannot reach;
 `tests/pages.mjs` then loads every page in a browser holding its published
 policy and fails on a violation.
 
