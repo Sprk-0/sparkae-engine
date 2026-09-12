@@ -176,6 +176,24 @@ if (!only) {
     ['x-content-type-options', /^nosniff$/i, 'nosniff'],
     ['strict-transport-security', /max-age=\d+/, 'max-age'],
   ];
+  // script-src is checked against _headers rather than against a pattern,
+  // because it is the directive that stopped being the same on every page:
+  // it is now 'self' plus the sha256 of that page's inline script, and a hash
+  // that is right in _headers and wrong on the wire is precisely what the
+  // offline checks cannot see. tests/check.mjs §20 proves the local rule matches
+  // the local page; this proves the host is serving that rule and not an older
+  // one — including that 'unsafe-inline' has not come back through the Netlify
+  // UI, which is a place a policy can change with no commit behind it.
+  const localScriptSrc = new Map();
+  {
+    let route = null;
+    for (const line of fs.readFileSync(path.join(root, '_headers'), 'utf8').split('\n')) {
+      if (/^\//.test(line)) route = line.trim();
+      const m = /^\s+Content-Security-Policy:\s*(.+)$/.exec(line);
+      if (m && route) localScriptSrc.set(route, ((/script-src ([^;]*)/.exec(m[1]) || [])[1] || '').trim());
+    }
+  }
+  const directives = (v) => (v || '').trim().split(/\s+/).filter(Boolean).sort().join(' ');
   const routes = [];
   for (const f of files.filter((x) => x.endsWith('.html'))) {
     routes.push('/' + f);
@@ -189,6 +207,13 @@ if (!only) {
         .map(([name, , what]) => `${name}: ${what}`);
       check(missing.length === 0,
         `${route} carries the security headers` + (missing.length ? ` — missing ${missing.join(', ')}` : ''));
+
+      const served = (/script-src ([^;]*)/.exec(r.header('content-security-policy')) || [])[1] || '';
+      const want = localScriptSrc.get(route) || '';
+      check(!!want && directives(served) === directives(want),
+        `${route}: script-src on the wire is the one in _headers` +
+        (directives(served) === directives(want) ? '' : ` — served ${JSON.stringify(served.trim())}, _headers has ${JSON.stringify(want)}`));
+      check(!/'unsafe-inline'/.test(served), `${route}: script-src on the wire carries no 'unsafe-inline'`);
     } catch (e) { fail(`${route}: ${e.message}`); }
   }
 }

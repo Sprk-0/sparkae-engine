@@ -39,6 +39,30 @@ const TYPES = {
   '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2', '.png': 'image/png',
 };
 
+// The Content-Security-Policy each route is published under, read from
+// _headers. Serving these pages WITHOUT it would test a page the site does not
+// ship: script-src is 'self' plus a hash per inline script now, so a page whose
+// inline script was edited without refreshing its hash opens fine from a disk
+// and is refused on the wire. Only a browser holding the real policy can see
+// that, so it is given one and its violations are failures.
+//
+// What this does NOT catch is an inline `on<event>=` attribute coming back:
+// Chromium refuses such a handler when it is invoked, not when the page loads,
+// so a handler nobody clicks raises nothing here — fault injection confirmed
+// every check below stays green with an `onclick=` added to privacy.html. That
+// case is tests/check.mjs §20's, which reads the attribute out of the markup.
+const csp = new Map();
+{
+  let route = null;
+  for (const line of fs.readFileSync(path.join(root, '_headers'), 'utf8').split('\n')) {
+    if (/^\//.test(line)) route = line.trim();
+    const m = /^\s+Content-Security-Policy:\s*(.+)$/.exec(line);
+    if (m && route) csp.set(route, m[1].trim());
+  }
+}
+const policyFor = (rel) => csp.get('/' + rel) || csp.get('/' + rel.replace(/\.html$/, '')) ||
+  (rel === 'index.html' ? csp.get('/') : null);
+
 // Netlify's shape, as far as these pages depend on it: the root is index.html
 // and an extensionless path resolves to the .html file beside it.
 const server = http.createServer((req, res) => {
@@ -47,7 +71,10 @@ const server = http.createServer((req, res) => {
   let file = path.join(root, rel);
   if (!fs.existsSync(file) && fs.existsSync(file + '.html')) { rel += '.html'; file += '.html'; }
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('not found'); }
-  res.writeHead(200, { 'content-type': TYPES[path.extname(rel)] || 'application/octet-stream' });
+  const headers = { 'content-type': TYPES[path.extname(rel)] || 'application/octet-stream' };
+  const policy = rel.endsWith('.html') ? policyFor(rel) : null;
+  if (policy) headers['content-security-policy'] = policy;
+  res.writeHead(200, headers);
   res.end(fs.readFileSync(file));
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -105,7 +132,10 @@ for (const file of pages) {
   const dead = [...new Set(seen.links)]
     .filter((href) => !fs.existsSync(path.join(root, href.replace(/^\/+/, ''))));
 
+  const violations = errors.filter((e) => /Content Security Policy|Refused to (execute|load|apply)/i.test(e));
   checks.push(
+    [`${file}: served under its published CSP`, !!policyFor(file), policyFor(file) ? '' : 'no _headers rule'],
+    [`${file}: the page runs under that policy — no CSP violation`, violations.length === 0, violations.slice(0, 2).join(' | ')],
     [`${file}: no page or console error on load`, errors.length === 0, errors.slice(0, 2).join(' | ')],
     [`${file}: reached no origin but its own`, offsite.length === 0, offsite.slice(0, 2).join(' | ')],
     [`${file}: has a title`, seen.title.length > 0, seen.title],
