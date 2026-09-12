@@ -1045,19 +1045,23 @@ check(/§02/.test(gridHtml) && /§09/.test(gridHtml) && !/>§01</.test(gridHtml)
   'the walkthrough grid holds §02–§09 and no longer holds §01');
 
 // ── 19. a tag is a claim too ─────────────────────────────────────
-// The tag scheme is `v<engine version>-preview.<n>`, so a tag that names a
-// version this build does not ship is wrong on its face. And a tag the README
-// cites but the changelog never records is a state nobody can look up.
+// The tag scheme is `v<engine version>`, so the tag this build ships is derivable
+// from the engine rather than taken on trust: it has to be the one the README
+// names, and the changelog has to record it. Older tags cited as history are not
+// held to that — v1.1.0 predates every entry in the file, and a heading written
+// now to satisfy a check would be a record of something that did not happen.
 console.log('19. released states');
-const previewTags = [...new Set([...readmeSrc.matchAll(/v\d+\.\d+\.\d+-preview\.\d+/g)].map(m => m[0]))];
-check(previewTags.length > 0, 'the README names the tagged state (' + previewTags.join(', ') + ')');
+// The tag this build ships is `v` + ENGINE_VERSION. The README has to name it
+// and the changelog has to have an entry for it; older tags cited as history
+// (v1.1.0 predates these entries) are left alone rather than backfilled with a
+// heading nobody wrote at the time.
+const shipped = 'v' + E.ENGINE_VERSION;
+const taggedInReadme = [...new Set([...readmeSrc.matchAll(/`v\d+\.\d+\.\d+`/g)].map(m => m[0].replace(/`/g, '')))];
 const changelogSrc = read('CHANGELOG.md');
-for (const tag of previewTags) {
-  check(tag.slice(1).split('-')[0] === E.ENGINE_VERSION,
-    tag + ' names the engine version this build ships (' + E.ENGINE_VERSION + ')');
-  check(new RegExp('^## .*' + tag.replace(/\./g, '\\.'), 'm').test(changelogSrc),
-    tag + ' has a changelog entry');
-}
+check(taggedInReadme.indexOf(shipped) !== -1,
+  'the README names the tag this build ships, ' + shipped + ' (names: ' + taggedInReadme.join(', ') + ')');
+check(new RegExp('^## .*' + shipped.replace(/\./g, '\\.') + '\\s*$', 'm').test(changelogSrc),
+  shipped + ' has a changelog entry');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
