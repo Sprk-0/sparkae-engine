@@ -282,6 +282,22 @@ rejects a `data-action` on anything a keyboard cannot reach;
 `tests/pages.mjs` then loads every page in a browser holding its published
 policy and fails on a violation.
 
+Three sections of `tests/check.mjs` hold what the pages *claim*, ported from
+the private repository's site tests when that repository stopped carrying a
+copy of this site. §21 reads the OSCAL document the demo downloads and follows
+every reference — a `risk-uuid` that satisfies the schema's uuid pattern and
+resolves to nothing is valid JSON and a useless record, and the schema check
+cannot see it. §22 holds the social card and the error page: the figures baked
+into `static/og-card.png` are read out of its source, `static/og-card.src.html`,
+and must be the catalog's own High-baseline counts stated on the homepage
+against the same nouns; `404.html` may carry no path-relative URL, because
+Netlify renders it *at* the unmatched path. §23 is the copy: every catalog
+count labelled and correct, no near miss next to an objective word, the
+independence sentences present, no draft note, no internal reference, one
+contact address, every form control labelled, every fragment link resolving.
+None of it is a style guide — each check is a factual, legal or accessibility
+claim a copy edit could quietly reverse.
+
 **Served as-is** is meant literally, and it is a claim about the deployed site
 rather than about these files, so it has its own check:
 

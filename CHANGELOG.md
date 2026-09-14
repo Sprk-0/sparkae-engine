@@ -41,6 +41,70 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-09-14 (the site's claims, held here)
+
+No part of the tuple moves. This is the test suite and the card source; the
+engine, ruleset and golden fixture are untouched.
+
+The private repository kept a copy of this site under `website/` with four
+test modules over it — the demo's exports, the site's discoverability, its
+content claims and its credibility reconciliations. That copy is stale on
+fifteen of sixteen files and one of its assertions now pins an `onclick=` this
+site removed on 2026-09-12. The public repository owns the site; the coverage
+worth keeping moves here, written against the pages as they are.
+
+- **§21 — the OSCAL document's references resolve.** The official schema
+  rejects an invented assembly or a bracketed target id; it cannot see a
+  reference. Every `risk-uuid`, `observation-uuid` and `subject-uuid` in the
+  sample run's download now has to resolve to something declared, Not Reviewed
+  has to travel as a prop over `not-satisfied` and raise no risk, every tested
+  failure has to point at the risk it raises, `reviewed-controls` has to name
+  the 156 controls as lower-case OSCAL ids, and the four CSVs have to be
+  rectangular — parsed as RFC 4180 records, since an evidence cell may hold a
+  newline and a line split reads that as a ragged row.
+- **§22 — findable, shareable, no dead ends.** Every page declares the card,
+  its size and alt text; the PNG header is read rather than trusted; and the
+  card's source now lives beside it at `static/og-card.src.html`, moved from
+  the private tree so the image stays regenerable. Its fonts are the
+  repository's own and load from a checkout with nothing else. Review caught
+  that the source declared only the upright Fraunces face while its headline
+  sets "Minutes, not weeks." in italic — so the card had been rendering a
+  synthesized oblique while the site, whose stylesheet declares the italic
+  face, renders the real one. The source declares it now and the card is
+  regenerated from it: the same card, with the italic the type actually has.
+  Its figures are read out of the markup and
+  required on the homepage against the same nouns, and both are required to be
+  the catalog's High-baseline counts. `404.html` may carry no path-relative
+  URL, no absolute loader and no `<base>`.
+- **§23 — what the pages claim.** Fifty-odd checks: catalog counts labelled
+  and correct on the homepage, the footers and the sample card; no near miss
+  next to an objective word; the independence sentences on the homepage, the
+  assessor page and the walkthrough; RFC-0024 cited as closed; the status page
+  claiming no state its snapshot did not give it; one contact address; every
+  page linking to this repository from the footer; the navigation complete on
+  every page and presented on phones; no id defined twice and every
+  `page.html#fragment` resolving (the nine workflow hashes are routes the demo
+  honours, and are accepted as such); no draft note; no internal reference in
+  any published file; every form control labelled.
+- **One defect found by the port.** The revision editor's determination
+  `<select>` had a `<label>` beside it with no `for`, and no `id` to point at —
+  a control a screen reader announces as nothing. The first fix was an
+  `aria-label`, which names the control and leaves the visible label inert;
+  review pointed that out. The select now carries an id derived from the
+  finding's own (`ex-verdict-AC-1_a--01-`) and the label points at it, so the
+  label is the control's name and clicking it focuses the select — driven in a
+  browser with two editors open, each with its own id.
+- **What did not port, and why.** Assertions on `build.sh` tokens,
+  `sync-public.sh`, the publish allowlist and the private `netlify.toml` are
+  about machinery this repository does not have. The sample no longer runs on
+  page load — §18 is written against the run button — so the auto-run
+  assertion is not carried; the opt-in tour is. `test_website_csp_scope` and
+  `test_imp986_public_repo_audit` were already redundant with §3, §20 and
+  `check_published.mjs`, which reads the policy off the wire.
+- **§3 gained the three rules the content-claims suite held every policy to**:
+  `frame-ancestors 'none'` and `object-src 'none'` on every rule, no CSP on a
+  wildcard path, and `/demo` as a forced 301.
+
 ## 2026-09-12 (script-src drops 'unsafe-inline')
 
 No part of the tuple moves: this is the site's policy and the markup that runs

@@ -9672,8 +9672,13 @@ document.getElementById('findings-body').addEventListener('click', (ev) => {
     const verdict = rev ? rev.verdict : (block.closest('tr').querySelector('.verdict-tag') || {}).textContent || 'OTS';
     const opts = ['SAT', 'OTS', 'NR'].map(v =>
       '<option value="' + v + '"' + (v === verdict.trim() ? ' selected' : '') + '>' + v + '</option>').join('');
+    // The label points at the control: an id from the finding's own id, with
+    // the characters an objective id carries that an id attribute should not
+    // (dots, brackets, parens) folded to hyphens. Clicking the label then
+    // focuses the select, and the label is its accessible name.
+    const selectId = 'ex-verdict-' + id.replace(/[^A-Za-z0-9_-]/g, '-');
     block.querySelector('.ex-actions').innerHTML =
-      '<label class="ex-vlabel">Determination</label><select class="ex-select">' + opts + '</select>' +
+      '<label class="ex-vlabel" for="' + selectId + '">Determination</label><select class="ex-select" id="' + selectId + '">' + opts + '</select>' +
       '<button class="ex-btn primary" data-act="save">Save revision</button>' +
       '<button class="ex-btn" data-act="cancel">Cancel</button>';
     const ta = document.createElement('textarea');

@@ -352,6 +352,10 @@ const refusedXss = await page.evaluate(() => ({
   injected: document.querySelectorAll('#ssp-upload-status img, .upload-file img').length,
   shownAsText: /img src=x onerror/.test((document.getElementById('ssp-upload-status') || {}).textContent || ''),
   bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+  // A refused upload used to move "Assessed as of" to today while CloudVault
+  // stayed selected, silently changing the pinned sample's temporal verdicts.
+  // The date moves only when a package is actually taken in.
+  date: document.getElementById('assessment-date').value,
 }));
 
 // ── selecting a sample means assessing that sample ─────────────────────────
@@ -503,6 +507,7 @@ const checks = [
     refusedXss.injected === 0, 'img count=' + refusedXss.injected],
   ['a refused member name is still shown, as text', refusedXss.shownAsText, ''],
   ['an upload nothing could be read from binds nothing', refusedXss.bound === 0, String(refusedXss.bound)],
+  ['a refused upload leaves the pinned sample date alone', refusedXss.date === golden.assessment_date, refusedXss.date],
   ['selecting a bundled sample releases the uploaded package',
     boundAfterUpload === 1 && afterSelect.bound === 0,
     'bound after upload ' + boundAfterUpload + ', after selecting ' + afterSelect.bound],

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!--
+  Source for og-card.png beside it, the 1200x630 Open Graph / Twitter card
+  every page declares. It exists so the image can be regenerated rather than
+  being an opaque binary: the headline and the figures below mirror
+  index.html's hero and stat row on purpose, because a social card that
+  overstates the catalog is the same credibility bug as an unlabelled count on
+  the page. tests/check.mjs section 22 reads the figures out of this file,
+  requires each on the homepage against the same noun, and requires both to be
+  the catalog's own High-baseline counts — so a change to either side without
+  the other fails the suite.
+
+  This file is served like everything else in the tree (the site is published
+  as-is) but it is not a page: it is absent from the sitemap, no page links to
+  it, and it carries no script. The fonts are the repository's own, so it
+  renders identically anywhere the tree is checked out.
+
+  Regenerate the PNG after editing this file or the homepage figures:
+
+    node -e "const {chromium}=require('playwright');(async()=>{
+      const b=await chromium.launch();const p=await b.newPage({viewport:{width:1200,height:630}});
+      await p.goto('file://'+process.cwd()+'/static/og-card.src.html');
+      await p.screenshot({path:'static/og-card.png'});await b.close();})()"
+-->
+<html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'Fraunces';src:url('fonts/Fraunces-VariableFont.woff2')format('woff2');font-weight:100 900;font-style:normal}
+@font-face{font-family:'Fraunces';src:url('fonts/Fraunces-Italic-VariableFont.woff2')format('woff2');font-weight:100 900;font-style:italic}
+@font-face{font-family:'IBM Plex Mono';src:url('fonts/IBMPlexMono-Regular.woff2')format('woff2');font-weight:400}
+@font-face{font-family:'IBM Plex Mono';src:url('fonts/IBMPlexMono-Medium.woff2')format('woff2');font-weight:500}
+@font-face{font-family:'IBM Plex Sans';src:url('fonts/IBMPlexSans-VariableFont.woff2')format('woff2');font-weight:100 700}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px}
+body{background:#0F1419;color:#FFFEF8;font-family:'IBM Plex Sans',sans-serif;
+     display:flex;flex-direction:column;justify-content:space-between;padding:64px 72px;position:relative;overflow:hidden}
+/* faint diamond field, echoes the mark without competing with the type */
+.field{position:absolute;right:-90px;top:-70px;width:620px;height:620px;opacity:.07}
+.mast{display:flex;align-items:center;gap:14px}
+.mark{width:26px;height:26px}
+.word{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:19px;letter-spacing:.34em;text-transform:uppercase}
+.word b{font-weight:500;color:#D4634B}
+h1{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:66px;line-height:1.03;letter-spacing:-.025em;
+   font-variation-settings:"opsz" 144;max-width:1000px;position:relative;z-index:2}
+h1 em{font-style:italic;font-weight:400;color:#D4634B}
+.sub{margin-top:22px;font-size:21px;line-height:1.5;color:#AEB6C2;max-width:905px;position:relative;z-index:2}
+.sub b{color:#FFFEF8;font-weight:500}
+.rule{height:1px;background:#2C3540;margin-bottom:20px}
+.data{font-family:'IBM Plex Mono',monospace;font-size:16.5px;letter-spacing:.075em;text-transform:uppercase;
+      color:#8A93A0;display:flex;flex-wrap:nowrap;gap:0 12px;white-space:nowrap}
+.data b{color:#FFFEF8;font-weight:500}
+.data i{color:#3A4250;font-style:normal}
+</style></head><body>
+<svg class="field" viewBox="0 0 100 100"><path d="M50 4L96 50L50 96L4 50Z" fill="none" stroke="#B23A1C" stroke-width="1.1"/><path d="M50 20L80 50L50 80L20 50Z" fill="none" stroke="#B23A1C" stroke-width="1.1"/><path d="M50 36L64 50L50 64L36 50Z" fill="#B23A1C"/></svg>
+
+<div class="mast">
+  <svg class="mark" viewBox="0 0 32 32"><rect width="32" height="32" fill="#B23A1C"/><path d="M16 6L24 16L16 26L8 16Z" fill="#0F1419"/></svg>
+  <div class="word">Spark<b>AE</b></div>
+</div>
+
+<div>
+  <h1>Every determination,<br>traced to evidence. <em>Minutes, not weeks.</em></h1>
+  <p class="sub">Seven deterministic gates over every &ldquo;Determine if&rdquo; objective. Interview and Test stay with the assessor. <b>No evidence leaves your network.</b></p>
+</div>
+
+<div>
+  <div class="rule"></div>
+  <div class="data">
+    <span><b>410</b> controls</span><i>·</i>
+    <span><b>1,429</b> objectives</span><i>·</i>
+    <span>FedRAMP High baseline</span><i>·</i>
+    <span><b>7</b> deterministic gates</span>
+  </div>
+</div>
+</body></html>
