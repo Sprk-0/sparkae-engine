@@ -1496,6 +1496,15 @@ const heroSection = (home.split('<section class="hx-hero">')[1] || '').split('</
 check(heroSection.length > 0 && !heroSection.includes('curl ') && heroSection.includes('Sample package · no signup · nothing uploaded'),
   'the hero leads with the finding and the sample, not a curl');
 
+// The integrations page's delivery subheader was once sentence fragments that
+// said "file export or REST" against the page's own batch-export card. It is a
+// sentence naming both delivery models.
+const delivery = (pageText['integrations.html'].split('Delivery Models')[1] || '');
+const deliverySub = ((/class="section-sub">([\s\S]*?)<\/div>/.exec(delivery) || [])[1] || '').replace(/\s+/g, ' ').trim();
+check(deliverySub.length > 0 && /The same engine/.test(deliverySub) && /REST API/.test(deliverySub) && /batch export/i.test(deliverySub) &&
+  /\.$/.test(deliverySub) && !pageText['integrations.html'].includes('file export or REST'),
+  'the integrations delivery subheader is a sentence naming the REST API and batch export');
+
 // The status page claims no state it was not given: it once shipped five green
 // badges and a clean incident history while telling visitors both came from a
 // snapshot that had never been published.
