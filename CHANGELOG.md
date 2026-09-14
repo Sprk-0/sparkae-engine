@@ -66,8 +66,13 @@ worth keeping moves here, written against the pages as they are.
   its size and alt text; the PNG header is read rather than trusted; and the
   card's source now lives beside it at `static/og-card.src.html`, moved from
   the private tree so the image stays regenerable. Its fonts are the
-  repository's own and load from a checkout with nothing else; rendered here
-  it produces the shipped card. Its figures are read out of the markup and
+  repository's own and load from a checkout with nothing else. Review caught
+  that the source declared only the upright Fraunces face while its headline
+  sets "Minutes, not weeks." in italic — so the card had been rendering a
+  synthesized oblique while the site, whose stylesheet declares the italic
+  face, renders the real one. The source declares it now and the card is
+  regenerated from it: the same card, with the italic the type actually has.
+  Its figures are read out of the markup and
   required on the homepage against the same nouns, and both are required to be
   the catalog's High-baseline counts. `404.html` may carry no path-relative
   URL, no absolute loader and no `<base>`.
@@ -83,7 +88,12 @@ worth keeping moves here, written against the pages as they are.
   any published file; every form control labelled.
 - **One defect found by the port.** The revision editor's determination
   `<select>` had a `<label>` beside it with no `for`, and no `id` to point at —
-  a control a screen reader announces as nothing. It carries `aria-label` now.
+  a control a screen reader announces as nothing. The first fix was an
+  `aria-label`, which names the control and leaves the visible label inert;
+  review pointed that out. The select now carries an id derived from the
+  finding's own (`ex-verdict-AC-1_a--01-`) and the label points at it, so the
+  label is the control's name and clicking it focuses the select — driven in a
+  browser with two editors open, each with its own id.
 - **What did not port, and why.** Assertions on `build.sh` tokens,
   `sync-public.sh`, the publish allowlist and the private `netlify.toml` are
   about machinery this repository does not have. The sample no longer runs on

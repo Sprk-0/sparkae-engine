@@ -1300,7 +1300,8 @@ for (const f of allPages) {
   const image = meta('property', 'og:image'), twImage = meta('name', 'twitter:image');
   const okImage = image === ORIGIN + '/' + CARD && twImage === ORIGIN + '/' + CARD && meta('name', 'twitter:card') === 'summary_large_image';
   // A screen-reader user following a shared link should get the claim the card
-  // makes, not "image". Sixty characters is the floor below which it is a label.
+  // makes, not "image". At sixty characters or fewer it is a label, not a
+  // description, so the check wants more than that.
   const alt = meta('property', 'og:image:alt') || '', twAlt = meta('name', 'twitter:image:alt') || '';
   const okAlt = alt.length > 60 && twAlt.length > 60;
   const okSize = meta('property', 'og:image:width') === '1200' && meta('property', 'og:image:height') === '630';
