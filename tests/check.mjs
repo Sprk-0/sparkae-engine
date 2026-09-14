@@ -606,6 +606,21 @@ check(storedBad === '' && deflatedBad === '',
   'the fixtures this section builds are valid ZIPs: every CRC-32 is over the uncompressed bytes — ' +
   (storedBad || deflatedBad || 'stored and deflated both verify'));
 
+// An archive cut before its central directory — a download that stopped early —
+// is refused with a reason that says so. It is not read by walking the local
+// headers: the central directory is the inventory this reader counts names from
+// before it reads a byte, and a header walk on a truncated archive is exactly
+// the count-of-what-happened-to-succeed that lets one of two same-named members
+// pass as unique. The private repository's engine copy had that walk; this one
+// refuses on purpose, and the refusal is what a visitor sees.
+const wholeZip = buildZip([{ name: 'first.txt', text: 'first member' }, { name: 'second.txt', text: 'second member' }]);
+const cdAt = (() => { const v = new DataView(wholeZip.buffer); for (let i = wholeZip.length - 4; i >= 0; i--) if (v.getUint32(i, true) === 0x02014b50) return i; return -1; })();
+const truncatedZip = await E.parseZipReport(asFile(wholeZip.slice(0, cdAt), 'truncated.zip'));
+check(cdAt > 0 && truncatedZip.parsed.length === 0 && truncatedZip.chunks.length === 0 &&
+  truncatedZip.skipped.some(s => /truncated/.test(s.reason)),
+  'an archive cut before its central directory is refused as truncated, not read by a header walk — ' +
+  JSON.stringify((truncatedZip.skipped[0] || {}).reason || truncatedZip.parsed));
+
 // Data descriptors: the local headers say the members are zero bytes long.
 // Reading those zeroes refused the first member as a truncated stream and then
 // advanced by zero bytes, so the second member was never seen or reported.
