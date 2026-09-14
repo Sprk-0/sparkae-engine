@@ -126,6 +126,22 @@ const headers = read('_headers');
 check(!/connect-src\s+\*/.test(headers), "_headers: no rule carries connect-src *");
 const cspRules = [...headers.matchAll(/^(\/\S*)\n\s+Content-Security-Policy:\s*(.+)$/gm)].map(m => [m[1], m[2]]);
 check(cspRules.length > 0 && cspRules.every(([, v]) => /connect-src 'self'/.test(v) && /default-src 'self'/.test(v)), `_headers: ${cspRules.length} per-page policies, all default-src 'self' + connect-src 'self'`);
+// The no-outbound-calls claim is only enforceable while these hold on every
+// rule, not most of them: a page that can be framed or can load a plugin has
+// an outbound path the connect-src directive never sees.
+check(cspRules.every(([, v]) => /frame-ancestors 'none'/.test(v) && /object-src 'none'/.test(v)),
+  "_headers: every policy carries frame-ancestors 'none' and object-src 'none'");
+// Netlify combines every rule whose path matches, and a browser enforces two
+// policies as their intersection — so a CSP on a wildcard path can only tighten
+// a page's own, silently. The file's own header explains this; the check is
+// what keeps it true.
+const cspOnWildcard = cspRules.filter(([p]) => p.includes('*')).map(([p]) => p);
+check(!cspOnWildcard.length, '_headers: no wildcard path declares a CSP' + (cspOnWildcard.length ? ' — ' + cspOnWildcard.join(', ') : ''));
+// /demo is the outreach short link. Forced (the trailing `!`), so it is always
+// the standalone demo even if a page named demo.html were ever published again,
+// which is why its _headers rule can be the strict policy.
+check(/^\/demo\s+\/demo-standalone\.html\s+301!\s*$/m.test(read('_redirects')),
+  '_redirects: /demo is a forced 301 to demo-standalone.html');
 for (const f of published.filter(f => f.endsWith('.html'))) {
   const stem = '/' + f.replace(/\.html$/, '');
   check(cspRules.some(([p]) => p === '/' + f) && cspRules.some(([p]) => p === stem || (f === 'index.html' && p === '/')), f + ': CSP rule for both /' + f + ' and ' + stem);
@@ -1164,6 +1180,418 @@ for (const f of published.filter(f => f.endsWith('.html'))) {
       (same ? '' : ` — page has ${JSON.stringify(want)}, policy has ${JSON.stringify(listed)}`));
   }
 }
+
+// ── 21. the OSCAL document's references resolve ─────────────────────────────
+// Ported from the private repository's test_website_demo_exports, which drove
+// the exporter over a synthesised finding per objective. This drives it over
+// the sample run instead — the same 981 findings the golden fixture pins — so
+// the document under test is the one a visitor downloads. The official schema
+// (tests/check_oscal_schema.py) already rejects an invented assembly or a
+// bracketed target-id; what it cannot see is a reference. A risk-uuid that
+// satisfies the uuid pattern and resolves to nothing is valid JSON and a
+// useless record, and that is what this section reads.
+console.log('21. OSCAL references resolve');
+const result21 = arRoot.results[0];
+const uuidsOf = (list) => new Set((list || []).map(x => x.uuid));
+const declaredRisks = uuidsOf(result21.risks);
+const declaredObs = uuidsOf(result21.observations);
+const declaredComponents = uuidsOf((result21['local-definitions'] || {}).components);
+const findings21 = result21.findings || [];
+
+const riskRefs = findings21.flatMap(f => (f['related-risks'] || []).map(r => r['risk-uuid']));
+const danglingRisks = riskRefs.filter(u => !declaredRisks.has(u));
+check(riskRefs.length > 0 && !danglingRisks.length,
+  `every related-risks pointer resolves to a declared risk (${riskRefs.length} pointers, ${declaredRisks.size} risks)` +
+  (danglingRisks.length ? ' — dangling: ' + danglingRisks.slice(0, 3).join(', ') : ''));
+
+const obsRefs = findings21.flatMap(f => (f['related-observations'] || []).map(o => o['observation-uuid']));
+const danglingObs = obsRefs.filter(u => !declaredObs.has(u));
+check(obsRefs.length > 0 && !danglingObs.length,
+  `every related-observations pointer resolves to a declared observation (${obsRefs.length} pointers, ${declaredObs.size} observations)`);
+
+// subject-uuid is a reference too. The schema only asks that it be a uuid; a
+// fresh one satisfies it and tells a consumer nothing about what was assessed.
+const subjects = (result21.observations || []).flatMap(o => o.subjects || []);
+const danglingSubjects = subjects.filter(s => !declaredComponents.has(s['subject-uuid']));
+check(declaredComponents.size > 0 && subjects.length > 0 && !danglingSubjects.length && subjects.every(s => s.type === 'component'),
+  `every observation subject is a declared component (${subjects.length} subjects, ${declaredComponents.size} component)`);
+
+// reviewed-controls says what was in scope. OSCAL control ids are lower-case
+// and dotted; the catalog's "AC-2(1)" form is not a valid one.
+const included = (((result21['reviewed-controls'] || {})['control-selections'] || [])[0] || {})['include-controls'] || [];
+check(included.length === a.summary.controls && included.every(c => /^[a-z][a-z0-9.-]*$/.test(c['control-id'])),
+  `reviewed-controls names the ${a.summary.controls} controls assessed, as lower-case OSCAL ids`);
+
+// OSCAL has no "not reviewed" objective state, so Not Reviewed has to collapse
+// to not-satisfied. What must not happen is for it to READ as a tested failure:
+// the real determination travels as a prop, and no risk is raised for an
+// objective nobody tested. Conversely, every not-satisfied finding that IS a
+// tested failure carries the risk that justifies it.
+const detProp = (f) => ((f.props || []).find(p => p.name === 'determination') || {}).value;
+const nrFindings = findings21.filter(f => detProp(f) === 'Not Reviewed');
+check(nrFindings.length === a.summary.not_reviewed && nrFindings.every(f => f.target.status.state === 'not-satisfied' && !f['related-risks']),
+  `Not Reviewed (${nrFindings.length}) is recorded as a prop over not-satisfied, and raises no risk`);
+const otsFindings = findings21.filter(f => f.target.status.state === 'not-satisfied' && detProp(f) !== 'Not Reviewed');
+check(otsFindings.length === a.summary.other_than_satisfied && otsFindings.every(f => (f['related-risks'] || []).length > 0),
+  `every Other Than Satisfied finding (${otsFindings.length}) points at the risk it raises`);
+
+// The four CSV downloads, parsed as records rather than lines: an evidence cell
+// may carry a newline, and a line-split reads that as a ragged row when it is
+// not one. The parse is RFC 4180 — quoted fields may hold commas, doubled
+// quotes and newlines.
+const csvRecords = (text) => {
+  const out = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n') { row.push(cur); out.push(row); row = []; cur = ''; }
+    else if (ch !== '\r') cur += ch;
+  }
+  if (cur.length || row.length) { row.push(cur); out.push(row); }
+  return out.filter(r => r.length > 1 || r[0] !== '');
+};
+for (const [name, build] of [['findings', EX.buildFindingsCSV], ['RET', EX.buildRET], ['POA&M', EX.buildPOAM], ['TCW', EX.buildTCW]]) {
+  const recs = csvRecords(build(a.state, {}));
+  const width = recs[0].length;
+  const ragged = recs.filter(r => r.length !== width).length;
+  check(recs.length > 1 && !ragged, `${name} CSV: ${recs.length - 1} records, every one ${width} cells wide` + (ragged ? ` — ${ragged} ragged` : ''));
+}
+
+// The summary is a work aid. It must not imply assessor adoption or an
+// authorization status — the independence guardrail, in the one export a
+// reader is most likely to paste into an email.
+const summaryText = EX.buildSummary(a.state, {}).replace(/\s+/g, ' ').toLowerCase();
+check(!/ready for fedramp submission|submission-grade|submission-ready/.test(summaryText) && !/\bauthoritative\b/.test(summaryText),
+  'the summary claims no submission readiness and calls nothing authoritative');
+check(/not been reviewed, scoped, or adopted/.test(summaryText) && /confers no authorization status/.test(summaryText),
+  'the summary states the independence limit in its own words');
+
+// The page has to use the shared exporter, not regrow its own. The keys named
+// here are the two the old inline emitter invented and the root the pre-1.1.2
+// document used; the page names them in prose, so object-literal keys are what
+// is matched.
+check(/<script src="demo-exports\.js"><\/script>/.test(page) && page.includes('DEMO_EXPORTS.buildAssessmentResults'),
+  'demo-standalone.html builds its OSCAL through demo-exports.js');
+const regrown = ["'related-controls':", "'associated-risks':", "'security-assessment-results':"].filter(k => page.includes(k));
+check(!regrown.length, 'the page has not regrown an inline OSCAL emitter' + (regrown.length ? ' — ' + regrown.join(' ') : ''));
+const declaredVersions = [...page.matchAll(/'oscal-version':\s*'([^']+)'/g)].map(m => m[1]);
+check(declaredVersions.every(v => v === '1.1.2'), 'every oscal-version the page itself declares is 1.1.2' + (declaredVersions.length ? ` (${declaredVersions.length})` : ''));
+
+
+// ── 22. the site is findable, shareable, and does not dead-end ──────────────
+// Ported from the private repository's test_imp988_site_discoverability. Three
+// things nobody reading the pages would notice and everyone promoting them
+// would: a link with no image renders as a bare row in every feed, an
+// unmatched path fell through to the host's stock error page with no way back,
+// and crawlers had nothing to index from. Section 11 holds the sitemap and the
+// robots file; this holds the card and the error page — and holds the card's
+// figures to the same rule as the pages, since a social card is the most
+// widely seen surface and the easiest one to let overstate the catalog.
+console.log('22. findable, shareable, no dead ends');
+const CARD = 'static/og-card.png';
+const CARD_SRC = 'static/og-card.src.html';
+const allPages = published.filter(f => f.endsWith('.html'));
+
+for (const f of allPages) {
+  const html = read(f);
+  const meta = (attr, name) => (new RegExp(`<meta ${attr}="${name}" content="([^"]*)">`).exec(html) || [])[1];
+  const image = meta('property', 'og:image'), twImage = meta('name', 'twitter:image');
+  const okImage = image === ORIGIN + '/' + CARD && twImage === ORIGIN + '/' + CARD && meta('name', 'twitter:card') === 'summary_large_image';
+  // A screen-reader user following a shared link should get the claim the card
+  // makes, not "image". Sixty characters is the floor below which it is a label.
+  const alt = meta('property', 'og:image:alt') || '', twAlt = meta('name', 'twitter:image:alt') || '';
+  const okAlt = alt.length > 60 && twAlt.length > 60;
+  const okSize = meta('property', 'og:image:width') === '1200' && meta('property', 'og:image:height') === '630';
+  check(okImage && okAlt && okSize, `${f}: declares the social card, its 1200×630 size, and alt text` +
+    (okImage ? '' : ' — image/card meta') + (okAlt ? '' : ' — alt text thin or missing') + (okSize ? '' : ' — size meta'));
+}
+
+// Scrapers reject an image that is not the size the meta tags declare, and the
+// tags above all say 1200×630. Read the PNG header rather than trust the name.
+const png = fs.readFileSync(path.join(root, CARD));
+const pngOk = png.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+const pngW = png.readUInt32BE(16), pngH = png.readUInt32BE(20);
+check(pngOk && pngW === 1200 && pngH === 630, `${CARD} is a real ${pngW}×${pngH} PNG`);
+
+// A binary nobody can rebuild is a binary that goes stale. The source lives
+// beside it, reaches nothing off-origin at render time, and is not a page.
+const cardSrc = read(CARD_SRC);
+check(!allPages.includes('og-card.src.html'), 'the card source is not a published page');
+const cardFonts = [...cardSrc.matchAll(/url\('([^']*)'\)/g)].map(m => m[1]);
+check(cardFonts.length > 0 && cardFonts.every(u => u.startsWith('fonts/') && fs.existsSync(path.join(root, 'static', u))),
+  'the card source uses only this repository\'s own fonts, and each one exists' +
+  (cardFonts.every(u => u.startsWith('fonts/')) ? '' : ' — ' + cardFonts.filter(u => !u.startsWith('fonts/')).join(', ')));
+check(!/file:\/\/\//.test(cardSrc) && !/https?:\/\//.test(cardSrc.replace(/http:\/\/www\.w3\.org\/2000\/svg/g, '')),
+  'the card source fetches nothing at render time and names no machine path');
+
+// The credibility rule the site was rewritten around: a number shown to a
+// buyer is labelled and matches the catalog. Read the figures out of the card
+// source, require each on the homepage against the same noun, and require
+// both to be the catalog's own High-baseline counts.
+const cardFigures = [...cardSrc.matchAll(/<b>([\d,]+)<\/b>\s*([a-z ]+?)<\/span>/g)].map(m => [m[1], m[2]]);
+const high = counts('High');
+const fmt = (n) => n.toLocaleString('en-US');
+const cardControls = cardFigures.find(([, noun]) => noun === 'controls'), cardObjectives = cardFigures.find(([, noun]) => noun === 'objectives');
+check(cardControls && cardControls[0] === fmt(high.controls) && cardObjectives && cardObjectives[0] === fmt(high.objectives),
+  `the card states the catalog's High baseline: ${fmt(high.controls)} controls · ${fmt(high.objectives)} objectives` +
+  (cardFigures.length ? ` (card says ${cardFigures.map(x => x.join(' ')).join(', ')})` : ' — no figures found in the card source'));
+check(home.includes(`<div class="num">${fmt(high.controls)}</div><div class="label">Controls · FedRAMP High`) &&
+  home.includes(`<div class="num">${fmt(high.objectives)}</div><div class="label">"Determine if" objectives`),
+  'the homepage states the same two figures against the same nouns');
+check(/FedRAMP High baseline/.test(cardSrc), 'the card names the baseline its counts belong to');
+const cardLower = cardSrc.toLowerCase();
+const cardOverclaims = ['3pao', 'accredited', 'certif', 'ai-', ' ai ', 'authorization to operate', 'ato'].filter(w => cardLower.includes(w));
+check(!cardOverclaims.length && /interview and test stay with the assessor/.test(cardLower),
+  'the card claims nothing the pages do not, and carries the scope limit' + (cardOverclaims.length ? ' — ' + cardOverclaims.join(', ') : ''));
+
+// The error page. Netlify renders 404.html AT the unmatched request URL rather
+// than redirecting to it, so a path-relative reference resolves against that
+// path: measured on the old page served at /old/docs/page, href="index.html"
+// went to /old/docs/index.html — another 404 — and the stylesheet beside it,
+// so the page that exists to route a lost visitor home rendered unstyled with
+// nothing on it that worked. Every URL it carries is root-relative. A <base>
+// element would be the other fix and is blocked by the page's own base-uri
+// 'none', which is not the thing to loosen for a layout convenience.
+const notFound = read('404.html');
+const nfMarkup = notFound.replace(/<!--[\s\S]*?-->/g, '');
+const nfNav = [...nfMarkup.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)].map(m => m[1]).join(' ');
+check(nfNav && ['index.html', 'assessors.html', 'demo-standalone.html', 'integrations.html'].every(t => nfNav.includes(`href="/${t}"`)),
+  '404.html carries the site navigation, root-relative');
+check(nfMarkup.split('</nav>').slice(1).join('').includes('href="/demo-standalone.html"'),
+  '404.html routes back to the demo from its body, not only its nav');
+check(/<meta name="robots" content="[^"]*noindex[^"]*">/.test(notFound),
+  '404.html is noindex — it answers on every unmatched path and would otherwise compete with real pages');
+const nfRelative = [...nfMarkup.matchAll(/(?:href|src)="(?!\/|https?:|data:|mailto:|#)([^"]*)"/g)].map(m => m[1]);
+check(!nfRelative.length, '404.html uses no path-relative URL' + (nfRelative.length ? ' — ' + nfRelative.slice(0, 3).join(', ') : ''));
+check(!/<link[^>]*rel="(?:stylesheet|preload|modulepreload|prefetch|manifest)"[^>]*href="https?:/.test(nfMarkup) && !/<base[\s/>]/.test(nfMarkup),
+  '404.html loads with no absolute loader and no <base> element');
+check(notFound.includes('<link rel="stylesheet" href="/ae-editorial.css">'),
+  '404.html reaches the stylesheet from the site root');
+const nfRule = (cspRules.find(([p]) => p === '/404.html') || [])[1] || '';
+check(/base-uri 'none'/.test(nfRule), "the /404.html policy keeps base-uri 'none'");
+check(notFound.includes(`<link rel="canonical" href="${ORIGIN}/404.html">`) && notFound.includes(`<meta property="og:url" content="${ORIGIN}/404.html">`),
+  '404.html still declares an absolute canonical and og:url — root-relative navigation must not sweep up the metadata');
+
+// Crawlability beyond what section 11 holds: the robots file points at the
+// sitemap, and the sitemap lists the home page once, as the bare origin.
+const robots = read('robots.txt');
+check(/^User-agent: \*$/m.test(robots) && robots.includes(`Sitemap: ${ORIGIN}/sitemap.xml`),
+  'robots.txt addresses every crawler and points at the sitemap');
+check(sitemapLocs.includes(ORIGIN + '/') && !sitemapLocs.includes(ORIGIN + '/index.html') && new Set(sitemapLocs).size === sitemapLocs.length,
+  'sitemap.xml lists the homepage once, as the bare origin, and no <loc> twice');
+
+
+// ── 23. what the pages claim ────────────────────────────────────────────────
+// Ported from the private repository's test_website_content_claims and
+// test_imp985_website_credibility — the regressions a copy edit reintroduces
+// quietly and nobody notices until a prospect does. Not a style guide: every
+// assertion here is a factual, legal or accessibility claim. Where those suites
+// asserted on build tokens, sync scripts and an allowlist this repository does
+// not have, the assertion is dropped; where they asserted on copy the public
+// site has since changed on purpose (the sample no longer runs on page load —
+// section 18 is written against the run button), the current behaviour is what
+// is pinned.
+console.log('23. what the pages claim');
+const pageText = Object.fromEntries(allPages.map(f => [f, read(f)]));
+const allText = Object.values(pageText).join('\n');
+
+// A wrong count is the cheapest possible credibility loss, and the one most
+// likely to survive a rewrite: only a near miss next to an objective word is
+// flagged, since the bare number could be anything else on the page.
+for (const baseline of ['Low', 'Moderate', 'High']) {
+  const { objectives } = counts(baseline);
+  const nearMisses = [objectives - 1, objectives + 1].filter(n =>
+    new RegExp('\\b' + fmt(n).replace(',', '[,]?') + '\\b[^.<]{0,30}(DIF|objective|"Determine if")', 'i').test(allText));
+  check(!nearMisses.length, `no page quotes a near miss of the ${baseline} objective count (${objectives})` + (nearMisses.length ? ' — found ' + nearMisses.join(', ') : ''));
+}
+// Numbers are labelled with what they count. 410 / 1,429 is the High baseline
+// and used to sit unlabelled above a footer saying 447 / 1,513; the two forms
+// below are the ones that contradicted each other.
+const full = counts(null);
+check(new RegExp(`${fmt(high.objectives)}</div><div class="label">[^<]*High baseline \\(${high.controls} controls\\)`).test(home.replace(/\s+/g, ' ')),
+  'the homepage labels the High-baseline objective count as High, with its control count');
+check(home.replace(/\s+/g, ' ').includes(`${high.controls}</div><div class="label">Controls · FedRAMP High profile`) && !/410<\/div><div class="label">[^<]*NIST[^<]*High/.test(home),
+  '410 is labelled the FedRAMP High profile, not NIST High (which is 426)');
+const footerLine = `full catalog ${full.controls} controls · ${fmt(full.objectives)} objectives · FedRAMP High baseline ${high.controls} / ${fmt(high.objectives)}`;
+const footerPages = allPages.filter(f => /full catalog/.test(pageText[f]));
+check(footerPages.length >= 6 && footerPages.every(f => pageText[f].includes(footerLine)),
+  `${footerPages.length} footers state the catalog figures, each labelled and matching the catalog`);
+check(!/447 Controls · 1,513 DIFs/.test(allText) && !/v0\.7\.0-rc1/.test(allText),
+  'no unlabelled catalog count and no release-candidate tag survives as a badge');
+// The server product's plain-NIST install is a deployment profile, not a job
+// parameter — the API field is assessment_framework.
+check(!/framework=nist/.test(allText) && /FRAMEWORK=nist/.test(allText),
+  'NIST mode is described as the install profile (FRAMEWORK=nist), not a job parameter');
+
+// The demo says what it runs.
+const low = counts('Low');
+check(page.includes(`id="cv-meta">FedRAMP Low · ${low.controls} controls · ${low.objectives} objectives`) &&
+  page.includes('<option value="Low" selected>FedRAMP Low</option>') &&
+  page.includes(`controls: ${low.controls},`) && !page.includes('controls: 421,') &&
+  page.includes('CloudVault Federal — FedRAMP Low Baseline'),
+  `the sample card, the profile selector and the bundled SSP all say FedRAMP Low · ${low.controls} / ${low.objectives}`);
+check(!page.includes('totalBytes > 50 * 1024 * 1024') &&
+  page.includes('const controls = profileCounts(engineBaseline()).controls;') && page.includes("const baseline = 'FedRAMP ' + engineBaseline();"),
+  'an upload is labelled with the profile the rail declares, not a guess from its byte size');
+check(page.includes('id="stat-mode">EXAMINE · automated</span>') && !page.includes("railMode: 'EXAMINE · INTERVIEW · TEST'") && !page.includes('The 3PAO engine walks'),
+  '§01 is EXAMINE only — Interview and Test stay with the assessor');
+check(page.includes('OSCAL 1.1.2 output · FedRAMP constraints (min 1.0.4)') && page.includes("railMode: 'PKG · OSCAL 1.1.2'") &&
+  !page.includes('assembling OSCAL 1.0.4') && !page.includes('OSCAL 1.0.4 SAR') && read('demo-exports.js').includes("'oscal-version': '1.1.2'"),
+  'the validator names the OSCAL version the exports declare (1.1.2; 1.0.4 only as the FedRAMP minimum)');
+check(page.includes('const names = (window.SparkAEEngine && SparkAEEngine.GATE_NAMES) ||') &&
+  page.includes("['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Determination']"),
+  'the gate pills read the engine\'s own GATE_NAMES, with gate 7 as Determination');
+check(!page.includes('§04 · Live Demo'), 'the demo header carries no stray section number');
+// The live path narrates the corpus the engine indexed; the seventeen appendices
+// and the policy-family sweep belong to the scripted walkthrough.
+const liveStart = page.indexOf('async function runInitialLive(sample)');
+const liveBody = liveStart >= 0 ? page.slice(liveStart, page.indexOf('\n}\n', liveStart)) : '';
+check(liveStart >= 0 && page.includes('return runInitialLive(sample);') && !liveBody.includes('17/17 appendices') && !liveBody.includes('SSP_APPENDICES'),
+  'the live run narrates nothing it never saw');
+check(!page.includes('setTimeout(showOnboarding, 200)') && page.includes('data-action="onboarding-show">How this works'),
+  'the tour is opt-in: a control opens it, nothing opens it on load');
+check(page.includes('id="assessment-date"') && page.includes('for="assessment-date"') &&
+  page.includes('const asOfDay = engineAssessmentDate();') && page.includes("const asOf = new Date(asOfDay + 'T00:00:00Z');") &&
+  !page.includes('corpusAssessmentDate') && !read('demo-engine.js').includes('corpusAssessmentDate'),
+  'an upload takes its assessment date from the visible field — never the clock, never the package\'s own newest date');
+check(page.includes('assessment_date: run.assessmentDate,') && (page.match(/window\.__lastRunWasReal = false;/g) || []).length >= 2,
+  'exports carry the displayed live run\'s own date, and switching workflow or sample drops the live flag');
+// A 2018 scan assessed as of 2026 is stale; deriving the date from the corpus
+// would let it pass its own cadence gate.
+const ownScan = advAssess(ADV.replace('2026-05-28', '2018-01-01'), '2026-06-01');
+check(ownScan.status !== 'Satisfied' && ownScan.temporal_status === 'stale',
+  'a stale package cannot pass by being assessed as of its own scan date');
+const nrRun = advAssess('Nothing relevant here at all.', SAMPLE_DATE);
+check(nrRun.status === 'Not Reviewed' && nrRun.gates.map(g => g.gate).join(',') === '1,7',
+  'Not Reviewed still records the status gate: gates 1 and 7');
+// Identifiers are content-derived RFC 4122 v5, one per finding and observation;
+// the count exceeding the finding count is what shows they are not one seed
+// reused.
+const v5 = new Set(a.arText.match(/[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/g) || []);
+check(v5.size > a.findings.length, `the OSCAL document carries ${v5.size} distinct v5 identifiers for ${a.findings.length} findings`);
+
+// Independence. Phrases that assert a status SparkAE does not hold, or a
+// readiness the product's own trackers say generated bundles do not have.
+const BANNED = ['ready for FedRAMP submission', 'submission-ready', 'submission-grade', 'Authoritative downloads', 'CUI-safe'];
+const bannedHits = allPages.flatMap(f => BANNED.filter(b => pageText[f].toLowerCase().includes(b.toLowerCase())).map(b => `${f}: ${b}`));
+check(!bannedHits.length, 'no page makes a claim the product cannot back' + (bannedHits.length ? ' — ' + bannedHits.join('; ') : ''));
+const homeFlat = home.replace(/\s+/g, ' ');
+check(homeFlat.includes('not</strong> a FedRAMP Recognized independent assessment service') && homeFlat.includes('does not replace one') && homeFlat.includes('does not make the authorization decision'),
+  'the homepage states what SparkAE is not — the load-bearing sentence of the position');
+const assessorsFlat = pageText['assessors.html'].replace(/\s+/g, ' ');
+check(assessorsFlat.includes('You keep scope, testing, conclusions, overrides, and the final deliverables.') && assessorsFlat.includes('It is not a FedRAMP Recognized independent assessment service'),
+  'the assessor page keeps scope with the assessor');
+const walkthroughFlat = pageText['demo-20x.html'].replace(/\s+/g, ' ');
+check(walkthroughFlat.includes('SparkAE does not adjudicate') && walkthroughFlat.includes('it does not resolve the disagreement'),
+  'the 20x walkthrough does not let SparkAE adjudicate');
+const rfcPages = allPages.filter(f => pageText[f].includes('RFC-0024'));
+check(rfcPages.length > 0 && rfcPages.every(f => pageText[f].replace(/\s+/g, ' ').includes('was <strong>closed</strong>')),
+  'RFC-0024 is cited as closed, not as settled policy');
+check(homeFlat.includes('reference engine published at the Source link is Apache-2.0') && homeFlat.includes('SparkAE server product is commercial software'),
+  'the homepage states the license boundary');
+const heroSection = (home.split('<section class="hx-hero">')[1] || '').split('</section>')[0];
+check(heroSection.length > 0 && !heroSection.includes('curl ') && heroSection.includes('Sample package · no signup · nothing uploaded'),
+  'the hero leads with the finding and the sample, not a curl');
+
+// The status page claims no state it was not given: it once shipped five green
+// badges and a clean incident history while telling visitors both came from a
+// snapshot that had never been published.
+const status = pageText['status.html'];
+check(!status.includes('No incidents reported in the last 90 days —') && !status.includes('>Operational<') &&
+  (status.match(/class="badge unknown"/g) || []).length >= 5 &&
+  status.includes('id="incident-list"') && status.includes('id="maintenance-list"') && status.includes('data.incidents') && status.includes('data.maintenance'),
+  'status.html renders every state from the snapshot and starts every badge unknown');
+check(status.includes('function esc(') && status.includes('esc(i.title') && status.includes('esc(m.title'),
+  'status.html escapes the operator-authored snapshot fields it renders');
+const seed = JSON.parse(read('status-data.json'));
+check(seed.published_at === null && seed.components && !Object.keys(seed.components).length,
+  'the committed status snapshot declares no state');
+
+// Every contact link on the site resolves to one address, so the published site
+// can never point at a mailbox that does not exist. Every page links to this
+// repository, and does so from the footer rather than the primary navigation.
+const mailtos = [...new Set(allText.match(/mailto:[^"'?]+/g) || [])];
+check(mailtos.length === 1, 'one contact address across the site' + (mailtos.length === 1 ? ` (${mailtos[0]})` : ' — ' + mailtos.join(', ')));
+const noSource = allPages.filter(f => !pageText[f].includes('href="https://github.com/Sprk-0/sparkae-engine"'));
+check(!noSource.length, 'every page links to this repository' + (noSource.length ? ' — missing on ' + noSource.join(', ') : ''));
+const sourceInNav = allPages.filter(f => [...pageText[f].matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)].some(m => m[1].includes('github.com/Sprk-0/sparkae-engine')));
+check(!sourceInNav.length, 'the Source link is a footer link, not primary navigation' + (sourceInNav.length ? ' — in nav on ' + sourceInNav.join(', ') : ''));
+check(!/https?:\/\/[a-z0-9.-]*sparkae\.com|@sparkae\.com/i.test(allText),
+  'no page names the .com domain, which belongs to an unrelated business');
+
+// Every page reaches every section from a <nav> element. Section 11 crawls the
+// link graph for reachability; this is the narrower claim that the navigation
+// itself is complete, which is what the demo page and the status page once
+// lacked — a wordmark that linked nowhere and no site links at all.
+for (const f of allPages) {
+  const nav = [...pageText[f].matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)].map(m => m[1]).join(' ');
+  const targets = ['index.html', 'assessors.html', 'demo-standalone.html', 'integrations.html', 'index.html#cta'];
+  const missing = targets.filter(t => !nav.includes(`href="${t}"`) && !nav.includes(`href="/${t}"`));
+  check(nav.length > 0 && !missing.length, `${f}: the navigation reaches every section` + (missing.length ? ' — lacks ' + missing.join(', ') : ''));
+}
+// The shared stylesheet once hid nav .links below 900px, so a DOM-only check
+// passed while a phone visitor could reach nothing.
+const css = read('ae-editorial.css');
+const mobile = (css.split('@media (max-width:900px){')[1] || '').split('\n}\n')[0];
+check(!css.includes('nav .links{display:none}') && mobile.includes('nav .links{display:flex') && mobile.includes('overflow-x:auto'),
+  'the navigation is presented on phones, not hidden');
+
+// A redesign that drops a section id silently breaks every other page that
+// deep-links to it. Every page.html#fragment link on any page names an id the
+// target defines — or, for the demo, a workflow hash it honours (section 15
+// holds that the nine cards open the tab they name). And no page defines an
+// id twice, which makes fragment navigation ambiguous.
+const idsOf = {};
+for (const f of allPages) {
+  const found = [...pageText[f].replace(/<!--[\s\S]*?-->/g, '').matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m => m[1]);
+  const dupes = [...new Set(found.filter(i => found.indexOf(i) !== found.lastIndexOf(i)))];
+  check(!dupes.length, `${f}: no id is defined twice` + (dupes.length ? ' — ' + dupes.slice(0, 5).join(', ') : ''));
+  idsOf[f] = new Set(found);
+}
+const demoRoutes = new Set([...page.matchAll(/data-uc="([a-z]+)"/g)].map(m => m[1]));
+const badFragments = allPages.flatMap(f => [...pageText[f].matchAll(/href="\/?([a-z0-9-]+\.html)#([A-Za-z0-9_-]+)"/g)]
+  .filter(m => !idsOf[m[1]] || !(idsOf[m[1]].has(m[2]) || (m[1] === 'demo-standalone.html' && demoRoutes.has(m[2]))))
+  .map(m => `${f} → ${m[1]}#${m[2]}`));
+check(!badFragments.length, 'every cross-page fragment link resolves to an id or a demo route' + (badFragments.length ? ' — ' + badFragments.slice(0, 4).join('; ') : ''));
+
+// No draft note ships. These are the markers found on the production site in
+// the 2026-09-04 reviews: HOLD notes, "proposed copy", pricing caveats.
+const DRAFT = ['HOLD ·', 'HOLD —', '— HOLD', 'HOLD /', 'Proposed copy', 'not a customer claim', 'not for outreach', 'Do not use them in outreach', 'not a rate card', 'not a published list price'];
+const draftHits = allPages.flatMap(f => DRAFT.filter(m => pageText[f].toLowerCase().includes(m.toLowerCase())).map(m => `${f}: ${m}`));
+check(!draftHits.length, 'no published page ships a draft note' + (draftHits.length ? ' — ' + draftHits.join('; ') : ''));
+// Register ids, tracker rows, PR numbers and review-bot names are internal
+// process, not content. Scanned over every published text file, not only the
+// pages: a stylesheet comment ships too.
+const INTERNAL = /\b(?:IMP|OUT|DD|UA|W2|W3)-\d+\b|\bPR #\d+|\bADR-?0\d{2,}\b|\bCodex\b|\bCopilot\b/g;
+const internalHits = [...published, 'robots.txt', 'sitemap.xml', '_headers', '_redirects', 'netlify.toml', 'status-data.json']
+  .flatMap(f => [...new Set(read(f).match(INTERNAL) || [])].map(h => `${f}: ${h}`));
+check(!internalHits.length, 'no published file carries an internal reference' + (internalHits.length ? ' — ' + internalHits.slice(0, 5).join('; ') : ''));
+// The product is the title; the maker is the footer line.
+for (const f of allPages) {
+  const title = ((/<title>([\s\S]*?)<\/title>/.exec(pageText[f]) || [])[1] || '').trim();
+  check(title.includes('SparkAE') && !title.includes('ONE Solution Cyber') && !title.includes('(Spark Assessment Engine)'),
+    `${f}: one product name in the title bar (${title})`);
+}
+
+// Accessibility floors. A screen reader gets nothing from a styled div above an
+// input; six download buttons whose visible text is an extension need names.
+// Script bodies are scanned too, because the demo writes its controls into
+// template literals.
+const unlabelled = allPages.flatMap(f => [...pageText[f].matchAll(/<(input|select|textarea)\b[^>]*>/g)]
+  .map(m => m[0]).filter(tag => !/type="hidden"/.test(tag))
+  .filter(tag => {
+    const id = (/id="([^"]+)"/.exec(tag) || [])[1];
+    return !(/aria-label(?:ledby)?=/.test(tag) || (id && pageText[f].includes(`for="${id}"`)));
+  }).map(tag => `${f}: ${tag.slice(0, 60)}`));
+check(!unlabelled.length, 'every form control has a programmatic label' + (unlabelled.length ? ' — ' + unlabelled.slice(0, 3).join('; ') : ''));
+check((page.match(/aria-label="Download /g) || []).length >= 6, 'the download buttons carry accessible names');
+// The homepage's structured contact form, and the policy that lets it submit.
+check(/<form class="hx-form" name="[a-z-]+" method="POST" data-netlify="true"/.test(home) &&
+  ['pr-name', 'pr-org', 'pr-email', 'pr-role'].every(id => home.includes(`id="${id}"`) && home.includes(`for="${id}"`)) &&
+  !headers.includes("form-action 'none'") && (headers.match(/form-action 'self'/g) || []).length >= 2,
+  'the homepage form is structured and labelled, and the CSP allows it to submit');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

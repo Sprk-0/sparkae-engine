@@ -9673,7 +9673,7 @@ document.getElementById('findings-body').addEventListener('click', (ev) => {
     const opts = ['SAT', 'OTS', 'NR'].map(v =>
       '<option value="' + v + '"' + (v === verdict.trim() ? ' selected' : '') + '>' + v + '</option>').join('');
     block.querySelector('.ex-actions').innerHTML =
-      '<label class="ex-vlabel">Determination</label><select class="ex-select">' + opts + '</select>' +
+      '<label class="ex-vlabel">Determination</label><select class="ex-select" aria-label="Determination">' + opts + '</select>' +
       '<button class="ex-btn primary" data-act="save">Save revision</button>' +
       '<button class="ex-btn" data-act="cancel">Cancel</button>';
     const ta = document.createElement('textarea');
