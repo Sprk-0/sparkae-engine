@@ -26,14 +26,14 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on 1.4.1 | 45 |
+| **OPEN** | reproduced on 1.4.1 | 44 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
-| **CLOSED** | fixed in 1.4.0 or 1.4.1, verified on this tree | 22 |
+| **CLOSED** | fixed in 1.4.0 or 1.4.1, verified on this tree | 23 |
 | **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
 
 Statuses come from running the engine on this tree, not from reading the
-changelog. Where a status contradicts the changelog, the code won — see item 48,
-where the 1.4.0 entry claims a fix the code does not contain.
+changelog — see item 43, which no entry ever claimed and which would otherwise
+have been assumed closed alongside its neighbours.
 
 **How to read the rest.** Items are grouped by what to do first, not by the order they were found. Original review IDs (`#1` … `#166`) are in parentheses so earlier notes still map. Later IDs that only restated an earlier item are aliases, not extra bugs. Numbering is unchanged from the 1.3.0 edition: **do not renumber**, the aliases at the foot of the file depend on it.
 
@@ -242,13 +242,15 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`) — **UNVERIFIED**
     Not re-checked against the 1.4.0 refutation attribution, which may have changed the behaviour this describes.
 
-48. **`stemWord` splits the same lexeme.** (`#15`) — **OPEN**
-    The `access` case is fixed — `access`, `accessing` and `accessed` all stem to
-    `access`. But `stemsAgree('implementation', 'implemented')` is **false** on
-    1.4.1 (`implementat` vs `implement`).
-    **The 1.4.0 changelog entry claims this pair was fixed and it was not.** The
-    changelog is left as written — it is the historical record — and the
-    correction lives here. Fix the stemmer and the entry becomes true.
+48. **`stemWord` splits the same lexeme.** (`#15`) — **CLOSED (1.4.0)**
+    `access`, `accessing` and `accessed` all stem to `access`; the `ss` guard in
+    the suffix table is what fixed it. `implementation` and `implemented` still
+    stem apart (`implementat` / `implement`) and are reconciled one level up by
+    `stemsAgree()`, which reads a stem that extends another as the same word when
+    both are at least `STEM_AGREE_MIN_CHARS`. That is the documented design
+    (`demo-engine.js:718`), not a gap: `stemsAgree('implementat','implement')` is
+    true. Note that `stemsAgree` takes **stems, not words** — calling it with raw
+    words returns false and looks like a defect.
 
 49. **`parsePdfText` / `parsePoamXlsx` still call missing globals.** (`#44–45`) — **CLOSED (1.4.0)**
     Both readers are gone; only copy explaining their absence remains.
@@ -388,7 +390,6 @@ None of these exist. Each one holds an item that is still **OPEN**:
 - A punctuated keyword run must read as stuffed (item 8).
 - `review_required` must be present in OSCAL, the findings CSV and the receipt (item 22).
 - POA&M must exclude Not Reviewed (item 23).
-- `stemsAgree('implementation','implemented')` must be true (item 48).
 - A golden or benchmark case that runs through `parsePackage`, so the ZIP and DOCX items can fail a push (item 71).
 
 ---
@@ -398,12 +399,11 @@ None of these exist. Each one holds an item that is still **OPEN**:
 Re-cut against 1.4.1. **PR 0 is this file.**
 
 **PR 1 — engine, false Satisfied (moves the verdict digest)**
-Items **1, 4, 5, 8, 48** — one theme, normalise before you match.
+Items **1, 4, 5, 8** — one theme, normalise before you match.
 - `CTRL_ID_RE`: replace the trailing `\b` with a lookahead so `AC-2(1)` matches before a space or punctuation.
 - `foldHomoglyphs`: strip `\p{Cf}` and U+00AD.
 - `docxText` and the XML path: decode numeric and `&nbsp;` entities.
 - `evidenceLooksStuffed`: run the 5-gram check regardless of run length.
-- `stemWord`: fold `implementat` onto `implement`.
 Item 1 is the highest-value fix in the file — it is what lets 1.4.0's own-control
 scoping reach the 232 enhancement keys. Land these together and regenerate the
 golden fixture and `tests/benchmark/results.json` once, with a note saying why
