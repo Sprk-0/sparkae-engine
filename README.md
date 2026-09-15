@@ -70,12 +70,12 @@ Every determination statement passes through seven recorded gates, in order:
 
 | # | Gate | Sub-checks |
 |---|------|-----------|
-| 1 | Presence | evidence above the BM25 relevance threshold |
-| 2 | Concepts | concept coverage of the objective text ≥ 40% |
-| 3 | Strength | 3a traceable references · 3b no keyword stuffing |
-| 4 | ODP | organization-defined parameters resolved |
-| 5 | Contradiction | 5a no refutation · 5b no self-contradiction · 5c no draft / placeholder markers |
-| 6 | Temporal | 6a currency · 6b scan cadence · 6c no future-dated claims · 6d open-finding SLA |
+| 1 | Presence | a BM25-ranked chunk names at least 15% of the objective's distinct terms |
+| 2 | Concepts | 2a concept coverage ≥ 40%, two terms per concept · 2b the control's subject is named beside the objective's own words |
+| 3 | Strength | 3a traceable references in the control's own evidence · 3b no keyword stuffing |
+| 4 | ODP | 4a typed parameters (frequency · time · role · threshold) have a value stated about the objective · selections and untyped placeholders are recorded as unverified, never as resolved |
+| 5 | Contradiction | 5a no refutation, each attributed to the heading that precedes it · 5b no self-contradiction · 5c no draft / placeholder markers, homoglyphs folded in both cases |
+| 6 | Temporal | 6a currency, decided by the review or update date when there is one; undated evidence is flagged for review, not called current · 6b scan cadence · 6c no future-dated claims · 6d open-finding SLA, every date format |
 | 7 | Determination | Satisfied only if gates 1–6 all passed |
 
 A result's `gates` array holds one record per gate reached and nothing else,
@@ -84,12 +84,19 @@ result reports `assessment_method: EXAMINE`, the `assessment_date` it was
 given, an evidence-support score (`confidence`), a defensibility score
 (an internal finding-trace rubric — not a measure of assessor acceptance),
 and `review_required` when a Satisfied verdict rests on thin support
-(confidence or concept coverage below 60%).
+(confidence or concept coverage below 60%, or evidence that carries no date).
+A Satisfied result also lists the organization-defined parameters this build
+could not verify (`odp_unverified`), so a pass says which of its parameters
+were actually checked.
 
 Retrieval is lexical BM25 (k1 1.5, b 0.75) — there are no embeddings and no
-vector store in this build. Contradiction and draft detection are
-pattern-based indicators. Thresholds are constants in `demo-engine.js` and
-are hashed into the ruleset digest.
+vector store in this build. Ranking is BM25; the `score` a hit reports, and
+the number gate 1 thresholds, is the share of the objective's distinct terms
+the chunk names, so a corpus of one chunk cannot clear the threshold by being
+the best of one. Contradiction and draft detection are pattern-based
+indicators. Every threshold, term list and matcher in `demo-engine.js` is
+published in `RULESET` and hashed into the ruleset digest, so a pattern-only
+edit moves the digest.
 
 ## Determinism, precisely
 
@@ -132,7 +139,7 @@ request and on every push to `main`, and fails the build on a wrong
 determination that has no recorded reason.
 
 ```text
-engine 1.3.0 · 16 cases · 15 correct · 0 false passes · 1 false fail
+engine 1.4.0 · 16 cases · 15 correct · 0 false passes · 1 false fail
 external-review 5 cases · 5 correct · engine-repo 11 cases · 10 correct
 ```
 
@@ -251,8 +258,8 @@ repository carries no release tags**, so what identifies a state worth citing is
 the reproducibility tuple rather than a label:
 
 ```text
-engine 1.3.0 · catalog 2026-07-21 / 91ad1b17138f · ruleset b39ee143bdfe
-  → verdict digest 04b1f79d6f44   (CloudVault sample, FedRAMP Low, 2026-06-01)
+engine 1.4.0 · catalog 2026-07-21 / 91ad1b17138f · ruleset 7b0c09a72496
+  → verdict digest 614ab4597d07   (CloudVault sample, FedRAMP Low, 2026-06-01)
 ```
 
 Those five parts are in every artifact the engine emits and in

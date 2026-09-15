@@ -3741,7 +3741,7 @@ const USE_CASES = {
     stages: ['Intake', 'Classification', 'SLA mapping', 'Aging', 'Reconciliation', 'Output'],
     runBtnLabel: 'Run ConMon cycle',
     idleTitle: 'ConMon engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run ConMon cycle</strong>. The engine will ingest the monthly scan output (OS · Web App · Database · Container per RA-5), verify authenticated-scan coverage (RA-5(5) · 10% unauthenticated triggers DFR), classify findings under FedRAMP RA-5(d) SLAs (Critical/High 30d · Moderate 90d · Low 180d), identify aging vulnerabilities and Deviation Request candidates, evaluate the AO escalation chain (DFR → CAP → Suspension → Revocation), and produce the ConMon deliverables.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run ConMon cycle</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through the shape of a monthly ConMon cycle: scan output by type (OS · Web App · Database · Container per RA-5), authenticated-scan coverage (RA-5(5) · 10% unauthenticated triggers DFR), the FedRAMP RA-5(d) SLA classes (Critical/High 30d · Moderate 90d · Low 180d), aging vulnerabilities and Deviation Request candidates, the AO escalation chain (DFR → CAP → Suspension → Revocation), and the deliverables a cycle produces. With a package uploaded, the walkthrough names its files and shows only what the upload panel parsed from scan CSVs; every other figure reads <em>not parsed</em>.',
     railOutput: 'ConMon Report + POA&M + VDR',
     railMode: 'CONMON · MONTHLY',
     exports: ['ConMon Monthly Report', 'POA&amp;M Update', 'VDR Bundle', 'OSCAL ConMon'],
@@ -3750,7 +3750,7 @@ const USE_CASES = {
     stages: ['Intake', 'Readiness', 'Rotation', 'Re-test', 'Carry-forward', 'Output'],
     runBtnLabel: 'Run annual reassessment',
     idleTitle: 'Annual engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run annual reassessment</strong>. The engine executes the FedRAMP Annual Assessment per <strong style="color:var(--vermillion)">fedramp.gov</strong> Annual Assessment Guidance (Rev5). Pre-assessment readiness check: SSP + appendices update, POA&amp;M + Inventory refresh, Section 5 Annual Assessment Control Selection Worksheet (core controls + ⅓ of remaining + prior-year findings), IRP test report (verified by IA), CP functional test report (verified by IA), annual penetration test per FedRAMP Pen Test Guidance v3.0, and ConMon evaluation including leveraged-system Rev4→Rev5 gap analysis. Produces the SAR with full re-test cohort + carry-forward + closure validation.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run annual reassessment</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through the FedRAMP Annual Assessment per <strong style="color:var(--vermillion)">fedramp.gov</strong> Annual Assessment Guidance (Rev5): the pre-assessment readiness check (SSP + appendices update, POA&amp;M + Inventory refresh, Section 5 Annual Assessment Control Selection Worksheet — core controls + ⅓ of remaining + prior-year findings), the IRP test report (verified by IA), the CP functional test report (verified by IA), the annual penetration test per FedRAMP Pen Test Guidance v3.0, and ConMon evaluation including leveraged-system Rev4→Rev5 gap analysis, ending at the shape of a SAR with a re-test cohort, carry-forward and closure validation.',
     railOutput: 'AAR + POA&M + OSCAL Annual',
     railMode: 'ANNUAL · CORE + ⅓',
     exports: ['Annual Assessment Report', 'POA&amp;M Update', 'Section 5 Control Selection Worksheet', 'OSCAL Annual'],
@@ -3759,7 +3759,7 @@ const USE_CASES = {
     stages: ['Intake', 'Classify', 'Impact', 'Re-test', 'Delta', 'Output'],
     runBtnLabel: 'Run SCR review',
     idleTitle: 'SCR engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run SCR review</strong>. The engine will ingest the change, classify it under FedRAMP RFC-0007 (Routine Recurring · Adaptive · Transformative · Impact Categorization), identify affected controls, re-test the differential scope, quantify the risk delta, and produce the SCN package.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run SCR review</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through a Significant Change Request: classification under FedRAMP RFC-0007 (Routine Recurring · Adaptive · Transformative · Impact Categorization), the affected controls, the differential re-test scope, the risk delta, and the shape of the SCN package.',
     railOutput: 'SCR Decision + Impact + OSCAL Δ',
     railMode: 'SCN · ADAPTIVE/TRANSFORMATIVE',
     exports: ['SCR Decision Memo', 'SCR Impact Assessment', 'POA&amp;M Update', 'OSCAL Delta'],
@@ -3768,7 +3768,7 @@ const USE_CASES = {
     stages: ['Intake', 'Citation', 'Structure', 'Method', 'Compliance', 'Score'],
     runBtnLabel: 'Run QA audit',
     idleTitle: 'QA engine is idle',
-    idleCopy: 'Press <strong style="color:var(--vermillion)">Run QA audit</strong> to validate the entire portfolio. The QA agent will walk every finding across every use case, verify citation completeness, structure, method alignment, and adherence to FedRAMP guidelines, and produce a quality score with a discrepancy report.',
+    idleCopy: 'Press <strong style="color:var(--vermillion)">Run QA audit</strong>. This section is a guided walkthrough over the authored sample portfolio — it does not run the assessment engine. Its rules walk every authored finding across every use case for citation completeness, structure, method alignment and adherence to FedRAMP guidelines, and end at a quality score with a discrepancy report.',
     railOutput: 'QA Report + OSCAL QC Trail',
     railMode: 'QA · CROSS-PORTFOLIO',
     exports: ['QA Audit Report', 'Discrepancy Log', 'Citation Audit Trail', 'OSCAL QC'],
@@ -3777,7 +3777,7 @@ const USE_CASES = {
     stages: ['Intake', 'Discovery', 'Validation', 'Persistence', 'Cadence', 'Output'],
     runBtnLabel: 'Run KSI validation',
     idleTitle: 'KSI engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. The engine will execute the FedRAMP 20x Phase 2 Persistent Validation and Assessment (RFC-0017) flow against the eleven KSI themes (AFR · CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SVC · TPR) per FRMR.KSI release 25.11C, walk all 65 active indicators (60 Low · 65 Moderate), verify ≥70% automated validation coverage, walk machine-resource cadences (7-day) and non-machine-resource cadences (90-day), and produce the KSI evidence package.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through the FedRAMP 20x Phase 2 Persistent Validation and Assessment (RFC-0017) flow against the eleven KSI themes (AFR · CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SVC · TPR) per FRMR.KSI release 25.11C: the 65 active indicators (60 Low · 65 Moderate), the ≥70% automated-validation coverage threshold, machine-resource cadences (7-day) and non-machine-resource cadences (90-day), and the shape of the KSI evidence package.',
     railOutput: 'KSI Package + Evidence Trail',
     railMode: 'KSI · 20x PHASE 2',
     exports: ['KSI Validation Package', 'Automation Coverage Report', 'Persistent Evidence', 'OSCAL Validations'],
@@ -3786,7 +3786,7 @@ const USE_CASES = {
     stages: ['Assemble', 'Schema', 'Constraints', 'Cross-ref', 'Severity', 'Output'],
     runBtnLabel: 'Validate OSCAL package',
     idleTitle: 'Package validator is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. The validator will assemble the OSCAL 1.1.2 SAR + POA&amp;M output from the prior assessment data, run NIST OSCAL schema checks on every required field, apply the FedRAMP constraints (which accept OSCAL 1.0.4 or later), and apply FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators. Surfaces schema errors and constraint violations as findings. This is the gate before submission.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. This section is a guided walkthrough — it does not run the assessment engine. It assembles OSCAL 1.1.2 SAR + POA&amp;M output from the authored walkthrough findings and steps through the checks a validator would apply: NIST OSCAL schema checks on every required field, the FedRAMP constraints (which accept OSCAL 1.0.4 or later), and FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators — surfacing schema errors and constraint violations as findings. This is the gate before submission.',
     railOutput: 'Validated OSCAL Package + SVRL Report',
     railMode: 'PKG · OSCAL 1.1.2',
     exports: ['OSCAL SAR (JSON)', 'OSCAL POA&M (JSON)', 'SVRL Validation Report', 'Submission Readiness Report'],
@@ -3795,7 +3795,7 @@ const USE_CASES = {
     stages: ['Discover', 'Authenticate', 'Enumerate', 'Sync', 'Map', 'Index'],
     runBtnLabel: 'Sync data sources',
     idleTitle: 'Data source sync is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Sync data sources</strong>. The connector engine spans three tiers: <strong>Tier 1 Evidence Sources</strong> (vulnerability scanners, IdP, cloud posture, ticket trackers, document repositories), <strong>Tier 2 GRC Platforms</strong> (ServiceNow GRC, Drata, Vanta, ZenGRC, OneTrust, Hyperproof, AuditBoard, Archer), and <strong>Tier 3 Custom Connectors</strong> (JSON · CSV · PDF/OCR · webhook for tools without a pre-built schema). Each connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned with namespaced extensions per <strong style="color:var(--vermillion)">fedramp.gov</strong> OSCAL prop pattern), then onward to the FedRAMP authorization deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>. Each connector card carries a <strong>▸ View schema mapping</strong> link, which opens that connector\'s full mapping in a new window.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Sync data sources</strong>. This section is a guided walkthrough over a connector catalog — it does not run the assessment engine, and none of these connectors run here. The catalog spans three tiers: <strong>Tier 1 Evidence Sources</strong> (vulnerability scanners, IdP, cloud posture, ticket trackers, document repositories), <strong>Tier 2 GRC Platforms</strong> (ServiceNow GRC, Drata, Vanta, ZenGRC, OneTrust, Hyperproof, AuditBoard, Archer), and <strong>Tier 3 Custom Connectors</strong> (JSON · CSV · PDF/OCR · webhook for tools without a pre-built schema). Each connector defines a schema mapping from its native fields into the SPARKAE canonical evidence record (OSCAL-aligned with namespaced extensions per <strong style="color:var(--vermillion)">fedramp.gov</strong> OSCAL prop pattern), then onward to the FedRAMP authorization deliverable per <strong style="color:var(--vermillion)">fedramp.gov/documents-templates</strong>. Each connector card carries a <strong>▸ View schema mapping</strong> link, which opens that connector\'s full mapping in a new window.',
     railOutput: 'Connector Inventory + Schema Map + Validation Pipeline',
     railMode: 'SRC · INGESTION',
     exports: ['Connector Inventory', 'Evidence Coverage Map', 'Schema Mapping Manifest', 'Provenance Trail'],
@@ -4023,6 +4023,16 @@ function syncRailNote() {
   const note = document.getElementById('rail-note');
   if (!note) return;
   const sample = SAMPLES[selected];
+  // An uploaded package on a tab whose walkthrough needs a record it does not
+  // carry — the mirror of the case below, where a walkthrough sample is picked
+  // on the one tab that reads documents.
+  const RECORD_TABS = { annual: 'annual-reassessment', scr: 'change-request', ksi: 'KSI submission' };
+  if (selected === 'custom' && RECORD_TABS[activeUC] && sample && !sample[activeUC]) {
+    note.style.display = 'block';
+    note.innerHTML = '<strong>' + engEsc(sample.name) + '</strong> carries no ' + engEsc(RECORD_TABS[activeUC]) + ' record, and this section is a walkthrough over one. ' +
+      'Run <strong>§01</strong> to assess your package, or choose <strong>CloudVault</strong> or <strong>MeshGate</strong> to step through this section.';
+    return;
+  }
   if (activeUC !== 'initial' || (sample && sample.liveEngine) || uploadedPackageCount()) {
     note.style.display = 'none';
     note.textContent = '';
@@ -4057,6 +4067,7 @@ document.querySelectorAll('.ssp-option:not(.ssp-upload)').forEach(btn => {
     // discardPreviousRun ran on upload, on clear and at run start, and not here,
     // which is the path this missed.
     CUSTOM_PKG_FILES = [];
+    CUSTOM_PKG_REPORT = null;
     discardPreviousRun();
     const uploadBtn = document.getElementById('ssp-upload-btn');
     if (uploadBtn) {
@@ -4134,24 +4145,6 @@ function readTextBlob(blob, maxBytes) {
   });
 }
 
-function readBlobBuffer(blob) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = () => rej(r.error);
-    r.readAsArrayBuffer(blob);
-  });
-}
-
-function deterministicHash(s) {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = (h * 16777619) >>> 0;
-  }
-  return h;
-}
-
 function fmtBytes(n) {
   if (n < 1024)        return n + ' B';
   if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
@@ -4171,36 +4164,26 @@ function fmtBytes(n) {
 //
 // Members the engine refuses come back as entries with no blob, carrying the
 // engine's own reason, so the panel reports them instead of omitting them.
+//
+// This is the engine's own read. parsePackage() returns the chunks a run
+// assesses AND the member listing it read them from, so the inventory below
+// and the corpus the engine indexes are one account of the package. The panel
+// used to unzip the archive itself and drop __MACOSX / .DS_Store / Thumbs.db
+// members silently while the engine, reading the same archive separately, kept
+// them as evidence — an inventory that omitted exactly the members the run
+// scored. The report is kept on the returned array (`.report`) and bound with
+// the files, so the run reuses it rather than reading the package again.
 async function expandFiles(files) {
-  const out = [];
-  for (const f of files) {
-    if (!/\.zip$/i.test(f.name)) {
-      out.push({ path: f.name, blob: f, size: f.size, fromZip: null });
-      continue;
-    }
-    const refused = [];
-    let members;
-    try {
-      members = await window.SparkAEEngine.unzip(await f.arrayBuffer(), refused);
-    } catch (e) {
-      out.push({ path: f.name, blob: null, size: f.size, fromZip: null,
-                 refusedReason: 'archive could not be read: ' + ((e && e.message) || String(e)) });
-      continue;
-    }
-    for (const m of members) {
-      if (m.directory) continue;
-      if (/__MACOSX|\.DS_Store|Thumbs\.db/i.test(m.name)) continue;
-      // A member kept as bytes is binary and must stay binary; one kept as text
-      // was decoded from UTF-8 and re-encoding it here is lossless for the
-      // formats that reach this point.
-      const blob = m.bytes ? new Blob([m.bytes]) : new Blob([m.text]);
-      out.push({ path: f.name + '!/' + m.name, blob, size: blob.size, fromZip: f.name });
-    }
-    for (const r of refused) {
-      out.push({ path: f.name + '!/' + r.name, blob: null, size: 0, fromZip: f.name,
-                 refusedReason: r.reason });
-    }
-  }
+  const report = await window.SparkAEEngine.parsePackage(files);
+  const out = report.members.map(m => {
+    // A member kept as bytes is binary and must stay binary; one kept as text
+    // was decoded from UTF-8 and re-encoding it here is lossless for the
+    // formats that reach this point. A top-level file is handed through as is.
+    const blob = m.file ? m.file : m.bytes ? new Blob([m.bytes]) : (m.text != null ? new Blob([m.text]) : null);
+    return { path: m.path, blob, size: m.size != null ? m.size : (blob ? blob.size : 0),
+             fromZip: m.fromZip || null, refusedReason: m.refusedReason || null };
+  });
+  out.report = report;
   return out;
 }
 
@@ -4269,51 +4252,11 @@ function parseCSVLine(line) {
   return out;
 }
 
-async function parsePoamXlsx(blob) {
-  try {
-    if (typeof XLSX === 'undefined') return null;
-    const buf = await readBlobBuffer(blob);
-    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
-    let totalRows = 0;
-    const sevCounts = { critical: 0, high: 0, moderate: 0, low: 0 };
-    const statusCounts = { open: 0, closed: 0, ongoing: 0 };
-    let pastSLA = 0, hasVNNN = 0;
-    const today = new Date(displayDate() + 'T00:00:00Z');
-    wb.SheetNames.forEach(s => {
-      const ws = wb.Sheets[s];
-      if (!ws['!ref']) return;
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-      if (!rows.length) return;
-      const headerRow = rows[0].map(c => String(c || '').toLowerCase());
-      const sevIdx = headerRow.findIndex(c => /severity|risk/.test(c));
-      const statusIdx = headerRow.findIndex(c => /status|state/.test(c));
-      const idIdx = headerRow.findIndex(c => /(weakness[_ ]?id|poam[_ ]?id|item[_ ]?id|^id$)/.test(c));
-      const dueIdx = headerRow.findIndex(c => /scheduled|due|completion/.test(c));
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || row.every(c => !c)) continue;
-        totalRows++;
-        if (sevIdx >= 0) {
-          const v = String(row[sevIdx] || '').toLowerCase().trim();
-          if (sevCounts.hasOwnProperty(v)) sevCounts[v]++;
-          else if (v === 'medium') sevCounts.moderate++;
-        }
-        if (statusIdx >= 0) {
-          const v = String(row[statusIdx] || '').toLowerCase().trim();
-          if (/clos|complet|resolv/.test(v)) statusCounts.closed++;
-          else if (/ongoing|in[_ -]?progress/.test(v)) statusCounts.ongoing++;
-          else if (/open|pending/.test(v)) statusCounts.open++;
-        }
-        if (idIdx >= 0 && /^V-?\d+/i.test(String(row[idIdx] || ''))) hasVNNN++;
-        if (dueIdx >= 0 && row[dueIdx]) {
-          const d = new Date(row[dueIdx]);
-          if (!isNaN(d.getTime()) && d < today) pastSLA++;
-        }
-      }
-    });
-    return { sheets: wb.SheetNames.length, items: totalRows, sevCounts, statusCounts, pastSLA, hasVNNN };
-  } catch (e) { return null; }
-}
+// There is no XLSX reader and no PDF reader on this page. Both used to exist
+// as functions that returned null unless a library the page never loads (XLSX,
+// pdfjsLib) happened to be present — which, with no network and a CSP of
+// 'self', it never was. The engine refuses both types with a reason the panel
+// shows; a reader that can only ever return null is a claim, not a reader.
 
 async function parseTextDoc(blob, maxBytes) {
   try {
@@ -4329,26 +4272,6 @@ async function parseDocxText(blob) {
   // the page does not load JSZip.
   try {
     const text = await window.SparkAEEngine.docxText(await blob.arrayBuffer(), 'upload');
-    return scanTextSignals(text.slice(0, 1 * 1024 * 1024));
-  } catch (e) { return null; }
-}
-
-async function parsePdfText(blob) {
-  // Use PDF.js to extract text from up to first 40 pages (caps work for huge docs).
-  try {
-    if (typeof window.pdfjsLib === 'undefined') return null;
-    const buf = await readBlobBuffer(blob);
-    const loadingTask = window.pdfjsLib.getDocument({ data: buf, disableWorker: false, isEvalSupported: false });
-    const pdf = await loadingTask.promise;
-    const maxPages = Math.min(pdf.numPages || 0, 40);
-    let text = '';
-    for (let i = 1; i <= maxPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      text += content.items.map(it => it.str || '').join(' ') + '\n';
-      if (text.length > 1 * 1024 * 1024) break;
-    }
-    try { pdf.destroy && pdf.destroy(); } catch (e) {}
     return scanTextSignals(text.slice(0, 1 * 1024 * 1024));
   } catch (e) { return null; }
 }
@@ -4444,7 +4367,21 @@ function mergeSignals(acc, sig, ctrlSet, perFileFn) {
 }
 
 function synthesizeCustomSample(pkg) {
-  // Build a SAMPLES.custom entry shaped exactly like cloudvault/meshgate, seeded by the upload.
+  // The rail entry for an upload, shaped like the authored samples so the
+  // §02–§09 walkthroughs can name its files. It adjudicates NOTHING and it
+  // invents nothing.
+  //
+  // The previous version emitted findings — a "3PAO examined … and confirmed"
+  // sentence per control, asserting that AC-3 access-enforcement language was
+  // present — from file-name heuristics and keyword hits, SAT and OTS alike,
+  // and filled the ConMon section from a hash of the file names:
+  // 50-odd in-scope assets, 200-odd open vulnerabilities, a severity table of
+  // 1 / 8 / 50 / 100, scan-type counts per category. An upload with no scan
+  // output showed a full ConMon cycle, all of it made up. The one path that
+  // adjudicates an upload is §01, through demo-engine.js.
+  //
+  // Here a figure is either what the upload panel parsed from a scan CSV or it
+  // is null, and every renderer prints null as "not parsed".
   const cspName = 'Custom Upload (' + pkg.inventory.length + ' files · ' + fmtBytes(pkg.totalBytes) + ')';
   // The profile is the visitor's declared choice in the rail — never inferred
   // from package size — and it is the profile the engine actually runs.
@@ -4452,213 +4389,56 @@ function synthesizeCustomSample(pkg) {
   const baseline = 'FedRAMP ' + engineBaseline();
   window.CUSTOM_BASELINE = baseline;
 
-  const seed = deterministicHash(pkg.inventory.map(i => i.name + i.size).join('|'));
-  const fileNames = pkg.inventory.slice(0, 8).map(i => i.name);
-  const today = displayDate();
-  const customSSP = { kind: 'SSP', title: 'Customer-uploaded System Security Plan', version: '', date: today };
-
-  // Presence
-  const hasSSP    = (pkg.tagCounts.SSP || 0) > 0 || (pkg.oscal && pkg.oscal.ssp > 0);
-  const hasPOAM   = (pkg.tagCounts.POAM || 0) > 0 || (pkg.oscal && pkg.oscal.poam > 0);
-  const hasScans  = (pkg.tagCounts.SCAN || 0) > 0 || pkg.scanRows > 0;
-  const hasIR     = (pkg.tagCounts.IR || 0) > 0 || (pkg.textSig && pkg.textSig.incidentResponse);
-  const hasCP     = (pkg.tagCounts.CP || 0) > 0 || (pkg.textSig && pkg.textSig.contingency);
-  const hasPolicy = (pkg.tagCounts.POLICY || 0) + (pkg.tagCounts.PROC || 0) > 0;
-  const hasInv    = (pkg.tagCounts.INV || 0) > 0;
-  const hasABD    = (pkg.tagCounts.ABD || 0) > 0;
-  const hasPT     = (pkg.tagCounts.PT || 0) > 0;
-  const hasIRTest = pkg.textSig && pkg.textSig.tabletopRecent;
-  const cited     = (pkg.controlsCited || []);
-  const has = (id) => cited.some(c => c.toUpperCase().startsWith(id.toUpperCase()));
-
-  const findings = [];
-
-  // ── SAT findings: only emit when we have positive evidence in the upload ──
-  if (hasSSP && has('AC-3')) findings.push({
-    ctrl: 'AC-3.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'No remediation required; the control implementation is verified to satisfy the control objective.',
-    text: 'The 3PAO examined the customer-uploaded SSP narrative and confirmed AC-3 access enforcement language is present and references the implementing components.',
-    cites: [{ ...customSSP, section: '§AC-3 — Access Enforcement' }],
-  });
-  if (hasSSP && has('AU-2')) findings.push({
-    ctrl: 'AU-2.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'No remediation required; verified to satisfy the control objective.',
-    text: 'The 3PAO examined the AU-2 event-logging narrative in the uploaded SSP and found the documented event categories address the FedRAMP-defined logging events.',
-    cites: [{ ...customSSP, section: '§AU-2 — Event Logging' }],
-  });
-  if (hasSSP && has('IA-2') && pkg.textSig && pkg.textSig.mfaWebauthn) findings.push({
-    ctrl: 'IA-2(1)', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'No remediation required.',
-    text: 'The 3PAO examined the IA-2(1) narrative and found explicit reference to phishing-resistant authenticators (WebAuthn/FIDO2) for privileged access, consistent with M-22-09 alignment.',
-    cites: [{ ...customSSP, section: '§IA-2(1) — Privileged MFA' }],
-  });
-  if (hasSSP && has('IA-2') && pkg.textSig && pkg.textSig.mfaSms && !pkg.textSig.mfaWebauthn) findings.push({
-    ctrl: 'IA-2(1)', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall replace SMS-OTP with phishing-resistant authenticators (FIDO2/WebAuthn) for privileged accounts per NIST SP 800-63B AAL3.',
-    text: 'The 3PAO examined the uploaded SSP and found IA-2 references SMS-OTP without an equivalent FIDO2/WebAuthn pathway for privileged accounts.',
-    cites: [{ ...customSSP, section: 'IA-2 narrative — SMS fallback referenced' }, { kind: 'POLICY', title: 'NIST SP 800-63B', section: 'AAL3 phishing-resistance' }],
-  });
-  if (hasSSP && pkg.textSig && pkg.textSig.fips140) findings.push({
-    ctrl: 'SC-13.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'No remediation required.',
-    text: 'The 3PAO examined the SC-13 narrative and confirmed reference to FIPS 140-2/3 validated cryptographic modules.',
-    cites: [{ ...customSSP, section: '§SC-13 — Cryptographic Protection' }],
-  });
-  if (hasSSP && pkg.textSig && pkg.textSig.tls12 && !pkg.textSig.tls13) findings.push({
-    ctrl: 'SC-8(1)', verdict: 'OTS', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'The CSP should plan migration to TLS 1.3 in alignment with NIST SP 800-52 Rev2 forward-looking guidance.',
-    text: 'The 3PAO examined SC-8(1) transmission protection language and observed TLS 1.2 enforcement without TLS 1.3 mention.',
-    cites: [{ ...customSSP, section: '§SC-8(1) — Transmission Confidentiality' }],
-  });
-
-  // ── Findings driven by what is missing or under-evidenced ──
-  if (!hasSSP) findings.push({
-    ctrl: 'PL-2.a', verdict: 'NR', method: 'EXAMINE', risk: 'High', implStatus: 'partial',
-    recommendation: 'The CSP shall provide the System Security Plan (SSP) per FedRAMP SSP Template Rev5 before assessment can proceed.',
-    text: 'The 3PAO examined the uploaded package (' + pkg.inventory.length + ' files / ' + fmtBytes(pkg.totalBytes) + ') and found no System Security Plan artifact (no file matched SSP heuristics, and no OSCAL system-security-plan JSON was detected). Without the SSP, the assessment cannot establish the documented control implementation baseline.',
-    cites: [{ kind: 'EVIDENCE', title: 'Customer Upload Manifest', date: today, section: 'no SSP detected · ' + pkg.inventory.length + ' files reviewed' }],
-  });
-  if (!hasPOAM) findings.push({
-    ctrl: 'CA-5.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall maintain a Plan of Action and Milestones (POA&M) per FedRAMP POA&M Template Completion Guide and provide it as part of the authorization package.',
-    text: 'The 3PAO examined the uploaded package and found no POA&M artifact. Open weaknesses must be tracked under V-NNN identifiers in the FedRAMP POA&M Template.',
-    cites: [{ kind: 'POLICY', title: 'FedRAMP POA&M Template Completion Guide', section: 'V-NNN identifier requirement' }],
-  });
-  if (hasPOAM && pkg.poamHasVNNN === 0 && pkg.poamItems > 0) findings.push({
-    ctrl: 'CA-5.b', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall populate the POA&M Weakness ID column with V-NNN identifiers per the FedRAMP POA&M Template Completion Guide.',
-    text: 'The 3PAO parsed the uploaded POA&M and observed ' + pkg.poamItems + ' rows but did not detect V-NNN identifiers in the Weakness ID column.',
-    cites: [{ kind: 'POAM', title: 'Customer-uploaded POA&M', date: today, section: 'rows=' + pkg.poamItems + ' · V-NNN absent' }],
-  });
-  if (hasPOAM && pkg.poamPastSLA > 0) findings.push({
-    ctrl: 'CA-5.c', verdict: 'OTS', method: 'EXAMINE', risk: 'High', implStatus: 'partial',
-    recommendation: 'The CSP shall remediate or submit Deviation Requests for the ' + pkg.poamPastSLA + ' POA&M items past their scheduled completion date.',
-    text: 'The 3PAO parsed the uploaded POA&M and identified ' + pkg.poamPastSLA + ' item(s) with a Scheduled Completion Date in the past, indicating SLA breach.',
-    cites: [{ kind: 'POAM', title: 'Customer-uploaded POA&M', date: today, section: 'past-SLA rows=' + pkg.poamPastSLA }],
-  });
-  if (!hasScans) findings.push({
-    ctrl: 'RA-5.a', verdict: 'NR', method: 'EXAMINE', risk: 'High', implStatus: 'partial',
-    recommendation: 'The CSP shall provide monthly authenticated vulnerability scan output per RA-5(5) covering OS · Web · Database · Container scan types.',
-    text: 'The 3PAO examined the uploaded package and found no vulnerability scan artifacts. RA-5 cannot be validated without scan evidence.',
-    cites: [{ kind: 'POLICY', title: 'FedRAMP ConMon Strategy Guide', version: 'v3.2', section: '§3.4 — Authenticated Scanning Requirement' }],
-  });
-  if (!hasIR) findings.push({
-    ctrl: 'IR-4.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall produce the Incident Response Plan (Appendix I) per NIST SP 800-61 and conduct an IR-3 functional test.',
-    text: 'The 3PAO examined the uploaded materials and found no Incident Response Plan or IR-related narrative.',
-    cites: [{ kind: 'POLICY', title: 'NIST SP 800-61 Rev2', section: 'Computer Security Incident Handling Guide' }],
-  });
-  if (hasIR && !hasIRTest) findings.push({
-    ctrl: 'IR-3.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall produce evidence of an annual IR-3 functional test (tabletop) within the prior 12 months.',
-    text: 'The 3PAO examined the uploaded IR materials and found the plan but no record of a recent functional test or tabletop exercise.',
-    cites: [{ kind: 'POLICY', title: 'NIST SP 800-61 Rev2', section: 'Functional testing cadence' }],
-  });
-  if (!hasCP) findings.push({
-    ctrl: 'CP-2.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Moderate', implStatus: 'partial',
-    recommendation: 'The CSP shall produce the Information System Contingency Plan (Appendix G) per NIST SP 800-34 and conduct a CP-4 functional test.',
-    text: 'The 3PAO examined the uploaded materials and found no Contingency Plan or DR narrative.',
-    cites: [{ kind: 'POLICY', title: 'NIST SP 800-34 Rev1', section: 'Contingency Planning Guide' }],
-  });
-  if (!hasABD) findings.push({
-    ctrl: 'CA-3.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Low', implStatus: 'partial',
-    recommendation: 'The CSP shall provide the Authorization Boundary Diagram (Appendix M) showing all components, data flows, and external interconnections.',
-    text: 'The 3PAO did not locate an Authorization Boundary Diagram artifact in the uploaded package.',
-    cites: [{ kind: 'POLICY', title: 'FedRAMP Authorization Boundary Guidance', section: 'Appendix M requirement' }],
-  });
-  if (!hasInv) findings.push({
-    ctrl: 'CM-8.a', verdict: 'OTS', method: 'EXAMINE', risk: 'Low', implStatus: 'partial',
-    recommendation: 'The CSP shall provide the Integrated Inventory Workbook covering all in-boundary assets per CM-8 and the FedRAMP IIW template.',
-    text: 'The 3PAO did not locate an Integrated Inventory Workbook in the uploaded package.',
-    cites: [{ kind: 'POLICY', title: 'FedRAMP Integrated Inventory Workbook Template', section: 'CM-8 requirement' }],
-  });
-
-  // ── Findings driven by parsed scan content ──
-  if (hasScans && scanHasContent(pkg)) {
-    const sf = pkg.scanFindings;
-    if (sf.critical > 0 || sf.high > 0) {
-      findings.push({
-        ctrl: 'SI-2.c', verdict: 'OTS', method: 'EXAMINE', risk: 'High', implStatus: 'implemented',
-        recommendation: 'The CSP shall remediate Critical findings within 30 days and High findings within 30 days of detection per FedRAMP RA-5(d), or submit Deviation Requests.',
-        text: 'The 3PAO parsed the uploaded scan output and counted ' + sf.critical + ' Critical and ' + sf.high + ' High severity findings across ' + (pkg.hosts ? pkg.hosts.length : 0) + ' distinct host(s) requiring remediation under the 30-day SLA.',
-        cites: [{ kind: 'SCAN', title: 'Customer-uploaded scan output', date: today, section: 'critical=' + sf.critical + ' · high=' + sf.high + ' · moderate=' + sf.moderate + ' · low=' + sf.low }],
-      });
-    }
-    if (pkg.scanRows > 0) {
-      findings.push({
-        ctrl: 'RA-5.b', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-        recommendation: 'No remediation required; scan evidence parsed successfully.',
-        text: 'The 3PAO parsed the customer scan submission and confirmed ' + pkg.scanRows + ' row(s) of vulnerability data with severity classifications.',
-        cites: [{ kind: 'SCAN', title: 'Customer-uploaded scan output', date: today, section: 'rows=' + pkg.scanRows }],
-      });
-    }
-    if (pkg.cves && pkg.cves.length > 0) {
-      const sample3 = pkg.cves.slice(0, 3).join(', ');
-      findings.push({
-        ctrl: 'RA-5.c', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-        recommendation: 'No remediation required; CVE traceability is present.',
-        text: 'The 3PAO extracted ' + pkg.cves.length + ' distinct CVE identifier(s) from the uploaded scan output (' + sample3 + (pkg.cves.length > 3 ? ', …' : '') + '), confirming traceability to the NVD.',
-        cites: [{ kind: 'SCAN', title: 'Customer-uploaded scan output', date: today, section: 'distinct_cves=' + pkg.cves.length }],
-      });
-    }
-  }
-
-  // ── Findings driven by OSCAL ──
-  if (pkg.oscal && pkg.oscal.ssp > 0) findings.push({
-    ctrl: 'PL-2.b', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-    recommendation: 'No remediation required.',
-    text: 'The 3PAO loaded ' + pkg.oscal.ssp + ' OSCAL system-security-plan JSON document(s) referencing ' + pkg.oscal.controlsCited.length + ' distinct control identifier(s).',
-    cites: [{ kind: 'EVIDENCE', title: 'OSCAL SSP', date: today, section: 'controls_cited=' + pkg.oscal.controlsCited.length }],
-  });
-
-  // Compute counts
-  const sat = findings.filter(f => f.verdict === 'SAT').length;
-  const ots = findings.filter(f => f.verdict === 'OTS').length;
-  const nr  = findings.filter(f => f.verdict === 'NR').length;
-
-  // Synthesize ConMon section
+  const fileNames = pkg.inventory.filter(i => !i.refusedReason).slice(0, 8).map(i => i.name);
+  const hasScans = scanHasContent(pkg);
   const sf = pkg.scanFindings;
-  const totalSc = sf.critical + sf.high + sf.moderate + sf.low;
-  const aging = (n) => Math.floor(n * 0.08 + (seed % 3));
+  const parsed = (v) => (hasScans ? v : null);
+  // Aging needs each finding's detection date, which the panel does not read.
+  const sev = (total, sla) => ({ total: parsed(total), aging: null, sla });
+  const scanType = () => ({ count: null, authPercent: null,
+    scanner: hasScans ? 'customer-supplied · scan type not read' : 'NOT PROVIDED' });
+
   const conmon = {
+    parsedOnly: true,
     period: new Date(displayDate() + 'T00:00:00Z').toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
     files: fileNames,
-    assets: 50 + (seed % 100),
-    authenticated: 50 + (seed % 100) - (hasScans ? 0 : 5),
-    total: totalSc || (200 + seed % 800),
-    vdr: hasPOAM ? Math.max(1, Math.floor(totalSc / 50)) : 0,
+    assets: parsed(pkg.hosts ? pkg.hosts.length : 0),
+    authenticated: null,
+    total: parsed(sf.critical + sf.high + sf.moderate + sf.low),
+    vdr: null,
     severities: {
-      critical: { total: sf.critical || (totalSc ? 0 : 1), aging: 0,                       sla: '30 days'  },
-      high:     { total: sf.high     || (totalSc ? 0 : 8), aging: aging(sf.high     || 8), sla: '30 days'  },
-      moderate: { total: sf.moderate || 50,                aging: aging(sf.moderate || 50), sla: '90 days'  },
-      low:      { total: sf.low      || 100,               aging: aging(sf.low      || 100), sla: '180 days' },
+      critical: sev(sf.critical,  '30 days'),
+      high:     sev(sf.high,      '30 days'),
+      moderate: sev(sf.moderate,  '90 days'),
+      low:      sev(sf.low,       '180 days'),
     },
-    poamDelta: { added: Math.max(1, ots), closed: pkg.poamItems > 0 ? Math.floor(pkg.poamItems / 4) : 0, ongoing: pkg.poamItems || ots * 4 },
-    kev: pkg.scanFindings.critical > 0 ? 1 : 0,
-    scanTypes: {
-      os:        { count: 50 + seed % 100, authPercent: hasScans ? 100 : 0, scanner: hasScans ? 'Customer-supplied' : 'NOT PROVIDED' },
-      webapp:    { count: 12 + seed % 30,  authPercent: hasScans ? 100 : 0, scanner: hasScans ? 'Customer-supplied' : 'NOT PROVIDED' },
-      database:  { count: 4  + seed % 8,   authPercent: hasScans ? 100 : 0, scanner: hasScans ? 'Customer-supplied' : 'NOT PROVIDED' },
-      container: { count: 30 + seed % 60,  authPercent: hasScans ? 100 : 0, scanner: hasScans ? 'Customer-supplied' : 'NOT PROVIDED' },
-    },
+    poamDelta: { added: null, closed: null, ongoing: null },
+    kev: null,
+    scanTypes: { os: scanType(), webapp: scanType(), database: scanType(), container: scanType() },
     dfrRisk: !hasScans,
-    findings: findings.filter(f => /^(RA-5|SI-2|CA-7|AU-)/.test(f.ctrl)).slice(0, 6),
+    findings: [],
   };
 
   SAMPLES['custom'] = {
     name: cspName,
     controls: controls,
+    custom: true,
     initial: {
       files: fileNames,
-      sat: sat, ots: ots, nr: nr, na: 0, nt: 0, ra: 0, or_: 0, fp: 0, def: Math.round((sat / Math.max(1, sat + ots + nr)) * 100),
-      findings: findings,
+      sat: 0, ots: 0, nr: 0, na: 0, nt: 0, ra: 0, or_: 0, fp: 0, def: 0,
+      findings: [],
     },
     conmon: conmon,
-    annual:    { files: fileNames, cycle: 'Custom assessment', readiness: {}, cohorts: [], carryForward: 0, newFindings: ots, closedThisCycle: 0, significantChanges: 0, penTest: { conducted: hasPT, vectors: hasPT ? 6 : 0 }, findings: findings.slice(0, 8) },
-    scr:       { files: fileNames, change: 'Customer-uploaded change request', impacts: { boundary: { affected: false, detail: '' }, dataFlow: { affected: false, detail: '' }, controls: { affected: false, detail: '' }, leveraged: { affected: false, detail: '' }, riskRating: { affected: false, detail: '' }, conmon: { affected: false, detail: '' }, oscal: { affected: false, detail: '' }, techstack: { affected: false, detail: '' } }, affectedControls: 0, newFindings: 0, riskDelta: 0, classify: { category: 'Routine Recurring' }, findings: [] },
-    ksi:       { themes: { AFR: { total: 5, automated: 4, passed: 5 } }, findings: [] },
+    // An upload carries no annual-reassessment record, no change request and no
+    // KSI submission, so there is nothing for §03, §04 or §05 to step through.
+    // These used to be filled with placeholders — an empty cohort list that
+    // made §03 throw, a `classify` key §04 never read, and a KSI theme of five
+    // indicators with four automated that nobody submitted. A section with no
+    // record is null, and its runner says so and stops.
+    annual: null,
+    scr: null,
+    ksi: null,
   };
-
   return SAMPLES['custom'];
 }
 
@@ -4729,7 +4509,8 @@ function renderUploadStatus(pkg) {
   // fixed allowlist and is escaped for the same reason the next reader should
   // not have to check where it came from.
   const fileRows = showFiles.map(f =>
-    '<div class="upload-file"><span class="file-tag">' + engEsc(f.tag) + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + engEsc(f.name) + ' · ' + fmtBytes(f.size) + '</div>'
+    '<div class="upload-file"><span class="file-tag">' + engEsc(f.tag) + '</span> ' + (f.fromZip ? '<span class="upload-warn" style="margin-right:4px">📦</span>' : '') + engEsc(f.name) + ' · ' + fmtBytes(f.size) +
+    (f.refusedReason && f.tag !== 'UNREAD' ? ' · <span class="upload-warn">not read: ' + engEsc(f.refusedReason) + '</span>' : '') + '</div>'
   ).join('') + (pkg.inventory.length > showFiles.length ? '<div class="upload-file" style="opacity:.6">… and ' + (pkg.inventory.length - showFiles.length) + ' more</div>' : '');
 
   const scanLine = scanHasContent(pkg)
@@ -4740,9 +4521,6 @@ function renderUploadStatus(pkg) {
     : '';
   const hostLine = (pkg.hosts && pkg.hosts.length)
     ? '<div class="upload-row"><span class="upload-label">Distinct hosts</span><span class="upload-value">' + pkg.hosts.length + '</span></div>'
-    : '';
-  const poamLine = pkg.poamItems > 0
-    ? '<div class="upload-row"><span class="upload-label">Parsed POA&M items</span><span class="upload-value">' + pkg.poamItems + ' rows · open ' + (pkg.poamStatus.open || 0) + ' · ongoing ' + (pkg.poamStatus.ongoing || 0) + ' · closed ' + (pkg.poamStatus.closed || 0) + (pkg.poamPastSLA ? ' · ⚠ ' + pkg.poamPastSLA + ' past SLA' : '') + '</span></div>'
     : '';
   const oscalLine = (oscal.ssp + oscal.poam + oscal.sar + oscal.sap + oscal.component + oscal.catalog + oscal.profile) > 0
     ? '<div class="upload-row"><span class="upload-label">OSCAL detected</span><span class="upload-value">' +
@@ -4765,7 +4543,7 @@ function renderUploadStatus(pkg) {
   status.innerHTML =
     '<div class="upload-row"><span class="upload-label">Files received</span><span class="upload-value">' + pkg.inventory.length + ' · ' + fmtBytes(pkg.totalBytes) + '</span></div>' +
     '<div class="upload-row"><span class="upload-label">Profile (from the rail)</span><span class="upload-value">' + baseline + ' · ' + sample.controls + ' controls</span></div>' +
-    scanLine + cveLine + hostLine + poamLine + oscalLine + ctrlLine + cryptoLine +
+    scanLine + cveLine + hostLine + oscalLine + ctrlLine + cryptoLine +
     '<div style="height:6px"></div>' +
     checkRows +
     '<div class="upload-files">' + fileRows + '</div>' +
@@ -4797,6 +4575,7 @@ function clearCustomUpload() {
   // and the next run still assessed the cleared package, under whatever
   // assessment date the newly selected sample carried.
   CUSTOM_PKG_FILES = [];
+  CUSTOM_PKG_REPORT = null;
   discardPreviousRun();
   syncRailNote();
 }
@@ -4816,9 +4595,12 @@ document.getElementById('ssp-upload-btn').addEventListener('click', (ev) => {
 });
 
 // The one ingestion handler. It reads the upload once, through the engine's
-// readers, and everything the visitor then sees — the inventory, the refusals,
-// the selected input and the corpus a run assesses — comes out of that single
-// read. Nothing is bound to the engine until the read succeeds.
+// parsePackage(), and everything the visitor then sees — the inventory, the
+// refusals, the selected input and the corpus a run assesses — comes out of
+// that single read: the member listing feeds the inventory, and the chunks are
+// bound alongside the files (CUSTOM_PKG_REPORT) so engineCorpus indexes them
+// rather than unzipping the package a second time. Nothing is bound to the
+// engine until the read succeeds.
 document.getElementById('ssp-upload-input').addEventListener('change', async (ev) => {
   const files = Array.from(ev.target.files || []);
   if (!files.length) return;
@@ -4826,6 +4608,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
   // whatever package was loaded belongs to the run that was here before it.
   discardPreviousRun();
   CUSTOM_PKG_FILES = [];
+  CUSTOM_PKG_REPORT = null;
   const btn = document.getElementById('ssp-upload-btn');
   const nameEl = btn.querySelector('.ssp-name');
   const metaEl = btn.querySelector('.ssp-meta');
@@ -4879,6 +4662,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
   // it here rather than in a listener of its own is what keeps a failed parse
   // from leaving runnable evidence behind.
   CUSTOM_PKG_FILES = files;
+  CUSTOM_PKG_REPORT = { files, report: pkg.report };
   // An upload carries the visitor's real evidence, so the default assessment
   // date becomes their own — read once, here, into a visible field they can
   // edit. The engine itself never reads the clock.
@@ -4917,9 +4701,6 @@ async function processUploadsWithProgress(files) {
   const scanFindings = { critical: 0, high: 0, moderate: 0, low: 0 };
   let scanRows = 0;
   const allCVEs = new Set(), allHosts = new Set();
-  let poamItems = 0, poamPastSLA = 0, poamHasVNNN = 0;
-  const poamSev = { critical: 0, high: 0, moderate: 0, low: 0 };
-  const poamStatus = { open: 0, closed: 0, ongoing: 0 };
   const oscal = { ssp: 0, poam: 0, sar: 0, sap: 0, component: 0, catalog: 0, profile: 0, controlsCited: new Set() };
   const textSig = { fips140: false, tls13: false, tls12: false, mfaWebauthn: false, mfaSms: false, mentionsKEV: false, rev5: false, rev4: false, govcloud: false, incidentResponse: false, contingency: false, tabletopRecent: false };
   const controlsCited = new Set();
@@ -4943,10 +4724,12 @@ async function processUploadsWithProgress(files) {
     const display = f.path.split('!/').pop();
     const cls = classifyFile(display);
     const inv = { name: display, fullPath: f.path, size: f.size, tag: cls.tag, label: cls.label, fromZip: f.fromZip };
-    // A member the engine refused has no bytes to classify. It is still listed,
-    // with the engine's own reason, because an artifact that vanished from the
-    // inventory reads as evidence that was never supplied.
-    if (f.refusedReason) {
+    // A member the engine refused and could not even return the bytes of —
+    // a duplicate name, a stream that will not inflate, a housekeeping member —
+    // has nothing to classify. It is still listed, with the engine's own
+    // reason, because an artifact that vanished from the inventory reads as
+    // evidence that was never supplied.
+    if (f.refusedReason && !f.blob) {
       inv.refusedReason = f.refusedReason;
       inv.tag = 'UNREAD';
       inv.label = 'refused — ' + f.refusedReason;
@@ -4954,6 +4737,11 @@ async function processUploadsWithProgress(files) {
       tagCounts[inv.tag] = (tagCounts[inv.tag] || 0) + 1;
       continue;
     }
+    // A file the engine refused but could hand over — a PDF, an XLSX — is
+    // classified by name so the inventory can say what KIND of artifact the
+    // package carries, and carries the engine's reason beside it so nobody
+    // reads "present" as "read".
+    if (f.refusedReason) { inv.refusedReason = f.refusedReason; inv.label += ' · not read by the engine: ' + f.refusedReason; }
     inventory.push(inv);
     totalBytes += f.size;
     setCurrent('[' + (i + 1) + '/' + expanded.length + '] ' + cls.tag + ' · ' + display.slice(0, 60));
@@ -4967,16 +4755,6 @@ async function processUploadsWithProgress(files) {
           if (r.sevs) { scanFindings.critical += r.sevs.critical; scanFindings.high += r.sevs.high; scanFindings.moderate += r.sevs.moderate; scanFindings.low += r.sevs.low; }
           (r.cves || []).forEach(c => allCVEs.add(c));
           (r.hosts || []).forEach(h => allHosts.add(h));
-        }
-      }
-      if (ext === 'xlsx' && (cls.tag === 'POAM' || /poa[_-]?m/i.test(display))) {
-        const r = await parsePoamXlsx(f.blob);
-        if (r) {
-          poamItems += r.items;
-          poamPastSLA += r.pastSLA || 0;
-          poamHasVNNN += r.hasVNNN || 0;
-          if (r.sevCounts) for (const k in poamSev) poamSev[k] += r.sevCounts[k] || 0;
-          if (r.statusCounts) for (const k in poamStatus) poamStatus[k] += r.statusCounts[k] || 0;
         }
       }
       if (ext === 'json') {
@@ -5000,10 +4778,6 @@ async function processUploadsWithProgress(files) {
         const sig = await parseDocxText(f.blob);
         if (sig) { mergeSignals(textSig, sig, controlsCited, () => { if (sig.rev5) rev5Hits++; if (sig.rev4) rev4Hits++; }); promoteFromHints2(inv, sig.kindHints); }
       }
-      if (ext === 'pdf') {
-        const sig = await parsePdfText(f.blob);
-        if (sig) { mergeSignals(textSig, sig, controlsCited, () => { if (sig.rev5) rev5Hits++; if (sig.rev4) rev4Hits++; }); promoteFromHints2(inv, sig.kindHints); }
-      }
     } catch (e) {
       console.warn('Parse error on', display, e);
     }
@@ -5022,7 +4796,7 @@ async function processUploadsWithProgress(files) {
     inventory, totalBytes, tagCounts,
     scanFindings, scanRows,
     cves: Array.from(allCVEs), hosts: Array.from(allHosts),
-    poamItems, poamPastSLA, poamHasVNNN, poamSev, poamStatus,
+    report: expanded.report,
     oscal: { ...oscal, controlsCited: Array.from(oscal.controlsCited) },
     controlsCited: Array.from(controlsCited),
     textSig, rev5Hits, rev4Hits,
@@ -5034,6 +4808,12 @@ async function processUploadsWithProgress(files) {
 // The page carries no randomness now — this counter does the same job.
 let _tick = 0;
 
+// `msg` is markup: callers pass <span class="key"> around the values they
+// highlight. That makes every interpolated VALUE a sink — a file name, a sample
+// name, a period — and each caller escapes those with engEsc() before they
+// reach this string. The page runs from file://, where the deployed CSP does
+// not apply, so nothing but that escaping stands between a member named
+// <img onerror=…> and its handler.
 function log(time, tag, msg, cls = '') {
   const el = document.getElementById('log');
   const line = document.createElement('div');
@@ -5082,10 +4862,10 @@ function renderSLAMatrix(severities, sample) {
     const hasAging = s.aging > 0 ? ' has-aging' : '';
     return `<div class="sla-band ${sev}${hasAging}" data-sev="${sev}">
       <div class="sla-band-name">${SEVERITY_LABELS[sev]}</div>
-      <div class="sla-band-sla">SLA · ${s.sla}</div>
+      <div class="sla-band-sla">SLA · ${engEsc(s.sla)}</div>
       <div class="sla-band-counts">
-        <span class="sla-band-aging">${s.aging}</span>
-        <span class="sla-band-total">past SLA / ${s.total} open</span>
+        <span class="sla-band-aging">${s.aging == null ? '—' : s.aging}</span>
+        <span class="sla-band-total">past SLA / ${s.total == null ? NOT_PARSED : s.total + ' open'}</span>
       </div>
     </div>`;
   }).join('');
@@ -5196,16 +4976,29 @@ function renderInitialSummary(d) {
   animateNum('r-def', d.def);
 }
 
+// A ConMon figure is a number or null. Null is a figure this run did not read
+// — an uploaded package whose scan output the panel could not parse — and it
+// is printed as such, never as 0 and never as an estimate.
+const NOT_PARSED = 'not parsed';
+function conmonNum(v) { return v == null ? NOT_PARSED : String(v); }
+function conmonSum(vals) { return vals.some(v => v == null) ? null : vals.reduce((a, b) => a + b, 0); }
+function conmonPct(part, whole) { return (part == null || whole == null || !whole) ? null : Math.round(100 * part / whole); }
+// animateNum counts up to a number; a null gets the words instead.
+function paintConmonNum(id, v) {
+  if (v == null) { const el = document.getElementById(id); if (el) { el.textContent = '—'; el.title = NOT_PARSED; } }
+  else animateNum(id, v);
+}
+
 function renderConMonSummary(d) {
-  const totalAging = SEVERITY_ORDER.reduce((s, k) => s + d.severities[k].aging, 0);
-  const totalOpen = SEVERITY_ORDER.reduce((s, k) => s + d.severities[k].total, 0);
-  const slaCompliance = totalOpen > 0 ? Math.round(100 * (totalOpen - totalAging) / totalOpen) : 100;
+  const totalAging = conmonSum(SEVERITY_ORDER.map(k => d.severities[k].aging));
+  const totalOpen = conmonSum(SEVERITY_ORDER.map(k => d.severities[k].total));
+  const slaCompliance = (totalAging == null || totalOpen == null) ? null : (totalOpen > 0 ? Math.round(100 * (totalOpen - totalAging) / totalOpen) : 100);
   document.getElementById('results-summary').innerHTML = `
     <div class="sar-section-label">
       <span class="sar-section-num">§1</span>
       <span class="sar-section-title">Continuous Monitoring Monthly Executive Summary</span>
       <span class="sar-section-ref">per fedramp.gov · ConMon Strategy Guide (Rev5) · Rev5 Playbook</span>
-      <span class="sar-section-total">${d.period} cycle · ${d.assets} in-scope assets · ${slaCompliance}% within SLA</span>
+      <span class="sar-section-total">${d.period} cycle · in-scope assets ${conmonNum(d.assets)} · within SLA ${slaCompliance == null ? NOT_PARSED : slaCompliance + '%'}</span>
     </div>
     <div class="verdict-summary">
       <div class="verdict-cell def"><div class="num" id="r-total">0</div><div class="lbl">Open Vulnerabilities</div><div class="sub">RA-5(a) · all severities</div></div>
@@ -5224,14 +5017,14 @@ function renderConMonSummary(d) {
       <div class="verdict-cell or"><div class="num" id="r-poam-new">0</div><div class="lbl">New This Cycle</div><div class="sub">added to POA&amp;M</div></div>
       <div class="verdict-cell fp"><div class="num" id="r-kev">0</div><div class="lbl">CISA KEV / BOD 22-01</div><div class="sub">priority remediation</div></div>
     </div>`;
-  animateNum('r-total', d.total);
-  animateNum('r-aging', totalAging);
-  animateNum('r-vdr', d.vdr);
-  animateNum('r-poam', d.poamDelta.ongoing);
-  animateNum('r-auth', Math.round(100 * d.authenticated / d.assets));
-  animateNum('r-poam-closed', d.poamDelta.closed);
-  animateNum('r-poam-new', d.poamDelta.added);
-  animateNum('r-kev', d.kev || 0);
+  paintConmonNum('r-total', d.total);
+  paintConmonNum('r-aging', totalAging);
+  paintConmonNum('r-vdr', d.vdr);
+  paintConmonNum('r-poam', d.poamDelta.ongoing);
+  paintConmonNum('r-auth', conmonPct(d.authenticated, d.assets));
+  paintConmonNum('r-poam-closed', d.poamDelta.closed);
+  paintConmonNum('r-poam-new', d.poamDelta.added);
+  paintConmonNum('r-kev', d.kev);
 }
 
 function renderAnnualSummary(d) {
@@ -5331,11 +5124,14 @@ function renderExportBar() {
     '<div class="export-note">Illustrative deliverable names — this walkthrough does not generate files. Downloads come from a §01 live-engine run.</div>' + names;
 }
 
+// Citation metadata is text — an engine citation carries an uploaded file's
+// name — and is escaped here, at the sink, whoever built the cite.
 function renderCites(cites) {
   if (!cites || !cites.length) return '';
   const rows = cites.map(c => {
-    const meta = [c.title, c.version, c.date, c.section].filter(p => p && p.length).join(' · ');
-    return `<div class="cite-row"><span class="cite-kind ${c.kind.toLowerCase()}">${c.kind}</span><span class="cite-meta">${meta}</span></div>`;
+    const meta = [c.title, c.version, c.date, c.section].filter(p => p && String(p).length).join(' · ');
+    const kind = String(c.kind || '');
+    return `<div class="cite-row"><span class="cite-kind ${engEsc(kind.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}">${engEsc(kind)}</span><span class="cite-meta">${engEsc(meta)}</span></div>`;
   }).join('');
   return `<div class="cite-block">${rows}</div>`;
 }
@@ -5358,36 +5154,44 @@ let currentSampleName = '';
 // scheduled for and drops itself if a later paint has started.
 let _paintGen = 0;
 
+// The one painter. Rows land in batches on timers (a 981-row run at one timer
+// per row was 78 seconds and a timer storm), capped at ENGINE_ROW_CAP with the
+// remainder behind a control, and every row is built by buildFindingRow.
+//
+// There used to be two: this cascade for 40 rows or fewer and a batched
+// override above it for more, and only the override built rows through
+// buildFindingRow — the one path that renders the examine statement and the
+// assessor's revise control. Chip a filter that left 40 rows or fewer of a live
+// run and the cascade took over: the statements and the Revise buttons
+// vanished from the very rows the assessor had narrowed down to. One painter
+// cannot disagree with itself.
 function paintFindings(findings) {
   const tbody = document.getElementById('findings-body');
+  const bar = document.getElementById('eng-showall');
+  if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
   const gen = ++_paintGen;
   tbody.innerHTML = '';
-  setFilterCount(findings.length, findings.length);
-  if (!findings.length) { tbody.appendChild(emptyFindingsRow()); return; }
-  findings.forEach((f, i) => {
+  if (!findings.length) { setFilterCount(0, 0); tbody.appendChild(emptyFindingsRow()); return; }
+  const shown = Math.min(findings.length, window.__engShowAll ? findings.length : ENGINE_ROW_CAP);
+  const BATCH = 12, STEP = 55;
+  for (let start = 0; start < shown; start += BATCH) {
     setTimeout(() => {
       if (gen !== _paintGen) return;
-      const tr = document.createElement('tr');
-      const statusBadge = f.status ? ` <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;padding:1px 6px;margin-left:6px;border:1px solid #3A4250;color:#7A8290">${f.status}</span>` : '';
-      const riskBadge = f.risk ? `<span class="risk-tag ${f.risk.toLowerCase()}">${f.risk}</span>` : '';
-      const implBadge = f.implStatus ? `<span class="impl-pill ${f.implStatus.replace('-', '')}">${f.implStatus.replace('-', ' ')}</span>` : '';
-      const recBlock = f.recommendation ? `<div class="rec-block"><span class="rec-label">Recommendation · SAR Appendix A</span><span class="rec-text">${f.recommendation}</span></div>` : '';
-      // Asset/CVE/KEV strip — ConMon findings have these
-      let assetStrip = '';
-      const lookupKey = currentSampleName + '/' + activeUC + '/' + f.ctrl;
-      if (typeof ASSET_LOOKUP !== 'undefined' && ASSET_LOOKUP[lookupKey]) {
-        const a = ASSET_LOOKUP[lookupKey];
-        const parts = [];
-        if (a.asset)   parts.push(`<span class="as-label">Asset</span><span class="as-asset">${a.asset}</span>`);
-        if (a.cve)     parts.push(`<span class="as-label">CVE</span><span class="as-cve">${a.cve}</span>`);
-        if (a.kev)     parts.push(`<span class="as-label">KEV · BOD 22-01</span><span class="as-kev">due ${a.kevDue}</span>`);
-        if (a.scanner) parts.push(`<span class="as-label">Scanner</span>${a.scanner}`);
-        if (parts.length) assetStrip = `<div class="asset-strip">${parts.join('')}</div>`;
-      }
-      tr.innerHTML = `<td class="ctrl">${f.ctrl}${statusBadge}</td><td><span class="verdict-tag ${f.verdict.toLowerCase()}">${f.verdict}</span>${riskBadge}${implBadge}</td><td><span class="method-tag ${f.method.toLowerCase()}">${f.method}</span></td><td>${f.text}${renderCites(f.cites)}${assetStrip}${recBlock}</td>`;
-      tbody.appendChild(tr);
-    }, i * 80);
-  });
+      const frag = document.createDocumentFragment();
+      for (let i = start; i < Math.min(start + BATCH, shown); i++) frag.appendChild(buildFindingRow(findings[i]));
+      tbody.appendChild(frag);
+    }, (start / BATCH) * STEP);
+  }
+  setFilterCount(shown, findings.length);
+  if (bar && shown < findings.length) {
+    bar.style.display = 'block';
+    bar.innerHTML = '<button class="show-all-btn" id="eng-showall-btn">Show all ' +
+      findings.length + ' findings · ' + (findings.length - shown) + ' more</button>';
+    document.getElementById('eng-showall-btn').onclick = () => {
+      window.__engShowAll = true;
+      paintFindings(findings);
+    };
+  }
 }
 
 // An empty table is indistinguishable from a broken one. Name the selection
@@ -5417,13 +5221,14 @@ function renderScanBands(sample) {
   ];
   const cards = types.map(t => {
     const d = st[t.key];
-    const authClass = d.authPercent === 100 ? 'ok' : (d.authPercent >= 90 ? 'warn' : 'fail');
-    const authLabel = d.authPercent === 100 ? '✓ 100% AUTH · RA-5(5)' : (d.authPercent + '% AUTH · DFR risk');
+    const unread = d.authPercent == null;
+    const authClass = unread ? 'warn' : d.authPercent === 100 ? 'ok' : (d.authPercent >= 90 ? 'warn' : 'fail');
+    const authLabel = unread ? 'AUTH COVERAGE NOT PARSED' : d.authPercent === 100 ? '✓ 100% AUTH · RA-5(5)' : (d.authPercent + '% AUTH · DFR risk');
     return `<div class="scan-band">
       <div class="scan-band-label">${t.icon}</div>
       <div class="scan-band-name">${t.label}</div>
-      <div class="scan-band-count">${d.count} ${t.unit}</div>
-      <div class="scan-band-scanner">${d.scanner}</div>
+      <div class="scan-band-count">${d.count == null ? NOT_PARSED : d.count + ' ' + t.unit}</div>
+      <div class="scan-band-scanner">${engEsc(d.scanner)}</div>
       <span class="scan-band-auth ${authClass}">${authLabel}</span>
     </div>`;
   }).join('');
@@ -5501,7 +5306,7 @@ function renderKSISummary(sample) {
 //   · a bundled sample — the figures are authored fixture data;
 //   · an uploaded package — worse, and this is the case worth naming. The
 //     walkthrough tabs seed their numbers from a hash of the visitor's file
-//     names and sizes (`50 + seed % 100` assets, `200 + seed % 800` findings)
+//     names and sizes (fifty-odd assets, a few hundred findings, all from a hash)
 //     and fall back to literals when a parser finds nothing. Those are not
 //     their figures. Only §01 reads the contents of what they uploaded;
 //   · no engine — §01 is itself a walkthrough then, so it cannot be offered as
@@ -5513,16 +5318,13 @@ function logWalkthroughNotice() {
   const engineUp = !!window.SparkAEEngine && typeof CATALOG !== 'undefined';
   const live = engineUp ? ' · §01 Initial Assessment is the live engine and reads your evidence' : '';
   const body = (selected === 'custom')
-    ? 'guided walkthrough · these figures are seeded from your package\'s file names and counts, not adjudicated from its contents' + live
+    ? 'guided walkthrough · this is an uploaded package: the walkthrough names its files and shows only what the upload panel parsed from scan output — anything it did not read says \'not parsed\' — and nothing here is adjudicated from the package\'s contents' + live
     : 'guided walkthrough over authored sample data · figures are authored, not computed from evidence' + live;
   log('00:00.0', 'init', '<span class="key">walkthrough</span> · ' + body, 'warn');
 }
 
 async function runKSI(sample) {
-  if (!sample.ksi) {
-    setStatus('◆ ERROR · KSI data not available for this SSP');
-    return;
-  }
+  if (!sample.ksi) return stopWalkthroughWithoutRecord(sample, USE_CASES.ksi, 'KSI submission');
   renderStages(USE_CASES.ksi.stages);
   logWalkthroughNotice();
   document.getElementById('matrix-container').innerHTML = renderKSIMatrix(sample);
@@ -5536,7 +5338,7 @@ async function runKSI(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · loading KSI submission · ' + k.baseline);
-  log('00:00.0', 'init', 'KSI submission · ' + sample.name + ' · ' + k.baseline);
+  log('00:00.0', 'init', 'KSI submission · ' + engEsc(sample.name) + ' · ' + engEsc(k.baseline));
   await wait(400);
   log('00:01.4', 'load', 'KSI release <span class="key">25.11C</span> · 11 themes · ' + total + ' indicators', 'ok');
   await wait(300);
@@ -5697,10 +5499,10 @@ async function runInitialWalkthrough(sample) {
   setStage(1);
   setStatus('◆ SSP REVIEW · 17 mandatory appendices A through Q · per fedramp.gov SSP Template Rev5');
   if (_realRun) {
-    log('00:00.0', 'init', `<span class="key">live engine</span> · ${_realRun.corpusLabel} · ${_realRun.fileCount} file(s) · ${_realRun.chunkCount} chunks indexed`);
+    log('00:00.0', 'init', `<span class="key">live engine</span> · ${engEsc(_realRun.corpusLabel)} · ${_realRun.fileCount} file(s) · ${_realRun.chunkCount} chunks indexed`);
     log('00:00.2', 'init', `BM25 index built · ${_realRun.controlCount} controls / ${_realRun.summary.findings.length} determination statements at ${engineBaseline()} baseline`, 'ok');
   } else {
-    log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Low'} baseline`);
+    log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${sample.controls} controls · FIPS 199 ${engEsc(inventory.fips199 ? inventory.fips199.overall : 'Low')} baseline`);
   }
   await wait(300);
   // For custom uploads, reflect the actually-detected materials. Otherwise use baked-in CSP narrative.
@@ -5972,6 +5774,17 @@ async function runInitialWalkthrough(sample) {
   renderFindings(d.findings);
 }
 
+// §03, §04 and §05 step through a record — an annual reassessment, a change
+// request, a KSI submission — that only the authored samples carry. For an
+// uploaded package the section is null, and the walkthrough stops here by
+// saying so, the way §01 stops for a rail entry with no document set: naming
+// the package, saying why, and saying what to do instead.
+function stopWalkthroughWithoutRecord(sample, cfg, what) {
+  renderStages(cfg.stages);
+  log('00:00.0', 'stop', '✗ no ' + what + ' record for <span class="key">' + engEsc(sample.name) + '</span> — this section is a walkthrough over the authored samples, and an uploaded package carries no ' + what + ' to step through. Pick <span class="key">CloudVault</span> or <span class="key">MeshGate</span> to see the walkthrough, or run <span class="key">§01</span> to assess your package', 'warn');
+  setStatus('◆ STOPPED · walkthrough · no ' + what + ' record for an uploaded package');
+}
+
 // ── ConMon runner ──
 async function runConMon(sample) {
   const d = sample.conmon;
@@ -5981,20 +5794,23 @@ async function runConMon(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · Reading scan output · ' + d.period);
-  log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.period} cycle · ${d.assets} in-scope assets`);
+  // Names and figures below are text the visitor did not write — a file name
+  // is the package author's — so every one of them is escaped into the log.
+  if (d.parsedOnly) log('00:00.0', 'init', 'uploaded package · the figures below are what the upload panel parsed from scan CSVs, and nothing else · a figure the panel did not read says <span class="key">' + NOT_PARSED + '</span>, never a number', 'warn');
+  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${engEsc(d.period)} cycle · in-scope assets ${conmonNum(d.assets)}`);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
     await wait(280);
   }
-  log('00:0' + d.files.length + '.0', 'init', `${d.total} open vulnerabilities ingested · ${d.authenticated}/${d.assets} authenticated`, 'ok');
+  log('00:0' + d.files.length + '.0', 'init', `open vulnerabilities ${conmonNum(d.total)} · authenticated ${conmonNum(d.authenticated)} of ${conmonNum(d.assets)}`, 'ok');
   await wait(400);
 
   setStage(2);
   setStatus('◆ CLASSIFYING · severity · asset criticality · exploitability');
   log('00:08.0', 'class', 'CVSS v3 normalization · per-finding severity assigned');
   await wait(500);
-  log('00:09.6', 'class', `severity distribution · C:${d.severities.critical.total} H:${d.severities.high.total} M:${d.severities.moderate.total} L:${d.severities.low.total}`, 'ok');
+  log('00:09.6', 'class', `severity distribution · C:${conmonNum(d.severities.critical.total)} H:${conmonNum(d.severities.high.total)} M:${conmonNum(d.severities.moderate.total)} L:${conmonNum(d.severities.low.total)}`, 'ok');
   await wait(400);
 
   setStage(3);
@@ -6003,7 +5819,7 @@ async function runConMon(sample) {
   await wait(500);
   for (const sev of SEVERITY_ORDER) {
     setBand(sev, true);
-    log(fmt(12 + SEVERITY_ORDER.indexOf(sev) * 2) + '.0', sev.slice(0, 4), `${SEVERITY_LABELS[sev]} band · ${d.severities[sev].sla} window applied`, 'ok');
+    log(fmt(12 + SEVERITY_ORDER.indexOf(sev) * 2) + '.0', sev.slice(0, 4), `${SEVERITY_LABELS[sev]} band · ${engEsc(d.severities[sev].sla)} window applied`, 'ok');
     await wait(400);
     setBand(sev, false);
   }
@@ -6011,21 +5827,22 @@ async function runConMon(sample) {
 
   setStage(4);
   setStatus('◆ AGING · identifying past-SLA vulnerabilities');
-  const totalAging = SEVERITY_ORDER.reduce((s, k) => s + d.severities[k].aging, 0);
+  const totalAging = conmonSum(SEVERITY_ORDER.map(k => d.severities[k].aging));
   log('00:24.0', 'age', 'cross-referencing scan dates against POA&M open dates');
   await wait(700);
-  log('00:26.8', 'age', `${totalAging} vulnerabilities past their FedRAMP SLA window`, totalAging > 0 ? 'warn' : 'ok');
+  log('00:26.8', 'age', `vulnerabilities past their FedRAMP SLA window · ${conmonNum(totalAging)}`, totalAging > 0 ? 'warn' : 'ok');
   await wait(300);
-  log('00:28.4', 'age', `${d.vdr} flagged as Deviation Requests (RA · FP · OR)`, 'warn');
+  log('00:28.4', 'age', `flagged as Deviation Requests (RA · FP · OR) · ${conmonNum(d.vdr)}`, 'warn');
   await wait(400);
 
   setStage(5);
   setStatus('◆ RECONCILING · POA&M delta · scan coverage · ConMon strategy');
   log('00:32.0', 'recon', 'comparing prior month POA&M · classifying delta');
   await wait(600);
-  log('00:34.2', 'recon', `POA&M delta · +${d.poamDelta.added} added · -${d.poamDelta.closed} closed · ${d.poamDelta.ongoing} ongoing`, 'ok');
+  log('00:34.2', 'recon', `POA&M delta · added ${conmonNum(d.poamDelta.added)} · closed ${conmonNum(d.poamDelta.closed)} · ongoing ${conmonNum(d.poamDelta.ongoing)}`, 'ok');
   await wait(400);
-  log('00:36.0', 'recon', `auth-scan coverage · ${d.authenticated}/${d.assets} hosts (${Math.round(100 * d.authenticated / d.assets)}%)`, d.authenticated < d.assets ? 'warn' : 'ok');
+  const authPct = conmonPct(d.authenticated, d.assets);
+  log('00:36.0', 'recon', `auth-scan coverage · ${conmonNum(d.authenticated)} of ${conmonNum(d.assets)} hosts` + (authPct == null ? '' : ` (${authPct}%)`), (authPct != null && authPct < 100) ? 'warn' : 'ok');
   await wait(400);
 
   setStage(6);
@@ -6034,12 +5851,12 @@ async function runConMon(sample) {
   await wait(500);
   log('00:44.4', 'out', 'OSCAL ConMon schema validation · ✓ valid', 'ok');
   await wait(400);
-  log('00:46.8', 'out', `VDR bundle · ${d.vdr} candidates packaged for adjudication`, 'ok');
+  log('00:46.8', 'out', `VDR bundle · candidates packaged for adjudication · ${conmonNum(d.vdr)}`, 'ok');
   await wait(400);
-  // The JAB was retired under the FedRAMP Authorization Act and replaced by the
-  // FedRAMP Board; ConMon deliverables go to the authorizing agency. "Ready for
-  // JAB submission" names a body that no longer takes submissions.
-  log('00:50.2', 'done', 'ConMon cycle complete · ready for submission to the authorizing agency', 'ok');
+  // A walkthrough ends at the shape of the package, not at a deliverable. This
+  // build is EXAMINE preparation; "ready for submission" named a readiness
+  // nothing here can confer.
+  log('00:50.2', 'done', 'ConMon cycle walkthrough complete · the package shape above is what a cycle produces; nothing here is a deliverable', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
   setStatus('◆ COMPLETE · walkthrough · ConMon package shape');
@@ -6051,6 +5868,7 @@ async function runConMon(sample) {
 
 // ── Annual Reassessment runner ──
 async function runAnnual(sample) {
+  if (!sample.annual) return stopWalkthroughWithoutRecord(sample, USE_CASES.annual, 'annual-reassessment');
   const d = sample.annual;
   renderStages(USE_CASES.annual.stages);
   logWalkthroughNotice();
@@ -6058,10 +5876,10 @@ async function runAnnual(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · Prior SAR · POA&M · ConMon history · ' + d.cycle);
-  log('00:00.0', 'init', `<span class="key">${sample.name}</span> · ${d.cycle} · ${sample.controls} total controls`);
+  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${engEsc(d.cycle)} · ${sample.controls} total controls`);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'prior cycle artifacts ingested · POA&M state loaded', 'ok');
@@ -6153,6 +5971,7 @@ async function runAnnual(sample) {
 
 // ── SCR runner ──
 async function runSCR(sample) {
+  if (!sample.scr) return stopWalkthroughWithoutRecord(sample, USE_CASES.scr, 'change-request');
   const d = sample.scr;
   renderStages(USE_CASES.scr.stages);
   logWalkthroughNotice();
@@ -6160,10 +5979,10 @@ async function runSCR(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · SCR submission · current SSP · POA&M state');
-  log('00:00.0', 'init', `<span class="key">${sample.name}</span> · SCR review · ${d.classification.toLowerCase()} change`);
+  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · SCR review · ${engEsc(d.classification.toLowerCase())} change`);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${f}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'SCR package ingested · prior cycle context loaded', 'ok');
@@ -6628,7 +6447,7 @@ async function runQA() {
   log('00:00.0', 'init', `<span class="key">portfolio scan</span> · ${report.totalFindings} findings · ${report.totalCites} citations`);
   await wait(400);
   for (const k of sampleRoster()) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${SAMPLES[k].name}</span> · ${report.useCaseCount} use cases`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${engEsc(SAMPLES[k].name)}</span> · ${report.useCaseCount} use cases`, 'ok');
     await wait(250);
   }
   log('00:05.0', 'init', `${report.totalChecks.toLocaleString()} rule checks queued`, 'ok');
@@ -7148,7 +6967,7 @@ async function runPackageValidator(sample) {
   // Stage 1 — Assemble
   setStage(1);
   setStatus('◆ ASSEMBLE · building OSCAL output from assessment data');
-  log('00:00.0', 'init', '<span class="key">' + sample.name + '</span> · assembling OSCAL 1.1.2 SAR + POA&M + KSI package');
+  log('00:00.0', 'init', '<span class="key">' + engEsc(sample.name) + '</span> · assembling OSCAL 1.1.2 SAR + POA&M + KSI package');
   await wait(400);
   log('00:01.4', 'build', 'building Security Assessment Report (SAR) from initial + conmon + annual + scr findings');
   await wait(400);
@@ -8124,7 +7943,7 @@ async function runDataSources(sample) {
   // Stage 1 — Discover
   setStage(1);
   setStatus('◆ DISCOVER · enumerating two tiers · evidence sources + GRC peers');
-  log('00:00.0', 'init', '<span class="key">' + sample.name + '</span> · ' + activeConnectors.length + ' evidence sources · ' + grcConnectors.length + ' GRC peer platforms');
+  log('00:00.0', 'init', '<span class="key">' + engEsc(sample.name) + '</span> · ' + activeConnectors.length + ' evidence sources · ' + grcConnectors.length + ' GRC peer platforms');
   await wait(400);
   log('00:01.4', 'disc', 'Tier 1 (evidence): scanners · IdP · cloud posture · doc repos · ticket trackers');
   await wait(300);
@@ -8654,6 +8473,10 @@ function computePortfolioMetrics() {
   const systems = [];
   for (const k of Object.keys(SAMPLES)) {
     const s = SAMPLES[k];
+    // An uploaded package carries no walkthrough figures — its ConMon and KSI
+    // entries are null where nothing was parsed — so there is nothing here to
+    // rank it by, and ranking it on zeros would be a result it never had.
+    if (s.custom) continue;
     const init = s.initial;
     const conmon = s.conmon;
     const ksi = s.ksi;
@@ -9084,24 +8907,26 @@ function engineVerdict(status) {
   return 'NR';
 }
 
-// One engine record -> one shell finding.
+// One engine record -> one shell finding. Every field here is TEXT, escaped by
+// buildFindingRow when it becomes markup; the one exception is metaHtml, built
+// below from parts that are escaped here because the row interpolates it raw.
 function engineFindingToShell(f, corpusLabel) {
   const refs = (f.evidence_references || []).filter(Boolean);
   const cites = refs.length
     ? refs.map(fn => ({
         kind: 'EVIDENCE',
-        title: engEsc(fn),
-        section: engEsc('objective ' + f.dif_id + ' · retrieved evidence chunk'),
+        title: fn,
+        section: 'objective ' + f.dif_id + ' · retrieved evidence chunk',
       }))
     : [{
         kind: 'EVIDENCE',
-        title: engEsc(corpusLabel),
-        section: engEsc('no chunk cleared the relevance threshold for ' + f.dif_id),
+        title: corpusLabel,
+        section: 'no chunk cleared the relevance threshold for ' + f.dif_id,
       }];
 
   const bits = [];
-  if (f.finding) bits.push(engEsc(f.finding));
-  if (f.gap_description && f.status !== 'Satisfied') bits.push(engEsc(f.gap_description));
+  if (f.finding) bits.push(f.finding);
+  if (f.gap_description && f.status !== 'Satisfied') bits.push(f.gap_description);
   const conf = typeof f.confidence === 'number' ? Math.round(f.confidence * 100) + '%' : '—';
   const gates = f.gates || [];
   const review = f.review_required
@@ -9116,14 +8941,15 @@ function engineFindingToShell(f, corpusLabel) {
                review + '</div>';
 
   return {
-    ctrl: engEsc(f.dif_id || f.control_id),
+    ctrl: String(f.dif_id || f.control_id || ''),
     verdict: engineVerdict(f.status),
     method: 'EXAMINE',
     risk: f.risk_exposure_before || 'Low',
     implStatus: f.status === 'Satisfied' ? 'implemented'
               : f.status === 'Not Reviewed' ? 'not-verified' : 'partial',
-    recommendation: engEsc(f.recommendation || ''),
-    text: bits.join(' — ') + meta,
+    recommendation: f.recommendation || '',
+    text: bits.join(' — '),
+    metaHtml: meta,
     cites,
     engine: {
       dif_id: String(f.dif_id || f.control_id || ''),
@@ -9153,7 +8979,11 @@ async function engineCorpus(sample) {
   } else {
     return null;
   }
-  const r = await E.parsePackage(files);
+  // The upload was read when it was selected; a second read of the same files
+  // would be a second chance for the inventory and the corpus to disagree.
+  const r = (CUSTOM_PKG_REPORT && CUSTOM_PKG_REPORT.files === files)
+    ? CUSTOM_PKG_REPORT.report
+    : await E.parsePackage(files);
   return { chunks: r.chunks, parsed: r.parsed, skipped: r.skipped, label, files, bundled };
 }
 
@@ -9198,6 +9028,11 @@ async function runEngine(corpus, baseline, asOfDay, onProgress) {
     ? Math.round(findings.reduce((s, f) => s + (f.defensibility_score || 0), 0) / findings.length)
     : 0;
 
+  // The system name and the file lists are INPUTS to the receipt, hashed with
+  // the rest. They used to be attached after buildReceipt() had taken the
+  // digest, so the downloaded receipt.json could not be verified against its
+  // own receipt_digest: delete the digest, re-hash what is left, and it did not
+  // match. DEMO_EXPORTS.receiptDigestOf(receipt) is that round trip.
   const receipt = DEMO_EXPORTS.buildReceipt({
     engineVersion: E.ENGINE_VERSION,
     catalogVersion: CATALOG_VERSION,
@@ -9207,11 +9042,11 @@ async function runEngine(corpus, baseline, asOfDay, onProgress) {
     findings,
     assessmentDate: asOfDay,
     baseline,
+    systemName: corpus.bundled ? 'CloudVault Storage Platform (sample)' : 'Uploaded package',
+    filesParsed: corpus.parsed.slice(),
+    filesRefused: corpus.skipped.map(x => x.name + ' — ' + x.reason),
   });
-  receipt.system_name = corpus.bundled ? 'CloudVault Storage Platform (sample)' : 'Uploaded package';
   const ranked = rankLiveRun(findings);
-  receipt.files_parsed = corpus.parsed.slice();
-  receipt.files_refused = corpus.skipped.map(x => x.name + ' — ' + x.reason);
 
   return {
     corpusLabel: corpus.label,
@@ -9606,54 +9441,15 @@ function renderInitialSummaryLive(run) {
 // succeeded, so a package the panel had just called a failure was still sitting
 // here, runnable, and Run Again assessed it under the next sample's date.
 let CUSTOM_PKG_FILES = [];
+// The engine's read of those files — chunks, parsed, skipped, members — taken
+// once at upload and reused by the run. Cleared wherever the files are.
+let CUSTOM_PKG_REPORT = null;
 document.getElementById('engine-profile').addEventListener('change', () => {
   const b = engineBaseline();
   const c = profileCounts(b);
   const cv = document.getElementById('cv-meta');
   if (cv) cv.textContent = 'FedRAMP ' + b + ' · ' + c.controls + ' controls · ' + c.objectives + ' objectives · v2.4';
 });
-
-// ── Capped, batched finding painter ─────────────────────────────────────
-// The original cascades rows in with one setTimeout per finding at 80ms. That
-// reads beautifully for 30 authored findings and falls over at ~1,000 engine
-// findings: 981 live timers and 78 seconds before the last row lands. Same
-// cascade, but batched — and capped, with the remainder behind a control.
-const _paintFindingsCascade = paintFindings;
-
-paintFindings = function (findings) {
-  const tbody = document.getElementById('findings-body');
-  const bar = document.getElementById('eng-showall');
-  if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
-
-  if (findings.length <= 40) return _paintFindingsCascade(findings);
-
-  const gen = ++_paintGen;
-  tbody.innerHTML = '';
-  const shown = Math.min(findings.length, window.__engShowAll ? findings.length : ENGINE_ROW_CAP);
-  const BATCH = 12, STEP = 55;
-  for (let start = 0; start < shown; start += BATCH) {
-    setTimeout(() => {
-      if (gen !== _paintGen) return;
-      const frag = document.createDocumentFragment();
-      for (let i = start; i < Math.min(start + BATCH, shown); i++) {
-        frag.appendChild(buildFindingRow(findings[i]));
-      }
-      tbody.appendChild(frag);
-    }, (start / BATCH) * STEP);
-  }
-
-  setFilterCount(shown, findings.length);
-
-  if (bar && shown < findings.length) {
-    bar.style.display = 'block';
-    bar.innerHTML = '<button class="show-all-btn" id="eng-showall-btn">Show all ' +
-      findings.length + ' findings · ' + (findings.length - shown) + ' more</button>';
-    document.getElementById('eng-showall-btn').onclick = () => {
-      window.__engShowAll = true;
-      paintFindings(findings);
-    };
-  }
-};
 
 // One delegated listener for every statement block: the painter batches rows
 // in and out, so per-row listeners would leak and miss.
@@ -9713,26 +9509,32 @@ document.getElementById('findings-body').addEventListener('click', (ev) => {
   }
 });
 
-// Row construction, lifted out of the original painter so both paths agree.
+// Row construction — the only place a finding becomes markup. Every field of
+// the finding is text and is escaped HERE: f.text, f.recommendation and f.ctrl
+// used to be interpolated as HTML, and only the live-engine mapper escaped its
+// own values before handing them over, so an authored or custom row rendered
+// whatever its text contained. The one field that is markup by design,
+// f.metaHtml, is built by the mapper from already-escaped parts.
 function buildFindingRow(f) {
   const tr = document.createElement('tr');
+  const cls = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const statusBadge = f.status
-    ? ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;padding:1px 6px;margin-left:6px;border:1px solid #3A4250;color:#7A8290">' + f.status + '</span>'
+    ? ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;padding:1px 6px;margin-left:6px;border:1px solid #3A4250;color:#7A8290">' + engEsc(f.status) + '</span>'
     : '';
-  const riskBadge = f.risk ? '<span class="risk-tag ' + f.risk.toLowerCase() + '">' + f.risk + '</span>' : '';
+  const riskBadge = f.risk ? '<span class="risk-tag ' + cls(f.risk) + '">' + engEsc(f.risk) + '</span>' : '';
   const implBadge = f.implStatus
-    ? '<span class="impl-pill ' + f.implStatus.replace('-', '') + '">' + f.implStatus.replace('-', ' ') + '</span>' : '';
+    ? '<span class="impl-pill ' + cls(String(f.implStatus).replace('-', '')) + '">' + engEsc(String(f.implStatus).replace('-', ' ')) + '</span>' : '';
   const recBlock = f.recommendation
-    ? '<div class="rec-block"><span class="rec-label">Recommendation · SAR Appendix A</span><span class="rec-text">' + f.recommendation + '</span></div>' : '';
+    ? '<div class="rec-block"><span class="rec-label">Recommendation · SAR Appendix A</span><span class="rec-text">' + engEsc(f.recommendation) + '</span></div>' : '';
   let assetStrip = '';
   const lookupKey = currentSampleName + '/' + activeUC + '/' + f.ctrl;
   if (typeof ASSET_LOOKUP !== 'undefined' && ASSET_LOOKUP[lookupKey]) {
     const a = ASSET_LOOKUP[lookupKey];
     const parts = [];
-    if (a.asset)   parts.push('<span class="as-label">Asset</span><span class="as-asset">' + a.asset + '</span>');
-    if (a.cve)     parts.push('<span class="as-label">CVE</span><span class="as-cve">' + a.cve + '</span>');
-    if (a.kev)     parts.push('<span class="as-label">KEV · BOD 22-01</span><span class="as-kev">due ' + a.kevDue + '</span>');
-    if (a.scanner) parts.push('<span class="as-label">Scanner</span>' + a.scanner);
+    if (a.asset)   parts.push('<span class="as-label">Asset</span><span class="as-asset">' + engEsc(a.asset) + '</span>');
+    if (a.cve)     parts.push('<span class="as-label">CVE</span><span class="as-cve">' + engEsc(a.cve) + '</span>');
+    if (a.kev)     parts.push('<span class="as-label">KEV · BOD 22-01</span><span class="as-kev">due ' + engEsc(a.kevDue) + '</span>');
+    if (a.scanner) parts.push('<span class="as-label">Scanner</span>' + engEsc(a.scanner));
     if (parts.length) assetStrip = '<div class="asset-strip">' + parts.join('') + '</div>';
   }
   // The examine statement, and the assessor's ability to revise it. Only the
@@ -9759,10 +9561,10 @@ function buildFindingRow(f) {
         '</div>' +
       '</details>';
   }
-  tr.innerHTML = '<td class="ctrl">' + f.ctrl + statusBadge + '</td>' +
-    '<td><span class="verdict-tag ' + f.verdict.toLowerCase() + '">' + f.verdict + '</span>' + riskBadge + implBadge + '</td>' +
-    '<td><span class="method-tag ' + f.method.toLowerCase() + '">' + f.method + '</span></td>' +
-    '<td>' + f.text + renderCites(f.cites) + assetStrip + recBlock + exBlock + '</td>';
+  tr.innerHTML = '<td class="ctrl">' + engEsc(f.ctrl) + statusBadge + '</td>' +
+    '<td><span class="verdict-tag ' + cls(f.verdict) + '">' + engEsc(f.verdict) + '</span>' + riskBadge + implBadge + '</td>' +
+    '<td><span class="method-tag ' + cls(f.method) + '">' + engEsc(f.method) + '</span></td>' +
+    '<td>' + engEsc(f.text) + (f.metaHtml || '') + renderCites(f.cites) + assetStrip + recBlock + exBlock + '</td>';
   return tr;
 }
 
