@@ -632,7 +632,11 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // every date format; the ruleset digest covers every matcher; ZIP members are
 // CRC-checked, the end-of-directory record has to end the file, and archiver
 // housekeeping members are refused.
-const ENGINE_VERSION = '1.4.0';
+// 1.4.1: stop words are dropped as words, before stemming, when the anchor
+// stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
+// and a selection option's own words are built; a stemmed stop word — `oth`,
+// `dur`, `onli` — could anchor a clause. No sample verdict moves.
+const ENGINE_VERSION = '1.4.1';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -892,7 +896,7 @@ function mentionsSubject(evidenceText, terms, objectiveStems) {
   const found = new Set();
   const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
   const anchor = (terms.length === 1 && objectiveStems && objectiveStems.size)
-    ? new Set([...objectiveStems].filter(st => st !== terms[0] && !STOP_WORDS.has(st) && st.length > 2))
+    ? new Set([...objectiveStems].filter(st => st !== terms[0]))
     : null;
   for (const clause of clauses) {
     if (NEGATION_RE.test(clause)) continue;
@@ -1071,14 +1075,26 @@ function extractOdps(difText) {
   return out;
 }
 
+// The stems of a text's content words: stop words are dropped as WORDS, before
+// stemming, because STOP_WORDS holds words and a stemmed stop word is not in it
+// — "other" stems to `oth`, "during" to `dur`, "only" to `onli`, and all three
+// walked through a filter that looked the stem up.
+function contentStems(text) {
+  const out = new Set();
+  for (const w of String(text).toLowerCase().match(WORD_RE) || []) {
+    if (STOP_WORDS.has(w)) continue;
+    const st = stemWord(w);
+    if (st.length > 2) out.add(st);
+  }
+  return out;
+}
+
 // The words of the objective a value clause has to share to count as being
 // about it: the objective's own stems with the placeholders and stop words
 // taken out.
 function objectiveAnchorStems(difText) {
   const bare = String(difText || '').replace(/\[[^\[\]]*\]/g, ' ').replace(/^\s*Determine\s+if\s+/i, '');
-  const out = new Set();
-  clauseStems(bare).forEach(st => { if (st.length > 2 && !STOP_WORDS.has(st)) out.add(st); });
-  return out;
+  return contentStems(bare);
 }
 
 function validateOdps(difText, evidenceText) {
@@ -1111,7 +1127,7 @@ function validateOdps(difText, evidenceText) {
           if (/organization[- ]defined/i.test(opt)) return false;
           let terms = distinguishingTerms(opt);
           const exact = !terms.length;
-          if (exact) terms = [...clauseStems(opt)].filter(st => st.length > 2 && !STOP_WORDS.has(st));
+          if (exact) terms = [...contentStems(opt)];
           if (!terms.length) return false;
           const need = Math.min(CONCEPT_TERMS_REQUIRED, terms.length);
           return anyClause(c => terms.filter(t => exact ? c.stems.has(t) : hasStem(c.stems, t)).length >= need);
