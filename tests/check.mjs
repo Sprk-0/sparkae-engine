@@ -2013,5 +2013,75 @@ check(unionText.split(/\s+/).length > 200 && !E.evidenceLooksStuffed(unionText),
   "the bundled sample's own retrieval union, whose sections share a house-style opening, is not stuffed — " +
   unionText.split(/\s+/).length + ' words');
 
+
+// ── 26. the exports say what the engine decided ─────────────────────────────
+// A determination the engine qualified, or a column it cannot fill, has to
+// reach the artifact a reader acts on. None of this changes a determination:
+// the sample's 153 / 808 / 20 are the same objectives as before.
+console.log('26. the exports say what the engine decided');
+
+const flaggedFindings = a.findings.filter(f => f.review_required);
+const csv26 = csvRecords(EX.buildFindingsCSV(a.state, {}));
+const head26 = csv26[0];
+const colOf = (name) => head26.indexOf(name);
+check(flaggedFindings.length > 0 && a.findings.every(f => !f.review_required || f.status === 'Satisfied'),
+  'the engine flags only Satisfied determinations for review — ' + flaggedFindings.length + ' of them');
+check(colOf('Review Required') > -1 && colOf('Review Reason') > -1,
+  'the findings CSV carries Review Required and Review Reason');
+check(csv26.slice(1).filter(r => r[colOf('Review Required')] === 'Yes').length === flaggedFindings.length,
+  'every flagged determination is marked Yes in the findings CSV');
+check(csv26.slice(1).every(r => r[colOf('Review Required')] !== 'Yes' || r[colOf('Review Reason')]),
+  'a flagged row states the reason the floor was not met');
+const tcw26 = csvRecords(EX.buildTCW(a.state, {}));
+check(tcw26[0].indexOf('Review Required') > -1 &&
+      tcw26.slice(1).filter(r => r[tcw26[0].indexOf('Review Required')] === 'Yes').length === flaggedFindings.length,
+  'the TCW carries the flag too');
+const arProps = JSON.stringify(a.ar);
+check((arProps.match(/"review-required"/g) || []).length === flaggedFindings.length,
+  'OSCAL carries a review-required prop on each flagged finding');
+check(EX.buildSummary(a.state, {}).includes('of which flagged for review: ' + flaggedFindings.length),
+  'the summary states how many of its Satisfied are flagged');
+// The receipt attests the flag, so an export that drops it no longer verifies.
+const flagStripped = EX.buildReceipt({
+  engineVersion: E.ENGINE_VERSION, catalogVersion, catalog: CATALOG, ruleset: E.RULESET,
+  chunks: E.chunkText(sample, 'CloudVault-Federal-SSP.txt'),
+  findings: a.findings.map(f => ({ ...f, review_required: false })),
+  assessmentDate: SAMPLE_DATE, baseline: 'Low',
+});
+check(flagStripped.verdict_digest !== a.state.receipt.verdict_digest,
+  'the verdict digest covers the review flag: a run with the flags stripped does not hash the same');
+
+// 23: Not Reviewed is a gap in the package, not an open weakness
+const poam26 = csvRecords(EX.buildPOAM(a.state, {})).slice(1);
+const ret26 = csvRecords(EX.buildRET(a.state, {})).slice(1);
+const ots26 = a.findings.filter(f => f.status === 'Other Than Satisfied').length;
+const nr26 = a.findings.filter(f => f.status === 'Not Reviewed').length;
+check(nr26 > 0 && poam26.length === ots26 && poam26.length === ret26.length,
+  'the POA&M carries the Other Than Satisfied and not the ' + nr26 + ' Not Reviewed, and agrees with the RET');
+
+// 29: the detection date says which detection it is
+check(poam26[0].some(c => c.includes('Original Detection Date is the date of this assessment')) &&
+      ret26[0].some(c => c.includes('cannot establish an earlier detection')),
+  'the RET and POA&M say that their detection date is this assessment, not an earlier one');
+
+// 27: no invented FedRAMP origination
+check(!EX.buildTCW(a.state, {}).includes('Service Provider Corporate') &&
+      EX.buildTCW(a.state, {}).includes('not determined by this build'),
+  'the TCW states that control origination is not determined rather than stamping a FedRAMP value');
+
+// 28: a column this build does not fill says so, and only where it would mean something
+const otsRow26 = csv26.slice(1).find(r => r[2] === 'Other Than Satisfied');
+const satRow26 = csv26.slice(1).find(r => r[2] === 'Satisfied');
+check(otsRow26.filter(c => c === 'not produced by this build').length === 4,
+  'the four FedRAMP columns this build does not produce say so on a row that carries a weakness');
+check(!satRow26.some(c => c === 'not produced by this build'),
+  'and stay blank on a Satisfied row, which has no threat or residual risk to state');
+
+// 25: a cut evidence body says it was cut
+const cut = a.findings.find(f => (f.evidence_description || '').includes('truncated for this artifact'));
+check(!!cut && /\d+ characters of evidence were assessed/.test(cut.evidence_description),
+  'an evidence body the artifact truncates says so and names the length the gates read');
+check(E.evidenceDescription('short') === 'short', 'a body under the limit is untouched');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

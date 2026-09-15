@@ -701,7 +701,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.5.0';
+const ENGINE_VERSION = '1.5.1';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -1048,6 +1048,21 @@ function scoreEvidence(text) {
 // A passage is stuffed when a five-word sequence repeats, and repeats often
 // enough relative to its length to be padding rather than house style. Both
 // parameters are published in RULESET and hashed into the ruleset digest.
+// What an artifact shows of the evidence. The gates read the whole string; a
+// CSV cell, an OSCAL description and a TCW row got the first 500 characters
+// with nothing to say so, and a refutation or a date past that offset simply
+// was not in the artifact — the determination accounted for it and the record
+// of the determination did not. The cut stays (an OSCAL file with every
+// evidence body in full is megabytes of duplicated corpus), but it says it is a
+// cut, and how much it left behind.
+const EVIDENCE_DESCRIPTION_MAX = 500;
+function evidenceDescription(text) {
+  const s = String(text == null ? '' : text);
+  if (s.length <= EVIDENCE_DESCRIPTION_MAX) return s;
+  return s.slice(0, EVIDENCE_DESCRIPTION_MAX) +
+    ' […truncated for this artifact; ' + s.length + ' characters of evidence were assessed]';
+}
+
 const STUFFING_MIN_DUPES = 3;
 const STUFFING_DUPE_SHARE = 0.15;
 
@@ -1839,7 +1854,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       dif_id: dif.i, control_id: controlId, objective_id: dif.i,
       status: 'Other Than Satisfied', determination: 'Other Than Satisfied',
       finding: 'Refuting evidence found: ' + allRefutations[0],
-      evidence_description: evidenceText.slice(0, 500), evidence_references: strongHits.slice(0,3).map(h => h.filename),
+      evidence_description: evidenceDescription(evidenceText), evidence_references: strongHits.slice(0,3).map(h => h.filename),
       weakness_name: 'Control Not Implemented — ' + controlId,
       weakness_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
       weakness_type: 'Significant Deficiency',
@@ -1919,7 +1934,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     dif_id: dif.i, control_id: controlId, objective_id: dif.i,
     status: determination, determination: determination,
     finding: allPassed ? 'All 7 gates passed' : gaps[0] || 'Gate failure',
-    evidence_description: evidenceText.slice(0, 500),
+    evidence_description: evidenceDescription(evidenceText),
     evidence_references: evRefs,
     assessment_method: 'EXAMINE',
     assessment_date: asOfDay,
@@ -2000,6 +2015,7 @@ const RULESET = Object.freeze({
     homoglyphs: Object.keys(HOMOGLYPHS).sort().map(k => [k, HOMOGLYPHS[k]]),
     invisible: rx(INVISIBLE_RE),
     stuffing: { min_dupes: STUFFING_MIN_DUPES, dupe_share: STUFFING_DUPE_SHARE },
+    evidence_description_max: EVIDENCE_DESCRIPTION_MAX,
     entities: { pattern: rx(ENTITY_RE), named: Object.keys(XML_ENTITIES).sort().map(k => [k, XML_ENTITIES[k]]) },
     control_id: rx(CONTROL_ID_RE),
     dates: DATE_PATTERNS.map(([re, fmt]) => ({ format: fmt, pattern: rx(re) })),
@@ -2055,6 +2071,7 @@ global.SparkAEEngine = {
   docxText: docxText,
   decodeEntities: decodeEntities,
   evidenceLooksStuffed: evidenceLooksStuffed,
+  evidenceDescription: evidenceDescription,
   unzip: unzip,
   chunkText: chunkText,
   checkCoverage: checkCoverage,

@@ -22,8 +22,8 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-15 (the state this build is in)
 
-Engine 1.5.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `d10ea7075a64` ·
-verdict digest `614ab4597d07`
+Engine 1.5.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `dbacaaed27dc` ·
+verdict digest `5ded83f4010c`
 
 The tuple above is how to cite this build — the same tree as the entries below,
 identified by what it decided rather than by a label, so it can be reproduced,
@@ -40,6 +40,71 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-15 (the exports say what the engine decided · engine 1.5.1)
+
+Engine 1.5.0 → **1.5.1** · ruleset `d10ea7075a64` → `dbacaaed27dc` (the version is
+in it) · verdict digest `614ab4597d07` → **`5ded83f4010c`** · golden regenerated.
+
+**No determination moves.** All 981 objectives on the bundled sample come out of
+this change with the status they went in with: 153 Satisfied, 808 Other Than
+Satisfied, 20 Not Reviewed, 60 flagged. The verdict digest moves because the
+verdict LINE moves — it carries the review flag now, which is the point of the
+change, and is the one time a digest that moves does not mean a determination
+did.
+
+The engine has flagged thin Satisfied since 1.2.0: all seven gates passed, and
+then a floor did not — confidence under 60%, concept coverage under 60%, or
+evidence carrying no date at all. Sixty of the sample's 153 Satisfied are
+flagged. None of that left the tab. OSCAL, all four CSVs, the summary and the
+receipt's verdict lines each carried the determination without the qualification
+the engine had put on it, so a downstream reader — the GRC tool, the reviewer,
+the package — saw 153 clean Satisfied.
+
+- **The flag travels on every artifact.** Two columns on the findings CSV
+  (`Review Required`, `Review Reason`) and on the TCW, a `review-required` prop
+  with its reason on the OSCAL finding, and a line in the summary beside the
+  count it qualifies. It follows the engine's determination rather than the
+  effective one: once an assessor revises an objective, a human has looked at
+  it, which is what the flag was asking for.
+- **The receipt attests it.** `review_required` is part of the verdict line, so
+  a run where sixty Satisfied are flagged no longer hashes the same as one where
+  none are. Without that, an export could drop the flag from every row and still
+  verify against its own receipt — the hole restated. `check.mjs` §26 strips the
+  flags from a copy of the run and requires the digest to differ.
+- **The POA&M is open weaknesses.** It filtered on "anything but Satisfied",
+  which swept in every Not Reviewed — twenty on the sample, hundreds on a live
+  Low run — and put untested objectives in front of a reader as findings with a
+  remediation owed. Not Reviewed means no evidence cleared the retrieval floor:
+  a gap in the package, not a weakness in the system. The RET already read it
+  this way; the two agree now.
+- **Control origination is not invented.** Every TCW row was stamped
+  `Service Provider Corporate`. Origination is a property of how the system is
+  built, stated by the system owner; this build does not read it and does not
+  derive it. The row says `not determined by this build`.
+- **A column this build does not fill says so.** Applicable Threats and the
+  three post-remediation risk columns were empty on every findings row, and
+  empty reads as "none" — no threats, no residual risk — which is a claim. They
+  name themselves as not produced, and only on a row that carries a weakness: on
+  a Satisfied row there is no threat and no residual risk to state, and blank is
+  the honest answer.
+- **The detection date says which detection it is.** The RET and POA&M stamped
+  the assessment date into Original Detection Date, so a 2018 finding in the
+  evidence was dated 2026-06-01. The engine reads a package, not a history, and
+  cannot establish an earlier detection; the date stays and the comment says
+  what it is.
+- **A truncated evidence body says it was truncated.** The gates read the whole
+  string and the artifact got its first 500 characters with nothing to mark the
+  cut, so a refutation or a date past that offset was accounted for in the
+  determination and absent from the record of it. The cut stays — an OSCAL file
+  carrying every evidence body in full is megabytes of duplicated corpus — and
+  now names the length the gates actually read.
+
+Still open, and next: the catalog's own parameter values are unread (gate 4
+checks keyword classes, not the 236 objectives that carry a FedRAMP value), and
+the pages still claim things this build does not do — including, on
+`assessors.html`, that every Satisfied clears the floors, which the sixty
+flagged determinations contradict. `.github/REVIEW-FINDINGS.md` has the rest.
 
 ## 2026-09-15 (normalise before you match · engine 1.5.0)
 
