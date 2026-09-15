@@ -2,7 +2,7 @@
 
 Inventory of defects found against `main` at engine **1.3.0**, catalog `2026-07-21` / `91ad1b17138f`, golden verdict digest `04b1f79d6f44` (CloudVault sample, FedRAMP Low, assessed as of 2026-06-01).
 
-**Re-baselined 2026-09-15 against engine 1.4.1** (`6558408`), catalog `2026-07-21` / `91ad1b17138f`, ruleset `7a852bebcef0`, verdict digest `614ab4597d07`.
+**Re-baselined 2026-09-15 against engine 1.4.1** (`6558408`); **PR 1 landed as engine 1.5.0**, ruleset `d10ea7075a64`, verdict digest `614ab4597d07` unchanged.
 
 This file is a working review list, not a site page. It lives under `.github/` so it is not part of the published tree `check_published.mjs` compares to sparkae.ai. The GitHub repository is already public.
 
@@ -26,9 +26,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on 1.4.1 | 44 |
+| **OPEN** | reproduced on 1.4.1 | 40 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
-| **CLOSED** | fixed in 1.4.0 or 1.4.1, verified on this tree | 23 |
+| **CLOSED** | fixed in 1.4.0, 1.4.1 or 1.5.0, verified on this tree | 27 |
 | **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -47,15 +47,12 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
 
 ### False Satisfied
 
-1. **Enhancement IDs never match (`\b` after `)`).** (`#78–82`) — **OPEN**
-   `CTRL_ID_RE` (`demo-engine.js:149`) ends `\b` after `)`, and `)` is not a word
-   character, so the enhancement alternative only matches when a word character
-   follows. Reproduced on 1.4.1: `extractControlIds("AC-2(1) is implemented")` →
-   `["AC-2"]`, while `extractControlIds("see AC-2(1)x")` → `["AC-2(1)"]`.
-   **232 / 447** catalog keys are enhancement-shaped, so `ownEvidence` is always
-   empty for them and gates 2/3b/5/6 fall through to the BM25 union — the
-   own-control scoping 1.4.0 built reaches half the catalog. Required test:
-   `"AC-2(1) is not implemented"` must OTS `AC-2(1)`.
+1. **Enhancement IDs never match (`\b` after `)`).** (`#78–82`) — **CLOSED (1.5.0)**
+   The close is a negative lookahead refusing a trailing word character and a
+   trailing `(`, so an enhancement can never backtrack into its base.
+   `controlIdPositions` carried a second copy of the same pattern and now reads
+   the one pattern, so a refutation under an enhancement heading is charged to
+   the enhancement. `check.mjs` §25 holds it.
 
 2. **Gate 5a sees only the first "not implemented."** (`#1–3`) — **CLOSED (1.4.0)**
    `execAll` collects every occurrence and attributes each to the closest control id before it.
@@ -63,17 +60,17 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
 3. **Gates 3a and 4 still score the neighbor's prose.** (`#8–9`) — **CLOSED (1.4.0)**
    `demo-engine.js:1679,1693` now read `ownEvidence || evidenceText`.
 
-4. **Invisible format characters beat Gate 5.** (`#114`) — **OPEN**
-   `foldHomoglyphs` normalises NFKD → NFKC and folds a homoglyph map; neither
-   step removes Cf or the soft hyphen. Reproduced on 1.4.1: `detectRefutations`
-   returns `["not implemented"]` for the plain string and `[]` for
-   `not​implemented`, `not‌implemented`, `not⁠implemented` and
-   `imple­mented`. Fix: strip `\p{Cf}` and U+00AD in the fold.
+4. **Invisible format characters beat Gate 5.** (`#114`) — **CLOSED (1.5.0)**
+   `foldHomoglyphs` deletes `\p{Cf}` — zero-width space, non-joiner, joiner,
+   word joiner, BOM and soft hyphen. Because deleting them can weld two words
+   ("not<ZWSP>implemented" → "notimplemented"), every matcher over the fold is
+   built with `\s*` between words by `weldTolerant`.
 
-5. **DOCX/XML entities are not decoded.** (`#84`, `#142`) — **OPEN**
-   `docxText` (`demo-engine.js:306`) decodes `&lt; &gt; &amp; &quot; &apos;` and
-   nothing else, so `not&#x200B;implemented`, `not&nbsp;implemented` and
-   `not&#32;implemented` survive as literal text. Same hole on `.xml` uploads.
+5. **DOCX/XML entities are not decoded.** (`#84`, `#142`) — **CLOSED (1.5.0)**
+   `decodeEntities` reads decimal and hexadecimal references plus the five XML
+   names and `nbsp`, in one pass that is never re-scanned. Loose `.xml` and
+   `.nessus` uploads are decoded the same way; `.txt`, `.md`, `.csv` and `.json`
+   are left as typed.
 
 6. **Catalog ODP values are dead.** (`#115`) — **OPEN**
    **236** of the catalog's 1,513 objectives carry a non-empty `o` (AC-1_c.1-1 is
@@ -91,12 +88,13 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
    none (see item 53), so the structure the finding describes is intact and rests
    entirely on the anchor rule.
 
-8. **Stuffing aborts on short sentences.** (`#116`) — **OPEN**
-   `evidenceLooksStuffed` returns false when the longest run between `[.!?;:]` is
-   under 40 tokens, *before* it looks for 5-gram duplicates. Reproduced on 1.4.1
-   with one keyword phrase repeated twelve times: unpunctuated → `true`, the same
-   words with a period between them → `false`, with a semicolon → `false`.
-   Fix: run the 5-gram check regardless of run length.
+8. **Stuffing aborts on short sentences.** (`#116`) — **CLOSED (1.5.0)**
+   The run-length condition is gone; repetition is measured as a share of the
+   passage (`STUFFING_MIN_DUPES`, `STUFFING_DUPE_SHARE`, both in `RULESET`).
+   A raw count alone read the bundled sample's own retrieval union as stuffed —
+   sections legitimately share a house-style opening — and cost nineteen
+   determinations, so the ratio is the parameter, and `check.mjs` §25 pins that
+   union as not stuffed.
 
 9. **Gate 6d only sees ISO dates.** (`#18`, `#117`) — **PARTIAL**
    The ISO-only defect is closed: `DATE_TOKEN_RE` is gone and the SLA check reads
@@ -381,13 +379,10 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 
 ### Tests still to write
 
-None of these exist. Each one holds an item that is still **OPEN**:
+The four PR 1 needed are in `check.mjs` §25. These do not exist; each holds an
+item that is still **OPEN**:
 
-- `"AC-2(1) is not implemented"` must OTS `AC-2(1)` (item 1).
-- A refutation behind ZWSP, ZWNJ, word joiner or soft hyphen must still refute (item 4).
-- A refutation written as `&#x200B;` / `&nbsp;` / `&#32;` in DOCX and XML must still refute (item 5).
 - `"every 10 years"` must not resolve a three-year catalog `o` — or Gate 4 copy stops claiming it does (item 6).
-- A punctuated keyword run must read as stuffed (item 8).
 - `review_required` must be present in OSCAL, the findings CSV and the receipt (item 22).
 - POA&M must exclude Not Reviewed (item 23).
 - A golden or benchmark case that runs through `parsePackage`, so the ZIP and DOCX items can fail a push (item 71).
@@ -398,16 +393,13 @@ None of these exist. Each one holds an item that is still **OPEN**:
 
 Re-cut against 1.4.1. **PR 0 is this file.**
 
-**PR 1 — engine, false Satisfied (moves the verdict digest)**
-Items **1, 4, 5, 8** — one theme, normalise before you match.
-- `CTRL_ID_RE`: replace the trailing `\b` with a lookahead so `AC-2(1)` matches before a space or punctuation.
-- `foldHomoglyphs`: strip `\p{Cf}` and U+00AD.
-- `docxText` and the XML path: decode numeric and `&nbsp;` entities.
-- `evidenceLooksStuffed`: run the 5-gram check regardless of run length.
-Item 1 is the highest-value fix in the file — it is what lets 1.4.0's own-control
-scoping reach the 232 enhancement keys. Land these together and regenerate the
-golden fixture and `tests/benchmark/results.json` once, with a note saying why
-the digest moved. Bump `ENGINE_VERSION`.
+**PR 1 — engine, false Satisfied** — **LANDED as engine 1.5.0**
+Items **1, 4, 5, 8**, one theme: normalise before you match. The control-id
+close is a lookahead, `\p{Cf}` is deleted before matching (with `\s*` word
+separators so a deletion cannot weld two words past a matcher), references are
+decoded, and stuffing is a share of the passage rather than a count. The
+verdict digest did **not** move — the bundled sample exercises none of the four
+— so `check.mjs` §25 is what holds them.
 
 **PR 2 — exports say what the engine decided (no digest movement)**
 Items **22, 23, 25, 27, 28, 29**. `review_required` onto every artifact; POA&M
@@ -431,6 +423,23 @@ the rest of items **9, 11** — fail-closed or rename. Moves the digest again.
 **70–77** (verification and process). Item **71** is the one to pull forward: until
 a golden case runs through `parsePackage`, none of the parser items can fail a
 push.
+
+---
+
+## Found while fixing, not in the original review
+
+Not numbered: the canonical sequence is 1–77 and renumbering would break the
+alias table below.
+
+**PR1-a. Two matchers backtrack quadratically on a run of spaces.** — **CLOSED (1.5.0)**
+The `absent` refutation and `SCAN_CONTEXT_RE` each carried a whitespace
+quantifier on both sides of an optional group, so a space run could be split
+between them every possible way — 306ms on twenty thousand spaces under 1.4.1,
+tens of seconds on a real document, in a parser that reads visitor uploads.
+Pre-existing, not introduced by the `\s*` rewrite, which made it marginally
+worse (428ms on the same input). Each optional group carries its own trailing
+separator now. `check.mjs` §25 walks every regex in `RULESET` and fails any that
+exceeds 100ms on that input, so the shape cannot come back unnoticed.
 
 ---
 

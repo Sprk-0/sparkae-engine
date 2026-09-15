@@ -1910,5 +1910,108 @@ check(!page.includes('_paintFindingsCascade') && (page.match(/^function paintFin
   page.includes("'<td>' + engEsc(f.text) + (f.metaHtml || '') + renderCites(f.cites)"),
   'one painter builds every row through buildFindingRow, and the row escapes the finding text at the sink');
 
+
+// ── 25. normalise before you match ──────────────────────────────────────────
+// Four ways a document could read as compliant while saying otherwise. None of
+// them is exercised by the bundled sample — it names no enhancement, carries no
+// invisible character and no entity, and is not stuffed — so these cases are
+// what holds the fixes. The verdict digest does not move across them.
+console.log('25. normalise before you match');
+
+// ITEM 1: an enhancement id is a control of its own, not a mention of its base.
+check(JSON.stringify(E.extractControlIds('AC-2(1) is implemented')) === '["AC-2(1)"]',
+  'an enhancement id followed by a space is the enhancement, not the base control — ' + JSON.stringify(E.extractControlIds('AC-2(1) is implemented')));
+check(JSON.stringify(E.extractControlIds('AC-2(1), AC-17(3).')) === '["AC-2(1)","AC-17(3)"]',
+  'enhancement ids are read before a comma and before a full stop — ' + JSON.stringify(E.extractControlIds('AC-2(1), AC-17(3).')));
+check(JSON.stringify(E.extractControlIds('see AC-2(1)')) === '["AC-2(1)"]',
+  'an enhancement id at the end of the text is read');
+check(JSON.stringify(E.extractControlIds('AC-25 applies')) === '["AC-25"]' &&
+      JSON.stringify(E.extractControlIds('AC-2abc')) === '[]',
+  'the close still refuses AC-2 inside AC-25 and inside AC-2abc');
+const enhDif = (CATALOG['AC-2(1)'] || {}).d ? CATALOG['AC-2(1)'].d[0] : null;
+const enhOts = enhDif ? verdictFor([['ssp.txt',
+  'AC-2(1) Automated System Account Management. Automated account management is not implemented for this system.']],
+  'AC-2(1)', enhDif) : null;
+check(!!enhDif && enhOts.status === 'Other Than Satisfied' && sub(enhOts, 5, '5a') === false,
+  '"AC-2(1) … is not implemented" refuses AC-2(1) on its own evidence — ' + (enhOts ? enhOts.status : 'no dif'));
+const enhIdx = E.buildRefutationIndex(new E.BM25Retriever(E.chunkText(
+  'AC-2 Account Management. Accounts are reviewed quarterly.\n\nAC-2(1) Automated Account Management. Automation is not implemented.', 'ssp.txt')));
+check(!(enhIdx['AC-2'] || []).length && (enhIdx['AC-2(1)'] || []).length === 1,
+  'a refutation under an enhancement heading is charged to the enhancement, not to its base control — ' + JSON.stringify(enhIdx));
+
+// ITEM 4: invisible characters render as nothing and must not hide a refutation.
+for (const [name, text] of [['zero-width space', 'not​implemented'], ['zero-width non-joiner', 'not‌implemented'],
+                            ['word joiner', 'not⁠implemented'], ['byte-order mark', 'not﻿implemented'],
+                            ['soft hyphen', 'the control is not imple­mented']])
+  check(E.detectRefutations(E.foldHomoglyphs(text)).length > 0,
+    'a refutation split by a ' + name + ' still refutes');
+check(E.foldHomoglyphs('place​holder') === 'placeholder' && E.foldHomoglyphs('not implemented') === 'not implemented',
+  'the fold deletes invisible characters and leaves honest text byte-identical');
+check(!E.detectRefutations(E.foldHomoglyphs('The policy is implemented, reviewed annually and disseminated to all personnel.')).length,
+  'the welded-word tolerance raises no refutation on ordinary prose');
+const zwsp = verdictFor([['ssp.txt',
+  'AC-1 Access Control Policy. The access control policy is not​implemented. See SSP section 2, version 3, dated 2026-01-15.']],
+  'AC-1', difOf('AC-1', 'AC-1_a.[01]'));
+check(zwsp.status === 'Other Than Satisfied' && sub(zwsp, 5, '5a') === false,
+  'an AC-1 body refuted through a zero-width space is Other Than Satisfied — ' + zwsp.status);
+
+// ITEM 5: a character written as a reference is that character.
+check(E.decodeEntities('not&#x200B;implemented') === 'not​implemented' &&
+      E.decodeEntities('not&nbsp;implemented') === 'not implemented' &&
+      E.decodeEntities('not&#32;implemented') === 'not implemented',
+  'numeric and nbsp references decode to the characters they name');
+check(E.decodeEntities('&amp;lt;') === '&lt;', 'a reference is decoded once and the result is not re-scanned');
+check(E.decodeEntities('a &foo; b') === 'a &foo; b' && E.decodeEntities('&#xD800;') === '&#xD800;',
+  'an unknown reference and a lone surrogate are left as written');
+check(E.decodeEntities('&lt;a&gt; &amp; &quot;x&quot; &apos;y&apos;') === '<a> & "x" \'y\'',
+  'the five XML names still decode');
+for (const [name, body] of [['&#x200B;', 'not&#x200B;implemented'], ['&nbsp;', 'not&nbsp;implemented'], ['&#32;', 'not&#32;implemented']])
+  check(E.detectRefutations(E.foldHomoglyphs(E.decodeEntities(body))).length > 0,
+    'a refutation written as ' + name + ' still refutes once decoded');
+
+// Every matcher the ruleset publishes runs in linear time on a run of spaces.
+// Two carried a whitespace quantifier on each side of an optional group, so a
+// run could be split between them every possible way: quadratic, 306ms on
+// twenty thousand spaces before the fix and tens of seconds on a realistic
+// document, in a parser that reads whatever a visitor drops on the page.
+const evilRun = 'enforcement' + ' '.repeat(20000) + 'x';
+const evilScan = 'scan' + ' '.repeat(20000) + 'x';
+const slowest = (() => {
+  const seen = [];
+  const walk = (o) => { for (const k in o) { const v = o[k];
+    if (v && typeof v === 'object') { if (typeof v.source === 'string') seen.push([k, v]); else walk(v); } } };
+  walk(E.RULESET);
+  let worst = ['(none)', 0];
+  for (const [name, spec] of seen) {
+    let re; try { re = new RegExp(spec.source, spec.flags.replace('g', '')); } catch (e) { continue; }
+    for (const evil of [evilRun, evilScan]) {
+      const t = Date.now(); re.test(evil); const ms = Date.now() - t;
+      if (ms > worst[1]) worst = [name, ms];
+    }
+  }
+  return worst;
+})();
+check(slowest[1] < 100, 'every matcher in RULESET runs in linear time on a 20k-space run — slowest: ' + slowest[0] + ' ' + slowest[1] + 'ms');
+check(E.detectRefutations('logging is absent').length === 1 && E.detectRefutations('enforcement absent').length === 1 &&
+      E.detectRefutations('monitoring was absent').length === 1,
+  'the absent matcher still reads the auxiliary it carries, and reads it missing');
+
+// ITEM 8: stuffing is repetition as a share of the passage, not a raw count.
+const KW = 'access control policy account management audit review logging';
+check(E.evidenceLooksStuffed(Array(12).fill(KW).join(' ')), 'an unpunctuated keyword run reads as stuffed');
+check(E.evidenceLooksStuffed(Array(12).fill(KW).join('. ')), 'the same keyword run reads as stuffed with a full stop after each');
+check(E.evidenceLooksStuffed(Array(12).fill(KW).join('; ')), 'and with a semicolon after each');
+// The regression this parameter exists for, on real data rather than a guess:
+// most of what reaches evidenceLooksStuffed is the retrieval union, and an SSP
+// opens each section with its own name. Counting duplicate 5-grams without
+// weighing them against the length of the passage read the bundled sample's
+// own union as stuffed and cost nineteen determinations.
+const unionRetriever = new E.BM25Retriever(E.chunkText(sample, 'CloudVault-Federal-SSP.txt'));
+const ir2 = difOf('IR-2', 'IR-2a.01') || (CATALOG['IR-2'].d || []).filter(d => d.b.includes('Low'))[0];
+const unionText = E.foldHomoglyphs(unionRetriever.query(ir2.t, 8, 'IR-2').map(h => h.text).join('\n\n'));
+check(unionText.split(/\s+/).length > 200 && !E.evidenceLooksStuffed(unionText),
+  "the bundled sample's own retrieval union, whose sections share a house-style opening, is not stuffed — " +
+  unionText.split(/\s+/).length + ' words');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
