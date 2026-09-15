@@ -146,15 +146,39 @@ class BM25Retriever {
 // DOCUMENT PARSING (in-browser)
 // ════════════════════════════════════════════════════════
 
-const CTRL_ID_RE = /\b([A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?)\b/g;
+// A control id ends where a word ends, and the enhancement suffix is part of
+// the id: "AC-2(1)" is a control of its own, not a mention of AC-2.
+//
+// The pattern used to close with `\b`, which asserts a word boundary — and `)`
+// is not a word character, so after "AC-2(1)" the boundary only existed when a
+// word character followed. "AC-2(1) is implemented", "AC-2(1)," and "AC-2(1)"
+// at the end of a line all failed it, the optional group was given back, and
+// the match came out as the BASE control "AC-2". Only the nonsense case,
+// "AC-2(1)x", produced the enhancement. 232 of the catalog's 447 keys are
+// enhancements, so those controls were never tagged on a chunk, never had own
+// evidence, and every gate that reads a control's own text fell through to the
+// retrieval union for half the catalog.
+//
+// The close is now a negative lookahead instead. `\w` keeps "AC-2" out of
+// "AC-2abc" the way `\b` did; `(` refuses a base id that an enhancement suffix
+// follows, so backtracking can never turn "AC-2(1)" into "AC-2" — a malformed
+// "AC-2(1)x" yields nothing at all, which is the fail-closed direction.
+//
+// One pattern serves both readers. They are the same id in two places, and
+// keeping two literals is how they drift apart.
+const CONTROL_ID_RE = /\b[A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?(?![\w(])/g;
 const VALID_FAMILIES = new Set(['AC','AT','AU','CA','CM','CP','IA','IR','MA','MP','PE','PL','PM','PS','PT','RA','SA','SC','SI','SR']);
+const CONTROL_IDS_PER_CHUNK_MAX = 50;
 
 function extractControlIds(text) {
   const ids = new Set();
-  let m; CTRL_ID_RE.lastIndex = 0;
-  while ((m = CTRL_ID_RE.exec(text)) && ids.size < 50) {
-    const fam = m[1].split('-')[0];
-    if (VALID_FAMILIES.has(fam)) ids.add(m[1]);
+  // matchAll rather than exec: a shared global regex carries `lastIndex`
+  // between calls, and the cap below can leave a loop part-way through the
+  // string. matchAll runs on its own copy, so no reader can strand another.
+  for (const m of String(text).matchAll(CONTROL_ID_RE)) {
+    if (ids.size >= CONTROL_IDS_PER_CHUNK_MAX) break;
+    const fam = m[0].split('-')[0];
+    if (VALID_FAMILIES.has(fam)) ids.add(m[0]);
   }
   return [...ids];
 }
@@ -227,7 +251,7 @@ async function parseFile(file) {
   if (ext === 'txt' || ext === 'md' || ext === 'nessus' || ext === 'xml' || ext === 'json' || ext === 'csv') {
     const text = await file.text();
     if (!text || !text.trim()) throw unsupported(name, 'file is empty');
-    return chunkText(text, name);
+    return chunkText(markupText(ext, text), name);
   }
   if (ext === 'docx') return await parseDocx(file);
   if (ext === 'zip') return (await parseZipReport(file)).chunks;
@@ -282,6 +306,48 @@ async function parsePackage(files) {
 // `budget` is the enclosing archive's remaining expansion allowance, passed in
 // for a nested DOCX so that a package of many DOCX members cannot expand past
 // the limit one member at a time.
+// XML carries a character either literally or as a reference, and the two are
+// the same character. This decoded five named references and nothing else, so a
+// DOCX or an XML upload could write a refutation as "not&#x200B;implemented",
+// "not&nbsp;implemented" or "not&#32;implemented" — text that opens in Word
+// reading "not implemented" and reached the gates as the literal source, where
+// no pattern matches it.
+//
+// Numeric references, decimal and hexadecimal, are decoded alongside the five
+// names XML defines plus `nbsp`, which is the one HTML name a Word document
+// writes often enough to matter. A reference this does not know is left as
+// written rather than guessed at.
+//
+// One pass, and the output is never re-scanned: "&amp;lt;" decodes to "&lt;"
+// and stops there, so a reference cannot be smuggled through in an encoded
+// form and decoded a second time.
+const XML_ENTITIES = { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'", nbsp: ' ' };
+const ENTITY_RE = /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([A-Za-z][A-Za-z0-9]*));/g;
+
+function decodeEntities(text) {
+  return String(text).replace(ENTITY_RE, (whole, dec, hex, name) => {
+    if (name !== undefined) {
+      const known = XML_ENTITIES[name.toLowerCase()];
+      return known === undefined ? whole : known;
+    }
+    const cp = parseInt(dec !== undefined ? dec : hex, dec !== undefined ? 10 : 16);
+    // Out of range, or half of a surrogate pair: not a character, so the
+    // reference stays as it was written rather than becoming U+FFFD.
+    if (!Number.isFinite(cp) || cp < 0 || cp > 0x10FFFF) return whole;
+    if (cp >= 0xD800 && cp <= 0xDFFF) return whole;
+    return String.fromCodePoint(cp);
+  });
+}
+
+// A loose .xml or .nessus upload is read as text, and the same reference
+// decoding applies to it: a scanner report that writes "not&#32;implemented"
+// says "not implemented". The other text types are left exactly as uploaded —
+// an "&amp;" in a .txt, .md, .csv or .json file is five characters the author
+// wrote, not a reference to one.
+function markupText(ext, text) {
+  return (ext === 'xml' || ext === 'nessus') ? decodeEntities(text) : text;
+}
+
 async function docxText(buf, label, budget) {
   // unzip() returns an array, and refuses every member of a name the archive
   // uses twice — a DOCX carrying two word/document.xml is two documents
@@ -298,12 +364,11 @@ async function docxText(buf, label, budget) {
   }
   const docXml = body.text;
   if (!docXml) throw unsupported(label, 'DOCX has no word/document.xml');
-  const text = docXml
+  const text = decodeEntities(docXml
     .replace(/<w:br[^>]*\/>/gi, '\n')
     .replace(/<\/w:p>/gi, '\n\n')
     .replace(/<\/w:r>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/<[^>]+>/g, ''))
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   if (!text) throw unsupported(label, 'DOCX contains no text');
@@ -562,7 +627,7 @@ async function parseZipReport(file) {
     if (ARCHIVE_HOUSEKEEPING_RE.test(name)) { refuse(name, 'archive housekeeping member (__MACOSX, .DS_Store, Thumbs.db) — not a document, so it is not read', { size }); continue; }
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
-      if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); members.push({ name, size, text: content }); }
+      if (content && content.trim()) { chunks.push(...chunkText(markupText(ext, content), name)); parsed.push(name); members.push({ name, size, text: content }); }
       else refuse(name, 'archive member is empty', { size, text: content || '' });
     } else if (ext === 'docx') {
       // A DOCX inside a package is the ordinary shape of a real submission: the
@@ -636,7 +701,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.4.1';
+const ENGINE_VERSION = '1.5.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -980,26 +1045,41 @@ function scoreEvidence(text) {
 
 // ── Gate 3b: Keyword Stuffing ──
 
+// A passage is stuffed when a five-word sequence repeats, and repeats often
+// enough relative to its length to be padding rather than house style. Both
+// parameters are published in RULESET and hashed into the ruleset digest.
+const STUFFING_MIN_DUPES = 3;
+const STUFFING_DUPE_SHARE = 0.15;
+
 function evidenceLooksStuffed(text) {
   if (!text) return false;
   const words = text.split(/\s+/);
   if (words.length < 40) return false;
-  let longest = 0, run = 0;
-  for (const w of words) {
-    run++;
-    if (/[.!?;:]/.test(w)) { longest = Math.max(longest, run); run = 0; }
-  }
-  longest = Math.max(longest, run);
-  if (longest < 40) return false;
+  // The duplicate-5-gram test below used to run only when the longest stretch
+  // between [.!?;:] was itself 40 words or more. Keyword stuffing does not need
+  // to be one long breathless run, and punctuation is free: the same phrases
+  // with a full stop after each read as ordinary sentences to that gate and
+  // walked past it. What identifies stuffing is repetition, so repetition is
+  // what is measured, however the author chose to punctuate.
+  //
+  // Repetition is measured as a SHARE of the passage, not as a count. Most of
+  // what reaches this function is the retrieval union — eight chunks from eight
+  // different sections, joined — and an SSP names its own subject in every
+  // section it opens, so "policy and procedures CloudVault maintains an" recurs
+  // across the union as a matter of house style. Three such echoes in seven
+  // hundred words is the shape of a document; the same three in eighty words is
+  // the shape of a keyword list. An absolute count cannot tell those apart and
+  // read the ordinary sample as stuffed, which cost nineteen determinations.
   const lowered = words.map(w => w.replace(/[.,;:!?"'()\[\]]/g, '').toLowerCase());
   const seen = new Set();
   let dupes = 0;
-  for (let i = 0; i < lowered.length - 4; i++) {
+  const windows = lowered.length - 4;
+  for (let i = 0; i < windows; i++) {
     const gram = lowered.slice(i, i+5).join(' ');
     if (seen.has(gram)) dupes++;
     seen.add(gram);
   }
-  return dupes >= 3;
+  return dupes >= STUFFING_MIN_DUPES && (dupes / windows) >= STUFFING_DUPE_SHARE;
 }
 
 // ── Gate 4: ODP Validation ──
@@ -1144,13 +1224,39 @@ function validateOdps(difText, evidenceText) {
 
 // ── Gate 5: Refutation & Contradiction Detection ──
 
+// Deleting an invisible character (foldHomoglyphs, below) can weld two words
+// together: "not<ZWSP>implemented" folds to "notimplemented". A matcher that
+// separates its words with `\s+` requires whitespace that is no longer there,
+// so the sentence reads as neither "not implemented" nor anything else, and the
+// gate that should refuse this control passes it.
+//
+// weldTolerant rewrites a pattern's word separators to `\s*` — whitespace that
+// may be absent — so one matcher covers the honest text and the welded form.
+// It is applied at construction, so RULESET publishes the pattern that actually
+// runs and the ruleset digest moves with it.
+//
+// It rewrites `\s+` and the literal space. Neither may appear inside a
+// character class in a pattern passed here, because a class is matched as
+// source text like anything else: write `[\s-]` (as DRAFT_RE does) rather than
+// `[ -]`, and the rewrite cannot reach it.
+function weldTolerant(re) {
+  return new RegExp(re.source.replace(/\\s\+/g, '\\s*').replace(/ /g, '\\s*'), re.flags);
+}
+
 const REFUTING_PATTERNS = [
   /\bnot\s+(?:yet\s+)?(?:been\s+)?(?:fully\s+|properly\s+|completely\s+|correctly\s+|formally\s+|successfully\s+|adequately\s+)?(?:implemented|configured|enforced|deployed|established|maintained|performed|documented|disseminated|defined|reviewed|updated|applied|operational|turned\s+on|in\s+place)\b/,
   /\byet\s+to\s+be\s+(?:implemented|configured|enforced|deployed|established|completed|performed|defined|built|turned\s+on|operational|in\s+place)\b/,
   /\bremains?\s+outstanding\b/,
   /\bremains?\s+to\s+be\s+(?:implemented|configured|enforced|deployed|established|completed|performed|defined|built|turned\s+on)\b/,
   /\bpartially\s+implemented\b/,
-  /\b(?:tooling|capabilit(?:y|ies)|controls?|mechanisms?|process(?:es)?|procedures?|configuration|enforcement|logging|monitoring)\s+(?:is|are|was|were|remains?)?\s*absent\b/,
+  // The optional auxiliary carries its own trailing separator. Written as
+  // `\s+(?:is|are|…)?\s*absent`, two whitespace quantifiers sat side by side
+  // with only an optional group between them, so a run of spaces could be
+  // split between them in every possible way: 306ms on twenty thousand spaces
+  // under 1.4.1, and the cost is quadratic, so a document could hang the tab it
+  // was dropped into. Inside the group the separators are divided by a literal
+  // and there is nothing to split.
+  /\b(?:tooling|capabilit(?:y|ies)|controls?|mechanisms?|process(?:es)?|procedures?|configuration|enforcement|logging|monitoring)\s+(?:(?:is|are|was|were|remains?)\s+)?absent\b/,
   /\benforcement\s+(?:is\s+|was\s+)?disabled\b/,
   /\bnon-?compliant\b/,
   /\bno\s+(?:evidence|records?|documentation)\s+(?:of|exist|that|to)\b/,
@@ -1161,7 +1267,7 @@ const REFUTING_PATTERNS = [
   /\bno\s+(?:documented\s+|formal\s+|automated\s+|effective\s+)?(?:procedure|policy|process|mechanism|capabilit(?:y|ies)|enforcement|safeguards?)\s+(?:exists?|is\s+(?:in\s+place|defined|documented|implemented|enforced))\b/,
   /\b(?:is|are)\s+(?:still\s+|currently\s+)?being\s+implemented\b/,
   /\bimplementation\s+(?:is\s+|remains\s+)?(?:still\s+)?(?:in\s+progress|incomplete|underway|not\s+(?:yet\s+)?complete|ongoing)\b/,
-];
+].map(weldTolerant);
 
 const NEGATION_PAIRS = [
   [/not implemented/, /is implemented/],
@@ -1170,9 +1276,9 @@ const NEGATION_PAIRS = [
   [/not required/, /is required/],
   [/not configured/, /is configured/],
   [/disabled/, /enabled/],
-];
+].map(pair => pair.map(weldTolerant));
 
-const DRAFT_RE = /\b(?:tbd|to\s+be\s+(?:determined|defined|decided|finalized)|pending\s+finalization|to-?do|placeholder)\b|[\[<]\s*(?:insert|todo|placeholder|fill[\s-]?in)\b/i;
+const DRAFT_RE = weldTolerant(/\b(?:tbd|to\s+be\s+(?:determined|defined|decided|finalized)|pending\s+finalization|to-?do|placeholder)\b|[\[<]\s*(?:insert|todo|placeholder|fill[\s-]?in)\b/i);
 
 // Which control a refuting sentence is about. A document names a control in a
 // heading and describes it in the paragraphs that follow, so the closest
@@ -1185,11 +1291,12 @@ const DRAFT_RE = /\b(?:tbd|to\s+be\s+(?:determined|defined|decided|finalized)|pe
 // characters earlier, and the two were indistinguishable.
 // Shared by detectRefutationsScoped and buildRefutationIndex.
 const REFUTATION_FOLLOWING_SCOPE_CHARS = 600;
-const CONTROL_ID_ANY_RE = /\b[A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?\b/g;
-
 // Positions of every control id in `text`, as [{id, pos}] in text order.
+// Reads CONTROL_ID_RE, the one pattern: this used to carry its own copy, with
+// the same `\b`-after-`)` defect, so refutation scoping charged an
+// enhancement's sentence to the base control.
 function controlIdPositions(text) {
-  return [...String(text).matchAll(CONTROL_ID_ANY_RE)].map(m => ({ id: m[0], pos: m.index }));
+  return [...String(text).matchAll(CONTROL_ID_RE)].map(m => ({ id: m[0], pos: m.index }));
 }
 
 // The ids that own a refutation at `refPos`, given the id occurrences of the
@@ -1358,7 +1465,7 @@ function checkCurrency(dates, assessmentDate) {
 // ── Gate 6b: Scan Cadence Check (ConMon 30-day) ──
 
 const SCAN_CADENCE_DAYS = 30;
-const SCAN_CONTEXT_RE = /\b(?:vulnerability scan|vuln scan|authenticated scan|credentialed scan|web application scan|database scan|container scan|nessus|qualys|tenable|rapid7|openvas|scanned|last scan|most recent scan|scan(?:s)?\s+(?:was|were|is|are)?\s*(?:performed|completed|run|conducted|executed))\b/i;
+const SCAN_CONTEXT_RE = /\b(?:vulnerability scan|vuln scan|authenticated scan|credentialed scan|web application scan|database scan|container scan|nessus|qualys|tenable|rapid7|openvas|scanned|last scan|most recent scan|scan(?:s)?\s+(?:(?:was|were|is|are)\s+)?(?:performed|completed|run|conducted|executed))\b/i;
 
 function checkScanCadence(dates, assessmentDate) {
   const ad = assessmentDate; // supplied by assessDif — never the clock
@@ -1439,9 +1546,26 @@ const HOMOGLYPHS = {
   'Ο':'O','Α':'A','Ε':'E','Ρ':'P','Ν':'N','Τ':'T','Κ':'K','Ι':'I','Χ':'X','Β':'B','Η':'H','Μ':'M','Υ':'Y','Ζ':'Z','Ϲ':'C','Ϳ':'J',
 };
 
+// Invisible formatting characters — zero-width space, zero-width non-joiner and
+// joiner, word joiner, byte-order mark, soft hyphen — render as nothing and
+// survive NFKC, which normalises compatibility forms and leaves format
+// characters where they are. A document could therefore write
+// "not<ZWSP>implemented", "imple<SHY>mented" or "place<ZWSP>holder" and read
+// exactly like the honest text on screen while matching none of the patterns
+// gate 5 refuses on. Unicode calls these default-ignorable, and the standard
+// reading of a string that carries them is the string without them, so they are
+// deleted here rather than replaced: "imple<SHY>mented" is "implemented" and
+// "place<ZWSP>holder" is "placeholder".
+//
+// Deleting them can also WELD two words: "not<ZWSP>implemented" becomes
+// "notimplemented", which is not "not implemented" either. That is why every
+// matcher built on top of this fold separates its words with `\s*` — see
+// weldTolerant() below.
+const INVISIBLE_RE = /\p{Cf}/gu;
+
 function foldHomoglyphs(text) {
   if (!text) return text;
-  let out = text.normalize('NFKD').replace(/[̀-ͯ]/g, '').normalize('NFKC');
+  let out = text.normalize('NFKD').replace(/[̀-ͯ]/g, '').normalize('NFKC').replace(INVISIBLE_RE, '');
   for (const [from, to] of Object.entries(HOMOGLYPHS)) out = out.replaceAll(from, to);
   return out;
 }
@@ -1874,6 +1998,10 @@ const RULESET = Object.freeze({
     negation_pairs: NEGATION_PAIRS.map(([a, b]) => [rx(a), rx(b)]),
     draft: rx(DRAFT_RE),
     homoglyphs: Object.keys(HOMOGLYPHS).sort().map(k => [k, HOMOGLYPHS[k]]),
+    invisible: rx(INVISIBLE_RE),
+    stuffing: { min_dupes: STUFFING_MIN_DUPES, dupe_share: STUFFING_DUPE_SHARE },
+    entities: { pattern: rx(ENTITY_RE), named: Object.keys(XML_ENTITIES).sort().map(k => [k, XML_ENTITIES[k]]) },
+    control_id: rx(CONTROL_ID_RE),
     dates: DATE_PATTERNS.map(([re, fmt]) => ({ format: fmt, pattern: rx(re) })),
     date_context: CTX_PATTERNS.map(([re, ctx]) => ({ context: ctx, pattern: rx(re) })),
     currency_deciding_context: CURRENCY_DECIDING_CTX.slice(),
@@ -1925,6 +2053,8 @@ global.SparkAEEngine = {
   parseZipReport: parseZipReport,
   parseDocx: parseDocx,
   docxText: docxText,
+  decodeEntities: decodeEntities,
+  evidenceLooksStuffed: evidenceLooksStuffed,
   unzip: unzip,
   chunkText: chunkText,
   checkCoverage: checkCoverage,

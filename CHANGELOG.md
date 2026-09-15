@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-15 (the state this build is in)
 
-Engine 1.4.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `7a852bebcef0` ·
+Engine 1.5.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `d10ea7075a64` ·
 verdict digest `614ab4597d07`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,83 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-15 (normalise before you match · engine 1.5.0)
+
+Engine 1.4.1 → **1.5.0** · ruleset `7a852bebcef0` → `d10ea7075a64` ·
+verdict digest `614ab4597d07` **unchanged** · golden regenerated for the version.
+
+Four ways a document could read as compliant on screen while saying otherwise to
+the gates. They are one defect wearing four coats: text was compared before it
+was normalised, so a character the reader never sees decided a determination.
+None of the four is exercised by the bundled sample — it names no enhancement,
+carries no invisible character and no reference, and is not stuffed — so every
+determination it produces is byte-identical and the verdict digest does not
+move. `check.mjs` §25 is what holds these; the sample never could.
+
+- **An enhancement id is a control, not a mention of its base.** The control-id
+  pattern closed with `\b`, and `)` is not a word character, so the boundary
+  after "AC-2(1)" existed only when a word character followed it. "AC-2(1) is
+  implemented", "AC-2(1)," and "AC-2(1)" ending a line all failed that
+  assertion, the enhancement suffix was given back, and the match came out as
+  **AC-2**. Only the nonsense case, "AC-2(1)x", produced the enhancement. 232 of
+  the catalog's 447 keys are enhancements, so for half the catalog no chunk was
+  ever tagged with the control it named, no control had evidence of its own, and
+  the own-control scoping the 1.4.0 fix set built fell straight back to the
+  retrieval union. The close is a negative lookahead now, refusing both a
+  trailing word character and a trailing `(`, so backtracking can never turn an
+  enhancement into its base. `controlIdPositions` carried a second copy of the
+  same pattern with the same defect, which is why a refutation under an
+  enhancement heading was charged to the base control; there is one pattern now.
+- **Invisible characters are deleted before matching.** Zero-width space,
+  zero-width non-joiner and joiner, word joiner, byte-order mark and soft hyphen
+  render as nothing and survive NFKC, so "not<ZWSP>implemented" and
+  "place<ZWSP>holder" read like the honest text and matched none of the patterns
+  gate 5 refuses on. Unicode calls these default-ignorable and reads a string
+  that carries them as the string without them, which is what the fold does now.
+  Deleting them can also weld two words — "not<ZWSP>implemented" becomes
+  "notimplemented" — so every matcher built over the fold separates its words
+  with `\s*` rather than `\s+`. That rewrite happens at construction, so
+  `RULESET` publishes the patterns that actually run.
+- **A character written as a reference is that character.** The DOCX reader
+  decoded five named references and nothing else, so "not&#x200B;implemented",
+  "not&nbsp;implemented" and "not&#32;implemented" opened in Word reading "not
+  implemented" and reached the gates as their literal source. Decimal and
+  hexadecimal references now decode alongside the five XML names and `nbsp`, in
+  one pass whose output is never re-scanned, so "&amp;lt;" decodes to "&lt;" and
+  stops. A reference the table does not know, and a lone surrogate, are left as
+  written rather than guessed at. A loose `.xml` or `.nessus` upload is decoded
+  the same way; `.txt`, `.md`, `.csv` and `.json` are not, because an "&amp;" in
+  those is five characters their author typed.
+- **Stuffing is repetition as a share of the passage.** The duplicate-5-gram
+  test ran only when the longest stretch between `[.!?;:]` was itself forty
+  words or more, and punctuation is free: the same phrases with a full stop
+  after each read as ordinary sentences and walked past the gate. The run-length
+  condition is gone. What replaces it is not a bigger count but a ratio, and the
+  reason is worth recording: most of what reaches this check is the retrieval
+  union — eight chunks from eight sections, joined — and an SSP names its own
+  subject in every section it opens. Counting duplicates without weighing them
+  against the length of the passage read the bundled sample's own union as
+  stuffed, on the strength of "policy and procedures CloudVault maintains an"
+  recurring across it, and cost nineteen determinations on seven base controls
+  that nothing in this change was about. Three echoes in seven hundred words is
+  the shape of a document; the same three in eighty words is a keyword list.
+
+One thing outside the review's list, found while rewriting the separators and
+fixed here because the fix is two characters and the failure is a hang. Two
+matchers — the `absent` refutation and the scan-context pattern — carried a
+whitespace quantifier on each side of an optional group, so a run of spaces
+could be split between them in every possible way. That is quadratic: 306ms on
+twenty thousand spaces under 1.4.1, tens of seconds on a document, in a parser
+whose whole job is to read a file a visitor drops on the page. Each optional
+group now carries its own trailing separator, so the quantifiers are divided by
+a literal and there is nothing to split. `check.mjs` §25 walks every regex
+`RULESET` publishes and fails if any of them exceeds 100ms on such a run.
+
+`review_required` still does not reach the exports, the catalog's own parameter
+values are still unread, and the pages still claim things this build does not
+do. Those are the next two cuts, and they are inventoried with everything else
+in `.github/REVIEW-FINDINGS.md`.
 
 ## 2026-09-15 (anchor stems are content words · engine 1.4.1)
 
