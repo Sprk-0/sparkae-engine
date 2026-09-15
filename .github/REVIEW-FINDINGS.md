@@ -1,153 +1,89 @@
 # SparkAE public reference build — interrogate findings
 
-Inventory of defects found against `main` at engine **1.3.0**, catalog `2026-07-21` / `91ad1b17138f`, golden verdict digest `04b1f79d6f44` (CloudVault sample, FedRAMP Low, assessed as of 2026-06-01).
-
-**Re-baselined 2026-09-15 against engine 1.4.1** (`6558408`); **PR 1 landed as engine 1.5.0**, ruleset `d10ea7075a64`, verdict digest `614ab4597d07` unchanged.
+Inventory of defects found against `main` at engine **1.3.0**, catalog **2026-07-21** / `91ad1b17138f`, golden verdict digest `04b1f79d6f44` (CloudVault sample, FedRAMP Low, assessed as of 2026-06-01).
 
 This file is a working review list, not a site page. It lives under `.github/` so it is not part of the published tree `check_published.mjs` compares to sparkae.ai. The GitHub repository is already public.
 
----
-
-## Read this before picking up an item
-
-This inventory was written against **1.3.0**. Two releases have landed since, and
-between them they closed most of it:
-
-- **1.4.0** (`0aafdb4`, "the interrogation fix set") took the original review's
-  fifty-six defects and twenty-one tests — every item here whose alias is in the
-  `#1`–`#77` range — and moved the verdict digest `04b1f79d6f44` → `614ab4597d07`,
-  Satisfied 219 → 153.
-- **1.4.1** (`6558408`, "anchor stems are content words") dropped stop words as
-  words before stemming, in the objective anchors and in `contentStems`.
-
-What remains is mostly the later passes (`#78`–`#166`), which 1.4.0 did not cover.
-**Every item below now carries a status**, so nobody starts work that is already
-done:
-
-| Status | Meaning | Count |
-|---|---|---|
-| **OPEN** | reproduced on 1.4.1 | 40 |
-| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
-| **CLOSED** | fixed in 1.4.0, 1.4.1 or 1.5.0, verified on this tree | 27 |
-| **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
-
-Statuses come from running the engine on this tree, not from reading the
-changelog — see item 43, which no entry ever claimed and which would otherwise
-have been assumed closed alongside its neighbours.
-
-**How to read the rest.** Items are grouped by what to do first, not by the order they were found. Original review IDs (`#1` … `#166`) are in parentheses so earlier notes still map. Later IDs that only restated an earlier item are aliases, not extra bugs. Numbering is unchanged from the 1.3.0 edition: **do not renumber**, the aliases at the foot of the file depend on it.
+**How to read it.** Items are grouped by what to do first, not by the order they were found. Original review IDs (`#1` … `#166`) are in parentheses so earlier notes still map. Later IDs that only restated an earlier item are aliases, not extra bugs. The current suite does not hold an item unless the note says it does (a few tests **lock** the wrong behaviour).
 
 **Do not start with** Gate 4 fail-closed, Gate 2 quorum, or 6a-with-no-dates unless you make an explicit product call: those move the golden digest.
+
+Suggested first PR: P0 engine/XSS/receipt/synthesis **plus** `#78–82` (otherwise enhancement objectives keep using the BM25-union path). Bump `ENGINE_VERSION` if verdicts change; regenerate golden + `tests/benchmark/results.json` and say why the digest moved.
 
 ---
 
 ## P0 — Act on now
 
-Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinations, a receipt that does not hash to itself, or public copy that tells an assessor to skip what "passed."
+Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinations, a receipt that does not hash to itself, or public copy that tells an assessor to skip what “passed.”
 
 ### False Satisfied
 
-1. **Enhancement IDs never match (`\b` after `)`).** (`#78–82`) — **CLOSED (1.5.0)**
-   The close is a negative lookahead refusing a trailing word character and a
-   trailing `(`, so an enhancement can never backtrack into its base.
-   `controlIdPositions` carried a second copy of the same pattern and now reads
-   the one pattern, so a refutation under an enhancement heading is charged to
-   the enhancement. `check.mjs` §25 holds it.
+1. **Enhancement IDs never match (`\b` after `)`).** (`#78–82`)
+   `CTRL_ID_RE` / scoped refutation / corpus index. `"AC-2(1) is implemented"` → `['AC-2']`; `\bAC-2\(1\)\b` positions are empty. **232 / 447** catalog keys are enhancement-shaped, so `ownEvidence` is always empty and gates 2/3b/5/6 fall through to the BM25 union. Own-control scoping from 1.2.0 does not apply to half the catalog. Required test: `"AC-2(1) is not implemented"` must OTS `AC-2(1)`.
 
-2. **Gate 5a sees only the first "not implemented."** (`#1–3`) — **CLOSED (1.4.0)**
-   `execAll` collects every occurrence and attributes each to the closest control id before it.
+2. **Gate 5a sees only the first “not implemented.”** (`#1–3`)
+   `detectRefutations`, `detectRefutationsScoped`, and `buildRefutationIndex` call `execPattern` once per regex. A later sentence next to this control is ignored. Fix: `matchAll` and attribute each hit. Still useless for `AC-2(1)` until `#78` is fixed.
 
-3. **Gates 3a and 4 still score the neighbor's prose.** (`#8–9`) — **CLOSED (1.4.0)**
-   `demo-engine.js:1679,1693` now read `ownEvidence || evidenceText`.
+3. **Gates 3a and 4 still score the neighbor’s prose.** (`#8–9`)
+   `scoreEvidence` and `validateOdps` take `evidenceText` (BM25 union). Coverage, stuffing, refutation, and dates already use `ownEvidence || evidenceText`. A neighbor’s “SSP section / version / dated / ISSO” can Satisfied this control. For enhancements this is the default path, not an edge.
 
-4. **Invisible format characters beat Gate 5.** (`#114`) — **CLOSED (1.5.0)**
-   `foldHomoglyphs` deletes `\p{Cf}` — zero-width space, non-joiner, joiner,
-   word joiner, BOM and soft hyphen. Because deleting them can weld two words
-   ("not<ZWSP>implemented" → "notimplemented"), every matcher over the fold is
-   built with `\s*` between words by `weldTolerant`.
+4. **Invisible format characters beat Gate 5.** (`#114`)
+   `foldHomoglyphs` does not strip Cf / soft hyphen. Same AC-1 body that is OTS with `not implemented` becomes **Satisfied** with `not\u200Bimplemented`, `\u200C`, `\u2060`, `imple\u00ADmented`, and `place\u200Bholder`. Cyrillic lowercase `рlaceholder` still fails closed. Homoglyph tests are letters only.
 
-5. **DOCX/XML entities are not decoded.** (`#84`, `#142`) — **CLOSED (1.5.0)**
-   `decodeEntities` reads decimal and hexadecimal references plus the five XML
-   names and `nbsp`, in one pass that is never re-scanned. Loose `.xml` and
-   `.nessus` uploads are decoded the same way; `.txt`, `.md`, `.csv` and `.json`
-   are left as typed.
+5. **DOCX/XML entities are not decoded.** (`#84`, `#142`)
+   `docxText` decodes only `&lt; &gt; &amp; &quot; &apos;`. Crafted `not&#x200B;implemented`, `not&nbsp;implemented`, and `not&#32;implemented` all **Satisfy** AC-1. Same hole on `.xml` uploads. A real U+00A0 nbsp still fails closed.
 
-6. **Catalog ODP values are dead.** (`#115`) — **OPEN**
-   **236** of the catalog's 1,513 objectives carry a non-empty `o` (AC-1_c.1-1 is
-   `"AC-1 (c) (1): at least every 3 years"`). The engine never reads `dif.o` — no
-   reference to it anywhere in `demo-engine.js`. Gate 4 is keyword classes only:
-   `validateOdps(dif, "…reviewed and updated every 10 years.")` returns
-   `satisfied: true` against a three-year parameter.
+6. **Catalog ODP values are dead.** (`#115`)
+   236 DIFs carry `o` (e.g. AC-1_c.1-1: “at least every 3 years”). Engine never reads `dif.o`. Gate 4 is keyword classes only. Evidence saying “annually” **Satisfies** that objective.
 
-7. **AC-1 Gate 2b collapses to stem `acces`.** (`#157`) — **PARTIAL**
-   The named false pass is gone. On 1.4.1 AC-1's subject is `["access"]` (the
-   stemmer no longer truncates), and the one-term anchor path added in 1.4.0
-   requires a second objective stem beside it in the same clause, so
-   `mentionsSubject(PE-2-only text, ["access"], AC-1 stems)` → **false**.
-   What remains: **24** controls still have a single subject term and PM-1 has
-   none (see item 53), so the structure the finding describes is intact and rests
-   entirely on the anchor rule.
+7. **AC-1 Gate 2b collapses to stem `acces`.** (`#157`)
+   Title is generic (“Policy and Procedures”); family “Access Control” is ambient, so the code keeps the raw term. A **PE-2-only** document — visitors sign in at the lobby, with section/version/page/date — **Satisfies AC-1_a.[01]**. Inverse of the 1.3.0 ambient fix. AT-1 / AU-1 / IA-1 stay Not Reviewed on the same text. 23 controls have a 0–1-term subject.
 
-8. **Stuffing aborts on short sentences.** (`#116`) — **CLOSED (1.5.0)**
-   The run-length condition is gone; repetition is measured as a share of the
-   passage (`STUFFING_MIN_DUPES`, `STUFFING_DUPE_SHARE`, both in `RULESET`).
-   A raw count alone read the bundled sample's own retrieval union as stuffed —
-   sections legitimately share a house-style opening — and cost nineteen
-   determinations, so the ratio is the parameter, and `check.mjs` §25 pins that
-   union as not stuffed.
+8. **Stuffing aborts on short sentences.** (`#116`)
+   `evidenceLooksStuffed` returns false if the longest run between `[.!?;:]` is under 40 tokens, before 5-gram dupes. Punctuated keyword runs **Satisfy**. Suite cases are long unpunctuated runs.
 
-9. **Gate 6d only sees ISO dates.** (`#18`, `#117`) — **PARTIAL**
-   The ISO-only defect is closed: `DATE_TOKEN_RE` is gone and the SLA check reads
-   every format `extractDates` reads. Still open: `CLOSURE_RE` is dead code —
-   `demo-engine.js:1408` already `continue`s unless `OPEN_STATUS_RE` matches, so
-   the `&& !OPEN_STATUS_RE.test(sent)` at 1409 can never be true.
+9. **Gate 6d only sees ISO dates.** (`#18`, `#117`)
+   `extractDates` accepts “May 1, 2025”; `DATE_TOKEN_RE` is `YYYY-MM-DD` only. Prose SLA dates **Satisfy**; the same sentence with `2025-05-01` is OTS. `CLOSURE_RE` is dead (`OPEN_STATUS_RE` already required).
 
-10. **One-term subjects + one distinguishing stem + lone BM25 hit.** (`#4–6`) — **CLOSED (1.4.0)**
-    Gate 1 is absolute (share of the objective's distinct stems, not min-maxed BM25); a concept needs two terms; a one-word subject needs an anchor beside it.
+10. **One-term subjects + one distinguishing stem + lone BM25 hit.** (`#4–6`)
+    `checkCoverage` treats one stem as the whole concept; Gate 2b can be a single word (`AC-2` → `account`); a single chunk is min-maxed to score 1.0 so Presence always clears. Furniture-only prose can Satisfied. Related: `#157`.
 
-11. **Untyped ODPs and `[Selection …]` pass.** (`#10–12`) — **PARTIAL**
-    The engine side is closed: typed values must sit in an affirmative clause
-    sharing a word with the objective, `[Selection …]` is extracted, and untyped
-    placeholders are recorded `odp_unverified` rather than passed. The product
-    call was not taken (unverified is not fail-closed), and `index.html` still
-    carries the "resolved ODPs" copy (`#93`).
+11. **Untyped ODPs and `[Selection …]` pass.** (`#10–12`)
+    Non-empty non-stuffed evidence clears untyped ODPs. `[Selection (one or more): …]` is never extracted. Typed checks are “keyword anywhere in the union.” Product call if you fail-closed (moves golden). Homepage still lists “resolved ODPs” as a Satisfied condition (`#93`).
 
-12. **Gate 6a passes with no dates; newest date launders a stale review.** (`#16–17`) — **CLOSED (1.4.0)**
-    A review or update date decides currency when there is one; evidence with no date is recorded `undated` and flagged rather than called current.
+12. **Gate 6a passes with no dates; newest date launders a stale review.** (`#16–17`)
+    No dates → `{isCurrent:true}`. Stale `review_date` concerns are discarded when `dates[0]` is fresh. Product call (PR 3), not a silent patch.
 
-13. **Uppercase homoglyphs miss the fold.** (`#13–14`) — **CLOSED (1.4.0)**
-    `HOMOGLYPHS` carries both cases and folds per character.
+13. **Uppercase homoglyphs miss the fold.** (`#13–14`)
+    Map is lowercase-only and never case-folds first. `Рlaceholder` (U+0420) does not become `placeholder`. Lowercase mix is already tested.
 
 ### Fabricated determinations and XSS
 
-14. **Uploads get invented 3PAO verdicts on §02–§09.** (`#37–41`, `#75`) — **CLOSED (1.4.0)**
-    `synthesizeCustomSample` is gone; §03–§05 stop on an upload and say so.
+14. **Uploads get invented 3PAO verdicts on §02–§09.** (`#37–41`, `#75`)
+    `synthesizeCustomSample` emits “The 3PAO examined … and confirmed” plus `50 + seed % 100` assets, fallback Critical/High counts, connector/scan-type totals. Stop synthesizing. Walkthroughs stay on authored samples; an upload runs §01 or is refused on those tabs.
 
-15. **Walkthrough `log()` interpolates upload names into `innerHTML`.** (`#46–56`, `#77`) — **CLOSED (1.4.0)**
-    Every name a walkthrough writes into the log is escaped.
+15. **Walkthrough `log()` interpolates upload names into `innerHTML`.** (`#46–56`, `#77`)
+    Sink at `demo-standalone.html` ~5037. ConMon/annual/SCR/KSI/initial/OSCAL/connectors interpolate `sample.name` and inventory filenames. §01 uses `engEsc`. `_headers` CSP does not apply on `file://`.
 
-16. **Cascade painter and `renderCites` are unescaped sinks.** (`#36`, `#90`, `#128`) — **CLOSED (1.4.0)**
-    One painter, `buildFindingRow`, escapes every field at the sink.
+16. **Cascade painter and `renderCites` are unescaped sinks.** (`#36`, `#90`, `#128`)
+    `f.text` / recommendations / cite `title`/`section`/`date` into HTML. Engine rows are pre-escaped; walkthrough and custom-upload rows are not. Escape at the sink.
 
-17. **The downloaded receipt does not hash to its own digest.** (`#22`, `#31`, `#67`) — **CLOSED (1.4.0)**
-    `receiptDigestOf` (`demo-exports.js:174`) is the verifier; the fields are inputs to the digest.
+17. **The downloaded receipt does not hash to its own digest.** (`#22`, `#31`, `#67`)
+    `runEngine` writes `system_name`, `files_parsed`, `files_refused` *after* `receipt_digest`. Rehashing the JSON does not recover the digest. Hash after those fields, or keep extra keys off the digested object.
 
 ### Public copy that is operationally dangerous
 
-18. **`assessors.html`: "Skip the controls that clearly pass."** (`#146`) — **OPEN**
-    Still present. Combined with the thin Satisfied the sample carries
-    (`review_required`), the enhancement-ID miss, ZWSP, catalog `o` and the
-    one-term subjects, this is advice a recognized assessment service could
-    follow off a public page.
+18. **`assessors.html`: “Skip the controls that clearly pass.”** (`#146`)
+    Combined with 48 thin Satisfied on the sample (`review_required`), enhancement-ID miss, ZWSP, catalog `o`, and AC-1/`acces`, this is advice a recognized assessment service could follow off a public page.
 
-19. **Homepage and assessors claim native OSCAL 1.1.2 assessment-results and POA&M, schema-validated on every build.** (`#145`) — **OPEN**
+19. **Homepage and assessors claim native OSCAL 1.1.2 assessment-results and POA&M, schema-validated on every build.** (`#145`)
     This repo emits OSCAL AR JSON and **POA&M CSV**. README puts OSCAL POA&M in the commercial column. CI vendors only `oscal_assessment-results_schema.json`.
 
-20. **Integrations og/twitter: "Same 7-gate engine as the 3PAO UI."** (`#148`) — **OPEN**
-    Still in `integrations.html:15` and `:29`. Social cards are what LinkedIn and Slack show.
+20. **Integrations og/twitter: “Same 7-gate engine as the 3PAO UI.”** (`#148`)
+    Body also shows “10 Analytical Services · Optional LLM.” This origin does not ship that UI. Social cards are what LinkedIn/Slack show.
 
-21. **`examineStatement` says the assessor "confirmed."** (`#104`, `#152`) — **OPEN**
-    Engine Satisfied, including `review_required`, is exported in that voice, and `tests/assessor.mjs` **locks the phrasing**. CONTRIBUTING forbids narrating work the engine did not perform.
+21. **`examineStatement` says the assessor “confirmed.”** (`#104`, `#152`)
+    Engine Satisfied, including `review_required`, is exported in that voice. `tests/assessor.mjs` **locks the phrasing.** CONTRIBUTING forbids narrating work the engine did not perform.
 
 ---
 
@@ -157,107 +93,97 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 
 ### Exports
 
-22. **`review_required` never leaves the tab.** (`#119`) — **OPEN**
-    Four references in `demo-engine.js`, **zero** in `demo-exports.js`. OSCAL,
-    Findings CSV, RET, POA&M, TCW, summary and the receipt verdict lines all omit
-    it, so downstream sees a clean Satisfied. `assessors.html` still says floors
-    every Satisfied must clear (`#153`).
+22. **`review_required` never leaves the tab.** (`#119`)
+    Golden Low: 219 Satisfied, **48** flagged. UI and `tests/browser.mjs` count it. `demo-exports.js` has zero matches: OSCAL, Findings CSV, RET, POA&M, TCW, summary, and receipt verdict lines omit it. Downstream sees clean Satisfied. `assessors.html` still says floors every Satisfied must clear (`#153`).
 
-23. **POA&M includes Not Reviewed rows.** (`#94`) — **OPEN**
-    `demo-exports.js:638` filters `effectiveStatus(...) !== 'Satisfied'`, which keeps Not Reviewed. NR is "no evidence above threshold," not an open weakness. RET correctly keeps OTS only.
+23. **POA&M includes Not Reviewed rows.** (`#94`)
+    `buildPOAM` keeps `effectiveStatus !== 'Satisfied'`. NR is “no evidence above threshold,” not an open weakness. RET correctly keeps OTS only. A live Low run dumps hundreds of NR rows as if they were findings.
 
-24. **OSCAL risks key off engine status; target state keys off effective status.** (`#23–24`, `#68–69`) — **CLOSED (1.4.0)**
-    Observations and risks follow the effective determination throughout.
+24. **OSCAL risks key off engine status; target state keys off effective (assessor) status.** (`#23–24`, `#68–69`)
+    OTS→SAT: satisfied target with `related-risks` still `open`. SAT→OTS: not-satisfied finding, no risk. CONTRIBUTING says every OTS finding points at the risk it raises.
 
-25. **Evidence bodies sliced at 500 characters, no ellipsis.** (`#120`) — **OPEN**
-    `demo-engine.js:1718` and `:1798`. Gates see the full string; the artifact does not, so a refutation or date past offset 500 is missing from the export.
+25. **Evidence bodies sliced at 500 characters, no ellipsis.** (`#120`)
+    Gates see the full string; CSV/OSCAL/TCW `evidence_description` does not. A refutation or date past offset 500 is missing from the artifact.
 
-26. **`csvSafe` only inspects `s[0]`.** (`#26–29`, `#70`, `#125`) — **CLOSED (1.4.0)**
-    `csvSafe` strips leading blanks (including BOM) before testing for a formula lead.
+26. **`csvSafe` only inspects `s[0]`.** (`#26–29`, `#70`, `#125`)
+    Leading space, newline, BOM (`U+FEFF`), or fullwidth `＝` then `=` is unchanged. `check.mjs` §8 is `/(^|,)"[=+\-@]/m` and cannot see padded cells.
 
-27. **TCW stamps every row `Control Origination: Service Provider Corporate`.** (`#95`) — **OPEN**
-    `demo-exports.js:664`, hardcoded. An invented FedRAMP origination value.
+27. **TCW stamps every row `Control Origination: Service Provider Corporate`.** (`#95`)
+    Not computed. Invented FedRAMP origination value.
 
-28. **Findings CSV empty FedRAMP-shaped columns.** (`#96`) — **OPEN**
-    In `buildFindingsCSV`, Applicable Threats and the three "After" columns are literal `''` on every row. Empty reads as "none," not "not produced."
+28. **Findings CSV empty FedRAMP-shaped columns.** (`#96`)
+    Applicable Threats, Likelihood/Impact/Risk After are always `''`. Empty reads as “none,” not “not produced.”
 
-29. **RET/POA&M "Original Detection Date" is the assessment date.** (`#97`) — **OPEN**
-    `buildPOAM` writes `today` into the detection column. A 2018 scan assessed as of 2026-06-01 is dated 2026-06-01.
+29. **RET/POA&M “Original Detection Date” is the assessment date.** (`#97`)
+    A 2018 scan assessed as of 2026-06-01 is dated 2026-06-01 on the RET.
 
-30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **UNVERIFIED**
-    The live OSCAL path was fixed in 1.4.0; `buildOSCALPOAM` still exists at `demo-standalone.html:6627` and was not part of that change. The dangling reference itself was not re-checked.
+30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`)
+    Live OSCAL path was fixed; walkthrough `buildOSCALPOAM` was not.
 
-31. **Executive summary says "25-column" findings CSV.** (`#30`, `#121`) — **CLOSED (1.4.0)**
-    The summary prints `FINDINGS_HEADERS.length`.
+31. **Executive summary says “25-column” findings CSV.** (`#30`, `#121`)
+    `FINDINGS_HEADERS` has **29** columns.
 
-32. **`import-ap.href` is `'#'`.** (`#25`) — **CLOSED (1.4.0)**
-    Points at a declared back-matter resource (`'#' + apUuid`).
+32. **`import-ap.href` is `'#'`.** (`#25`)
+    Schema-legal placeholder, not an assessment plan.
 
 ### Parser / retrieval
 
-33. **Control-ID boost of BM25 raw 0.** (`#7`, `#63`, `#158`) — **CLOSED (1.4.0)**
-    `demo-engine.js:133` boosts only when `raw > 0`.
+33. **Control-ID boost of BM25 raw 0.** (`#7`, `#63`, `#158`)
+    Tagged “See AC-1” / body `AC-1` outranks untagged paragraphs that answer the objective (`score: 1`). Gate 1 then runs on that token.
 
-34. **`extractControlIds` stops at 50 IDs per chunk.** (`#89`, `#166`) — **OPEN**
-    `demo-engine.js:155`, `ids.size < 50`. A control-list appendix can drop the ID that would have tagged the chunk.
+34. **`extractControlIds` stops at 50 IDs per chunk.** (`#89`, `#166`)
+    A control-list appendix can drop the ID that would have tagged the chunk.
 
-35. **ZIP `findEOCD` accepts the first `PK\x05\x06` in the last 64KiB.** (`#20`, `#72`) — **CLOSED (1.4.0)**
-    The record has to end the file; two self-consistent records are refused as ambiguous.
+35. **ZIP `findEOCD` accepts the first `PK\x05\x06` in the last 64KiB.** (`#20`, `#72`)
+    Never checks `eocd + 22 + commentLen === archive.length`. A comment containing that signature can yield 0 members that are neither parsed nor refused by name.
 
-36. **Member CRC-32 is unread.** (`#21`, `#73`) — **CLOSED (1.4.0)**
-    Every member's bytes are checked against the directory CRC and refused by name on mismatch.
+36. **Member CRC-32 is unread.** (`#21`, `#73`)
+    Corrupted stored bytes become evidence. `check.mjs` §13 only verifies fixtures it built.
 
-37. **DOCX headers, footers, footnotes, comments unread.** (`#85`, `#118`) — **OPEN**
-    Only `word/document.xml` is read — no reference to `header1.xml` or `footnotes.xml` anywhere. A refutation in a header never reaches Gate 5.
+37. **DOCX headers, footers, footnotes, comments unread.** (`#85`, `#118`)
+    Only `word/document.xml`. A refutation in a header never reaches Gate 5.
 
-38. **Tracked-change / vanish text is concatenated.** (`#83`, `#143`) — **OPEN**
-    No handling of `w:del` anywhere in the engine. Tags are stripped, so `<w:del>not implemented</w:del><w:ins>is implemented</w:ins>` still refutes — fail-closed, but the wrong document.
+38. **Tracked-change / vanish text is concatenated.** (`#83`, `#143`)
+    Tags stripped, so `<w:del>not implemented</w:del><w:ins>is implemented</w:ins>` still refutes (fail-closed OTS in reproduction). A CSP who deleted a gap still carries it. Not a Satisfied hole; still the wrong document.
 
-39. **`expandFiles` vs `parseZipReport` disagree.** (`#32–33`, `#71`) — **CLOSED (1.4.0)**
-    Housekeeping members are refused in the engine, so inventory and corpus agree, and the package is read once.
+39. **`expandFiles` vs `parseZipReport` disagree.** (`#32–33`, `#71`)
+    Panel drops `__MACOSX` / `.DS_Store` / `Thumbs.db`; engine does not. Package unzipped twice. Junk can become BM25 evidence the inventory never listed.
 
-40. **ZIP names always UTF-8; encrypted members not named as encrypted; EOCD disk fields unread.** (`#87–88`, `#109–110`) — **OPEN**
-    No CP437 or encryption handling in `demo-engine.js`. Flag 11 / GP bit 0 inflate as a generic failure; spanned archives are treated as single-disk.
+40. **ZIP names always UTF-8; encrypted members not named as encrypted; EOCD disk fields unread.** (`#87–88`, `#109–110`)
+    CP437 ignored. Flag 11 / GP bit 0 inflate as generic failure. Spanned archives treated as single-disk.
 
-41. **ZIP64 sentinels refused (good); nested `.zip` members refused as unsupported type.** (`#86`) — **OPEN**
-    `zip` is absent from the member extension list at `demo-engine.js:564`, so an inner archive falls to the unsupported branch. Not silent — but a package whose SSP is `ssp.zip` is never read.
+41. **ZIP64 sentinels refused (good); nested `.zip` members refused as unsupported type.** (`#86`)
+    Not silent. A package whose SSP is `ssp.zip` never reads the inner archive.
 
-42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **OPEN**
-    ZIP is bounded by `ZIP_MAX_BYTES` (64 MB); `demo-engine.js:228` calls `await file.text()` with no cap. `SECURITY.md` says large packages are "limited by the browser, not by this code" — false for ZIP, true for loose text.
+42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`)
+    ZIP is 64 MB / 512 members. Walkthrough scan/OSCAL parsers cap at 4–8 MB; live `file.text()` does not. `SECURITY.md` says large packages are “limited by the browser, not by this code” — false for ZIP, true for loose text.
 
-43. **`runDemo` has no `try/finally`.** (`#123`, `#126`) — **OPEN**
-    `demo-standalone.html:8782` sets `running = true` and clears it on the normal path only. A throw leaves it stuck and hash aliases and tab clicks silently no-op. Not part of the 1.4.0 set.
+43. **`runDemo` has no `try/finally`.** (`#123`, `#126`)
+    A throw leaves `running` stuck; hash aliases and tab clicks silently no-op.
 
-44. **Two findings painters; filter to ≤40 rows drops assessor UI.** (`#34–35`, `#74`, `#127`) — **CLOSED (1.4.0)**
-    One painter builds every row through `buildFindingRow`.
+44. **Two findings painters; filter to ≤40 rows drops assessor UI.** (`#34–35`, `#74`, `#127`)
+    Live Low NR is 1 row: cascade path has no examine statement / revise. One painter: always `buildFindingRow`.
 
-45. **Homoglyph fold runs after BM25.** (`#106`, `#144`) — **OPEN**
-    `demo-engine.js:1627` folds the retrieved text, after retrieval. All-Cyrillic chunks still tokenize to nothing → Not Reviewed (fail-closed miss, not Satisfied); mixed ASCII plus folded Cyrillic still reaches Gate 5.
+45. **Homoglyph fold runs after BM25.** (`#106`, `#144`)
+    All-Cyrillic chunks tokenize to nothing → **Not Reviewed** (fail-closed miss), not Satisfied. Mixed ASCII + folded lowercase Cyrillic still reaches Gate 5.
 
-46. **`.nessus` / `.xml` / `.json` tokenized as raw markup.** (`#107`) — **OPEN**
-    Read as text at `demo-engine.js:227` with no markup handling. Scanner XML full of `not` / `failed` can trip Gate 5; JSON keys can look like control IDs. No real `.nessus` fixture.
+46. **`.nessus` / `.xml` / `.json` tokenized as raw markup.** (`#107`)
+    Scanner XML full of `not` / `failed` can trip Gate 5; JSON keys can look like control IDs. No real `.nessus` fixture.
 
-47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`) — **UNVERIFIED**
-    Not re-checked against the 1.4.0 refutation attribution, which may have changed the behaviour this describes.
+47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`)
+    Any negation and any positive in the joined blob fail both controls.
 
-48. **`stemWord` splits the same lexeme.** (`#15`) — **CLOSED (1.4.0)**
-    `access`, `accessing` and `accessed` all stem to `access`; the `ss` guard in
-    the suffix table is what fixed it. `implementation` and `implemented` still
-    stem apart (`implementat` / `implement`) and are reconciled one level up by
-    `stemsAgree()`, which reads a stem that extends another as the same word when
-    both are at least `STEM_AGREE_MIN_CHARS`. That is the documented design
-    (`demo-engine.js:718`), not a gap: `stemsAgree('implementat','implement')` is
-    true. Note that `stemsAgree` takes **stems, not words** — calling it with raw
-    words returns false and looks like a defect.
+48. **`stemWord` splits the same lexeme.** (`#15`)
+    `access`→`acces`, `accessing`→`access`. Gate 2 false-fails on inflections.
 
-49. **`parsePdfText` / `parsePoamXlsx` still call missing globals.** (`#44–45`) — **CLOSED (1.4.0)**
-    Both readers are gone; only copy explaining their absence remains.
+49. **`parsePdfText` / `parsePoamXlsx` still call missing globals.** (`#44–45`)
+    `pdfjsLib` / `XLSX` never loaded. Always `null`. Delete.
 
-50. **TextDecoder on ZIP text is non-fatal.** (`#164`) — **OPEN**
-    `demo-engine.js:471` and `:528` construct `new TextDecoder()` without `{fatal:true}`. Invalid UTF-8 becomes U+FFFD and is still assessed.
+50. **TextDecoder on ZIP text is non-fatal.** (`#164`)
+    Invalid UTF-8 becomes U+FFFD and is still assessed.
 
-51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN**
-    Zero `integrity=` attributes in `index.html` or `demo-standalone.html`. Those four are cached `max-age=3600`, so a deploy can mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
+51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`)
+    Those four are cached `max-age=3600`. A deploy can mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
 
 ---
 
@@ -265,58 +191,58 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 
 Marketing, legal, onboarding, and walkthrough banners that the pages say and the code does not do. `tests/check.mjs` `BANNED` is five phrases and will not catch this list (`#162`).
 
-52. **README "Complete NIST SP 800-53A Rev 5 catalog | 447 | 1,513."** (`#130`) — **OPEN**
-    Counted on this tree: **215 base + 232 enhancements = 447**, 1,513 objectives. AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16 are all absent. 447 is the size of what is here, not evidence of completeness. `check.mjs` locks 447 as correct.
+52. **README “Complete NIST SP 800-53A Rev 5 catalog | 447 | 1,513.”** (`#130`)
+    215 base + 232 enhancements. Missing e.g. AC-16, AC-23, AC-24, AC-25, IA-13, SC-16. `check.mjs` locks 447 as correct. Footers say “full catalog 447” with no enhancement split.
 
-53. **37 controls have `b: []` (all PT and PM, including PM-1).** (`#131`) — **OPEN**
-    Confirmed: exactly **37**, families PT and PM, PM-1 among them. They inflate "447 complete" and never run in any profile. PM-1 is also the only control whose subject term list is empty, so `mentionsSubject` returns true for it unconditionally.
+53. **37 controls have `b: []` (all PT and PM, including PM-1).** (`#131`)
+    Inflate “447 complete”; never run. PM-1 is also the only control whose Gate 2b subject is empty (`mentionsSubject` returns true).
 
-54. **LI-SaaS is in the catalog and nowhere else.** (`#132`) — **OPEN**
-    Confirmed: LI-SaaS 156 controls / **789** objectives against Low's 156 / **981**, and **77** LI-tagged controls have zero LI-tagged objectives. The profile select is Low | Moderate | High only.
+54. **LI-SaaS is in the catalog and nowhere else.** (`#132`)
+    156 controls / 789 objectives vs Low 156 / 981. 77 LI-tagged controls have zero LI DIFs. Profile select is Low|Moderate|High only.
 
-55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`) — **UNVERIFIED**
-    The counts were not re-derived in the re-baseline.
+55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`)
+    QA 11 matches `QA_RULES`.
 
-56. **§07 validator vs live exporter.** (`#99–103`) — **UNVERIFIED**
-    C-004 / F-101 / C-003 behaviour and the "NIST + FedRAMP CONFORMANT" banner were not re-checked.
+56. **§07 validator vs live exporter.** (`#99–103`)
+    C-004 requires UUID v4; site mints v5. F-101 passes on planted `a2la-cert: #####`. C-003 pass text claims FedRAMP ≥1.0.4 and only tests presence. Pass copy is 3PAO-voice on a document the walkthrough just built. Banner “NIST + FedRAMP CONFORMANT” is not `check_oscal_schema.py`.
 
-57. **§02–§09 idle copy says the engine will ingest / execute.** (`#42`, `#76`) — **CLOSED (1.4.0)**
-    Idle copy says it is a walkthrough; the ConMon walkthrough ends at the package shape, not "ready for submission."
+57. **§02–§09 idle copy says the engine will ingest / execute.** (`#42`, `#76`)
+    Those tabs do not run `demo-engine.js`. ConMon completion log: “ready for submission to the authorizing agency” (`#43`) — not in `BANNED`.
 
-58. **Walkthrough CloudVault `initial.sat: 287` vs the live engine's Satisfied count.** (`#136`) — **OPEN**
-    `sat: 287` and ten references to the dead `_realRun` branch are still in `demo-standalone.html`. The gap is now wider than the finding recorded: 1.4.0 took the live sample to **153** Satisfied.
+58. **Walkthrough CloudVault `initial.sat: 287` vs golden live engine 219 Satisfied.** (`#136`)
+    Dead `_realRun` branch still looks like a live run could drive §02–§09.
 
-59. **Rail `cv-meta` always appends `· v2.4` (SSP version) after live profile counts.** (`#135`) — **OPEN**
-    Ten occurrences. The engine is 1.4.1 and the catalog is `2026-07-21`; changing Low → High keeps `v2.4`.
+59. **Rail `cv-meta` always appends `· v2.4` (SSP version) after live profile counts.** (`#135`)
+    Engine is 1.3.0; catalog is `2026-07-21`. Changing Low→High keeps `v2.4`.
 
-60. **Privacy / index: "deployment boundary," `LLM_PROVIDER=none`, "container you run."** (`#137`) — **UNVERIFIED**
-    Not re-checked, including the `SECURITY.md` / `localStorage` contradiction (`#138`).
+60. **Privacy / index: “deployment boundary,” `LLM_PROVIDER=none`, “container you run.”** (`#137`)
+    This origin is a static tab. `SECURITY.md` “stores nothing outside the page” vs onboarding `localStorage` (`#138`).
 
-61. **`terms.html`: "certified 3PAO"; first paragraph is not EXAMINE-only; demos described as synthetic only.** (`#149`) — **OPEN**
-    "certified 3PAO" still present. `/demo` accepts a visitor's real SSP in-tab, and FedRAMP says Recognized, not certified.
+61. **`terms.html`: “certified 3PAO”; first paragraph is not EXAMINE-only; demos described as synthetic only.** (`#149`)
+    `/demo` accepts a visitor’s real SSP in-tab. FedRAMP says Recognized, not certified.
 
-62. **Index: "Tenable for the package itself."** (`#150`) — **OPEN**
+62. **Index: “Tenable for the package itself.”** (`#150`)
 
-63. **`assessors.html` ODP copy: "90-day vs FedRAMP 60-day requirement."** (`#147`) — **OPEN**
-    Still present, and Gate 4 still never reads catalog `o` (item 6).
+63. **`assessors.html` ODP copy: “90-day vs FedRAMP 60-day requirement.”** (`#147`)
+    Gate 4 never reads catalog `o`.
 
-64. **Gap taxonomy names do not exist in code.** (`#159–161`, `#166` class) — **OPEN**
-    The marketed names (`odp_frequency_mismatch`, `insufficient_scope`, `stale_documentation`, `scan_gap`) appear nowhere in the engine; the actual constants (`missing_implementation`, `temporal_gap`, and the rest of the six) are what it emits. "13 pattern types … across DIFs … severity levels" is six `NEGATION_PAIRS` in one string with no severity. "Exact API enum values FedRAMP expects" — this build emits `Satisfied` / `Other Than Satisfied` / `Not Reviewed`.
+64. **Gap taxonomy names do not exist in code.** (`#159–161`, `#166` class)
+    Marketed six: `odp_frequency_mismatch`, `insufficient_scope`, `stale_documentation`, `scan_gap`… Actual: `missing_implementation`, `incomplete_policy`, `missing_evidence`, `contradictory_evidence`, `temporal_gap`, `other_gap`. Stuffing → `missing_evidence`. “13 pattern types … across DIFs … severity levels” is six `NEGATION_PAIRS` in one string, no severity. “Exact API enum values FedRAMP expects” — this build emits `Satisfied` / `Other Than Satisfied` / `Not Reviewed`.
 
-65. **README / CHANGELOG / `results.json`: "16 cases · 15 correct · 0 false passes."** (`#151`) — **OPEN**
-    True of that file. False as a site-level accuracy claim: items 1, 4, 5, 6 and 8 are all uncased by the benchmark, and `--strict` stays green.
+65. **README / CHANGELOG / `results.json`: “16 cases · 15 correct · 0 false passes.”** (`#151`)
+    True of that file. False as a site-level accuracy claim: ZWSP, entities, stuffing, prose SLA, catalog `o`, and AC-1/`acces` are uncased. `--strict` stays green.
 
-66. **SHA-1 is the reproducibility seal.** (`#122`) — **OPEN**
-    Nine references in `demo-exports.js`. Receipt, catalog, ruleset, evidence and verdict digests are SHA-1 and the toast prints `sha1`, while `demo-20x.html` shows an illustrative `sha256:`.
+66. **SHA-1 is the reproducibility seal.** (`#122`)
+    Comment: “never as security material.” Receipt/catalog/ruleset/evidence/verdict digests are SHA-1; toast prints `sha1`. `demo-20x.html` shows illustrative `sha256:`.
 
-67. **`demo-20x.html` is in `sitemap.xml` (priority 0.6).** (`#156`) — **OPEN**
-    The assessors page says SparkAE does not support FedRAMP 20x; the walkthrough still shows `fails_closed: false`.
+67. **`demo-20x.html` is in `sitemap.xml` (priority 0.6).** (`#156`)
+    Assessors page: “SparkAE does not support FedRAMP 20x.” Walkthrough still shows `fails_closed: false`.
 
-68. **NR statement: "found no documentation establishing that …"** (`#105`) — **CLOSED**
-    The phrase no longer appears in `demo-engine.js`.
+68. **NR statement: “found no documentation establishing that …”** (`#105`)
+    Gate 1 missed the BM25 threshold, not “the package lacked documents.” A refused PDF plus an unrelated TXT can produce this sentence.
 
-69. **`RULESET` omits the matchers that decide verdicts.** (`#19`) — **CLOSED (1.4.0)**
-    Refuting patterns, draft markers, negation pairs, the homoglyph map, stem suffixes, ODP value shapes, strength signals and date patterns are all hashed now.
+69. **`RULESET` omits the matchers that decide verdicts.** (`#19`)
+    Thresholds are hashed; `REFUTING_PATTERNS`, `DRAFT_RE`, `NEGATION_PAIRS`, `HOMOGLYPHS`, ODP keyword lists, `STRENGTH_PATTERNS` are not. A pattern-only edit does not move `ruleset_digest`.
 
 ---
 
@@ -324,41 +250,42 @@ Marketing, legal, onboarding, and walkthrough banners that the pages say and the
 
 Same fact, two implementations; suite locks the quirk; or the check is on the wrong path.
 
-70. **Upload assessment date is UTC `toISOString().slice(0,10)`.** (`#91`, `#111`, `#92`) — **OPEN**
-    Still on the page. It reads as the next calendar day for much of the US in the evening, and `check.mjs` §4 only scans `demo-engine.js` and `demo-exports.js`, so the page clock is invisible to it. Whether `browser.mjs` still locks the UTC value was not re-checked.
+70. **Upload assessment date is UTC `toISOString().slice(0,10)`.** (`#91`, `#111`, `#92`)
+    Next calendar day for much of the US in the evening. `tests/browser.mjs` **locks** that UTC value. `check.mjs` §4 only scans `demo-engine.js` and `demo-exports.js`, so the page clock is invisible.
 
-71. **Golden and benchmark use `chunkText` on embedded text, not `parsePackage`.** (`#112–113`) — **OPEN**
-    Confirmed in `tests/check.mjs` and `tests/benchmark.mjs`. ZIP- and DOCX-only bugs — items 5, 35–42, 50 — cannot move the golden digest or turn `--strict` red.
+71. **Golden and benchmark use `chunkText` on embedded text, not `parsePackage`.** (`#112–113`)
+    ZIP/DOCX-only bugs cannot move the golden digest or turn `--strict` red.
 
-72. **`ci.yml` header: everything the README claims is checked on every PR.** (`#154`) — **OPEN**
-    `check_published.mjs` runs on the Monday cron (`17 6 * * 1`) or `workflow_dispatch`. A broken deploy can sit until Monday.
+72. **`ci.yml` header: everything the README claims is checked on every PR.** (`#154`)
+    `check_published.mjs` (served-as-is, CSP on the wire, `/3pao.html` redirect) runs only Monday cron / `workflow_dispatch`. A broken deploy can sit until Monday.
 
-73. **`pages.mjs` loads `/404.html` (has CSP), not an unmatched path.** (`#155`, `#141`) — **UNVERIFIED**
-    `404.html` no longer appears in `tests/pages.mjs`, so this may already be addressed. The underlying hole — unmatched Netlify routes get `/*` and no CSP, and `/3pao` without `.html` is not redirected (`#140`) — was not re-checked.
+73. **`pages.mjs` loads `/404.html` (has CSP), not an unmatched path.** (`#155`, `#141`)
+    Unmatched Netlify routes get `/*` and **no CSP**. Documented in `_headers`; still a published hole. `/3pao` without `.html` is not redirected (`#140`); check only hits `/3pao.html`.
 
-74. **`status-data.json` `published_at: null`; `check.mjs` requires it stay null.** (`#139`) — **OPEN**
-    `status-data.json:28` and the assertion at `tests/check.mjs:1574`. Public `/status` cannot ship a real snapshot without changing the test.
+74. **`status-data.json` `published_at: null`; `check.mjs` requires it stay null.** (`#139`)
+    Public `/status` cannot ship a real snapshot without changing the test.
 
-75. **`.github/ISSUE_TEMPLATE/config.yml` `blank_issues_enabled: true`.** (`#165`) — **OPEN**
+75. **`.github/ISSUE_TEMPLATE/config.yml` `blank_issues_enabled: true`.** (`#165`)
     Security is a mailto contact link, not a gate. A visitor can still open a public issue with a crafted-document recipe.
 
-76. **Clipboard copies `[kind] meta` only.** (`#129`) — **UNVERIFIED**
+76. **Clipboard copies `[kind] meta` only.** (`#129`)
+    No objective, no statement.
 
-77. **Private vulnerability reporting is off.** (`CONTRIBUTING.md` / `SECURITY.md`) — **OPEN**
-    The email path works; the GitHub form is hypothetical.
+77. **Private vulnerability reporting is off.** (`CONTRIBUTING.md` / `SECURITY.md`)
+    Email path works; the GitHub form is hypothetical.
 
 ---
 
 ## Tests that should land with the fixes (`#57–77`)
 
-**All twenty-one landed in 1.4.0** — `check.mjs` §24, `assessor.mjs` and `browser.mjs` hold them. The table below is kept for traceability; nothing in it is outstanding.
+These are not extra product bugs. They are the cases that would make the twins, claims, and parsers fail a push the way the AT-1 false pass already does. **None of them exist today.**
 
 | Test | Holds |
 |---|---|
-| 57 | Two-control chunk: later "AC-2 … not implemented" must not Satisfied (`#1–3`) |
+| 57 | Two-control chunk: later “AC-2 … not implemented” must not Satisfied (`#1–3`) |
 | 58 | Own-control weak + neighbor section/version/date → 3a still fails (`#8`) |
 | 59 | Own-control no role keyword + neighbor ISSO → role ODP still fails (`#9`) |
-| 60 | Untyped ODP + non-empty irrelevant evidence → Gate 4 does not pass *or* copy does not say "resolved" (`#10`) |
+| 60 | Untyped ODP + non-empty irrelevant evidence → Gate 4 does not pass *or* copy does not say “resolved” (`#10`) |
 | 61 | `[Selection …]` included in 60 (`#11`) |
 | 62 | One-term subject, furniture-only evidence → must not Satisfied (`#4–6`) |
 | 63 | Eight tagged zero-score chunks + one untagged answering paragraph stays in `topK` (`#7`) |
@@ -368,7 +295,7 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 | 67 | Receipt round-trip after `system_name` / file lists (`#22`, `#31`) |
 | 68 | OSCAL after OTS→SAT: no open `related-risks` on a satisfied target (`#23`) |
 | 69 | OSCAL after SAT→OTS: a risk exists (`#24`) |
-| 70 | CSV `' =HYPERLINK'`, `'\n=cmd'`, `'﻿=1+1'` prefixed (`#26–29`) |
+| 70 | CSV `' =HYPERLINK'`, `'\n=cmd'`, `'\uFEFF=1+1'` prefixed (`#26–29`) |
 | 71 | ZIP `__MACOSX/._ssp.txt`: inventory and corpus agree (`#32–33`) |
 | 72 | ZIP comment contains fake EOCD (`#20`) |
 | 73 | Flipped CRC refused, not parsed (`#21`) |
@@ -377,69 +304,33 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 | 76 | `idleCopy` for §02–§09 does not say the engine ran (`#42`) |
 | 77 | `log()` filename with `<img onerror=…>` not HTML (`#46–56`) |
 
-### Tests still to write
-
-The four PR 1 needed are in `check.mjs` §25. These do not exist; each holds an
-item that is still **OPEN**:
-
-- `"every 10 years"` must not resolve a three-year catalog `o` — or Gate 4 copy stops claiming it does (item 6).
-- `review_required` must be present in OSCAL, the findings CSV and the receipt (item 22).
-- POA&M must exclude Not Reviewed (item 23).
-- A golden or benchmark case that runs through `parsePackage`, so the ZIP and DOCX items can fail a push (item 71).
+**Add to that list (from later passes, no original 57–77 number):** `"AC-2(1) is not implemented"` OTS on `AC-2(1)`; ZWSP / entity refutation; PE-2-only text must not Satisfied AC-1; catalog `o` consulted or Gate 4 copy changed; `review_required` present in OSCAL/CSV/receipt; POA&M excludes NR.
 
 ---
 
 ## Suggested PR cut
 
-Re-cut against 1.4.1. **PR 0 is this file.**
+**PR 1 — already wrong for a visitor (moves golden if 1–2/78 change verdicts)**
+- `matchAll` every refutation pattern (engine + index).
+- Score gates 3a and 4 on `ownEvidence || evidenceText`.
+- Fix enhancement ID boundaries (`#78–82`).
+- Strip Cf / soft hyphen; decode XML entities in `docxText` / XML parse.
+- Hash the receipt after `system_name` / files lists, or stop attaching those keys to the digested object.
+- Delete synthesized 3PAO/ConMon numbers; §02–§09 stay on authored samples.
+- `engEsc` (or `textContent`) on every walkthrough `log()` payload and at the painter/cite sink.
+- Stop saying OSCAL POA&M / “skip controls that pass” / “3PAO UI” on this origin.
+- Put `review_required` on exports.
 
-**PR 1 — engine, false Satisfied** — **LANDED as engine 1.5.0**
-Items **1, 4, 5, 8**, one theme: normalise before you match. The control-id
-close is a lookahead, `\p{Cf}` is deleted before matching (with `\s*` word
-separators so a deletion cannot weld two words past a matcher), references are
-decoded, and stuffing is a share of the passage rather than a count. The
-verdict digest did **not** move — the bundled sample exercises none of the four
-— so `check.mjs` §25 is what holds them.
+**PR 2 — twins CI cannot see today**
+- One ZIP read / one skip list; CRC and EOCD comment check; one findings painter.
+- Uppercase homoglyph fold + case-fold; `csvSafe` after BOM/whitespace; stop boosting BM25 score 0.
+- OSCAL risks from effective status; POA&M excludes NR; 25→29 column string.
 
-**PR 2 — exports say what the engine decided (no digest movement)**
-Items **22, 23, 25, 27, 28, 29**. `review_required` onto every artifact; POA&M
-filtered to Other Than Satisfied; evidence truncated with an ellipsis or not at
-all; origination, detection date and the FedRAMP-shaped columns computed or
-dropped rather than invented. Can run in parallel with PR 1.
-
-**PR 3 — claims match code**
-Items **18, 19, 20, 21, 52, 53, 54, 58, 59, 61, 62, 63, 64, 65, 66, 67**. Copy
-only. Split 447 into 215 + 232 and name what is absent; reconcile or remove
-LI-SaaS; drop "skip the controls that clearly pass," "3PAO UI" and OSCAL POA&M.
-Widen `check.mjs` `BANNED` past its five phrases so this class cannot regress.
-
-**PR 4 — product calls, not silent patches**
-Item **6** is the substantive one: consult catalog `o` so "every 10 years" fails a
-three-year parameter, or stop implying FedRAMP parameter values are checked. Then
-the rest of items **9, 11** — fail-closed or rename. Moves the digest again.
-
-**Deferred** — real, but none produces a false Satisfied: items **34, 37, 38,
-40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
-**70–77** (verification and process). Item **71** is the one to pull forward: until
-a golden case runs through `parsePackage`, none of the parser items can fail a
-push.
-
----
-
-## Found while fixing, not in the original review
-
-Not numbered: the canonical sequence is 1–77 and renumbering would break the
-alias table below.
-
-**PR1-a. Two matchers backtrack quadratically on a run of spaces.** — **CLOSED (1.5.0)**
-The `absent` refutation and `SCAN_CONTEXT_RE` each carried a whitespace
-quantifier on both sides of an optional group, so a space run could be split
-between them every possible way — 306ms on twenty thousand spaces under 1.4.1,
-tens of seconds on a real document, in a parser that reads visitor uploads.
-Pre-existing, not introduced by the `\s*` rewrite, which made it marginally
-worse (428ms on the same input). Each optional group carries its own trailing
-separator now. `check.mjs` §25 walks every regex in `RULESET` and fails any that
-exceeds 100ms on that input, so the shape cannot come back unnoticed.
+**PR 3 — product calls, not silent patches**
+- Fail untyped ODPs and `[Selection …]`, or stop calling Gate 4 “resolved.”
+- Fail 6a with no dates / stale typed dates, or stop calling it currency.
+- Consult catalog `o`, or stop implying FedRAMP parameter values are checked.
+- Put pattern sources in `RULESET`. Rewrite §02–§09 idle copy. Expand `BANNED`.
 
 ---
 
