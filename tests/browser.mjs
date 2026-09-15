@@ -327,6 +327,39 @@ await page.waitForFunction(
   () => /COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
   null, { timeout: 180000 });
 const uploadedNotice = await page.evaluate(() => document.getElementById('log').textContent);
+// What §02 shows for an upload with no scan output. It used to emit "The 3PAO
+// examined the customer-uploaded SSP … and confirmed …" findings from file-name
+// heuristics and fill the ConMon figures from a hash of the file names — 50-odd
+// assets, 200-odd vulnerabilities, a 1 / 8 / 50 / 100 severity table.
+const uploadedConmon = await page.evaluate(() => ({
+  // The findings table and the log, not the whole page: the preview note says
+  // in so many words that this is not a 3PAO, and that sentence must stay.
+  findings: (document.getElementById('findings-body') || {}).textContent || '',
+  log: document.getElementById('log').textContent,
+  rows: document.querySelectorAll('#findings-body tr:not(.findings-empty)').length,
+  empty: !!document.querySelector('#findings-body tr.findings-empty'),
+  matrix: (document.getElementById('matrix-container') || {}).textContent || '',
+}));
+
+// A file name reaches the §02 log too — "parsed <name>" for each member — and
+// log() assigns innerHTML. On file:// the deployed CSP does not apply, so the
+// name has to be escaped by the caller or it runs.
+const XSS_LOG_NAME = '<img src=x onerror="document.documentElement.setAttribute(\'data-log-audit\',\'1\')">.txt';
+fs.writeFileSync(path.join(tmp, XSS_LOG_NAME), 'AC-2 Account Management. Accounts are reviewed quarterly by the ISSO per SSP section 5.2.');
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [path.join(tmp, XSS_LOG_NAME)]);
+await page.waitForTimeout(900);
+await page.evaluate(() => document.querySelector('.uc-tab[data-uc="conmon"]').click());
+await page.click('#run-btn');
+await page.waitForFunction(
+  () => /COMPLETE|WALKTHROUGH/.test(document.getElementById('console-status').textContent),
+  null, { timeout: 180000 });
+const logXss = await page.evaluate(() => ({
+  fired: document.documentElement.getAttribute('data-log-audit'),
+  injected: document.querySelectorAll('#log img').length,
+  shownAsText: /img src=x onerror/.test(document.getElementById('log').textContent),
+}));
 
 const pf = walkResults.find(r => r.uc === 'portfolio') || {};
 const pfM = /(\d+) systems? · (\d+) ready · (\d+) minor · (\d+) material/.exec(pf.status || '');
@@ -539,9 +572,20 @@ const checks = [
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
   ['a walkthrough run on an uploaded package does not call it sample data',
-    /seeded from your package/.test(uploadedNotice) &&
-    !/authored sample data/.test(uploadedNotice),
+    /uploaded package/.test(uploadedNotice) && /not parsed/.test(uploadedNotice) &&
+    !/authored sample data/.test(uploadedNotice) && !/seeded from your package/.test(uploadedNotice),
     uploadedNotice.slice(0, 200).replace(/\s+/g, ' ')],
+  ['§02 on an upload adjudicates nothing: no 3PAO sentence and no finding row',
+    !/3PAO/.test(uploadedConmon.findings) && !/3PAO/.test(uploadedConmon.log) && uploadedConmon.rows === 0 && uploadedConmon.empty,
+    'rows=' + uploadedConmon.rows + ' 3PAO=' + (/3PAO/.test(uploadedConmon.findings) || /3PAO/.test(uploadedConmon.log))],
+  ['§02 on an upload invents no figures: assets, vulnerabilities and severities read "not parsed"',
+    /in-scope assets not parsed/.test(uploadedConmon.log) && /open vulnerabilities not parsed/.test(uploadedConmon.log) &&
+    /C:not parsed H:not parsed/.test(uploadedConmon.log) && !/\d+ in-scope assets/.test(uploadedConmon.log) &&
+    /not parsed/.test(uploadedConmon.matrix) && !/\d+ hosts/.test(uploadedConmon.matrix),
+    uploadedConmon.log.replace(/\s+/g, ' ').slice(0, 240)],
+  ['a file name logged by a walkthrough cannot execute: no handler ran', logXss.fired === null, 'data-log-audit=' + logXss.fired],
+  ['a file name logged by a walkthrough cannot execute: no element was injected', logXss.injected === 0, 'img count=' + logXss.injected],
+  ['a hostile file name is still shown in the log, as text', logXss.shownAsText, ''],
   ['\u00a708 reports the systems it actually rolled up',
     pfConsistent, pf.status || '(no status)'],
   ['§09 shows no telemetry for connectors that do not exist',

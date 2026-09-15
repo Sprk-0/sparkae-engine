@@ -34,6 +34,15 @@
 //  17. the README's accuracy figures are the ones the benchmark recorded
 //  18. the preview status sits beside every button that starts a run, and the
 //      one section that runs is on the page rather than behind a disclosure
+//  24. the 2026-09-15 interrogation fix set: every refutation is matched,
+//      gates read the control's own evidence, presence is absolute, ODPs are
+//      typed or recorded as unverified, homoglyphs fold in both cases, the
+//      currency and SLA checks read dates consistently, the ruleset digest
+//      covers every matcher, ZIP members are CRC-checked and the end-of-
+//      directory record has to end the file, the receipt verifies against its
+//      own digest, OSCAL risks follow the effective determination, CSV cells
+//      are neutralised behind leading blanks, and the walkthrough idle copy
+//      does not say the engine ran
 //
 // Usage:  node tests/check.mjs [site-root] [--write-golden]
 import fs from 'node:fs';
@@ -237,9 +246,31 @@ if (writeGolden) {
 
 // ── 8. CSV formula injection ────────────────────────────────────────────────
 console.log('8. CSV safety');
-const hostile = { ...a.state, findings: [{ ...a.findings[0], evidence_description: '=HYPERLINK("http://evil.example","x")', assessor_notes: '+cmd', weakness_name: '-1', evidence_references: ['@SUM(1)'] }] };
+const hostile = { ...a.state, findings: [{ ...a.findings[0], evidence_description: '=HYPERLINK("http://evil.example","x")', assessor_notes: '+cmd', weakness_name: '-1', evidence_references: ['@SUM(1)'],
+  // Behind a blank a spreadsheet strips before it reads the cell: a space, a
+  // newline, a byte-order mark. The wire regex below could not see these —
+  // `"` followed by a space is not `"` followed by `=` — so the check parses
+  // the cells and asks what the first character a spreadsheet would read is.
+  recommendation: ' =HYPERLINK("http://evil.example","y")', proposed_remediation: '\n=cmd', risk_statement: '\uFEFF=1+1', mitigating_factors: '\t=x' }] };
 const csv = EX.buildFindingsCSV(hostile) + '\n' + EX.buildTCW(hostile) + '\n' + EX.buildPOAM(hostile) + '\n' + EX.buildRET({ ...hostile, findings: [{ ...hostile.findings[0], status: 'Other Than Satisfied' }] });
 check(!/(^|,)"[=+\-@]/m.test(csv), 'no CSV cell begins with = + - @');
+const csvCells = (text) => {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',' || ch === '\n') { out.push(cur); cur = ''; }
+    else if (ch !== '\r') cur += ch;
+  }
+  out.push(cur);
+  return out;
+};
+const armed = csvCells(csv).filter(c => /^[=+\-@]/.test(c.replace(/^[\s\uFEFF\u00A0]+/, '')));
+check(!armed.length, 'no CSV cell begins with a formula character once leading blanks are stripped' + (armed.length ? ' — ' + JSON.stringify(armed.slice(0, 3)) : ''));
+check(['\' =HYPERLINK', '\'\n=cmd', '\'\uFEFF=1+1', '\'\t=x', '\'  +1', '\'\r\n@x'].every((want, i) =>
+  EX.csvSafe([' =HYPERLINK', '\n=cmd', '\uFEFF=1+1', '\t=x', '  +1', '\r\n@x'][i]) === want) && EX.csvSafe('plain text') === 'plain text' && EX.csvSafe('') === '',
+  'csvSafe neutralises a formula behind a space, a newline, a BOM or a tab, and leaves plain text alone');
 
 // ── 9. OSCAL shape + hand-off to the schema check ───────────────────────────
 console.log('9. OSCAL');
@@ -1250,6 +1281,15 @@ const otsFindings = findings21.filter(f => f.target.status.state === 'not-satisf
 check(otsFindings.length === a.summary.other_than_satisfied && otsFindings.every(f => (f['related-risks'] || []).length > 0),
   `every Other Than Satisfied finding (${otsFindings.length}) points at the risk it raises`);
 
+// import-ap is required by the schema and used to be href="#": a pointer to
+// nothing that the schema could not see through. It has to resolve to a
+// back-matter resource that says what the plan of this run was.
+const apHref = (arRoot['import-ap'] || {}).href || '';
+const apResource = ((arRoot['back-matter'] || {}).resources || []).find(r => '#' + r.uuid === apHref);
+check(apHref !== '#' && apHref.startsWith('#') && !!apResource && /EXAMINE/.test(apResource.description || '') &&
+  (apResource.props || []).some(p => p.name === 'interview-and-test' && p.value === 'not-performed'),
+  'import-ap points at a declared back-matter resource describing this run\'s plan, not at "#"' + (apHref === '#' ? '' : ' (' + apHref.slice(0, 12) + '…)'));
+
 // The four CSV downloads, parsed as records rather than lines: an evidence cell
 // may carry a newline, and a line-split reads that as a ragged row when it is
 // not one. The parse is RFC 4180 — quoted fields may hold commas, doubled
@@ -1617,6 +1657,248 @@ check(/<form class="hx-form" name="[a-z-]+" method="POST" data-netlify="true"/.t
   ['pr-name', 'pr-org', 'pr-email', 'pr-role'].every(id => home.includes(`id="${id}"`) && home.includes(`for="${id}"`)) &&
   !headers.includes("form-action 'none'") && (headers.match(/form-action 'self'/g) || []).length >= 2,
   'the homepage form is structured and labelled, and the CSP allows it to submit');
+
+// ── 24. the interrogation fix set ───────────────────────────────────────────
+// Fifty-six defects from the 2026-09-15 review of engine 1.3.0, each with the
+// test the reviewers asked for. Fixtures put the "neighbour" in a SEPARATE
+// file: two paragraphs in one file land in one chunk and are one control's own
+// evidence, which is not the case these tests are about.
+console.log('24. the interrogation fix set');
+const difOf = (cid, oid) => (CATALOG[cid].d || []).find(d => d.i === oid);
+const AC2G = difOf('AC-2', 'AC-2_g');
+const CV_TEXT = 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Reference: CloudVault-SSP.pdf.';
+const passes = (res, n) => (gate(res, n) || {}).pass;
+// §14's `sub` folds with ||, so a false sub-check followed by another check
+// reads as null. This one reads the check itself.
+const subOf = (res, n, id) => { const c = ((gate(res, n) || {}).checks || []).find(x => x.id === id); return c ? c.pass : null; };
+
+// 57 (1–3): a later refutation about THIS control, after an earlier one about another
+const twoCtl = verdictFor([['ssp.txt',
+  'AC-1 Access Control Policy. The access control policy is not implemented.\n\n' +
+  'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2. Most recent scan: 2026-05-28. Account monitoring alerting is not implemented for service accounts.']], 'AC-2', AC2G);
+check(twoCtl.status === 'Other Than Satisfied' && subOf(twoCtl, 5, '5a') === false && /not implemented/.test(twoCtl.finding),
+  'a second "not implemented", about this control, is caught after a first one about another — ' + twoCtl.status + ' / ' + twoCtl.finding);
+check(E.detectRefutations('x is not implemented. y is not implemented. z is partially implemented.').length === 3,
+  'every occurrence of a refuting pattern is collected, not the first');
+const twoIdx = E.buildRefutationIndex(new E.BM25Retriever(E.chunkText(
+  'AC-1 Access Control Policy. The access control policy is not implemented.\n\nAC-2 Account Management. Account monitoring is not implemented.', 'ssp.txt')));
+check((twoIdx['AC-1'] || []).length === 1 && (twoIdx['AC-2'] || []).length === 1,
+  'the corpus refutation index attributes each refutation to the heading that precedes it — ' + JSON.stringify(twoIdx));
+// and a refutation under one heading does not refute the control of the heading before it
+const underCm1 = verdictFor([['ssp.txt',
+  '3.3 AU-3: Content of Audit Records\n\nAudit records contain date/time, event type, user identity and outcome per SSP section 3.3, version 3.2, dated 2026-01-15.\n\n4.1 CM-1: Configuration Management Policy\n\nNot yet fully implemented. The policy is being drafted.']],
+  'AU-3', difOf('AU-3', 'AU-3_a'));
+check(subOf(underCm1, 5, '5a') === true,
+  'a refutation under the CM-1 heading is not charged to AU-3, whose heading is 250 characters earlier — 5a ' + subOf(underCm1, 5, '5a'));
+
+// 58 (8): a neighbour's references do not make this control's evidence Strong
+const weakOwn = verdictFor([
+  ['ac2.txt', 'AC-2 Account Management. Account use is monitored continuously by the ISSO.'],
+  ['ia2.txt', 'IA-2 Identification and Authentication. Multi-factor authentication is enforced per SSP section 6.1, version 2.4, dated 2026-01-15, and "the authentication policy governs all privileged access to the system".'],
+], 'AC-2', AC2G);
+check(weakOwn.status !== 'Satisfied' && subOf(weakOwn, 3, '3a') === false && weakOwn.evidence_strength === 'weak',
+  'gate 3a reads the control\'s own evidence: a neighbour\'s section/version/date cannot make it Strong — ' + weakOwn.evidence_strength);
+
+// 59 (9): a neighbour's ISSO does not resolve this control's role parameter
+const AC1A2 = difOf('AC-1', 'AC-1_a.[02]');
+const roleNeighbour = verdictFor([
+  ['ac1.txt', 'AC-1 Access Control Policy and Procedures. The access control policy is disseminated per SSP section 2.1, version 3.2, dated 2026-01-15.'],
+  ['ir1.txt', 'IR-1 Incident Response Policy. The incident response policy is disseminated to the ISSO and the security team per SSP section 9.1.'],
+], 'AC-1', AC1A2);
+check(roleNeighbour.status !== 'Satisfied' && passes(roleNeighbour, 4) === false && (gate(roleNeighbour, 4).missing || []).some(m => /personnel or roles/.test(m)),
+  'gate 4 reads the control\'s own evidence: a neighbour\'s ISSO does not resolve a role parameter this control never named — ' + JSON.stringify(gate(roleNeighbour, 4).missing));
+const roleOwn = verdictFor([['ac1.txt', 'AC-1 Access Control Policy and Procedures. The access control policy is disseminated to all system administrators and users per SSP section 2.1, version 3.2, dated 2026-01-15.']], 'AC-1', AC1A2);
+check(passes(roleOwn, 4) === true && (gate(roleOwn, 4).resolved || []).some(m => /personnel or roles/.test(m)),
+  'a role stated about the objective in the control\'s own evidence resolves it — ' + JSON.stringify(gate(roleOwn, 4).resolved));
+
+// 60 (10): an untyped placeholder is recorded as unverified, and the README does not call it resolved
+const untyped = verdictFor([['ac2.txt', 'AC-2 Account Management. Accounts are created following the account management procedures in SSP section 5.1, version 2.4, dated 2026-01-15.']], 'AC-2', difOf('AC-2', 'AC-2_f.[01]'));
+check((gate(untyped, 4).unverified || []).some(u => /prerequisites, and criteria/.test(u)) && (untyped.odp_unverified || []).length === 1 && !(gate(untyped, 4).resolved || []).length,
+  'an untyped [organization-defined …] placeholder is recorded as unverified, never as resolved — ' + JSON.stringify(gate(untyped, 4)));
+const gateRow4 = (readmeSrc.match(/^\| 4 \| ODP \|(.*)$/m) || [])[1] || '';
+check(/unverified/.test(gateRow4) && !/parameters resolved/.test(gateRow4),
+  'the README gate table says untyped placeholders are unverified, not resolved — ' + gateRow4.trim());
+
+// 61 (11): a [Selection …] is a parameter
+const SEL = difOf('AC-1', 'AC-1_a.(1)a.[01]');
+const selOdps = E.extractOdps(SEL.t);
+check(selOdps.length === 1 && selOdps[0].kind === 'selection' && selOdps[0].options.length === 3,
+  'a [Selection (one or more): …] parameter is extracted with its options — ' + JSON.stringify(selOdps));
+const selUnsaid = verdictFor([['ac1.txt', 'AC-1 Access Control Policy. The access control policy addresses purpose per SSP section 2.1, version 3.2, dated 2026-01-15.']], 'AC-1', SEL);
+const selSaid = verdictFor([['ac1.txt', 'AC-1 Access Control Policy. The organization-level access control policy addresses purpose per SSP section 2.1, version 3.2, dated 2026-01-15.']], 'AC-1', SEL);
+check((gate(selUnsaid, 4).unverified || []).length === 1 && (gate(selSaid, 4).resolved || []).length === 1 && !(gate(selSaid, 4).unverified || []).length,
+  'a selection is unverified until one of its options is stated about the objective — ' + JSON.stringify([gate(selUnsaid, 4).unverified, gate(selSaid, 4).resolved]));
+
+// 62 (4–6): furniture is not evidence
+const furniture = [['ac2.txt', 'AC-2 Account Management. The system mentions accounts sometimes. Reference: SSP section 5.2, version 2.4, dated 2026-05-01.']];
+const furnG = verdictFor(furniture, 'AC-2', AC2G);
+const furnJ = verdictFor(furniture, 'AC-2', difOf('AC-2', 'AC-2_j'));
+check(furnG.status !== 'Satisfied' && furnJ.status !== 'Satisfied' && subOf(furnG, 2, '2a') === false && subOf(furnG, 2, '2b') === false,
+  '"mentions accounts sometimes" satisfies neither AC-2_g nor AC-2_j — ' + furnG.status + ' / ' + furnJ.status);
+check(verdictFor([['ac2.txt', CV_TEXT]], 'AC-2', AC2G).status === 'Satisfied',
+  'and the account-monitoring sentence that IS about the objective still satisfies AC-2_g');
+const covOne = E.checkCoverage(['use of accounts is monitored'], 'The system mentions accounts sometimes.');
+const covTwo = E.checkCoverage(['use of accounts is monitored'], 'Account use is monitored by the ISSO.');
+check(covOne.ratio === 0 && covTwo.ratio === 1,
+  'a concept with two distinguishing terms needs two of them, not one — ' + covOne.ratio + ' / ' + covTwo.ratio);
+check(!E.mentionsSubject('The system mentions accounts sometimes.', ['account'], E.objectiveAnchorStems(AC2G.t)) &&
+  E.mentionsSubject('Account use is monitored.', ['account'], E.objectiveAnchorStems(AC2G.t)),
+  'a one-term subject has to be named beside a word of the objective, not as furniture');
+const loneHit = new E.BM25Retriever(E.chunkText('AC-2 Account Management. The system mentions accounts sometimes.', 'x.txt')).query(AC2G.t + ' Account Management Access Control', 8, 'AC-2');
+check(loneHit.length === 1 && loneHit[0].score < 1 && loneHit[0].score === Math.round(loneHit[0].score * 10000) / 10000,
+  'a lone chunk is not min-maxed to 1.0: its score is the share of the objective\'s terms it names — ' + (loneHit[0] || {}).score);
+
+// 63 (7): a tagged chunk that shares no term with the objective is not boosted over one that answers it
+const seeAc2 = [];
+for (let i = 0; i < 8; i++) seeAc2.push(['ref' + i + '.txt', 'See AC-2.']);
+seeAc2.push(['ssp.txt', 'Account use is monitored continuously by the ISSO and reviewed per SSP section 5.2. Most recent scan: 2026-05-28.']);
+const seeChunks = seeAc2.flatMap(([n, t]) => E.chunkText(t, n));
+const seeHits = new E.BM25Retriever(seeChunks).query(AC2G.t + ' Account Management Access Control', 8, 'AC-2');
+check(seeHits.some(h => h.filename === 'ssp.txt') && !seeHits.some(h => /^ref\d/.test(h.filename)),
+  'eight tagged "See AC-2" chunks do not push the untagged answering paragraph out of the top K — ' + JSON.stringify(seeHits.map(h => h.filename)));
+check(verdictFor(seeAc2, 'AC-2', AC2G).status === 'Satisfied', 'and that paragraph carries the objective to Satisfied');
+
+// 64 (13–14): an upper-case homoglyph draft marker
+const upperHomo = verdictFor([['ac2.txt', CV_TEXT + ' Note: Рlaceholder text remains in this section.']], 'AC-2', AC2G);
+check(E.foldHomoglyphs('Рlaceholder') === 'Placeholder' && subOf(upperHomo, 5, '5c') === false && upperHomo.status === 'Other Than Satisfied',
+  '"Рlaceholder" with a Cyrillic capital Er folds to "Placeholder" and fails gate 5c — ' + E.foldHomoglyphs('Рlaceholder') + ' / 5c ' + subOf(upperHomo, 5, '5c'));
+
+// 65 (16): a stale review is not laundered by a later untyped date
+const staleReview = verdictFor([['ac2.txt', CV_TEXT + ' Last reviewed: 2023-01-10.']], 'AC-2', AC2G);
+const freshReview = verdictFor([['ac2.txt', CV_TEXT + ' Last reviewed: 2026-03-01.']], 'AC-2', AC2G);
+check(subOf(staleReview, 6, '6a') === false && staleReview.temporal_status === 'stale' && /review_date: 2023-01-10/.test(staleReview.gap_description),
+  'a review dated 2023 fails currency although a scan two sentences on is dated 2026 — ' + staleReview.gap_description);
+check(subOf(freshReview, 6, '6a') === true && freshReview.temporal_status === 'current',
+  'and a fresh review passes it');
+const dated = E.extractDates('Last reviewed: 2023-01-10. Most recent scan: 2026-05-28.');
+check(dated.length === 2 && dated.find(d => d.dateStr === '2023-01-10').ctxType === 'review_date' && dated.find(d => d.dateStr === '2026-05-28').ctxType === 'unknown',
+  'a date\'s type is read from its own sentence, not from the forty characters around it — ' + JSON.stringify(dated.map(d => d.dateStr + ':' + d.ctxType)));
+
+// 17: undated evidence is undated, not current
+const undatedRun = verdictFor([['ac2.txt', 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2, version 2.4.']], 'AC-2', AC2G);
+check(undatedRun.temporal_status === 'undated' && undatedRun.review_required === true && /no date/.test(undatedRun.review_reason) && undatedRun.gates.find(g => g.gate === 6).checks[0].undated === true,
+  'evidence with no date is recorded as undated and flagged for review, not called current — ' + undatedRun.temporal_status + ' / ' + undatedRun.review_reason);
+
+// 66 (18): the SLA check reads every date format
+const slaMonth = E.checkOpenFindingSla('The high vulnerability CVE-2024-0001 remains open since January 1, 2024.', asOfDate);
+const slaIso = E.checkOpenFindingSla('The high vulnerability CVE-2024-0001 remains open since 2024-01-01.', asOfDate);
+check(!!slaMonth && slaMonth === slaIso, 'an open finding dated "January 1, 2024" gets the SLA verdict its ISO twin gets — ' + slaMonth);
+
+// 15: the stemmer keeps one lexeme together
+check(E.stemWord('access') === E.stemWord('accessing') && E.stemWord('process') === E.stemWord('processes') &&
+  E.stemWord('creation') === E.stemWord('created') && E.stemsAgree(E.stemWord('implementation'), E.stemWord('implemented')),
+  'access/accessing, process/processes, creation/created and implementation/implemented each stem as one word');
+
+// 19: the ruleset digest covers the matchers
+const rp = E.RULESET.patterns || {};
+check(Array.isArray(rp.refuting) && rp.refuting.length >= 10 && rp.draft && rp.draft.source && Array.isArray(rp.negation_pairs) &&
+  Array.isArray(rp.homoglyphs) && Array.isArray(rp.stem_suffixes) && rp.odp && rp.odp.frequency && Array.isArray(rp.strength) && Array.isArray(rp.dates),
+  'RULESET publishes the refuting, draft, negation, homoglyph, stem, ODP, strength and date matchers');
+const digestNow = EX.sha1Hex(EX.stableJson(E.RULESET));
+const digestEdited = EX.sha1Hex(EX.stableJson({ ...E.RULESET, patterns: { ...rp, draft: { source: rp.draft.source + '|xyzzy', flags: rp.draft.flags } } }));
+check(digestNow === a.summary.ruleset_digest && digestNow !== digestEdited,
+  'a pattern-only edit moves the ruleset digest');
+
+// 67 (22, 31): the receipt verifies against its own digest, file lists and all
+const rcChunks = E.chunkText(CV_TEXT, 'ssp.txt');
+const rc = EX.buildReceipt({ engineVersion: E.ENGINE_VERSION, catalogVersion, catalog: CATALOG, ruleset: E.RULESET, chunks: rcChunks,
+  findings: [verdictFor([['ssp.txt', CV_TEXT]], 'AC-2', AC2G)], assessmentDate: SAMPLE_DATE, baseline: 'Low',
+  systemName: 'Uploaded package', filesParsed: ['ssp.txt'], filesRefused: ['scan.pdf — .pdf text extraction is not available'] });
+const rcBack = JSON.parse(JSON.stringify(rc));
+check(rcBack.system_name === 'Uploaded package' && rcBack.files_parsed[0] === 'ssp.txt' && rcBack.files_refused.length === 1 &&
+  EX.receiptDigestOf(rcBack) === rcBack.receipt_digest,
+  'a downloaded receipt carrying system_name and the file lists re-hashes to its own receipt_digest');
+check(page.includes('systemName: corpus.bundled') && page.includes('filesParsed: corpus.parsed.slice()') && !/receipt\.(?:system_name|files_parsed|files_refused)\s*=/.test(page),
+  'the page hands those fields to buildReceipt rather than writing them after the digest');
+
+// 68/69 (23–24): OSCAL risks follow the effective determination
+const otsWithRefs = a.findings.find(f => f.status === 'Other Than Satisfied' && (f.evidence_references || []).length);
+const satOne = a.findings.find(f => f.status === 'Satisfied');
+const revs = {}; revs[otsWithRefs.objective_id] = { status: 'Satisfied', statement: 'Confirmed by the assessor per §5.2.' };
+revs[satOne.objective_id] = { status: 'Other Than Satisfied', statement: 'The assessor could not confirm this against the interview record.' };
+const arRev = EX.buildAssessmentResults(a.state, { revisions: revs });
+const resRev = arRev['assessment-results'].results[0];
+const riskIds = new Set((resRev.risks || []).map(r => r.uuid));
+const findRev = (id) => (resRev.findings || []).find(f => f['target-id'] === undefined && f.title === 'Assessment of ' + id);
+const fUp = findRev(otsWithRefs.objective_id), fDown = findRev(satOne.objective_id);
+check(fUp && fUp.target.status.state === 'satisfied' && !fUp['related-risks'] && (fUp['related-observations'] || []).length > 0,
+  'OTS→SAT: the satisfied target carries no open risk and its observations are emitted');
+const downRisk = fDown && (fDown['related-risks'] || [])[0] && (resRev.risks || []).find(r => r.uuid === fDown['related-risks'][0]['risk-uuid']);
+check(fDown && fDown.target.status.state === 'not-satisfied' && !!downRisk && downRisk.status === 'open' && riskIds.has(downRisk.uuid) &&
+  downRisk.characterizations[0].origin.actors[0].type === 'party' &&
+  (downRisk.props || []).some(p => p.name === 'determination-source' && p.value === 'assessor-revision') && /interview record/.test(downRisk.statement),
+  'SAT→OTS: a risk exists, is open, is declared, and names the assessor as its origin');
+const revNotSat = (resRev.findings || []).filter(f => f.target.status.state === 'not-satisfied' && !(f.props || []).some(p => p.name === 'determination' && p.value === 'Not Reviewed'));
+check(revNotSat.every(f => (f['related-risks'] || []).length === 1 && riskIds.has(f['related-risks'][0]['risk-uuid'])) &&
+  (resRev.findings || []).filter(f => f.target.status.state === 'satisfied').every(f => !f['related-risks']),
+  'after revisions every not-satisfied finding points at a declared risk and no satisfied finding points at one');
+check(JSON.stringify(arRev['assessment-results'].metadata.props) === JSON.stringify(a.ar['assessment-results'].metadata.props),
+  'and the receipt in metadata still attests the engine run');
+
+// 30: the summary counts its own columns
+const findingsWidth = csvRecords(EX.buildFindingsCSV(a.state, {}))[0].length;
+check(EX.buildSummary(a.state, {}).includes(findingsWidth + '-column assessment export'),
+  'the summary states the findings CSV width it actually has (' + findingsWidth + ')');
+
+// 71 (32–33): housekeeping members are refused by the engine, and the inventory is the engine's read
+const macosx = await E.parsePackage([asFile(buildZip([
+  { name: '__MACOSX/._ssp.txt', bytes: new Uint8Array([0, 5, 22, 7, 0, 2, 0, 0, 65, 67, 45, 50, 32, 110, 111, 116, 32, 105, 109, 112, 108, 101, 109, 101, 110, 116, 101, 100]) },
+  { name: '.DS_Store', bytes: new Uint8Array(64) },
+  { name: 'ssp.txt', text: CV_TEXT },
+]), 'mac.zip')]);
+check(macosx.parsed.length === 1 && macosx.parsed[0] === 'ssp.txt' && macosx.chunks.every(c => c.filename === 'ssp.txt') &&
+  macosx.skipped.length === 2 && macosx.skipped.every(x => /housekeeping/.test(x.reason)) &&
+  macosx.members.length === 3 && macosx.members.filter(m => m.refusedReason).length === 2,
+  '__MACOSX and .DS_Store members are refused by name and never reach the corpus; the member listing and the refusals agree — ' + JSON.stringify(refusals(macosx)));
+check(page.includes('const report = await window.SparkAEEngine.parsePackage(files);') && !page.includes('window.SparkAEEngine.unzip(') &&
+  page.includes('CUSTOM_PKG_REPORT = { files, report: pkg.report };') && page.includes('? CUSTOM_PKG_REPORT.report'),
+  'the page reads a package once, through parsePackage, and the run reuses that read');
+
+// 72 (20): a comment carrying a fake end-of-directory signature
+const commented = (members, comment) => {
+  const z = buildZip(members);
+  const out = new Uint8Array(z.length + comment.length);
+  out.set(z, 0); out.set(comment, z.length);
+  new DataView(out.buffer).setUint16(z.length - 2, comment.length, true);
+  return out;
+};
+const fakeInComment = new Uint8Array(40);
+fakeInComment.set([0x50, 0x4b, 0x05, 0x06], 10);            // PK\x05\x06 with zeroes after: "0 members at offset 0"
+const commentZip = await E.parseZipReport(asFile(commented([{ name: 'a.txt', text: 'first member' }, { name: 'b.txt', text: 'second member' }], fakeInComment), 'comment.zip'));
+check(commentZip.parsed.length === 2 && commentZip.skipped.length === 0,
+  'an archive whose comment contains a fake end-of-directory signature still parses its members — ' + JSON.stringify(commentZip.parsed) + ' ' + JSON.stringify(refusals(commentZip)));
+const selfConsistentFake = new Uint8Array(22);
+selfConsistentFake.set([0x50, 0x4b, 0x05, 0x06], 0);        // a second, self-consistent record at the very end
+const twoEocd = await E.parseZipReport(asFile(commented([{ name: 'a.txt', text: 'first member' }], selfConsistentFake), 'two-eocd.zip'));
+check(twoEocd.parsed.length === 0 && refusals(twoEocd).some(r => /ambiguous/.test(r)),
+  'two self-consistent end-of-directory records are refused as ambiguous, not resolved by position — ' + JSON.stringify(refusals(twoEocd)));
+
+// 73 (21): a member whose bytes do not match its CRC-32
+const badCrc = await E.parseZipReport(asFile(buildZip([{ name: 'ssp.txt', text: CV_TEXT }],
+  { patch: (cv) => cv.setUint32(16, cv.getUint32(16, true) ^ 0xFFFFFFFF, true) }), 'bad-crc.zip'));
+check(badCrc.parsed.length === 0 && badCrc.chunks.length === 0 && refusals(badCrc).some(r => /CRC-32/.test(r)),
+  'a member that fails its CRC-32 is refused by name, not read — ' + JSON.stringify(refusals(badCrc)));
+check(E.crc32(new TextEncoder().encode('123456789')) === 0xCBF43926, 'the engine\'s CRC-32 is IEEE 802.3 (check value cbf43926)');
+
+// 76 (42): §02–§09 idle copy says walkthrough, and does not say the engine ran
+const useCasesSrc = page.slice(page.indexOf('const USE_CASES = {'), page.indexOf('const SEVERITY_ORDER'));
+const idleCopies = [...useCasesSrc.matchAll(/\n  ([a-z]+): \{[\s\S]*?idleCopy: '((?:[^'\\]|\\.)*)'/g)].map(m => [m[1], m[2]]);
+const badIdle = idleCopies.filter(([k, c]) => k !== 'initial' && (!/walkthrough/i.test(c) || /\b(?:engine|validator|agent) (?:will|executes?|ingests?|runs?)\b/i.test(c)));
+check(/^  initial: \{\n(?:.*\n)*?    idleCopy: 'Select the sample SSP or upload a package/m.test(useCasesSrc),
+  '§01 idle copy is the live-engine copy — the one tab that runs still says so');
+check(idleCopies.length === 9 && !badIdle.length,
+  'every §02–§09 idle copy calls itself a walkthrough and none says the engine will ingest or execute' + (badIdle.length ? ' — ' + badIdle.map(b => b[0]).join(', ') : ''));
+check(!/ready for submission to the authorizing agency/.test(page) && !/The 3PAO examined the customer-uploaded/.test(page) && !/50 \+ \(seed % 100\)/.test(page) && !/200 \+ seed % 800/.test(page),
+  'the ConMon walkthrough no longer ends at a submission, and the custom sample fabricates no findings or figures');
+check(!/function parsePdfText|function parsePoamXlsx|typeof XLSX|window\.pdfjsLib\.getDocument/.test(page),
+  'the page carries no PDF or XLSX reader that could only ever return null');
+// 46–56: every name a walkthrough logs is escaped
+const rawLogNames = [...page.matchAll(/log\([^\n]*\$\{(?:sample\.name|f|SAMPLES\[k\]\.name)\}/g)].concat([...page.matchAll(/log\([^\n]*' \+ sample\.name \+ '/g)]);
+check(!rawLogNames.length, 'no log() call interpolates a sample or file name unescaped' + (rawLogNames.length ? ' — ' + rawLogNames[0][0].slice(0, 80) : ''));
+// 34–36: one painter, escaping at the sink
+check(!page.includes('_paintFindingsCascade') && (page.match(/^function paintFindings\(/gm) || []).length === 1 && !/^paintFindings = function/m.test(page) &&
+  page.includes("'<td>' + engEsc(f.text) + (f.metaHtml || '') + renderCites(f.cites)"),
+  'one painter builds every row through buildFindingRow, and the row escapes the finding text at the sink');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

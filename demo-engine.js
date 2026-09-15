@@ -49,7 +49,13 @@
 
 
 const BM25_K1 = 1.5, BM25_B = 0.75, CONTROL_ID_BOOST = 3.0;
-const STOP_WORDS = new Set(['a','an','and','are','as','at','be','by','for','from','has','have','in','is','it','its','of','on','or','that','the','this','to','was','were','will','with','we','they','their','if','but','so','than']);
+// Function words: prepositions, determiners and conjunctions. Not what a
+// sentence is about, in a query or in an objective. "notified within [time
+// period] when accounts are no longer required" is about notification and
+// accounts; `within` and `when` used to count as two of its distinguishing
+// terms, and a concept needs two of them now.
+const STOP_WORDS = new Set(['a','an','and','are','as','at','be','by','for','from','has','have','in','is','it','its','of','on','or','that','the','this','to','was','were','will','with','we','they','their','if','but','so','than',
+  'within','when','each','before','after','other','least','more','upon','into','onto','over','under','about','between','among','through','during','without','while','where','which','whose','these','those','such','only','also','both','either','neither','via','per','any','all','once','then','there','here','been','being','would','should','could','may','might','must','shall','can','does','did','do']);
 const TOKEN_RE = /[A-Za-z][A-Za-z0-9_-]{1,}/g;
 
 function tokenize(text) {
@@ -90,23 +96,49 @@ class BM25Retriever {
     return score;
   }
 
+  // The share of the query's distinct stems that a chunk names. This is the
+  // `score` a hit reports and the number gate 1 thresholds, and it is absolute:
+  // a chunk naming two of an objective's twelve terms scores 0.17 whether it is
+  // the only chunk in the corpus or one of a thousand.
+  //
+  // The previous score was BM25 min-maxed against the best hit, so the best hit
+  // was always 1.0 and a corpus of one chunk cleared MIN_EVIDENCE_SCORE with
+  // any sentence at all. Ranking is still BM25 — that is what it is good at —
+  // but a rank is not a relevance, and the threshold needs a relevance.
+  _coverage(qstems, idx) {
+    if (!qstems.size) return 0;
+    const have = this._stems[idx];
+    let n = 0;
+    qstems.forEach(st => { if (have.has(st)) n++; });
+    return n / qstems.size;
+  }
+
   query(queryText, topK = 8, controlId = null) {
-    const qtokens = tokenize(queryText);
+    // "Determine if" opens every objective and names nothing about it.
+    const qtokens = tokenize(String(queryText || '').replace(/^\s*Determine\s+if\s+/i, ''));
     if (!qtokens.length || !this.chunks.length) return [];
+    if (!this._stems) this._stems = this._tokenized.map(toks => new Set(toks.map(stemWord)));
+    const qstems = new Set(qtokens.map(stemWord));
     let scored = this.chunks.map((_, i) => [this._score(qtokens, i), i]);
     if (controlId) {
-      const maxRaw = Math.max(...scored.map(s => s[0]), 1e-6);
+      // A chunk tagged with the control ranks above an untagged one that scored
+      // the same — never above one that scored more than nothing. The boost
+      // used to lift a tagged chunk with a raw score of ZERO to three times the
+      // best raw score, so eight "See AC-2" cross-references outranked the one
+      // untagged paragraph that answered the objective and pushed it out of
+      // the top K. A chunk that shares no term with the objective is not
+      // evidence for it, tagged or not.
       scored = scored.map(([raw, idx]) => {
         const ids = this.chunks[idx].control_ids || [];
-        if (ids.includes(controlId)) return [(raw > 0 ? raw : maxRaw) * CONTROL_ID_BOOST, idx];
-        return [raw, idx];
+        return ids.includes(controlId) && raw > 0 ? [raw * CONTROL_ID_BOOST, idx] : [raw, idx];
       });
     }
     scored = scored.filter(s => s[0] > 0).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
     if (!scored.length) return [];
     scored = scored.slice(0, topK);
-    const maxS = scored[0][0] || 1;
-    return scored.map(([raw, idx]) => ({...this.chunks[idx], score: Math.round(raw/maxS*10000)/10000}));
+    return scored.map(([raw, idx]) => ({...this.chunks[idx],
+      score: Math.round(this._coverage(qstems, idx) * 10000) / 10000,
+      bm25: Math.round(raw * 10000) / 10000}));
   }
 }
 
@@ -127,25 +159,51 @@ function extractControlIds(text) {
   return [...ids];
 }
 
+// A heading is one short line that does not end a sentence: "2.2 AC-2: Account
+// Management", "1. SYSTEM DESCRIPTION". It names the paragraphs that FOLLOW it.
+const HEADING_MAX_CHARS = 100;
+function isHeadingPara(para) {
+  const t = String(para).trim();
+  return t.length > 0 && t.length <= HEADING_MAX_CHARS && !/\n/.test(t) && !/[.!?]$/.test(t) && /[A-Za-z]/.test(t);
+}
+
+// Paragraphs are packed into chunks of about maxChunk characters, and a chunk
+// is tagged with every control id it names. A heading that lands at the END of
+// a chunk — the boundary fell between "2.2 AC-2: Account Management" and its
+// body — used to tag the preceding section's text with the next section's id,
+// so the engine's "own evidence" for AC-2 was the AC-1 paragraph and AC-2's
+// paragraph was AC-3's. That was invisible while the gates read the whole
+// retrieval union; once they read a control's own evidence first, section
+// attribution decides verdicts, so a trailing heading now opens the next chunk
+// rather than closing this one.
 function chunkText(text, filename, maxChunk = 800, minChunk = 100) {
   if (!text || !text.trim()) return [];
   const paragraphs = text.split(/\n\n+/);
   const chunks = [];
-  let current = '', offset = 0;
+  const lenOf = (paras) => paras.reduce((n, p) => n + p.length + 2, 0);
+  let cur = [], offset = 0;
+  const flush = (paras) => {
+    const t = paras.join('\n\n').trim();
+    chunks.push({text: t, filename, offset, control_ids: extractControlIds(t)});
+    offset += lenOf(paras);
+  };
   for (const para of paragraphs) {
-    if (current.length + para.length > maxChunk && current.length >= minChunk) {
-      chunks.push({text: current.trim(), filename, offset, control_ids: extractControlIds(current)});
-      offset += current.length;
-      current = '';
+    const curLen = lenOf(cur);
+    if (curLen + para.length > maxChunk && curLen >= minChunk) {
+      const carried = [];
+      while (cur.length > 1 && isHeadingPara(cur[cur.length - 1])) carried.unshift(cur.pop());
+      flush(cur);
+      cur = carried;
     }
-    current += para + '\n\n';
+    cur.push(para);
   }
-  if (current.trim().length >= 10) {
-    if (chunks.length && current.trim().length < minChunk) {
-      chunks[chunks.length-1].text += '\n' + current.trim();
+  const tail = cur.join('\n\n').trim();
+  if (tail.length >= 10) {
+    if (chunks.length && tail.length < minChunk) {
+      chunks[chunks.length-1].text += '\n' + tail;
       chunks[chunks.length-1].control_ids = extractControlIds(chunks[chunks.length-1].text);
     } else {
-      chunks.push({text: current.trim(), filename, offset, control_ids: extractControlIds(current)});
+      flush(cur);
     }
   }
   return chunks;
@@ -185,23 +243,35 @@ async function parseFile(file) {
 // Parse a whole upload. Returns every chunk that was actually read plus an
 // explicit account of what was not, so the caller can show the visitor
 // "N files parsed · M refused (and why)" instead of a reassuring total.
+//
+// `members` is the same read, listed: one entry per file or archive member the
+// reader saw, carrying its bytes or text (or the reason it has neither) and,
+// for an archive member, the archive it came from. It exists so a caller that
+// wants an inventory — the demo's upload panel — takes it from THIS read rather
+// than unzipping the package a second time on its own. Two reads of one package
+// were two chances to disagree about what it contained, and did: the panel
+// dropped `__MACOSX` housekeeping members that the engine then read as evidence.
 async function parsePackage(files) {
-  const chunks = [], parsed = [], skipped = [];
+  const chunks = [], parsed = [], skipped = [], members = [];
   for (const f of files) {
     const ext = ((f.name || '').split('.').pop() || '').toLowerCase();
     try {
       if (ext === 'zip') {
         const r = await parseZipReport(f);
         chunks.push(...r.chunks); parsed.push(...r.parsed); skipped.push(...r.skipped);
+        for (const m of r.members) members.push(Object.assign({}, m, { path: f.name + '!/' + m.name, fromZip: f.name }));
       } else {
         chunks.push(...await parseFile(f));
         parsed.push(f.name);
+        members.push({ name: f.name, path: f.name, size: f.size, file: f, fromZip: null });
       }
     } catch (e) {
-      skipped.push({ name: f.name, reason: e && e.message ? e.message : String(e) });
+      const reason = e && e.message ? e.message : String(e);
+      skipped.push({ name: f.name, reason });
+      members.push({ name: f.name, path: f.name, size: f.size, file: f, fromZip: null, refusedReason: reason });
     }
   }
-  return { chunks, parsed, skipped };
+  return { chunks, parsed, skipped, members };
 }
 
 // The text of a DOCX, from its bytes. A DOCX is a ZIP holding XML, and the
@@ -319,12 +389,46 @@ async function inflateMember(data, method, budget) {
 
 // Scan back for the End of Central Directory record. The comment it may carry
 // is at most 65535 bytes, so the record starts within the last 65557.
-function findEOCD(view, len) {
+//
+// A signature alone does not make a record. The archive comment sits AFTER the
+// EOCD, so a comment that happens to contain the four signature bytes is found
+// first by a backward scan — and read as a record, it declares whatever member
+// count and directory offset the surrounding comment bytes spell, so a real
+// archive parsed as zero members with no refusal shown. The record is the one
+// whose own comment-length field carries it exactly to the end of the file.
+// Two candidates that both do are an archive that cannot be read unambiguously,
+// and it is refused as such rather than resolved by position.
+function findEOCD(view, len, failures) {
   const from = Math.max(0, len - 65557);
+  const found = [];
   for (let i = len - 22; i >= from; i--) {
-    if (view.getUint32(i, true) === 0x06054b50) return i;
+    if (view.getUint32(i, true) !== 0x06054b50) continue;
+    if (i + 22 + view.getUint16(i + 20, true) === len) found.push(i);
   }
+  if (found.length === 1) return found[0];
+  if (found.length > 1 && failures) failures.push({ name: '(archive)', reason: 'archive carries ' + found.length + ' self-consistent end-of-central-directory records — ambiguous, so it is not read' });
   return -1;
+}
+
+// CRC-32 (IEEE 802.3), the checksum every ZIP member carries. The central
+// directory records it over the member's UNCOMPRESSED bytes, and a reader that
+// never compares it will hand a corrupted member — a truncated upload, a bit
+// flip in transit, a stored member somebody edited in place — to the engine as
+// evidence. Nothing here is security material; it is the archive's own
+// statement of what its members should inflate to, checked.
+const CRC32_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC32_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
 }
 
 // `budget` is optional: a nested archive is handed the enclosing archive's
@@ -335,9 +439,10 @@ async function unzip(buffer, failures, sharedBudget) {
   const bytes = new Uint8Array(buffer);
   const members = [];
   const budget = sharedBudget || { left: ZIP_MAX_BYTES };
-  const eocd = findEOCD(view, bytes.length);
+  const eocdFailures = [];
+  const eocd = findEOCD(view, bytes.length, eocdFailures);
   if (eocd < 0) {
-    if (failures) failures.push({ name: '(archive)', reason: 'no ZIP central directory found — the file is not a ZIP, or is truncated' });
+    if (failures) failures.push(eocdFailures[0] || { name: '(archive)', reason: 'no ZIP central directory found — the file is not a ZIP, or is truncated' });
     return members;
   }
   const count = view.getUint16(eocd + 10, true);
@@ -367,6 +472,7 @@ async function unzip(buffer, failures, sharedBudget) {
     entries.push({
       name,
       method: view.getUint16(cd + 10, true),
+      crc: view.getUint32(cd + 16, true),
       compSize: view.getUint32(cd + 20, true),
       localAt: view.getUint32(cd + 42, true),
     });
@@ -375,7 +481,7 @@ async function unzip(buffer, failures, sharedBudget) {
   }
 
   // Pass two reads what the inventory says is unambiguous.
-  for (const { name, method, compSize, localAt } of entries) {
+  for (const { name, method, crc, compSize, localAt } of entries) {
     if (name.endsWith('/')) { members.push({ name, text: '', directory: true }); continue; }
     // Two members of one name are two documents claiming to be the same one.
     // Reading either is a guess about which the author meant, and the two may
@@ -405,6 +511,14 @@ async function unzip(buffer, failures, sharedBudget) {
     }
     try {
       const raw = await inflateMember(bytes.slice(dataAt, dataAt + compSize), method, budget);
+      // The directory says what these bytes should sum to. A member that does
+      // not is corrupt somewhere between the writer and here, and corrupt bytes
+      // decoded to text are not the document — they are refused by name.
+      const got = crc32(raw);
+      if (got !== crc) {
+        if (failures) failures.push({ name, reason: 'archive member failed its CRC-32 check (directory ' + crc.toString(16).padStart(8, '0') + ', content ' + got.toString(16).padStart(8, '0') + ') — corrupt, so it is not read' });
+        continue;
+      }
       // A member is either text or bytes, never both. A binary member's reader
       // parses the bytes — decoding it to a string would destroy it anyway —
       // so decoding it here would spend the time and hold a second copy of the
@@ -419,44 +533,65 @@ async function unzip(buffer, failures, sharedBudget) {
   return members;
 }
 
+// Members an archiver writes about itself: macOS resource forks under
+// __MACOSX/, Finder and Explorer metadata. They are not documents, and read as
+// text they are binary noise with a .txt name — noise the retriever then ranked
+// as evidence. Refused with a reason, so the inventory lists them as what they
+// are rather than dropping them in one reader and reading them in another.
+const ARCHIVE_HOUSEKEEPING_RE = /(?:^|\/)(?:__MACOSX\/|\.DS_Store$|Thumbs\.db$|\._[^/]*$)/i;
+
 async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
   const skipped = [];
   // One allowance for the package and everything nested inside it.
   const budget = { left: ZIP_MAX_BYTES };
-  const members = await unzip(buf, skipped, budget);
-  const chunks = [], parsed = [];
+  const unzipFailures = [];
+  const raw = await unzip(buf, unzipFailures, budget);
+  skipped.push(...unzipFailures);
+  const chunks = [], parsed = [], members = [];
+  const refuse = (name, reason, extra) => {
+    skipped.push({ name, reason });
+    members.push(Object.assign({ name, refusedReason: reason }, extra || {}));
+  };
   // unzip() has already refused every member of an ambiguous name, counted from
   // the central directory, so everything here is a member the archive names
   // once. Member order is the archive's own order, fixed for a given file.
-  for (const { name, text: content, bytes, directory } of members) {
+  for (const { name, text: content, bytes, directory } of raw) {
     if (directory) continue;
+    const size = bytes ? bytes.length : (content ? content.length : 0);
+    if (ARCHIVE_HOUSEKEEPING_RE.test(name)) { refuse(name, 'archive housekeeping member (__MACOSX, .DS_Store, Thumbs.db) — not a document, so it is not read', { size }); continue; }
     const ext = (name.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
-      if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); }
-      else skipped.push({ name, reason: 'archive member is empty' });
+      if (content && content.trim()) { chunks.push(...chunkText(content, name)); parsed.push(name); members.push({ name, size, text: content }); }
+      else refuse(name, 'archive member is empty', { size, text: content || '' });
     } else if (ext === 'docx') {
       // A DOCX inside a package is the ordinary shape of a real submission: the
       // SSP is a Word file and the package is a ZIP. Refusing it meant the one
       // document the assessment most depends on was the one excluded, so a run
       // reached Complete having read the README and not the SSP.
       if (!bytes) {
-        skipped.push({ name, reason: 'DOCX member could not be read as binary content' });
+        refuse(name, 'DOCX member could not be read as binary content', { size });
       } else {
         try {
           const text = await docxText(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget);
           chunks.push(...chunkText(text, name));
           parsed.push(name);
+          members.push({ name, size, bytes });
         } catch (e) {
-          skipped.push({ name, reason: (e && e.message) ? e.message : String(e) });
+          refuse(name, (e && e.message) ? e.message : String(e), { size, bytes });
         }
       }
     } else {
-      skipped.push({ name, reason: 'unsupported archive member type .' + ext });
+      // Listed with its bytes: the engine does not read it, but a caller
+      // building an inventory can still say what kind of file it is.
+      refuse(name, 'unsupported archive member type .' + ext, bytes ? { size, bytes } : { size, text: content || '' });
     }
   }
+  // What unzip() itself refused — duplicates, bad streams, a broken directory —
+  // is listed too, so the inventory and the refusal list are one account.
+  for (const f of unzipFailures) members.push({ name: f.name === '(archive)' ? file.name : f.name, refusedReason: f.reason });
   if (!parsed.length && !skipped.length) throw unsupported(file.name, 'ZIP contains no readable members');
-  return { chunks, parsed, skipped };
+  return { chunks, parsed, skipped, members };
 }
 
 async function parseZip(file) {
@@ -484,7 +619,20 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // matches case-insensitively like the per-control refutation checks; evidence
 // dates are UTC calendar dates that must round-trip (no local-time or
 // out-of-range normalisation).
-const ENGINE_VERSION = '1.3.0';
+// 1.4.0: every refuting pattern is matched everywhere it occurs, not once;
+// gate 1 thresholds the share of the objective's terms a chunk names rather
+// than a min-maxed rank, and a tagged chunk that shares no term is not
+// boosted; a concept needs two of its terms and a one-word subject has to be
+// named beside the objective's own words; gates 3a and 4 read the control's
+// own evidence first like every other gate; typed ODP values must sit in a
+// clause about the objective, selections are extracted, and untyped
+// placeholders are recorded as unverified rather than passed; homoglyph
+// folding covers upper case; the stemmer keeps -ss words whole; review dates
+// decide currency, undated evidence is called undated, and the SLA check reads
+// every date format; the ruleset digest covers every matcher; ZIP members are
+// CRC-checked, the end-of-directory record has to end the file, and archiver
+// housekeeping members are refused.
+const ENGINE_VERSION = '1.4.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -540,6 +688,7 @@ const GENERIC_TERMS = new Set([
   'associated', 'related', 'following', 'address', 'addresses', 'facilitate',
   'periodic', 'periodically', 'annually', 'frequency', 'selection', 'assignment',
   'system', 'systems', 'information', 'security', 'control', 'controls', 'compliance',
+  'current', 'currently', 'existing', 'applicable', 'necessary', 'required', 'specified', 'specify', 'specifies',
 ]);
 
 // Terms are compared as stems of whole words. The previous reader used
@@ -553,11 +702,29 @@ const GENERIC_TERMS = new Set([
 // however it were spelled.
 const STEM_SUFFIXES = ['ations','ation','ings','ing','ions','ion',
   'ments','ment','ness','ities','ity','ences','ence','ances','ance','ers','er','ed','es','s'];
+// A trailing -s is a plural only when the letter before it is not another s:
+// "access" and "process" are singular, and stripping them to "acces" and
+// "proces" split each lexeme in two — "access" and "accessing" stemmed apart,
+// so an objective about access failed against evidence about accessing it.
+//
+// Derivational endings are folded before the suffix table so a noun and its
+// verb land on one stem: -ization/-isation to the -iz/-is base (authorization,
+// authorized), -ification to -ifi (modification, modified), other -ation to the
+// -at base (creation, created), and a final -y to -i (policy, policies). These
+// are published in RULESET as STEM_DERIVATIONS. Where the table still leaves
+// two forms of one word apart — "implementation" stems to `implementat` and
+// "implemented" to `implement` — stemsAgree() below reads them as one.
+const STEM_DERIVATIONS = [['izations','iz'],['isations','is'],['ization','iz'],['isation','is'],['ifications','ifi'],['ification','ifi'],['ations','at'],['ation','at']];
 function stemWord(w) {
   w = String(w).toLowerCase();
-  for (const sfx of STEM_SUFFIXES) {
-    if (w.endsWith(sfx) && w.length > sfx.length + 2) return w.slice(0, -sfx.length);
+  for (const [sfx, to] of STEM_DERIVATIONS) {
+    if (w.endsWith(sfx) && w.length > sfx.length + 2) return w.slice(0, -sfx.length) + to;
   }
+  for (const sfx of STEM_SUFFIXES) {
+    if (sfx === 's' && w.endsWith('ss')) continue;
+    if (w.endsWith(sfx) && w.length > sfx.length + 2) { w = w.slice(0, -sfx.length); break; }
+  }
+  if (w.length > 3 && w.endsWith('y')) w = w.slice(0, -1) + 'i';
   return w;
 }
 const WORD_RE = /[a-z0-9-]+/g;
@@ -567,7 +734,35 @@ function clauseStems(clause) {
   return out;
 }
 
+// Two stems name one word when they are equal, or when one extends the other
+// and both are at least STEM_AGREE_MIN_CHARS long: `implement` and
+// `implementat`, `configur` and `configurat`. Below that length a shared prefix
+// is a coincidence (`cre`, `pro`), and the two are different words.
+const STEM_AGREE_MIN_CHARS = 5;
+function stemsAgree(a, b) {
+  if (a === b) return true;
+  if (a.length < STEM_AGREE_MIN_CHARS || b.length < STEM_AGREE_MIN_CHARS) return false;
+  return a.length < b.length ? b.startsWith(a) : a.startsWith(b);
+}
+// Whether a clause's stem set carries `term`, by stemsAgree.
+function hasStem(stems, term) {
+  if (stems.has(term)) return true;
+  if (term.length < STEM_AGREE_MIN_CHARS) return false;
+  for (const st of stems) if (stemsAgree(st, term)) return true;
+  return false;
+}
+
 const GENERIC_STEMS = new Set(Array.from(GENERIC_TERMS).map(stemWord));
+
+// A stem is generic when it is, or agrees with, the stem of a generic term —
+// `requir` (required) with `require` (requirement), `manag` (managers) with
+// `manage`. An exact lookup let an inflection of a generic word through as
+// subject matter.
+function isGenericStem(st, word) {
+  if (GENERIC_TERMS.has(word) || GENERIC_STEMS.has(st)) return true;
+  for (const g of GENERIC_STEMS) if (stemsAgree(g, st)) return true;
+  return false;
+}
 
 // The distinguishing terms of a phrase, as stems: what it is about, once the
 // compliance vocabulary is set aside.
@@ -576,7 +771,7 @@ function distinguishingTerms(phrase) {
   for (const w of String(phrase || '').toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9-]+/)) {
     if (w.length <= 3 || STOP_WORDS.has(w)) continue;
     const st = stemWord(w);
-    if (GENERIC_STEMS.has(st) || GENERIC_TERMS.has(w)) continue;
+    if (isGenericStem(st, w)) continue;
     if (out.indexOf(st) === -1) out.push(st);
   }
   return out;
@@ -654,7 +849,7 @@ function controlSubjectWords(controlTitle, familyName) {
   for (const src of [familyName, controlTitle]) {
     for (const w of String(src || '').toLowerCase().replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9-]+/)) {
       if (w.length <= 3 || STOP_WORDS.has(w)) continue;
-      if (GENERIC_STEMS.has(stemWord(w)) || GENERIC_TERMS.has(w)) continue;
+      if (isGenericStem(stemWord(w), w)) continue;
       if (out.indexOf(w) === -1) out.push(w);
     }
   }
@@ -681,16 +876,35 @@ function controlSubjectWords(controlTitle, familyName) {
 // Requiring them in one clause would refuse "Visitor access records are
 // maintained for one year. Physical security reviews them monthly," which is
 // exactly the evidence this gate exists to admit.
-function mentionsSubject(evidenceText, terms) {
+//
+// A subject of ONE sharp term — AC-2 is "Account Management" in "Access
+// Control", and after `management` (generic) and `access` (ambient) are set
+// aside it is `account` — made 2b a single-word check, and "mentions accounts
+// sometimes" passed it. So a one-term subject has to be named in an affirmative
+// clause that also carries another word of the objective itself: the subject
+// said about what the objective asks, not the subject as furniture.
+// `objectiveStems` is that word list; without it the one-term case is the
+// bare check, which is what the engine did before 1.4.0.
+function mentionsSubject(evidenceText, terms, objectiveStems) {
   if (!terms.length) return true;           // nothing to anchor on; gate 2a decides
   if (!evidenceText) return false;
   const need = Math.min(SUBJECT_TERMS_REQUIRED, terms.length);
   const found = new Set();
   const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
+  const anchor = (terms.length === 1 && objectiveStems && objectiveStems.size)
+    ? new Set([...objectiveStems].filter(st => st !== terms[0] && !STOP_WORDS.has(st) && st.length > 2))
+    : null;
   for (const clause of clauses) {
     if (NEGATION_RE.test(clause)) continue;
     const stems = clauseStems(clause);
-    for (const t of terms) if (stems.has(t)) found.add(t);
+    if (anchor) {
+      if (!hasStem(stems, terms[0])) continue;
+      let beside = false;
+      anchor.forEach(st => { if (hasStem(stems, st)) beside = true; });
+      if (beside) return true;
+      continue;
+    }
+    for (const t of terms) if (hasStem(stems, t)) found.add(t);
     if (found.size >= need) return true;
   }
   return false;
@@ -704,6 +918,15 @@ function mentionsSubject(evidenceText, terms) {
 // A concept that is entirely generic — "documented" — describes no subject, so it
 // is dropped rather than counted. Counting it let contentless vocabulary carry an
 // objective: two such concepts out of three cleared a 40% floor on their own.
+//
+// And a concept with several distinguishing terms is not covered by one of
+// them. "the use of accounts is monitored" is about accounts AND monitoring;
+// evidence that mentions accounts and never monitoring covered it, and a
+// one-concept objective went to 100% on a single noun. Where a concept has two
+// or more distinguishing terms the evidence has to name two of them, in
+// affirmative clauses of the same passage; where it has one, that one.
+// CONCEPT_TERMS_REQUIRED is published in RULESET.
+const CONCEPT_TERMS_REQUIRED = 2;
 function checkCoverage(concepts, evidenceText) {
   const scored = concepts.map(c => ({ concept: c, terms: distinguishingTerms(c) }));
   const material = scored.filter(x => x.terms.length);
@@ -717,13 +940,15 @@ function checkCoverage(concepts, evidenceText) {
   const clauses = String(evidenceText).split(CLAUSE_SPLIT).filter(c => c.trim());
   const covered = [], uncovered = [];
   for (const { concept, terms } of material) {
-    let found = false;
+    const need = Math.min(CONCEPT_TERMS_REQUIRED, terms.length);
+    const hit = new Set();
     for (const clause of clauses) {
       if (NEGATION_RE.test(clause)) continue;
       const stems = clauseStems(clause);
-      if (terms.some(t => stems.has(t))) { found = true; break; }
+      for (const t of terms) if (hasStem(stems, t)) hit.add(t);
+      if (hit.size >= need) break;
     }
-    (found ? covered : uncovered).push(concept);
+    (hit.size >= need ? covered : uncovered).push(concept);
   }
   return {covered, uncovered, generic, ratio: covered.length / material.length};
 }
@@ -774,39 +999,131 @@ function evidenceLooksStuffed(text) {
 }
 
 // ── Gate 4: ODP Validation ──
+//
+// An organization-defined parameter is a value the system owner supplies, and
+// the gate asks whether the evidence supplies it. Three kinds of parameter get
+// three different answers:
+//
+//   * a TYPED parameter — a frequency, a time period, a role, a threshold — has
+//     a recognisable value. It is RESOLVED when such a value is stated in an
+//     affirmative clause that is about this objective (shares a word with it),
+//     and MISSING otherwise. "Monthly" anywhere in the retrieved evidence used
+//     to resolve every frequency parameter; a frequency stated about backups
+//     does not resolve one asked about account reviews.
+//   * a SELECTION lists its own options, so it is RESOLVED when one of them is
+//     named in such a clause and UNVERIFIED when none is. Real SSPs describe a
+//     policy without saying "organization-level", and refusing every one of
+//     them for that would be a false fail by the hundred — but it is not a
+//     pass either, and it is recorded.
+//   * an UNTYPED placeholder — "[organization-defined events]" — names no value
+//     this build can recognise. It used to pass whenever the evidence was
+//     non-empty and not keyword-stuffed, which gate 1 had already required, so
+//     it could not fail; and the gate table then called it "resolved". It is
+//     recorded as UNVERIFIED now: not failed, and not claimed.
+//
+// The gate passes when nothing typed is missing. What was resolved, what was
+// missing and what could not be verified travel on the result, so a Satisfied
+// determination says which of its parameters this build actually checked.
 
 const ODP_PLACEHOLDER = /\[([^\[\]]*organization[- ]defined[^\[\]]*)\]/gi;
 const ODP_ASSIGNMENT = /\[assignment:\s*([^\[\]]+?)\]/gi;
-const ODP_FREQ_KW = ['daily','weekly','monthly','quarterly','annually','yearly','every','periodic','continuous','real-time','realtime'];
-const ODP_TIME_KW = ['within','hour','day','week','month','year','immediately'];
-const ODP_ROLE_KW = ['isso','ciso','iso','ao','authorizing official','system owner','administrator','security officer','manager'];
-const ODP_THRESH_KW = ['no more than','at least','maximum','minimum','threshold','limit','exceed','up to'];
+const ODP_SELECTION = /\[selection(?:\s*\([^)]*\))?\s*:\s*([^\[\]]+?)\]/gi;
+const ODP_FREQ_RE = /\b(?:daily|weekly|bi-?weekly|monthly|quarterly|semi-?annually|annually|yearly|every\s+\d+|every\s+(?:day|week|month|quarter|year)|periodic(?:ally)?|continuous(?:ly)?|real-?time|on\s+demand)\b/;
+const ODP_TIME_RE = /\b(?:within\s+\S+|\d+\s*(?:hours?|days?|weeks?|months?|years?|business\s+days?|minutes?)|immediately|same\s+day|next\s+business\s+day)\b/;
+const ODP_ROLE_RE = /\b(?:isso|issm|ciso|cio|iso|ao|authorizing\s+official|system\s+owner|information\s+owner|administrators?|security\s+officer|managers?|personnel|staff|team|engineers?|analysts?|custodians?|operators?|stakeholders?)\b/;
+const ODP_THRESH_RE = /\b(?:no\s+more\s+than|not\s+more\s+than|at\s+least|at\s+most|maximum|minimum|threshold|limit(?:ed)?\s+to|exceed(?:s|ing)?|up\s+to|\d+\s*(?:%|percent)|\d+\s+(?:consecutive|failed|unsuccessful|attempts))\b/;
 
+// The kind of value a placeholder asks for, read from its own wording.
+function odpKind(text) {
+  const n = String(text).toLowerCase();
+  if (/\btime\b|duration|how\s+long/.test(n)) return 'time';
+  if (/frequency|frequencies|period|how\s+often/.test(n)) return 'frequency';
+  if (/personnel|roles?\b|official|individuals?|team|owner/.test(n)) return 'role';
+  if (/threshold|limit|number|quantity|percentage|maximum|minimum|count\b/.test(n)) return 'threshold';
+  return 'other';
+}
+
+// Every parameter an objective carries, in text order. A selection's options
+// are kept: they are what the evidence is checked against.
 function extractOdps(difText) {
   if (!difText) return [];
-  const odps = [];
-  let m;
-  ODP_PLACEHOLDER.lastIndex = 0;
-  while ((m = ODP_PLACEHOLDER.exec(difText))) odps.push(m[1].trim());
-  ODP_ASSIGNMENT.lastIndex = 0;
-  while ((m = ODP_ASSIGNMENT.exec(difText))) odps.push(m[1].trim());
-  return odps;
+  const spans = [];
+  const collect = (re, kind) => {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(difText))) spans.push({ start: m.index, end: m.index + m[0].length, text: m[1].trim(), kind });
+  };
+  collect(ODP_SELECTION, 'selection');
+  collect(ODP_PLACEHOLDER, null);
+  collect(ODP_ASSIGNMENT, null);
+  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+  const out = [];
+  let lastEnd = -1;
+  for (const sp of spans) {
+    if (sp.start < lastEnd) continue;            // the placeholder inside a selection's span
+    lastEnd = sp.end;
+    if (sp.kind === 'selection') {
+      out.push({ text: sp.text, kind: 'selection', options: sp.text.split(/;/).map(o => o.trim()).filter(Boolean) });
+    } else {
+      out.push({ text: sp.text, kind: odpKind(sp.text) });
+    }
+  }
+  return out;
+}
+
+// The words of the objective a value clause has to share to count as being
+// about it: the objective's own stems with the placeholders and stop words
+// taken out.
+function objectiveAnchorStems(difText) {
+  const bare = String(difText || '').replace(/\[[^\[\]]*\]/g, ' ').replace(/^\s*Determine\s+if\s+/i, '');
+  const out = new Set();
+  clauseStems(bare).forEach(st => { if (st.length > 2 && !STOP_WORDS.has(st)) out.add(st); });
+  return out;
 }
 
 function validateOdps(difText, evidenceText) {
   const odps = extractOdps(difText);
-  if (!odps.length) return {required:[], missing:[], satisfied:true};
-  const et = (evidenceText||'').toLowerCase();
-  const stuffed = evidenceLooksStuffed(evidenceText);
-  const missing = odps.filter(odp => {
-    const n = odp.toLowerCase();
-    if (/frequency|period/.test(n)) return !ODP_FREQ_KW.some(k => et.includes(k));
-    if (/time/.test(n)) return !ODP_TIME_KW.some(k => et.includes(k)) && !ODP_FREQ_KW.some(k => et.includes(k));
-    if (/personnel|role|official/.test(n)) return !ODP_ROLE_KW.some(k => et.includes(k));
-    if (/threshold|limit|number|quantity/.test(n)) return !ODP_THRESH_KW.some(k => et.includes(k));
-    return !et.trim() || stuffed;
-  });
-  return {required:odps, missing, satisfied:!missing.length};
+  const required = odps.map(o => o.text);
+  if (!odps.length) return { required, resolved: [], missing: [], unverified: [], satisfied: true };
+  const anchors = objectiveAnchorStems(difText);
+  const clauses = String(evidenceText || '').split(CLAUSE_SPLIT).filter(c => c.trim())
+    .filter(c => !NEGATION_RE.test(c))
+    .map(c => ({ text: c.toLowerCase(), stems: clauseStems(c) }))
+    .filter(c => { let a = false; anchors.forEach(st => { if (hasStem(c.stems, st)) a = true; }); return a; });
+  const anyClause = (test) => clauses.some(test);
+  const resolved = [], missing = [], unverified = [];
+  for (const odp of odps) {
+    let ok;
+    switch (odp.kind) {
+      case 'frequency': ok = anyClause(c => ODP_FREQ_RE.test(c.text)); break;
+      case 'time':      ok = anyClause(c => ODP_TIME_RE.test(c.text) || ODP_FREQ_RE.test(c.text)); break;
+      case 'role':      ok = anyClause(c => ODP_ROLE_RE.test(c.text)); break;
+      case 'threshold': ok = anyClause(c => ODP_THRESH_RE.test(c.text)); break;
+      case 'selection': {
+        // An option counts when its distinguishing stems (two of them, or the
+        // one it has) sit in one anchored affirmative clause. An option made
+        // only of generic words — "organization-defined contract language" —
+        // is a placeholder of its own and cannot be matched.
+        const found = odp.options.some(opt => {
+          // An option with no distinguishing term — "organization-level" agrees
+          // with generic `organization` — is matched on its own words instead,
+          // exactly; an option that is itself a placeholder cannot be matched.
+          if (/organization[- ]defined/i.test(opt)) return false;
+          let terms = distinguishingTerms(opt);
+          const exact = !terms.length;
+          if (exact) terms = [...clauseStems(opt)].filter(st => st.length > 2 && !STOP_WORDS.has(st));
+          if (!terms.length) return false;
+          const need = Math.min(CONCEPT_TERMS_REQUIRED, terms.length);
+          return anyClause(c => terms.filter(t => exact ? c.stems.has(t) : hasStem(c.stems, t)).length >= need);
+        });
+        if (found) resolved.push(odp.text); else unverified.push(odp.text);
+        continue;
+      }
+      default: unverified.push(odp.text); continue;
+    }
+    (ok ? resolved : missing).push(odp.text);
+  }
+  return { required, resolved, missing, unverified, satisfied: !missing.length };
 }
 
 // ── Gate 5: Refutation & Contradiction Detection ──
@@ -841,58 +1158,76 @@ const NEGATION_PAIRS = [
 
 const DRAFT_RE = /\b(?:tbd|to\s+be\s+(?:determined|defined|decided|finalized)|pending\s+finalization|to-?do|placeholder)\b|[\[<]\s*(?:insert|todo|placeholder|fill[\s-]?in)\b/i;
 
-// Proximity thresholds (chars) for scoping refuting language to a control ID.
+// Which control a refuting sentence is about. A document names a control in a
+// heading and describes it in the paragraphs that follow, so the closest
+// control id BEFORE the sentence owns it; a sentence no id precedes belongs to
+// the closest id after it within REFUTATION_FOLLOWING_SCOPE_CHARS ("account
+// monitoring is not implemented (see AC-2)"); a text naming one control owns
+// every refutation in it wherever the id sits. The previous rule was symmetric
+// distance — any id within 400 characters counted — so "Not yet fully
+// implemented" under the CM-1 heading also refuted AU-3, whose heading sat 250
+// characters earlier, and the two were indistinguishable.
 // Shared by detectRefutationsScoped and buildRefutationIndex.
-const REFUTATION_NEAR_CONTROL_CHARS = 400;  // refutation within this distance of the target control ID counts against it
-const REFUTATION_NEAR_OTHER_CHARS = 200;    // refutation this close to a different control ID is attributed to that control
-const REFUTATION_INDEX_SCOPE_CHARS = 600;   // corpus-index attribution window around a refuting phrase
+const REFUTATION_FOLLOWING_SCOPE_CHARS = 600;
+const CONTROL_ID_ANY_RE = /\b[A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?\b/g;
 
-// Execute a pattern once from the start of the string without relying on (or
-// mutating) shared regex state — safe even if a pattern carries the g/y flag.
-function execPattern(pattern, text) {
-  if (pattern.global || pattern.sticky) {
-    return new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, '')).exec(text);
-  }
-  return pattern.exec(text);
+// Positions of every control id in `text`, as [{id, pos}] in text order.
+function controlIdPositions(text) {
+  return [...String(text).matchAll(CONTROL_ID_ANY_RE)].map(m => ({ id: m[0], pos: m.index }));
 }
 
-function nearestDistance(positions, pos) {
-  let best = Infinity;
-  for (const p of positions) best = Math.min(best, Math.abs(p - pos));
-  return best;
+// The ids that own a refutation at `refPos`, given the id occurrences of the
+// text. Ties (two ids in one heading) are shared.
+function refutationOwners(occurrences, refPos) {
+  if (!occurrences.length) return [];
+  let best = null;
+  for (const o of occurrences) if (o.pos < refPos && (best === null || o.pos > best)) best = o.pos;
+  if (best !== null) return [...new Set(occurrences.filter(o => o.pos === best).map(o => o.id))];
+  let next = null;
+  for (const o of occurrences) if (o.pos > refPos && o.pos - refPos <= REFUTATION_FOLLOWING_SCOPE_CHARS && (next === null || o.pos < next)) next = o.pos;
+  if (next !== null) return [...new Set(occurrences.filter(o => o.pos === next).map(o => o.id))];
+  const ids = [...new Set(occurrences.map(o => o.id))];
+  return ids.length === 1 ? ids : [];
+}
+
+// Every match of a pattern in the text, without mutating shared regex state.
+// The previous reader executed each pattern ONCE and kept the first hit, so a
+// chunk that said "AC-1 ... not implemented" and, two paragraphs on, "AC-2 ...
+// not implemented" carried one refutation, attributed to AC-1, and AC-2's went
+// unrecorded — in the scoped check, in the plain check and in the corpus index
+// alike. A pattern is a shape of sentence; it can occur as often as it likes.
+function execAll(pattern, text) {
+  const re = new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, '') + 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(text))) {
+    if (m[0]) out.push(m);
+    if (m[0] === '') re.lastIndex++;
+  }
+  return out;
 }
 
 function detectRefutations(text) {
   if (!text) return [];
   const t = text.toLowerCase();
   const found = [];
-  for (const p of REFUTING_PATTERNS) {
-    const m = execPattern(p, t);
-    if (m && m[0]) found.push(m[0]);
-  }
+  for (const p of REFUTING_PATTERNS) for (const m of execAll(p, t)) found.push(m[0]);
   return found;
 }
 
 function detectRefutationsScoped(text, controlId) {
   if (!text) return [];
   const t = text.toLowerCase();
-  const cidRe = new RegExp('\\b' + controlId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-  const cidPositions = [...text.matchAll(cidRe)].map(m => m.index);
-  const allCtrlRe = /\b[A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?\b/g;
-  const otherCtrls = [...text.matchAll(allCtrlRe)].filter(m => m[0] !== controlId);
+  // Positions are taken from the original text — the patterns are lower-case
+  // and the ids upper-case, and lower-casing changes no offsets.
+  const occurrences = controlIdPositions(text);
   const found = [];
-  for (const p of REFUTING_PATTERNS) {
-    const m = execPattern(p, t);  // match once; reuse below
-    if (!m || !m[0]) continue;
-    const refPos = m.index;
-    const cidDist = nearestDistance(cidPositions, refPos);  // nearest occurrence, not first
-    if (cidDist < REFUTATION_NEAR_CONTROL_CHARS) { found.push(m[0]); continue; }
-    if (otherCtrls.length === 0) { found.push(m[0]); continue; }
-    const nearOther = otherCtrls.some(oc => Math.abs(refPos - oc.index) < REFUTATION_NEAR_OTHER_CHARS);
-    if (nearOther && (cidPositions.length === 0 || cidDist > REFUTATION_NEAR_CONTROL_CHARS)) continue;
-    if (cidPositions.length === 0) found.push(m[0]);
+  for (const p of REFUTING_PATTERNS) for (const m of execAll(p, t)) {
+    // A text that names no control at all is this control's own evidence and
+    // every refutation in it is about this control.
+    if (!occurrences.length || refutationOwners(occurrences, m.index).includes(controlId)) found.push(m[0]);
   }
-  return found;
+  return [...new Set(found)];
 }
 
 function detectContradictions(text) {
@@ -954,8 +1289,15 @@ function extractDates(text) {
       const start = Math.max(0, m.index - 40);
       const end = Math.min(text.length, m.index + m[0].length + 40);
       const surrounding = text.slice(start, end);
+      // The date's type is read from its OWN sentence, not from whatever sits
+      // within forty characters. "Last reviewed: 2023-01-10. Most recent scan:
+      // 2026-05-28" typed the scan date as a review because "reviewed" was
+      // within the window — and that later "review" then decided currency.
+      const before = text.slice(start, m.index).split(/[.;\n]/).pop();
+      const after = text.slice(m.index + m[0].length, end).split(/[.;\n]/)[0];
+      const sentence = before + m[0] + after;
       let ctxType = 'unknown';
-      for (const [cp, ct] of CTX_PATTERNS) { if (cp.test(surrounding)) { ctxType = ct; break; } }
+      for (const [cp, ct] of CTX_PATTERNS) { if (cp.test(sentence)) { ctxType = ct; break; } }
       found.push({dateStr: m[0], dateObj, ctxType, surrounding});
     }
   }
@@ -964,10 +1306,23 @@ function extractDates(text) {
     .sort((a, b) => b.dateObj - a.dateObj);
 }
 
+// Which date decides currency. The newest date used to, whatever it was, so a
+// review dated two years ago was current because a scan two paragraphs on was
+// dated last month: the stale-review concern was computed and then discarded.
+// A review or update date is the document's own statement of when it was last
+// looked at, and when one is present it decides; failing that the newest date
+// whose context is known; failing that the newest date of all.
+//
+// No date at all is not "current". It is undated, and the gate says so:
+// `isCurrent` is null, nothing is asserted either way, and the caller flags the
+// verdict for a human rather than recording a currency nobody checked.
+const CURRENCY_DECIDING_CTX = ['review_date', 'update_date'];
 function checkCurrency(dates, assessmentDate) {
-  if (!dates.length) return {isCurrent:true, staleDays:0, concerns:[]};
+  if (!dates.length) return {isCurrent:null, staleDays:0, concerns:['evidence carries no date — currency not established'], deciding:null};
   const ad = assessmentDate; // supplied by assessDif — never the clock
-  const most = dates[0];
+  const reviewed = dates.filter(d => CURRENCY_DECIDING_CTX.includes(d.ctxType));
+  const typed = dates.filter(d => d.ctxType !== 'unknown');
+  const most = reviewed[0] || typed[0] || dates[0];   // dates arrive newest first
   const daysOld = Math.round((ad - most.dateObj) / 86400000);
   const thresh = STALENESS[most.ctxType] || 365;
   const concerns = [];
@@ -977,7 +1332,11 @@ function checkCurrency(dates, assessmentDate) {
     if (dd < 0) concerns.push(d.ctxType + ': ' + d.dateStr + ' is future-dated');
     else if (dd > dt) concerns.push(d.ctxType + ': ' + d.dateStr + ' is ' + dd + ' days old (threshold: ' + dt + ')');
   }
-  return {isCurrent: daysOld >= 0 && daysOld <= thresh, staleDays: Math.max(0, daysOld), concerns};
+  const isCurrent = daysOld >= 0 && daysOld <= thresh;
+  // The deciding date's own concern leads, so the finding names the date that
+  // failed the gate rather than whichever stale date was found first.
+  const own = concerns.filter(c => c.startsWith(most.ctxType + ': ' + most.dateStr));
+  return {isCurrent, staleDays: Math.max(0, daysOld), concerns: own.concat(concerns.filter(c => !own.includes(c))), deciding: most};
 }
 
 // ── Gate 6b: Scan Cadence Check (ConMon 30-day) ──
@@ -1022,7 +1381,6 @@ const FINDING_NOUN_RE = /\b(?:vulnerabilit(?:y|ies)|finding|flaw|cve|weakness|po
 const OPEN_STATUS_RE = /\b(?:remains?\s+(?:open|unremediated|unresolved|outstanding|unpatched)|still\s+(?:open|unremediated|unresolved)|currently\s+(?:open|unremediated|unresolved)|not\s+(?:yet\s+)?(?:remediated|patched|fixed|closed|resolved|mitigated))\b/i;
 const CLOSURE_RE = /\b(?:remediated|patched|fixed|closed|resolved|mitigated)\b/i;
 const SEVERITY_RE = /\b(critical|high|moderate|medium|low)\b/i;
-const DATE_TOKEN_RE = /(\d{4}-\d{2}-\d{2})/g;
 const SLA_DAYS = {critical:30, high:30, moderate:90, medium:90, low:180};
 
 function checkOpenFindingSla(evidenceText, assessmentDate) {
@@ -1037,10 +1395,10 @@ function checkOpenFindingSla(evidenceText, assessmentDate) {
     if (!sevMatch) continue;
     const severity = sevMatch[1].toLowerCase();
     const sla = SLA_DAYS[severity] || 180;
-    const dateToks = [...sent.matchAll(DATE_TOKEN_RE)].map(m => {
-      // UTC + round-trip check, same as extractDates.
-      try { const [y,mo,d] = m[1].split('-').map(Number); return utcCalendarDate(y,mo,d); } catch(e) { return null; }
-    }).filter(Boolean);
+    // The same reader gates 6a–6c use, so "January 1, 2024" and "2024-01-01"
+    // are the same finding date. A second, ISO-only regex here let a finding
+    // written with a month name escape the SLA check its twin failed.
+    const dateToks = extractDates(sent).map(d => d.dateObj);
     if (!dateToks.length) continue;
     const oldest = dateToks.reduce((a,b) => a < b ? a : b);
     const age = Math.round((ad - oldest) / 86400000);
@@ -1053,7 +1411,17 @@ function checkOpenFindingSla(evidenceText, assessmentDate) {
 
 // ── Homoglyph Folding (homoglyph defense) ──
 
-const HOMOGLYPHS = {'а':'a','е':'e','о':'o','р':'p','с':'c','х':'x','у':'y','к':'k','м':'m','т':'t','н':'h','в':'b','і':'i','ј':'j','ѕ':'s','ԁ':'d','ο':'o','α':'a','ε':'e','ρ':'p','ν':'v','τ':'t','κ':'k','ι':'i','χ':'x'};
+// Lower AND upper case. The map was lowercase-only and the folder never
+// case-folded, so "Рlaceholder" with a Cyrillic capital Er walked past gate 5c
+// while "рlaceholder" with the small letter did not. Folding is done per
+// character rather than by lowercasing the text, because the control-id
+// pattern that scopes gate 5 reads upper-case family letters.
+const HOMOGLYPHS = {
+  'а':'a','е':'e','о':'o','р':'p','с':'c','х':'x','у':'y','к':'k','м':'m','т':'t','н':'h','в':'b','і':'i','ј':'j','ѕ':'s','ԁ':'d','ԛ':'q','ԝ':'w','ғ':'f','ӏ':'l',
+  'А':'A','Е':'E','О':'O','Р':'P','С':'C','Х':'X','У':'Y','К':'K','М':'M','Т':'T','Н':'H','В':'B','І':'I','Ј':'J','Ѕ':'S','Ԁ':'D','Ԛ':'Q','Ԝ':'W','Ғ':'F','Ӏ':'I','З':'3','Ь':'b',
+  'ο':'o','α':'a','ε':'e','ρ':'p','ν':'v','τ':'t','κ':'k','ι':'i','χ':'x','υ':'u','ϲ':'c','ϳ':'j','ѡ':'w',
+  'Ο':'O','Α':'A','Ε':'E','Ρ':'P','Ν':'N','Τ':'T','Κ':'K','Ι':'I','Χ':'X','Β':'B','Η':'H','Μ':'M','Υ':'Y','Ζ':'Z','Ϲ':'C','Ϳ':'J',
+};
 
 function foldHomoglyphs(text) {
   if (!text) return text;
@@ -1078,22 +1446,11 @@ function buildRefutationIndex(retriever) {
     // against control-id offsets in the original, the same convention
     // detectRefutationsScoped uses).
     const lowered = txt.toLowerCase();
-    for (const pat of REFUTING_PATTERNS) {
-      const m = execPattern(pat, lowered);
-      if (!m) continue;
-      const pos = m.index;
-      // Find which control IDs have an occurrence near this refuting phrase,
-      // measuring against the NEAREST occurrence of each ID (not the first)
-      const nearby = cids.filter(cid => {
-        const re = new RegExp('\\b' + cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
-        const positions = [...txt.matchAll(re)].map(cm => cm.index);
-        if (!positions.length) return cids.length === 1;
-        return nearestDistance(positions, pos) < REFUTATION_INDEX_SCOPE_CHARS;
-      });
-      const targets = nearby.length ? nearby : (cids.length === 1 ? cids : []);
-      for (const cid of targets) {
+    const occurrences = controlIdPositions(txt).filter(o => cids.includes(o.id));
+    for (const pat of REFUTING_PATTERNS) for (const m of execAll(pat, lowered)) {
+      for (const cid of refutationOwners(occurrences, m.index)) {
         if (!index[cid]) index[cid] = [];
-        index[cid].push(m[0]);
+        if (!index[cid].includes(m[0])) index[cid].push(m[0]);
       }
     }
   }
@@ -1288,7 +1645,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     // clear its floor on an objective's own wording while the evidence addresses
     // a different control entirely; the subject is what tells those apart.
     const subject = controlSubjectTerms(controlTitle, familyName);
-    const g2b = mentionsSubject(ownEvidence || evidenceText, subject);
+    const g2b = mentionsSubject(ownEvidence || evidenceText, subject, objectiveAnchorStems(dif.t));
     const g2pass = g2a && g2b;
     gates.push({gate:2, name:'Concepts', pass:g2pass, checks:[
       {id:'2a', name:'Coverage', pass:g2a},
@@ -1300,8 +1657,10 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   if (typeof coverageResult === 'undefined') coverageResult = {ratio: 0, uncovered: [], covered: []};
 
   // Gate 3: Evidence Strength — 3a traceable references, 3b no keyword
-  // stuffing (checked on own-control evidence, not cross-control BM25 results)
-  const strength = scoreEvidence(evidenceText);
+  // stuffing. Both read the control's own evidence first, like every other
+  // gate: 3a used to read the BM25 union, so a neighbour's "SSP section 5 /
+  // version 3 / dated March" made THIS control's weak paragraph Strong.
+  const strength = scoreEvidence(ownEvidence || evidenceText);
   const g3a = strength.tier !== 'weak' && strength.tier !== 'unknown';
   const stuffed = evidenceLooksStuffed(ownEvidence || evidenceText);
   gates.push({gate:3, name:'Strength', pass:g3a && !stuffed, checks:[
@@ -1311,9 +1670,14 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   if (!g3a) gaps.push('Evidence strength: ' + strength.tier + ' — no traceable references');
   if (stuffed) gaps.push('Evidence appears keyword-stuffed');
 
-  // Gate 4: ODP Validation
-  const odp = validateOdps(dif.t, evidenceText);
-  gates.push({gate:4, name:'ODP', pass:odp.satisfied});
+  // Gate 4: ODP Validation — on the control's own evidence, not the union: a
+  // neighbour's "ISSO" used to resolve a role parameter this control never
+  // named. The record says what was resolved, what was missing and what this
+  // build cannot verify; only a missing typed value fails the gate.
+  const odp = validateOdps(dif.t, ownEvidence || evidenceText);
+  gates.push({gate:4, name:'ODP', pass:odp.satisfied, checks:[
+    {id:'4a', name:'Typed values', pass:!odp.missing.length},
+  ], resolved: odp.resolved, missing: odp.missing, unverified: odp.unverified});
   if (!odp.satisfied) gaps.push('Unresolved ODPs: ' + odp.missing.join(', '));
 
   // Gate 5: Refutation & Contradiction
@@ -1367,9 +1731,13 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   const temporalText = ownEvidence || evidenceText;
   const dates = extractDates(temporalText);
   const currency = checkCurrency(dates, asOf);
-  let g6pass = currency.isCurrent;
+  // null is undated: nothing to fail on, nothing to call current. The gate is
+  // not failed for it — 6b–6d likewise pass when they find nothing to check —
+  // but the result says 'undated', not 'current', and is flagged for review.
+  const undated = currency.isCurrent === null;
+  let g6pass = currency.isCurrent !== false;
   const g6concerns = [];
-  if (!currency.isCurrent) g6concerns.push(currency.concerns[0] || 'no current dates');
+  if (currency.isCurrent === false) g6concerns.push(currency.concerns[0] || 'no current dates');
 
   // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
   const cadenceIssue = checkScanCadence(dates, asOf);
@@ -1384,7 +1752,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
 
   gates.push({gate:6, name:'Temporal', pass:g6pass, checks:[
-    {id:'6a', name:'Currency', pass:currency.isCurrent},
+    {id:'6a', name:'Currency', pass:currency.isCurrent !== false, undated},
     {id:'6b', name:'Scan cadence', pass:!cadenceIssue},
     {id:'6c', name:'Future dates', pass:!futureDateIssue},
     {id:'6d', name:'Finding SLA', pass:!slaIssue}
@@ -1404,6 +1772,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   const reviewReasons = [];
   if (allPassed && conf < REVIEW_CONFIDENCE_FLOOR) reviewReasons.push('confidence ' + Math.round(conf * 100) + '% is below the ' + Math.round(REVIEW_CONFIDENCE_FLOOR * 100) + '% floor');
   if (allPassed && coverageResult.ratio < REVIEW_COVERAGE_FLOOR) reviewReasons.push('concept coverage ' + Math.round(coverageResult.ratio * 100) + '% is below the ' + Math.round(REVIEW_COVERAGE_FLOOR * 100) + '% floor');
+  if (allPassed && undated) reviewReasons.push('evidence carries no date — currency not established');
   const evRefs = strongHits.slice(0,3).map(h => h.filename).filter((v,i,a) => a.indexOf(v)===i);
 
   const result = {
@@ -1418,7 +1787,9 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     defensibility_score: defScore,
     concept_coverage: coverageResult.ratio,
     evidence_strength: strength.tier,
-    temporal_status: g6pass ? 'current' : 'stale',
+    temporal_status: !g6pass ? 'stale' : undated ? 'undated' : 'current',
+    odp_resolved: odp.resolved,
+    odp_unverified: odp.unverified,
     gap_description: gaps.join('; ') || '',
     review_required: reviewReasons.length > 0,
     review_reason: reviewReasons.join('; '),
@@ -1426,7 +1797,9 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   };
 
   if (allPassed) {
-    result.assessor_notes = 'Deterministic mode — all 7 gates passed. Strength: ' + strength.tier + ', coverage: ' + Math.round(coverageResult.ratio*100) + '%.';
+    result.assessor_notes = 'Deterministic mode — all 7 gates passed. Strength: ' + strength.tier + ', coverage: ' + Math.round(coverageResult.ratio*100) + '%.' +
+      (odp.unverified.length ? ' ' + odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; ') + '.' : '') +
+      (undated ? ' Evidence carries no date; currency not established.' : '');
   } else {
     const gapType = classifyGapType(gaps[0] || '');
     const gapTypes = [gapType];
@@ -1449,13 +1822,54 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
 }
 
 // The rule set, as data. Hashed into the reproducibility receipt so a change
-// to any threshold changes the ruleset digest even if ENGINE_VERSION is
-// forgotten. Regex pattern lists are covered by the version bump rule above.
+// to any rule changes the ruleset digest even if ENGINE_VERSION is forgotten.
+//
+// That has to include the matchers. The digest used to cover thresholds and
+// the generic-term list and leave every pattern that decides a verdict out of
+// it — the refuting phrases, the draft markers, the homoglyph map, the stem
+// suffixes, the ODP value shapes, the strength signals — so a pattern-only
+// edit moved verdicts and left the receipt's ruleset digest where it was. A
+// regex is serialised as its source and flags, so the digest moves when the
+// pattern does and only then.
+const rx = (re) => ({ source: re.source, flags: re.flags });
 const RULESET = Object.freeze({
   engine_version: ENGINE_VERSION,
-  bm25: { k1: BM25_K1, b: BM25_B, control_id_boost: CONTROL_ID_BOOST },
+  bm25: { k1: BM25_K1, b: BM25_B, control_id_boost: CONTROL_ID_BOOST, score: 'share of the objective\'s distinct stems the chunk names' },
   min_evidence_score: MIN_EVIDENCE_SCORE,
   min_concept_coverage: MIN_CONCEPT_COVERAGE,
+  concept_terms_required: CONCEPT_TERMS_REQUIRED,
+  patterns: {
+    tokenizer: rx(TOKEN_RE),
+    stop_words: Array.from(STOP_WORDS).sort(),
+    stem_suffixes: STEM_SUFFIXES.slice(),
+    stem_derivations: STEM_DERIVATIONS.map(d => d.slice()),
+    stem_agree_min_chars: STEM_AGREE_MIN_CHARS,
+    heading_max_chars: HEADING_MAX_CHARS,
+    concept_verbs: rx(CONCEPT_VERBS),
+    filler: rx(FILLER_RE),
+    clause_split: rx(CLAUSE_SPLIT),
+    negation: rx(NEGATION_RE),
+    strength: STRENGTH_PATTERNS.map(([name, re]) => ({ name, pattern: rx(re) })),
+    odp: {
+      placeholder: rx(ODP_PLACEHOLDER), assignment: rx(ODP_ASSIGNMENT), selection: rx(ODP_SELECTION),
+      frequency: rx(ODP_FREQ_RE), time: rx(ODP_TIME_RE), role: rx(ODP_ROLE_RE), threshold: rx(ODP_THRESH_RE),
+    },
+    refuting: REFUTING_PATTERNS.map(rx),
+    negation_pairs: NEGATION_PAIRS.map(([a, b]) => [rx(a), rx(b)]),
+    draft: rx(DRAFT_RE),
+    homoglyphs: Object.keys(HOMOGLYPHS).sort().map(k => [k, HOMOGLYPHS[k]]),
+    dates: DATE_PATTERNS.map(([re, fmt]) => ({ format: fmt, pattern: rx(re) })),
+    date_context: CTX_PATTERNS.map(([re, ctx]) => ({ context: ctx, pattern: rx(re) })),
+    currency_deciding_context: CURRENCY_DECIDING_CTX.slice(),
+    scan_context: rx(SCAN_CONTEXT_RE),
+    past_action: rx(PAST_ACTION_RE),
+    future_plan: rx(FUTURE_PLAN_RE),
+    finding_noun: rx(FINDING_NOUN_RE),
+    open_status: rx(OPEN_STATUS_RE),
+    closure: rx(CLOSURE_RE),
+    severity: rx(SEVERITY_RE),
+    archive_housekeeping: rx(ARCHIVE_HOUSEKEEPING_RE),
+  },
   // Gate 2 reads subject matter, not compliance vocabulary: a concept is covered
   // only by a term that is not in this list, and evidence that never names the
   // control's subject cannot satisfy it (gate 2b).
@@ -1474,10 +1888,9 @@ const RULESET = Object.freeze({
   staleness_days: STALENESS,
   scan_cadence_days: SCAN_CADENCE_DAYS,
   sla_days: SLA_DAYS,
-  refutation_windows: {
-    near_control_chars: REFUTATION_NEAR_CONTROL_CHARS,
-    near_other_chars: REFUTATION_NEAR_OTHER_CHARS,
-    index_scope_chars: REFUTATION_INDEX_SCOPE_CHARS
+  refutation_attribution: {
+    rule: 'closest preceding control id owns a refutation; else the closest following id within following_scope_chars; else the only id named',
+    following_scope_chars: REFUTATION_FOLLOWING_SCOPE_CHARS
   },
   gates: ['Presence', 'Concepts', 'Strength', 'ODP', 'Contradiction', 'Temporal', 'Determination']
 });
@@ -1501,7 +1914,19 @@ global.SparkAEEngine = {
   checkCoverage: checkCoverage,
   controlSubjectTerms: controlSubjectTerms,
   mentionsSubject: mentionsSubject,
+  objectiveAnchorStems: objectiveAnchorStems,
   extractConcepts: extractConcepts,
+  extractOdps: extractOdps,
+  validateOdps: validateOdps,
+  scoreEvidence: scoreEvidence,
+  detectRefutations: detectRefutations,
+  detectRefutationsScoped: detectRefutationsScoped,
+  checkCurrency: checkCurrency,
+  checkOpenFindingSla: checkOpenFindingSla,
+  foldHomoglyphs: foldHomoglyphs,
+  stemWord: stemWord,
+  stemsAgree: stemsAgree,
+  crc32: crc32,
   tokenize: tokenize,
   extractControlIds: extractControlIds,
   extractDates: extractDates,

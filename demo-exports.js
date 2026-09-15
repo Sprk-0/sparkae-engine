@@ -165,6 +165,18 @@ var DEMO_EXPORTS = (function () {
     return '{' + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ':' + stableJson(v[k]); }).join(',') + '}';
   }
 
+  // Everything the receipt carries is hashed into receipt_digest, so a reader
+  // who deletes receipt_digest from the downloaded JSON and re-hashes the rest
+  // gets the same value back. The page used to attach system_name, files_parsed
+  // and files_refused AFTER the digest was taken, so the download could not
+  // be verified against its own digest. They are inputs now: systemName,
+  // filesParsed, filesRefused. receiptDigestOf() is the verifier.
+  function receiptDigestOf(receipt) {
+    var core = {};
+    Object.keys(receipt || {}).forEach(function (k) { if (k !== 'receipt_digest') core[k] = receipt[k]; });
+    return sha1Hex(stableJson(core));
+  }
+
   function buildReceipt(input) {
     input = input || {};
     var chunks = input.chunks || [];
@@ -194,7 +206,10 @@ var DEMO_EXPORTS = (function () {
       assessment_method: 'EXAMINE',
       interview_test: 'not performed — remain with the assessor'
     };
-    receipt.receipt_digest = sha1Hex(stableJson(receipt));
+    if (input.systemName != null) receipt.system_name = String(input.systemName);
+    if (input.filesParsed) receipt.files_parsed = input.filesParsed.map(String);
+    if (input.filesRefused) receipt.files_refused = input.filesRefused.map(String);
+    receipt.receipt_digest = receiptDigestOf(receipt);
     return receipt;
   }
 
@@ -263,9 +278,17 @@ var DEMO_EXPORTS = (function () {
     return rev && rev.status ? String(rev.status) : String(f.status || '');
   }
 
+  // The character a spreadsheet reads first is the first one it does not
+  // strip, so leading spaces, tabs, line breaks, a byte-order mark and the
+  // other blanks are skipped before the formula characters are looked for.
+  // Inspecting s[0] alone let " =HYPERLINK(...)", "\n=cmd" and "\uFEFF=1+1"
+  // through unchanged.
+  var CSV_LEADING_BLANK = /^[\s\uFEFF\u00A0\u200B-\u200D\u2060]+/;
+  var CSV_FORMULA_LEAD = /^[=+\-@\t\r|%]/;
   function csvSafe(v) {
     var s = String(v == null ? '' : v);
-    return s && '=+-@\t\r'.indexOf(s[0]) !== -1 ? "'" + s : s;
+    var lead = s.replace(CSV_LEADING_BLANK, '');
+    return (lead && CSV_FORMULA_LEAD.test(lead)) || (s && /^[\t\r]/.test(s)) ? "'" + s : s;
   }
 
   function csvRow(fields) {
@@ -328,15 +351,21 @@ var DEMO_EXPORTS = (function () {
 
     var revisedCount = 0;
     findings.forEach(function (f) {
-      // Observations and risks below stay keyed to what the ENGINE determined —
-      // they record what was examined, which a revision does not change — so
-      // the uuid sequence is identical whether or not anything was revised.
+      // Observations and risks follow the EFFECTIVE determination — the
+      // assessor's where one was recorded. They used to key off the engine's,
+      // so a finding revised to satisfied still pointed at an open risk, and
+      // one revised to Other Than Satisfied raised none; CONTRIBUTING says
+      // every Other Than Satisfied finding points at the risk it raises, and
+      // the target state and its risk have to agree. The engine's own
+      // determination still travels in the props beside the assessor's, and
+      // the receipt still attests the engine run.
       var rev = revisionFor(opts, f);
-      var satisfied = f.status === 'Satisfied';
       var effective = effectiveStatus(f, rev);
+      var satisfied = effective === 'Satisfied';
       var objectiveId = f.objective_id || f.dif_id || '';
       var findingUuid = uuid();
-      var description = (satisfied ? f.evidence_description : f.weakness_description) ||
+      var description = (satisfied ? (f.evidence_description || (rev && rev.statement))
+                                   : (f.weakness_description || (rev && rev.statement))) ||
         ('Examine-method assessment of ' + objectiveId);
 
       var finding = {
@@ -394,17 +423,24 @@ var DEMO_EXPORTS = (function () {
             return { 'observation-uuid': obsUuid };
           });
         }
-      } else if (f.status === 'Other Than Satisfied') {
+      } else if (effective === 'Other Than Satisfied') {
+        // An assessor-raised risk has no engine weakness record; the assessor's
+        // statement is its description, its origin actor is a party rather than
+        // a tool (the schema's actor types are tool, assessment-platform and
+        // party), and a prop names the source outright.
+        var byAssessor = !!rev && f.status !== 'Other Than Satisfied';
         var riskUuid = uuid();
         finding['related-risks'] = [{ 'risk-uuid': riskUuid }];
+        var riskText = f.risk_statement || f.weakness_description ||
+          (byAssessor && rev.statement ? String(rev.statement) : description);
         var risk = {
           uuid: riskUuid,
-          title: f.weakness_name || ('Risk for ' + objectiveId),
-          description: f.risk_statement || f.weakness_description || description,
-          statement: f.risk_statement || f.weakness_description || description,
+          title: f.weakness_name || ('Risk for ' + objectiveId + (byAssessor ? ' (assessor determination)' : '')),
+          description: riskText,
+          statement: riskText,
           status: 'open',
           characterizations: [{
-            origin: { actors: [{ type: 'tool', 'actor-uuid': uuid() }] },
+            origin: { actors: [{ type: byAssessor ? 'party' : 'tool', 'actor-uuid': uuid() }] },
             facets: [
               { name: 'likelihood', system: FEDRAMP_NS, value: String(f.likelihood_before || 'Low').toLowerCase() },
               { name: 'impact', system: FEDRAMP_NS, value: String(f.impact_before || 'Low').toLowerCase() },
@@ -418,6 +454,7 @@ var DEMO_EXPORTS = (function () {
             description: f.proposed_remediation || f.recommendation || 'Requires remediation'
           }]
         };
+        if (byAssessor) risk.props = [{ name: 'determination-source', ns: SPARKAE_NS, value: 'assessor-revision' }];
         // The schema requires a non-empty array when the key is present.
         if (f.mitigating_factors) {
           risk['mitigating-factors'] = [{ uuid: uuid(), description: f.mitigating_factors }];
@@ -482,12 +519,38 @@ var DEMO_EXPORTS = (function () {
       metadata['oscal-version'] = '1.1.2';
     }
 
+    // import-ap is required by the schema, and href="#" satisfied it with a
+    // pointer to nothing. There is no separate assessment plan document for
+    // this run, so the plan is declared where OSCAL keeps in-document
+    // artifacts — back-matter — and the import points at that resource by
+    // uuid. It says what the plan of this run actually was: automated EXAMINE
+    // preparation over the objectives in reviewed-controls, at the recorded
+    // date, with INTERVIEW and TEST left to the assessor.
+    var apUuid = uuid('assessment-plan');
+    var apProps = [
+      { name: 'assessment-method', ns: SPARKAE_NS, value: 'EXAMINE' },
+      { name: 'interview-and-test', ns: SPARKAE_NS, value: 'not-performed' },
+      { name: 'baseline', ns: SPARKAE_NS, value: String(baseline) },
+      { name: 'controls-in-scope', ns: SPARKAE_NS, value: String(controlIds.length) }
+    ];
+    if (state.receipt && state.receipt.assessment_date) apProps.push({ name: 'assessment-date', ns: SPARKAE_NS, value: String(state.receipt.assessment_date) });
     return {
       'assessment-results': {
         uuid: uuid(),
         metadata: metadata,
-        'import-ap': { href: '#' },
-        results: [result]
+        'import-ap': { href: '#' + apUuid },
+        results: [result],
+        'back-matter': {
+          resources: [{
+            uuid: apUuid,
+            title: 'Assessment plan of record for this run',
+            description: 'Automated EXAMINE-method preparation over the ' + controlIds.length +
+              ' controls named in reviewed-controls (FedRAMP ' + baseline + ' baseline), assessed as of ' +
+              now.slice(0, 10) + ' by the SparkAE reference engine. No separate assessment plan document exists ' +
+              'for this run; INTERVIEW and TEST were not performed and remain with the assessor.',
+            props: apProps
+          }]
+        }
       }
     };
   }
@@ -686,7 +749,7 @@ var DEMO_EXPORTS = (function () {
       'PREVIEW EXPORTS INCLUDED',
       '-'.repeat(56),
       '- OSCAL AR (.json) — OSCAL v1.1.2 Assessment Results',
-      '- Findings CSV — 25-column assessment export',
+      '- Findings CSV — ' + FINDINGS_HEADERS.length + '-column assessment export',
       '- RET CSV — Risk Exposure Table (OTS only)',
       '- POA&M CSV — Plan of Action & Milestones',
       '- TCW CSV — Test Case Workbook',
@@ -711,6 +774,7 @@ var DEMO_EXPORTS = (function () {
     uuidFactory: uuidFactory,
     stableJson: stableJson,
     buildReceipt: buildReceipt,
+    receiptDigestOf: receiptDigestOf,
     SPARKAE_NS: SPARKAE_NS,
     ENGINE_UUID_NS: ENGINE_UUID_NS,
     csvSafe: csvSafe,

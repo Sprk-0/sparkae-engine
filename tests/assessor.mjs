@@ -71,6 +71,32 @@ await page.waitForFunction(() => {
   return settled;
 }, null, { timeout: 60000, polling: 300 });
 
+// ── a filter that narrows the run keeps the assessor layer ──────────────────
+// The page used to have two painters: a batched one that built rows through
+// buildFindingRow (statements, Revise buttons) for more than 40 rows, and a
+// cascade that did not, for 40 or fewer. Chip a filter that left 40 rows of a
+// live run and the assessor controls vanished from exactly the rows narrowed
+// down to. Not Reviewed is the small selection on the bundled sample.
+await page.click('.filter-chip[data-filter="verdict"][data-value="NR"]');
+await page.waitForFunction(() => {
+  const n = document.querySelectorAll('#findings-body tr').length;
+  const settled = n > 0 && window.__nrSettle === n;
+  window.__nrSettle = n;
+  return settled;
+}, null, { timeout: 60000, polling: 300 });
+const narrowed = await page.evaluate(() => ({
+  rows: document.querySelectorAll('#findings-body tr:not(.findings-empty)').length,
+  blocks: document.querySelectorAll('#findings-body .ex-block').length,
+  revise: document.querySelectorAll('#findings-body .ex-btn[data-act="revise"]').length,
+}));
+await page.click('.filter-chip[data-filter="verdict"][data-value="all"]');
+await page.waitForFunction(() => {
+  const n = document.querySelectorAll('.ex-block').length;
+  const settled = n > 0 && window.__allSettle === n;
+  window.__allSettle = n;
+  return settled;
+}, null, { timeout: 60000, polling: 300 });
+
 const download = async (kind) => {
   const [dl] = await Promise.all([
     page.waitForEvent('download', { timeout: 60000 }),
@@ -213,6 +239,9 @@ const checks = [
   ['no request left the page (every non-file request aborted)', blocked.length === 0, blocked.slice(0, 2).join(' | ')],
   ['every live finding carries an examine statement', blocks > 0, 'blocks=' + blocks],
   ['statements are collapsed by default', collapsed === blocks, collapsed + '/' + blocks],
+  ['a filter narrowing the run to 40 rows or fewer keeps every examine statement and Revise control',
+    narrowed.rows > 0 && narrowed.rows <= 40 && narrowed.blocks === narrowed.rows && narrowed.revise === narrowed.rows,
+    'rows=' + narrowed.rows + ' statements=' + narrowed.blocks + ' revise=' + narrowed.revise],
   ['the statement uses the SAR examine phrasing', /^During the assessment, the assessor examined /.test(engineStatement.trim()), engineStatement.slice(0, 80)],
   ['the objective is reworded, not quoted as "Determine if"', !/Determine if/i.test(engineStatement), ''],
   ['an unsatisfied objective says "could not confirm"', /could not confirm/.test(engineStatement), engineStatement.slice(0, 80)],

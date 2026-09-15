@@ -20,10 +20,10 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-11 (the state this build is in)
+## 2026-09-15 (the state this build is in)
 
-Engine 1.3.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `b39ee143bdfe` ·
-verdict digest `04b1f79d6f44`
+Engine 1.4.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `7b0c09a72496` ·
+verdict digest `614ab4597d07`
 
 The tuple above is how to cite this build — the same tree as the entries below,
 identified by what it decided rather than by a label, so it can be reproduced,
@@ -40,6 +40,119 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-15 (the interrogation fix set · engine 1.4.0)
+
+Engine 1.3.0 → **1.4.0** · ruleset `b39ee143bdfe` → `7b0c09a72496` · evidence digest
+`6de811bac5be` → `946ce09b5bf0` (same file; the chunker moved, see below) · verdict digest
+`04b1f79d6f44` → `614ab4597d07` · golden regenerated.
+
+A review of engine 1.3.0 raised fifty-six defects across the engine, the
+exporters and the demo page, and asked for twenty-one tests. All of them land
+here, each split apart, none merged; `check.mjs` §24, `assessor.mjs` and
+`browser.mjs` hold the tests. What moved and why, gate by gate:
+
+- **Every refutation is matched, and attributed to its heading.** The three
+  refutation readers executed each pattern once and kept the first hit, so a
+  chunk saying "AC-1 … not implemented" and later "AC-2 … not implemented"
+  carried one refutation, AC-1's. Every occurrence is collected now. The old
+  symmetric 400-character window also charged "Not yet fully implemented" under
+  the CM-1 heading to AU-3, whose heading sat 250 characters earlier; a
+  refutation now belongs to the closest control id *before* it, then to the
+  closest one after it within 600 characters, then to the only id named.
+- **Gate 1 is absolute.** The score was BM25 min-maxed against the best hit, so
+  the best hit was always 1.0 and a corpus of one chunk cleared the 0.15 floor
+  with any sentence. The score is now the share of the objective's distinct
+  stems a chunk names; ranking is still BM25. A tagged chunk with a raw score of
+  zero was boosted to three times the best raw score and pushed real evidence
+  out of the top eight; a chunk that shares no term with the objective is not
+  boosted.
+- **Gate 2 needs two terms of a concept, and a one-word subject beside the
+  objective's words.** "the use of accounts is monitored" was covered by a
+  sentence that mentioned accounts and never monitoring; AC-2's subject, once
+  ambient `access` and generic `management` are set aside, is the one word
+  `account`, and "mentions accounts sometimes" passed 2b. Function words
+  (`within`, `when`, `each`, …) and documentation adjectives (`current`,
+  `required`, `specified`) no longer count as subject matter, and the generic
+  check reads inflections. The stemmer keeps `access`/`accessing` and
+  `process`/`processes` together, folds `creation`/`created` and
+  `authorization`/`authorized` onto one stem, and reads `implementation` and
+  `implemented` as one word.
+- **Gates 3a and 4 read the control's own evidence first**, as gates 2, 3b, 5
+  and 6 already did. A neighbour's "SSP section 5 / version 3 / dated" made
+  this control's paragraph Strong; a neighbour's "ISSO" resolved a role
+  parameter this control never named.
+- **Gate 4 is typed.** A frequency, time, role or threshold value has to sit in
+  an affirmative clause that shares a word with the objective — "monthly"
+  anywhere in the evidence resolved every frequency parameter. `[Selection …]`
+  parameters are extracted and resolved when an option is stated; untyped
+  placeholders used to pass whenever the evidence was non-empty and are now
+  recorded as **unverified** on the result (`odp_unverified`) and in the gate
+  record, and the README gate table no longer calls them resolved.
+- **Gate 5c folds upper-case homoglyphs.** The map was lowercase-only, so
+  "Рlaceholder" with a Cyrillic capital Er walked past the draft check.
+- **Gate 6 reads dates consistently.** A review or update date decides currency
+  when there is one, so a later untyped date cannot launder a stale review; a
+  date's type is read from its own sentence rather than the forty characters
+  around it; evidence with no date at all is recorded as `undated` and flagged
+  for review rather than called current; and the open-finding SLA check reads
+  every date format the other temporal checks read.
+- **The ruleset digest covers every matcher.** Refuting patterns, draft
+  markers, negation pairs, the homoglyph map, stem suffixes, ODP value shapes,
+  strength signals and date patterns are all in `RULESET` now, so a
+  pattern-only edit moves `ruleset_digest`.
+- **ZIP reading.** The end-of-central-directory record has to end the file —
+  a comment containing the signature bytes used to be read as the record, and
+  two self-consistent records are refused as ambiguous. Every member's bytes
+  are checked against the directory's CRC-32 and refused by name on mismatch.
+  `__MACOSX/`, `.DS_Store` and `Thumbs.db` members are refused as housekeeping,
+  in the engine, so the inventory and the corpus agree.
+- **The chunker carries a heading into the chunk it names.** This is the one
+  change outside the review's list, and the reason the evidence digest moves
+  for an unchanged file. A section heading that landed at the end of a chunk
+  tagged the *preceding* section's text with the next section's id, so the
+  engine's own evidence for AC-2 in the bundled sample was the AC-1 paragraph
+  and AC-2's was AC-3's. That was invisible while the gates read the whole
+  retrieval union; once they read a control's own evidence, section
+  attribution decides verdicts, and the misattribution would have refused
+  most of the sample for the wrong reason.
+- **Exports.** `system_name`, `files_parsed` and `files_refused` are inputs to
+  the receipt and hashed into `receipt_digest` (`receiptDigestOf` is the
+  verifier), so the downloaded `receipt.json` re-hashes to its own digest.
+  OSCAL observations and risks follow the *effective* determination: an
+  objective an assessor revises to Satisfied no longer points at an open risk,
+  and one revised to Other Than Satisfied raises a risk whose origin names the
+  assessor. `import-ap` points at a declared back-matter resource describing
+  this run's plan rather than at `#`. `csvSafe` neutralises a formula behind a
+  leading space, newline, tab or byte-order mark, and the summary states the
+  findings CSV width it has (29 columns) rather than 25.
+- **The page.** The receipt fields are passed in before the digest, not written
+  after it. The package is read once, by `parsePackage`, which now returns the
+  member listing the inventory renders; the run reuses that read. The custom
+  rail entry adjudicates nothing and invents nothing: no "The 3PAO examined the
+  customer-uploaded SSP … and confirmed" findings from file-name heuristics, no
+  seeded asset, vulnerability, severity or scan-type counts; a ConMon figure the
+  panel did not parse reads *not parsed*. The PDF and XLSX readers, which called
+  libraries the page never loads and so always returned null, are gone. One
+  painter builds every row through `buildFindingRow`, so chipping a filter to 40
+  rows or fewer keeps the examine statements and Revise controls; the row
+  escapes every finding field at the sink, and every name a walkthrough writes
+  into the log is escaped. §02–§09 idle copy says it is a walkthrough and no
+  longer says the engine will ingest or execute; the ConMon walkthrough ends at
+  the package shape, not at "ready for submission".
+
+**219 → 153 Satisfied on the bundled sample; 20 Not Reviewed; 60 flagged for
+review.** Every loss is one of: a concept whose second term the section never
+states (the AC-2 section does not say accounts are monitored), a section that
+cites no reference of its own (AC-2 again — the header's version and review
+date no longer count for it), a typed parameter whose value the section does
+not state, a subject named only as furniture, or a draft marker in the union
+that an objective with no own evidence falls back to. The gains are objectives
+the old chunking had attributed to the wrong section (AC-1's selection
+objectives, IA-1) and refutations that were charged to the wrong control (AU-3,
+CA-2). The benchmark stays at 15 of 16 with the same documented case, whose
+recorded reason is updated: retrieval now surfaces its paragraph and gate 3a
+refuses it for citing nothing.
 
 ## 2026-09-14 (the site's claims, held here)
 
