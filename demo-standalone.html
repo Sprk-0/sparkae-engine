@@ -4023,6 +4023,16 @@ function syncRailNote() {
   const note = document.getElementById('rail-note');
   if (!note) return;
   const sample = SAMPLES[selected];
+  // An uploaded package on a tab whose walkthrough needs a record it does not
+  // carry — the mirror of the case below, where a walkthrough sample is picked
+  // on the one tab that reads documents.
+  const RECORD_TABS = { annual: 'annual-reassessment', scr: 'change-request', ksi: 'KSI submission' };
+  if (selected === 'custom' && RECORD_TABS[activeUC] && sample && !sample[activeUC]) {
+    note.style.display = 'block';
+    note.innerHTML = '<strong>' + engEsc(sample.name) + '</strong> carries no ' + engEsc(RECORD_TABS[activeUC]) + ' record, and this section is a walkthrough over one. ' +
+      'Run <strong>§01</strong> to assess your package, or choose <strong>CloudVault</strong> or <strong>MeshGate</strong> to step through this section.';
+    return;
+  }
   if (activeUC !== 'initial' || (sample && sample.liveEngine) || uploadedPackageCount()) {
     note.style.display = 'none';
     note.textContent = '';
@@ -4381,7 +4391,6 @@ function synthesizeCustomSample(pkg) {
 
   const fileNames = pkg.inventory.filter(i => !i.refusedReason).slice(0, 8).map(i => i.name);
   const hasScans = scanHasContent(pkg);
-  const hasPT = (pkg.tagCounts.PT || 0) > 0;
   const sf = pkg.scanFindings;
   const parsed = (v) => (hasScans ? v : null);
   // Aging needs each finding's detection date, which the panel does not read.
@@ -4420,9 +4429,15 @@ function synthesizeCustomSample(pkg) {
       findings: [],
     },
     conmon: conmon,
-    annual:    { files: fileNames, cycle: 'Custom assessment', readiness: {}, cohorts: [], carryForward: 0, newFindings: 0, closedThisCycle: 0, significantChanges: 0, penTest: { conducted: hasPT, vectors: 0 }, findings: [] },
-    scr:       { files: fileNames, change: 'Customer-uploaded change request', impacts: { boundary: { affected: false, detail: '' }, dataFlow: { affected: false, detail: '' }, controls: { affected: false, detail: '' }, leveraged: { affected: false, detail: '' }, riskRating: { affected: false, detail: '' }, conmon: { affected: false, detail: '' }, oscal: { affected: false, detail: '' }, techstack: { affected: false, detail: '' } }, affectedControls: 0, newFindings: 0, riskDelta: 0, classify: { category: 'Routine Recurring' }, findings: [] },
-    ksi:       { themes: { AFR: { total: 5, automated: 4, passed: 5 } }, findings: [] },
+    // An upload carries no annual-reassessment record, no change request and no
+    // KSI submission, so there is nothing for §03, §04 or §05 to step through.
+    // These used to be filled with placeholders — an empty cohort list that
+    // made §03 throw, a `classify` key §04 never read, and a KSI theme of five
+    // indicators with four automated that nobody submitted. A section with no
+    // record is null, and its runner says so and stops.
+    annual: null,
+    scr: null,
+    ksi: null,
   };
   return SAMPLES['custom'];
 }
@@ -5309,10 +5324,7 @@ function logWalkthroughNotice() {
 }
 
 async function runKSI(sample) {
-  if (!sample.ksi) {
-    setStatus('◆ ERROR · KSI data not available for this SSP');
-    return;
-  }
+  if (!sample.ksi) return stopWalkthroughWithoutRecord(sample, USE_CASES.ksi, 'KSI submission');
   renderStages(USE_CASES.ksi.stages);
   logWalkthroughNotice();
   document.getElementById('matrix-container').innerHTML = renderKSIMatrix(sample);
@@ -5762,6 +5774,17 @@ async function runInitialWalkthrough(sample) {
   renderFindings(d.findings);
 }
 
+// §03, §04 and §05 step through a record — an annual reassessment, a change
+// request, a KSI submission — that only the authored samples carry. For an
+// uploaded package the section is null, and the walkthrough stops here by
+// saying so, the way §01 stops for a rail entry with no document set: naming
+// the package, saying why, and saying what to do instead.
+function stopWalkthroughWithoutRecord(sample, cfg, what) {
+  renderStages(cfg.stages);
+  log('00:00.0', 'stop', '✗ no ' + what + ' record for <span class="key">' + engEsc(sample.name) + '</span> — this section is a walkthrough over the authored samples, and an uploaded package carries no ' + what + ' to step through. Pick <span class="key">CloudVault</span> or <span class="key">MeshGate</span> to see the walkthrough, or run <span class="key">§01</span> to assess your package', 'warn');
+  setStatus('◆ STOPPED · walkthrough · no ' + what + ' record for an uploaded package');
+}
+
 // ── ConMon runner ──
 async function runConMon(sample) {
   const d = sample.conmon;
@@ -5845,6 +5868,7 @@ async function runConMon(sample) {
 
 // ── Annual Reassessment runner ──
 async function runAnnual(sample) {
+  if (!sample.annual) return stopWalkthroughWithoutRecord(sample, USE_CASES.annual, 'annual-reassessment');
   const d = sample.annual;
   renderStages(USE_CASES.annual.stages);
   logWalkthroughNotice();
@@ -5947,6 +5971,7 @@ async function runAnnual(sample) {
 
 // ── SCR runner ──
 async function runSCR(sample) {
+  if (!sample.scr) return stopWalkthroughWithoutRecord(sample, USE_CASES.scr, 'change-request');
   const d = sample.scr;
   renderStages(USE_CASES.scr.stages);
   logWalkthroughNotice();

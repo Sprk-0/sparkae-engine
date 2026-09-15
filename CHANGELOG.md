@@ -132,7 +132,10 @@ here, each split apart, none merged; `check.mjs` §24, `assessor.mjs` and
   rail entry adjudicates nothing and invents nothing: no "The 3PAO examined the
   customer-uploaded SSP … and confirmed" findings from file-name heuristics, no
   seeded asset, vulnerability, severity or scan-type counts; a ConMon figure the
-  panel did not parse reads *not parsed*. The PDF and XLSX readers, which called
+  panel did not parse reads *not parsed*; it carries no annual, SCR or KSI
+  record at all, and §03, §04 and §05 stop on an upload and say so (§03 used
+  to throw on the empty cohort list, §05 walked a five-indicator KSI theme
+  nobody submitted). The PDF and XLSX readers, which called
   libraries the page never loads and so always returned null, are gone. One
   painter builds every row through `buildFindingRow`, so chipping a filter to 40
   rows or fewer keeps the examine statements and Revise controls; the row

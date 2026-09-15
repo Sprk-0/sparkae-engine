@@ -341,6 +341,31 @@ const uploadedConmon = await page.evaluate(() => ({
   matrix: (document.getElementById('matrix-container') || {}).textContent || '',
 }));
 
+// §03, §04 and §05 step through a record an upload does not carry. §03 used to
+// throw on the custom sample's empty cohort list, §04 read a key it did not
+// have, and §05 walked a KSI theme of five indicators nobody submitted. Each
+// has to stop, say so, and point at §01 — with no page error.
+const recordless = [];
+for (const uc of ['annual', 'scr', 'ksi']) {
+  await page.evaluate(u => document.querySelector(`.uc-tab[data-uc="${u}"]`).click(), uc);
+  const railNote = await page.evaluate(() => {
+    const n = document.getElementById('rail-note');
+    return n && getComputedStyle(n).display !== 'none' ? n.textContent : '';
+  });
+  await page.click('#run-btn');
+  await page.waitForFunction(
+    () => /COMPLETE|WALKTHROUGH|STOPPED/.test(document.getElementById('console-status').textContent),
+    null, { timeout: 60000 });
+  recordless.push(Object.assign({ uc, railNote }, await page.evaluate(() => ({
+    status: document.getElementById('console-status').textContent.trim(),
+    log: document.getElementById('log').textContent.replace(/\s+/g, ' '),
+    resultsShown: !!document.querySelector('#results.show'),
+    errorsSoFar: 0,
+  }))));
+}
+const recordlessBad = recordless.filter(r => !/STOPPED/.test(r.status) || !/§01/.test(r.log) || r.resultsShown ||
+  !/record/.test(r.railNote) || !/§01/.test(r.railNote));
+
 // A file name reaches the §02 log too — "parsed <name>" for each member — and
 // log() assigns innerHTML. On file:// the deployed CSP does not apply, so the
 // name has to be escaped by the caller or it runs.
@@ -583,6 +608,9 @@ const checks = [
     /C:not parsed H:not parsed/.test(uploadedConmon.log) && !/\d+ in-scope assets/.test(uploadedConmon.log) &&
     /not parsed/.test(uploadedConmon.matrix) && !/\d+ hosts/.test(uploadedConmon.matrix),
     uploadedConmon.log.replace(/\s+/g, ' ').slice(0, 240)],
+  ['§03, §04 and §05 on an upload stop, say there is no record, and point at §01 — before and after Run',
+    recordless.length === 3 && recordlessBad.length === 0,
+    JSON.stringify(recordlessBad.map(r => r.uc + ': ' + r.status + ' | rail: ' + r.railNote.slice(0, 60)))],
   ['a file name logged by a walkthrough cannot execute: no handler ran', logXss.fired === null, 'data-log-audit=' + logXss.fired],
   ['a file name logged by a walkthrough cannot execute: no element was injected', logXss.injected === 0, 'img count=' + logXss.injected],
   ['a hostile file name is still shown in the log, as text', logXss.shownAsText, ''],

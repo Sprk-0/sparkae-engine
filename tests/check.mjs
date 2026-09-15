@@ -1892,6 +1892,10 @@ check(!/ready for submission to the authorizing agency/.test(page) && !/The 3PAO
   'the ConMon walkthrough no longer ends at a submission, and the custom sample fabricates no findings or figures');
 check(!/function parsePdfText|function parsePoamXlsx|typeof XLSX|window\.pdfjsLib\.getDocument/.test(page),
   'the page carries no PDF or XLSX reader that could only ever return null');
+const customBlock = page.slice(page.indexOf("  SAMPLES['custom'] = {"), page.indexOf('function scanHasContent'));
+check(/annual: null,/.test(customBlock) && /scr: null,/.test(customBlock) && /ksi: null,/.test(customBlock) && !/themes: \{ AFR/.test(customBlock) &&
+  /if \(!sample\.annual\) return stopWalkthroughWithoutRecord/.test(page) && /if \(!sample\.scr\) return stopWalkthroughWithoutRecord/.test(page) && /if \(!sample\.ksi\) return stopWalkthroughWithoutRecord/.test(page),
+  'an upload carries no annual, SCR or KSI record — no placeholder cohorts or KSI themes — and each of those runners stops rather than reads one');
 // 46–56: every name a walkthrough logs is escaped
 const rawLogNames = [...page.matchAll(/log\([^\n]*\$\{(?:sample\.name|f|SAMPLES\[k\]\.name)\}/g)].concat([...page.matchAll(/log\([^\n]*' \+ sample\.name \+ '/g)]);
 check(!rawLogNames.length, 'no log() call interpolates a sample or file name unescaped' + (rawLogNames.length ? ' — ' + rawLogNames[0][0].slice(0, 80) : ''));
