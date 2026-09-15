@@ -1789,6 +1789,12 @@ check(E.stemWord('access') === E.stemWord('accessing') && E.stemWord('process') 
   E.stemWord('creation') === E.stemWord('created') && E.stemsAgree(E.stemWord('implementation'), E.stemWord('implemented')),
   'access/accessing, process/processes, creation/created and implementation/implemented each stem as one word');
 
+// anchors are content words: a stop word is dropped as a WORD, before stemming
+const anchors = E.objectiveAnchorStems('Determine if accounts are reviewed during other periods, only when [organization-defined frequency] applies under review');
+check(anchors.has('account') && anchors.has('review') && anchors.has('period') &&
+  !anchors.has('oth') && !anchors.has('dur') && !anchors.has('onli') && !anchors.has('und') && !anchors.has('when'),
+  'objective anchor stems carry no stemmed stop word (other→oth, during→dur, only→onli, under→und) and no stop word (when) — ' + [...anchors].join(','));
+
 // 19: the ruleset digest covers the matchers
 const rp = E.RULESET.patterns || {};
 check(Array.isArray(rp.refuting) && rp.refuting.length >= 10 && rp.draft && rp.draft.source && Array.isArray(rp.negation_pairs) &&

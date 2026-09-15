@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-15 (the state this build is in)
 
-Engine 1.4.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `7b0c09a72496` ·
+Engine 1.4.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `7a852bebcef0` ·
 verdict digest `614ab4597d07`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,22 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-15 (anchor stems are content words · engine 1.4.1)
+
+Engine 1.4.0 → **1.4.1** · ruleset `7b0c09a72496` → `7a852bebcef0` (the version is in it) ·
+verdict digest `614ab4597d07` unchanged · golden regenerated for the version.
+
+A review comment on the 1.4.0 pull request, from the Copilot reviewer:
+`objectiveAnchorStems()` built stems and then filtered them against
+`STOP_WORDS`, which holds words. A stemmed stop word is not a word in that
+list — "other" stems to `oth`, "during" to `dur`, "only" to `onli`, "under"
+to `und` — so those could stand as anchors for a gate 4 value clause or a
+gate 2b one-term subject, and a clause that shared nothing but "other" with
+the objective counted as being about it. Stop words are now dropped as words,
+before stemming, in the objective anchors and in a selection option's
+own-word fallback (`contentStems`). No determination on the bundled sample
+moves; `check.mjs` §24 pins the anchor set.
 
 ## 2026-09-15 (the interrogation fix set · engine 1.4.0)
 
