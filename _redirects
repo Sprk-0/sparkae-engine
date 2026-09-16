@@ -21,3 +21,17 @@
 # "Independent Assessment Services". Anything already linking the old path —
 # outreach emails, a partner's site, a search result — has to keep landing.
 /3pao.html    /assessors.html    301
+
+# The social card's SOURCE is not a page. It lives beside the PNG it renders
+# (static/og-card.png) so the binary stays rebuildable, and check.mjs 22 holds
+# it there — but publish = "." means everything in the tree is deployed, and it
+# was reachable at these two addresses with no Content-Security-Policy, because
+# _headers declares a policy per page and this is not one. A wildcard CSP is not
+# the fix (see the note at the top of _headers: Netlify combines matching rules
+# and a browser intersects them, so /* could only silently tighten each page's
+# own). Making the addresses 404 is.
+#
+# Forced, for the reason the /demo rule above documents: Netlify skips a
+# redirect whose path resolves to an existing file, and this file exists.
+/static/og-card.src.html    /404.html    404!
+/static/og-card.src         /404.html    404!

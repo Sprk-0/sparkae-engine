@@ -63,6 +63,21 @@ const MUST_NOT_BE_SERVED = [
   'docs/hygiene/2026-09-10-path-inventory.md',
   'docs/reviews/2026-09-09-sparkae-engine-public-rebaseline.md',
 ];
+// In the tree on purpose, and not an address. `publish = "."` deploys every
+// file here, so a file that is not a page is still reachable — and _headers
+// declares a Content-Security-Policy per page, so a non-page is served without
+// one. That is how static/og-card.src.html sat on the site with no CSP from
+// 2026-09-14 until the first dispatch of this job found it: the last scheduled
+// run predates the commit that published it.
+//
+// These are excluded from the byte comparison below and required to 404
+// instead, with and without the extension, because both were reachable. The
+// _redirects rules that make that true are forced (`404!`); an unforced rule
+// would be skipped for a path that resolves to a file, which is exactly the
+// case here. check.mjs 22 fails if a path listed here has no such rule, so the
+// two files cannot drift apart between runs of this one.
+const IN_TREE_NOT_SERVED = ['static/og-card.src.html'];
+
 const SKIP_DIRS = new Set(['.git', '.github', 'node_modules', 'out']);
 
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -73,6 +88,7 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =
 
 const files = walk(root)
   .filter((f) => !NOT_SERVED.includes(f))
+  .filter((f) => !IN_TREE_NOT_SERVED.includes(f))
   .filter((f) => !only || f.includes(only))
   .sort();
 
@@ -148,6 +164,20 @@ if (!only) {
       const r = await get('/' + f);
       check(r.status === 404, `${f} is not published (${r.status})`);
     } catch (e) { fail(`${f}: ${e.message}`); }
+  }
+  for (const f of IN_TREE_NOT_SERVED) {
+    // The opposite contradiction to the one below: a path listed here has to
+    // EXIST in the tree. If it does not, it belongs in MUST_NOT_BE_SERVED.
+    if (!fs.existsSync(path.join(root, f))) {
+      fail(`${f} is in IN_TREE_NOT_SERVED but is not in this tree — it belongs in MUST_NOT_BE_SERVED`);
+      continue;
+    }
+    for (const addr of ['/' + f, '/' + f.replace(/\.html$/, '')]) {
+      try {
+        const r = await get(addr);
+        check(r.status === 404, `${addr} is in the tree and not served (${r.status})`);
+      } catch (e) { fail(`${addr}: ${e.message}`); }
+    }
   }
   for (const f of MUST_NOT_BE_SERVED) {
     // A path listed here and present in the tree is a contradiction: it is

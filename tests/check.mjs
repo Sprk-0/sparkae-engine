@@ -1375,6 +1375,19 @@ check(pngOk && pngW === 1200 && pngH === 630, `${CARD} is a real ${pngW}×${pngH
 // beside it, reaches nothing off-origin at render time, and is not a page.
 const cardSrc = read(CARD_SRC);
 check(!allPages.includes('og-card.src.html'), 'the card source is not a published page');
+// Not a page, and — since `publish = "."` deploys every file in the tree — not
+// an address either. It was reachable at /static/og-card.src.html and at the
+// extensionless twin with no Content-Security-Policy, because _headers carries
+// a policy per page and this is not one. check_published.mjs lists it in
+// IN_TREE_NOT_SERVED and requires both to 404; this is the offline half, so the
+// rule cannot be dropped from _redirects without a PR going red. The `!` is
+// load-bearing: Netlify skips an unforced redirect whose path resolves to a
+// file that exists, which this one does.
+const redirects = read('_redirects');
+for (const addr of [CARD_SRC, CARD_SRC.replace(/\.html$/, '')]) {
+  check(new RegExp('^/' + addr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+\\S+\\s+404!\\s*$', 'm').test(redirects),
+    `_redirects forces a 404 for /${addr}, so the card source is not reachable`);
+}
 const cardFonts = [...cardSrc.matchAll(/url\('([^']*)'\)/g)].map(m => m[1]);
 check(cardFonts.length > 0 && cardFonts.every(u => u.startsWith('fonts/') && fs.existsSync(path.join(root, 'static', u))),
   'the card source uses only this repository\'s own fonts, and each one exists' +
