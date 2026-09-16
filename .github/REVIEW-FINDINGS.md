@@ -610,6 +610,45 @@ worse (428ms on the same input). Each optional group carries its own trailing
 separator now. `check.mjs` §25 walks every regex in `RULESET` and fails any that
 exceeds 100ms on that input, so the shape cannot come back unnoticed.
 
+**PR40-a. The host rewrites the homepage's form tag, and the wire check had never seen it.** — **CLOSED (check only)**
+The first `workflow_dispatch` after `#40` deployed found the homepage 47 bytes
+short on the wire, and one tag was the whole of it: Netlify consumes
+`data-netlify="true"` and `netlify-honeypot="website"` at deploy time and
+re-serialises the `<form>` it took them from, re-quoted and reordered. Two
+checks failed on it — the file comparison and `/ serves index.html`.
+
+Not caused by `#40`, which touches `_redirects` and two test files and cannot
+reach `index.html`. Not Pretty URLs either: `netlify.toml` has not changed since
+the last green run, the pin holds, and every other page's `href="x.html"`
+compares clean. Run `#91` on 2026-09-14 — the only scheduled run this job has
+ever had — served the tag verbatim, and `index.html` has carried both attributes
+unchanged since the site's first publish, so the host's behaviour changed rather
+than the file. Netlify's form detection is a dashboard setting and not a
+`netlify.toml` one, so no commit records it in either direction; that last step
+is inference, because this environment's network policy blocks sparkae.ai and
+the deploy preview alike.
+
+Deleting the attributes would have made it green and unregistered the site's
+only contact form, which `check.mjs` §23 requires to be a Netlify form. So
+`check_published.mjs` accommodates the rewrite instead, as narrowly as it can be
+stated: on `index.html` alone, on a form tag carrying `data-netlify="true"` in
+the tree, the served tag has to be that tag with exactly those two attributes
+removed and every other attribute and value intact. Order and quoting are the
+host's; nothing else is. Every other byte is still compared byte for byte.
+
+Fault-injected nine ways through a local stand-in for the host: the observed
+rewrite passes; a changed attribute value, an injected `action`, a dropped
+ordinary attribute, only one of the two consumed, a second form tag on the wire,
+and the rewrite alongside a changed line elsewhere in the file all fail; the
+exemption disappears entirely when the tree's form tag has no
+`data-netlify="true"`; and an unmutated tree is green.
+
+What no check here can say is whether the form is actually **registered** —
+that needs a POST this suite does not make. If form detection was off before
+2026-09-14, the fit-call form was not collecting, and the byte-for-byte green on
+run `#91` was the symptom. Worth confirming in the Netlify dashboard.
+
+
 ---
 
 ## Numbering notes
