@@ -157,8 +157,15 @@ and never merged into one headline number.
 It is also not a measurement of the engine as a whole, because the cases run
 `chunkText` over embedded strings rather than `parsePackage` over a file: no ZIP,
 DOCX, entity-decoding or archive-integrity path is exercised by any of the
-sixteen, so a defect in one of those cannot move this figure or turn `--strict`
-red. The adversarial cases for those live in `check.mjs` §25 and §26 instead.
+sixteen, so a defect in one of those cannot move this figure. That is deliberate
+— these sixteen are an accuracy record and widening what they measure would
+blur it — and it is not where those defects are caught. `check.mjs` §28 assesses
+the bundled sample a second time, delivered as a ZIP holding a DOCX, and
+requires the same verdict digest as the embedded text; the package it builds
+carries a control id written as a character reference, a `__MACOSX` member and a
+member whose stored CRC does not match its bytes, so the DOCX reader, the entity
+decoder, the skip list and the CRC check each move that digest if they break.
+§25 and §26 hold the adversarial cases for the gates and the exports.
 Known and uncased here: gate 4 does not compare a stated parameter value against
 the FedRAMP value the catalog carries for it (see
 `.github/REVIEW-FINDINGS.md` item 6).

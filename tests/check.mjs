@@ -2169,5 +2169,81 @@ check(unverSat.every(f => /not verified by this build/.test(f.review_reason)),
 check(unver.some(f => f.status === 'Satisfied'),
   'an unverified parameter does not by itself refuse the objective — the gates decide the verdict, the floors decide whether a human must look');
 
+
+// ── 28. the golden run, delivered as a package ──────────────────────────────
+// Every determination above is produced by chunkText over a string embedded in
+// this file, so no ZIP or DOCX defect could move the golden digest or turn
+// --strict red: the archive reader, the DOCX reader, the CRC check and the
+// housekeeping skip list were all invisible to the fixture that decides whether
+// a push is accepted.
+//
+// The same document is assessed again here, delivered the way a real submission
+// arrives — a ZIP holding a DOCX — and the determinations have to be the same
+// ones. The package is deliberately adversarial, because a clean one only
+// catches defects in paragraph handling: it carries a control id written as a
+// character reference (a decoding defect drops the id and the section stops
+// being that control's own evidence), a __MACOSX member holding a refutation
+// (a skip-list defect reads it and refuses AC-1), and a member whose stored CRC
+// does not match its bytes and which also holds a refutation (a CRC defect
+// reads it). Each of those four is a different reader, and each one moves this
+// digest if it breaks.
+console.log('28. the golden run, delivered as a package');
+
+const xmlEsc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function buildDocx(text) {
+  // Runs, as a real DOCX has them. docxText turns </w:r> into a space, so the
+  // text it returns is not byte-identical to the source — the determinations
+  // are, which is what this pins.
+  const paras = text.split(/\n\n+/)
+    .map(p => '<w:p><w:r><w:t xml:space="preserve">' + xmlEsc(p) + '</w:t></w:r></w:p>').join('');
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:body>' + paras + '</w:body></w:document>';
+  // One control id as a character reference. Decoded it is "AC-1" and the
+  // section is AC-1's own evidence; left as written the id is not there.
+  xml = xml.replace('AC-1', 'AC&#45;1');
+  return buildZip([{ name: 'word/document.xml', text: xml }]);
+}
+const REFUTATION = 'AC-1 Access Control Policy. The access control policy is not implemented.';
+const pkgBytes = buildZip([
+  { name: 'CloudVault-Federal-SSP.docx', bytes: buildDocx(sample) },
+  // Housekeeping: refused by name, so its refutation never reaches the corpus.
+  { name: '__MACOSX/._CloudVault-Federal-SSP.docx', text: REFUTATION },
+  // Stored CRC does not describe the bytes: refused as corrupt, so its
+  // refutation never reaches the corpus either.
+  { name: 'scan-notes.txt', text: REFUTATION, crc: 0x00000001, raw: new TextEncoder().encode(REFUTATION), method: 0 },
+]);
+const pkgReport = await E.parsePackage([asFile(pkgBytes, 'CloudVault-package.zip')]);
+const pkgRun = (() => {
+  const retr = new E.BM25Retriever(pkgReport.chunks);
+  const pidx = E.buildRefutationIndex(retr);
+  const asOf = new Date(SAMPLE_DATE + 'T00:00:00Z');
+  const findings = [];
+  for (const [cid, c] of Object.entries(CATALOG)) {
+    if (!c.b.includes('Low')) continue;
+    for (const d of c.d) { if (d.b.includes('Low')) findings.push(E.assessDif(d, retr, cid, c.T, c.F, pidx, asOf)); }
+  }
+  const receipt = EX.buildReceipt({ engineVersion: E.ENGINE_VERSION, catalogVersion, catalog: CATALOG,
+    ruleset: E.RULESET, chunks: pkgReport.chunks, findings, assessmentDate: SAMPLE_DATE, baseline: 'Low' });
+  const by = (st) => findings.filter(f => f.status === st).length;
+  return { findings, receipt, satisfied: by('Satisfied'), ots: by('Other Than Satisfied'), nr: by('Not Reviewed') };
+})();
+
+check(pkgReport.parsed.includes('CloudVault-Federal-SSP.docx'),
+  'the SSP is read out of the archive as a DOCX — parsed: ' + JSON.stringify(pkgReport.parsed));
+check(refusals(pkgReport).some(r => /__MACOSX/.test(r)) && refusals(pkgReport).some(r => /CRC-32/.test(r)),
+  'the housekeeping member and the member whose CRC does not match are refused by name — ' + JSON.stringify(refusals(pkgReport)));
+check(!pkgReport.chunks.some(c => /not implemented/i.test(c.text || '')),
+  'neither refused member put its refutation into the corpus');
+check(pkgRun.receipt.verdict_digest === a.summary.verdict_digest,
+  'the same document delivered as a ZIP of a DOCX produces the same determinations as the embedded text — ' +
+  pkgRun.receipt.verdict_digest.slice(0, 12) + ' vs ' + a.summary.verdict_digest.slice(0, 12));
+check(pkgRun.satisfied === a.summary.satisfied && pkgRun.ots === a.summary.other_than_satisfied && pkgRun.nr === a.summary.not_reviewed,
+  'and the same counts — ' + pkgRun.satisfied + ' / ' + pkgRun.ots + ' / ' + pkgRun.nr);
+// The character reference has to have been decoded: if it were not, the section
+// would not be AC-1's own evidence and AC-1's determinations would differ.
+check(pkgReport.chunks.some(c => (c.control_ids || []).includes('AC-1')),
+  'the control id written as "AC&#45;1" is read as AC-1 by the DOCX reader');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

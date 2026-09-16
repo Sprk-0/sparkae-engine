@@ -41,6 +41,43 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-09-16 (the golden run, delivered as a package)
+
+No part of the tuple moves. Engine 1.6.0, ruleset `fc6ad10cbb39`, verdict digest
+`20cd7ee2ae8e`; the engine, the exporters, the golden fixture and the benchmark
+are untouched. This is `check.mjs` §28, and it closes item 71.
+
+Every determination the golden fixture pins was produced by `chunkText` over a
+string embedded in the test file. Nothing that decides whether a push is
+accepted ever called `parsePackage`, so the archive reader, the DOCX reader, the
+CRC check and the housekeeping skip list were invisible to it: any of them could
+break without moving the golden digest.
+
+The bundled sample is now assessed a second time, delivered the way a real
+submission arrives — a ZIP holding a DOCX — and has to produce the same verdict
+digest as the embedded text. It does, and the equality is the assertion, so
+there is no second fixture to regenerate.
+
+The package is deliberately adversarial, because a clean one is not enough: a
+ZIP of a well-formed DOCX catches a defect in paragraph handling and nothing
+else, which was measured rather than assumed. It carries
+
+- a control id written as `AC&#45;1`, so a defect in the entity decoder drops
+  the id and the section stops being AC-1's own evidence;
+- a `__MACOSX/._…` member holding "the access control policy is not
+  implemented", so a defect in the skip list reads it and refuses AC-1;
+- a `scan-notes.txt` whose stored CRC does not describe its bytes, holding the
+  same refutation, so a defect in the CRC check reads it.
+
+Each of the four readers was mutated in turn to confirm the fixture fails when
+it should: merging paragraphs, dropping entity decoding, disabling the skip list
+and disabling the CRC check each move the digest and fail the suite.
+
+The benchmark still runs `chunkText`, deliberately. Those sixteen cases are an
+accuracy record with a published score, and widening what they measure to
+include delivery would blur what the figure means for a weaker net than this
+one. The README says so where the figure is quoted.
+
 ## 2026-09-16 (the product calls · engine 1.6.0)
 
 Engine 1.5.1 → **1.6.0** · ruleset `dbacaaed27dc` → `fc6ad10cbb39` · verdict

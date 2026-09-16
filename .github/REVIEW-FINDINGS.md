@@ -40,9 +40,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 17 |
+| **OPEN** | reproduced on the current tree | 16 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0 or the 2026-09-16 copy pass, verified on this tree | 50 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass or §28, verified on this tree | 51 |
 | **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -415,8 +415,23 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 70. **Upload assessment date is UTC `toISOString().slice(0,10)`.** (`#91`, `#111`, `#92`) — **OPEN**
     Still on the page. It reads as the next calendar day for much of the US in the evening, and `check.mjs` §4 only scans `demo-engine.js` and `demo-exports.js`, so the page clock is invisible to it. Whether `browser.mjs` still locks the UTC value was not re-checked.
 
-71. **Golden and benchmark use `chunkText` on embedded text, not `parsePackage`.** (`#112–113`) — **OPEN**
-    Confirmed in `tests/check.mjs` and `tests/benchmark.mjs`. ZIP- and DOCX-only bugs — items 5, 35–42, 50 — cannot move the golden digest or turn `--strict` red.
+71. **Golden and benchmark use `chunkText` on embedded text, not `parsePackage`.** (`#112–113`) — **CLOSED (2026-09-16)** *(golden; the benchmark stays text-only by decision)*
+    `check.mjs` §28 assesses the bundled sample a second time, delivered as a ZIP
+    holding a DOCX, and requires the same verdict digest as the embedded run —
+    equality, so there is no second fixture to regenerate. The package is
+    adversarial by design, because a clean ZIP-of-DOCX was measured and catches
+    only paragraph handling: it carries a control id written `AC&#45;1`, a
+    `__MACOSX` member holding a refutation, and a member whose stored CRC does
+    not describe its bytes holding the same refutation. All four readers were
+    mutated to confirm the fixture fails when it should. `check.mjs` runs on
+    every push and pull request, so a ZIP or DOCX defect now fails a push.
+
+    The benchmark still runs `chunkText`. Those sixteen cases are an accuracy
+    record with a published score, and widening what they measure to include
+    delivery would blur the figure for a weaker net than §28; the README says so
+    where the figure is quoted. The items this now covers — **37, 38, 40, 41,
+    42, 45, 46, 50** — remain open as defects, but they can no longer break
+    silently.
 
 72. **`ci.yml` header: everything the README claims is checked on every PR.** (`#154`) — **OPEN**
     `check_published.mjs` runs on the Monday cron (`17 6 * * 1`) or `workflow_dispatch`. A broken deploy can sit until Monday.
@@ -470,7 +485,6 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 What PR 1 and PR 2 needed is in `check.mjs` §25 and §26. These do not exist;
 each holds an item that is still **OPEN**:
 
-- A golden or benchmark case that runs through `parsePackage`, so the ZIP and DOCX items can fail a push (item 71).
 
 ---
 
@@ -510,9 +524,9 @@ record and the review flag are in the verdict line.
 
 **Deferred** — real, but none produces a false Satisfied: items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
-**70–77** (verification and process). Item **71** is the one to pull forward: until
-a golden case runs through `parsePackage`, none of the parser items can fail a
-push.
+**70, 72–77** (verification and process). Item **71** was pulled forward and is
+done, so the parser items above can now fail a push rather than breaking
+silently — which is the order to fix them in.
 
 ---
 
