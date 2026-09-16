@@ -672,7 +672,8 @@ const MIN_CONCEPT_COVERAGE = 0.40;
 
 // A Satisfied verdict resting on thin support is still Satisfied — the gates
 // are the rule — but it is flagged for a human before anyone relies on it.
-// Below either floor the result carries `review_required: true` and says why.
+// Below either floor — or where gate 4 could not verify an organization-defined
+// parameter — the result carries `review_required: true` and says why.
 const REVIEW_CONFIDENCE_FLOOR = 0.60;
 const REVIEW_COVERAGE_FLOOR = 0.60;
 
@@ -1999,8 +2000,10 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
 
   if (allPassed) {
     result.assessor_notes = 'Deterministic mode — all 7 gates passed. Strength: ' + strength.tier + ', coverage: ' + Math.round(coverageResult.ratio*100) + '%.' +
-      (odp.unverified.length ? ' ' + odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; ') + '.' : '') +
-      (undated ? ' Evidence carries no date; currency not established.' : '');
+      // No undated clause here: since 1.6.0 undated fails gate 6a, so a run
+      // that reaches this branch has a date. The undated case says so through
+      // the gate record and the gap description instead.
+      (odp.unverified.length ? ' ' + odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; ') + '.' : '');
   } else {
     const gapType = classifyGapType(gaps[0] || '');
     const gapTypes = [gapType];

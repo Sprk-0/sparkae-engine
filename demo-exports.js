@@ -286,11 +286,14 @@ var DEMO_EXPORTS = (function () {
 
   // A Satisfied determination the engine flagged for review. The engine sets
   // review_required only where all seven gates passed and a floor did not —
-  // thin confidence, thin coverage, or evidence with no date at all — so it
-  // marks a Satisfied that a human has to look at before it is relied on. It
-  // reached none of the artifacts: OSCAL, all four CSVs, the summary and the
-  // receipt's verdict lines each carried the determination without the flag,
-  // and a downstream reader saw sixty clean Satisfied on the bundled sample.
+  // thin confidence, thin coverage, or an organization-defined parameter this
+  // build could not verify — so it marks a Satisfied that a human has to look
+  // at before it is relied on. (Undated evidence was a fourth floor until
+  // 1.6.0, when it became a gate 6a failure instead: it cannot be Satisfied
+  // and flagged now, it is Other Than Satisfied.) None of it reached the
+  // artifacts before 1.5.1: OSCAL, all four CSVs, the summary and the receipt's
+  // verdict lines each carried the determination without the flag, and a
+  // downstream reader saw the sixty flagged Satisfied of that run as clean.
   //
   // It travels on the determination, so it follows the ENGINE's, not the
   // assessor's: once an assessor revises an objective a human has looked at
