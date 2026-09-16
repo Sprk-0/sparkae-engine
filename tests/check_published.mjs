@@ -119,6 +119,78 @@ const firstDifference = (want, got) => {
 
 const isText = (f) => /\.(html|js|mjs|css|json|xml|txt|md|toml)$/.test(f) || /^(LICENSE|NOTICE)$/.test(f);
 
+// -- The one rewrite the host is allowed to make -----------------------------
+//
+// The homepage's fit-call form is a Netlify form: index.html declares it with
+// data-netlify="true" and names its honeypot field, and tests/check.mjs 23
+// fails if either goes away. Netlify consumes those two attributes at deploy
+// time and re-serialises the tag it took them from, so what it serves is the
+// repository's open tag minus the two -- re-quoted and reordered by the same
+// host serialiser netlify.toml describes for Pretty URLs.
+//
+// Found on 2026-09-16, when the homepage came back 47 bytes short and that one
+// tag was the whole of it. Run #91 on 2026-09-14 -- the only scheduled run this
+// job had ever had -- served it verbatim, and index.html has carried both
+// attributes unchanged since the site's first publish, so the host's behaviour
+// changed rather than the file. Netlify's form detection is a dashboard
+// setting and not a netlify.toml one, so no commit records it either way.
+//
+// Deleting the attributes would make this green and unregister the site's only
+// contact form. So the comparison accommodates the rewrite instead, stated as
+// narrowly as it can be: on index.html alone, on a form tag that carries
+// data-netlify="true" HERE, the served tag has to be that tag with exactly
+// NETLIFY_FORM_ATTRS removed and every other attribute and value intact.
+// Attribute order and quoting are the host's to choose; nothing else is. Every
+// other byte of the file is still compared byte for byte, a form tag without
+// data-netlify="true" gets no exemption at all, and the tag count has to match,
+// so an injected form fails rather than being waved through.
+//
+// What this cannot say is whether the form is registered. That needs a POST,
+// which this suite does not make; it reads content drift and nothing else.
+const HOST_MAY_REWRITE_FORMS = 'index.html';
+const NETLIFY_FORM_ATTRS = ['data-netlify', 'netlify-honeypot'];
+const FORM_OPEN_RE = /<form\b[^>]*>/gi;
+
+const attrsOf = (tag) => {
+  const attrs = new Map();
+  const body = tag.replace(/^<\s*form/i, '').replace(/\/?>$/, '');
+  const re = /([A-Za-z_:][-\w:.]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>`=]+)))?/g;
+  for (const m of body.matchAll(re)) attrs.set(m[1].toLowerCase(), m[2] ?? m[3] ?? m[4] ?? '');
+  return attrs;
+};
+
+// How many form tags the host re-serialised, when that rewrite is the ONLY
+// difference between the tree and the wire -- and null when it is anything
+// else, including when there is no difference at all, so the callers keep
+// their own equality check for the ordinary case.
+const netlifyFormRewrite = (f, tree, wire) => {
+  if (f !== HOST_MAY_REWRITE_FORMS) return null;
+  const a = tree.toString('utf8');
+  const b = wire.toString('utf8');
+  const here = a.match(FORM_OPEN_RE) || [];
+  const there = b.match(FORM_OPEN_RE) || [];
+  if (!here.length || here.length !== there.length) return null;
+  let rewritten = 0;
+  for (let i = 0; i < here.length; i++) {
+    if (here[i] === there[i]) continue;
+    const mine = attrsOf(here[i]);
+    const theirs = attrsOf(there[i]);
+    if (mine.get('data-netlify') !== 'true') return null;
+    for (const attr of NETLIFY_FORM_ATTRS) mine.delete(attr);
+    if (mine.size !== theirs.size) return null;
+    for (const [k, v] of mine) if (theirs.get(k) !== v) return null;
+    rewritten++;
+  }
+  if (!rewritten) return null;
+  // Whatever those tags did, every byte outside them has to be identical.
+  // Splitting on a capture-free regex drops the tags and keeps the gaps.
+  const gapsA = a.split(FORM_OPEN_RE);
+  const gapsB = b.split(FORM_OPEN_RE);
+  if (gapsA.length !== gapsB.length) return null;
+  for (let i = 0; i < gapsA.length; i++) if (gapsA[i] !== gapsB[i]) return null;
+  return rewritten;
+};
+
 console.log(`published site: ${site}`);
 console.log(`comparing ${files.length} file(s) against this working tree\n`);
 
@@ -129,6 +201,13 @@ for (const f of files) {
   try { got = await get('/' + f); } catch (e) { fail(`${f}: ${e.message}`); continue; }
   if (got.status !== 200) { fail(`${f}: HTTP ${got.status}`); continue; }
   if (got.body.equals(want)) { ok(`${f} (${want.length} bytes)`); continue; }
+  const rewritten = netlifyFormRewrite(f, want, got.body);
+  if (rewritten !== null) {
+    ok(`${f} (${want.length} bytes) - ${rewritten} Netlify form tag${rewritten === 1 ? '' : 's'}`
+      + ` re-serialised by the host, ${NETLIFY_FORM_ATTRS.join(' and ')} consumed;`
+      + ' every other byte matches');
+    continue;
+  }
   fail(`${f}: site serves ${got.body.length} bytes, repository has ${want.length}`
     + (isText(f) ? firstDifference(want, got.body) : ''));
 }
@@ -141,8 +220,10 @@ if (!only) {
   console.log('\n2. the routes the site promises');
   try {
     const home = await get('/');
-    check(home.status === 200 && home.body.equals(fs.readFileSync(path.join(root, 'index.html'))),
-      '/ serves index.html byte-for-byte');
+    const tree = fs.readFileSync(path.join(root, 'index.html'));
+    check(home.status === 200 && (home.body.equals(tree)
+      || netlifyFormRewrite('index.html', tree, home.body) !== null),
+      '/ serves index.html, the Netlify form tag aside');
   } catch (e) { fail('/: ' + e.message); }
 
   // Both are forced 301s in _redirects, and both are addresses that outreach and
