@@ -1383,10 +1383,29 @@ check(!allPages.includes('og-card.src.html'), 'the card source is not a publishe
 // rule cannot be dropped from _redirects without a PR going red. The `!` is
 // load-bearing: Netlify skips an unforced redirect whose path resolves to a
 // file that exists, which this one does.
-const redirects = read('_redirects');
-for (const addr of [CARD_SRC, CARD_SRC.replace(/\.html$/, '')]) {
-  check(new RegExp('^/' + addr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+\\S+\\s+404!\\s*$', 'm').test(redirects),
-    `_redirects forces a 404 for /${addr}, so the card source is not reachable`);
+// Netlify applies the FIRST rule whose path matches, so asking whether a 404!
+// rule is present somewhere is not the same question as asking what the site
+// does — an earlier rule for the same path, or a wildcard above it, would win
+// silently while a presence check stayed green. Fault-injected: with
+// `/static/og-card.src.html /index.html 200` inserted above them, the presence
+// form passed and this one does not. The rules are read in order and the first
+// match has to be the refusal.
+const redirectRules = read('_redirects').split('\n')
+  .map(l => l.trim())
+  .filter(l => l && !l.startsWith('#'))
+  .map(l => l.split(/\s+/))
+  .filter(parts => parts.length >= 2 && parts[0].startsWith('/'))
+  .map(([from, to, status]) => ({ from, to, status: status || '' }));
+const matches = (rule, addr) => rule.from === addr ||
+  (rule.from.endsWith('/*') && addr.startsWith(rule.from.slice(0, -1)));
+for (const addr of ['/' + CARD_SRC, '/' + CARD_SRC.replace(/\.html$/, '')]) {
+  const first = redirectRules.find(r => matches(r, addr));
+  const exact = redirectRules.filter(r => r.from === addr);
+  check(!!first && first.status === '404!' && exact.length === 1,
+    `_redirects answers ${addr} with the forced 404 first, and once` +
+    (!first ? ' — no rule matches it' :
+      first.status !== '404!' ? ` — first match is ${first.from} -> ${first.to} ${first.status}` :
+      exact.length !== 1 ? ` — ${exact.length} rules name it` : ''));
 }
 const cardFonts = [...cardSrc.matchAll(/url\('([^']*)'\)/g)].map(m => m[1]);
 check(cardFonts.length > 0 && cardFonts.every(u => u.startsWith('fonts/') && fs.existsSync(path.join(root, 'static', u))),
