@@ -40,10 +40,10 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 16 |
-| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
+| **OPEN** | reproduced on the current tree | 22 |
+| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
 | **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass or §28, verified on this tree | 51 |
-| **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
+| **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
 changelog — see item 43, which no entry ever claimed and which would otherwise
@@ -233,8 +233,12 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     and POA&M row says so, so an assessment-day date no longer stands unremarked
     for an older finding.
 
-30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **UNVERIFIED**
-    The live OSCAL path was fixed in 1.4.0; `buildOSCALPOAM` still exists at `demo-standalone.html:6627` and was not part of that change. The dangling reference itself was not re-checked.
+30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **OPEN** *(verified 2026-09-16)*
+    `buildOSCALPOAM` emits `'related-observations': [{ 'observation-uuid': uuid() }]`
+    — a freshly minted UUID that no observation in the document declares. The
+    live OSCAL path was fixed in 1.4.0 and `check.mjs` §21 requires every
+    `observation-uuid` there to resolve; the walkthrough builder was never part
+    of that change and nothing tests it.
 
 31. **Executive summary says "25-column" findings CSV.** (`#30`, `#121`) — **CLOSED (1.4.0)**
     The summary prints `FINDINGS_HEADERS.length`.
@@ -286,8 +290,19 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 46. **`.nessus` / `.xml` / `.json` tokenized as raw markup.** (`#107`) — **OPEN**
     Read as text at `demo-engine.js:227` with no markup handling. Scanner XML full of `not` / `failed` can trip Gate 5; JSON keys can look like control IDs. No real `.nessus` fixture.
 
-47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`) — **UNVERIFIED**
-    Not re-checked against the 1.4.0 refutation attribution, which may have changed the behaviour this describes.
+47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`) — **OPEN** *(verified 2026-09-16, and worse than reported)*
+    Reproduced with one chunk naming AC-1 and AC-2, where AC-1 is refuted and
+    AC-2 affirmed. Both controls are refused, each for the other's reason:
+    - the refutation index charges "not implemented" — written about the
+      *access control policy* — to **AC-2**, because 1.4.0's rule is "closest
+      control id before the refutation" and both ids sit in the same opening
+      sentence, so the nearer one wins. AC-2 fails 5a on AC-1's sentence.
+    - **AC-1** fails 5b as self-contradictory, because the joined own-evidence
+      carries a negation and a positive and 5b does not scope either to a
+      control.
+    Both fail closed, so this is not a false-Satisfied path — it is two
+    determinations refused for the wrong reason, and a heading-based fix does
+    not reach it because there is no heading between the two ids.
 
 48. **`stemWord` splits the same lexeme.** (`#15`) — **CLOSED (1.4.0)**
     `access`, `accessing` and `accessed` all stem to `access`; the `ss` guard in
@@ -332,11 +347,34 @@ Marketing, legal, onboarding, and walkthrough banners that the pages say and the
     profile stands behind it, so it decides nothing in this build. Removing the
     tags would move the catalog digest — a product call, not a copy fix.
 
-55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`) — **UNVERIFIED**
-    The counts were not re-derived in the re-baseline.
+55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`) — **OPEN** *(verified 2026-09-16, counts exact)*
+    The onboarding tiles read 9 / 11 / 21 / 211. Counted on this tree:
+    **9** use-case tabs ✓, **11** `QA_RULES` ✓, **24** `OSCAL_CONSTRAINTS`
+    entries ✗ (tile says 21), **209** literal `fedramp.gov` occurrences ✗ (tile
+    says 211). Two of the four numbers are right; the other two are the ones
+    the original review named, to the digit.
 
-56. **§07 validator vs live exporter.** (`#99–103`) — **UNVERIFIED**
-    C-004 / F-101 / C-003 behaviour and the "NIST + FedRAMP CONFORMANT" banner were not re-checked.
+56. **§07 validator vs live exporter.** (`#99–103`) — **OPEN** *(verified 2026-09-16)*
+    The constraints *are* genuinely evaluated — each is an `if ? pass : fail`
+    over real fields of the document the walkthrough built — so the complaint is
+    not that nothing runs. It is what they assert:
+    - **C-004** tests `/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-…/i`, which
+      enforces v4 and rejects v5. Every UUID this build mints is **v5**
+      (`uuidV5`) — 3,147 of them in the live assessment-results, none v4 —
+      because a v4 is random and would break reproducibility. The constraint
+      contradicts the exporter, and the exporter is the one that is right.
+    - **C-003** tests `metadata['oscal-version']` for presence only, and the
+      pass text then says it is "meeting the FedRAMP minimum of 1.0.4". A
+      document declaring 0.9 would pass and carry that sentence.
+    - **F-101** passes on the prop's presence; the walkthrough plants
+      `{ name: 'a2la-cert', ns: 'https://fedramp.gov/ns/oscal', value: '#####' }`,
+      so the attestation it reports is a literal placeholder.
+    - Every pass and fail string is in 3PAO voice — "The 3PAO examined the
+      OSCAL SAR … and found …" — about a document the walkthrough itself built
+      moments earlier. Same defect class as item 21, which was fixed for the
+      engine and not here.
+    - `✓ NIST + FedRAMP CONFORMANT` comes from this 24-item list, not from
+      `check_oscal_schema.py`, which is the vendored NIST 1.1.2 schema.
 
 57. **§02–§09 idle copy says the engine will ingest / execute.** (`#42`, `#76`) — **CLOSED (1.4.0)**
     Idle copy says it is a walkthrough; the ConMon walkthrough ends at the package shape, not "ready for submission."
@@ -350,8 +388,18 @@ Marketing, legal, onboarding, and walkthrough banners that the pages say and the
     Reads `sample SSP v2.4`, in the markup and in the profile-change handler, so
     it is attached to the thing it versions.
 
-60. **Privacy / index: "deployment boundary," `LLM_PROVIDER=none`, "container you run."** (`#137`) — **UNVERIFIED**
-    Not re-checked, including the `SECURITY.md` / `localStorage` contradiction (`#138`).
+60. **Privacy / index: "deployment boundary," `LLM_PROVIDER=none`, "container you run."** (`#137`) — **OPEN** *(verified 2026-09-16)*
+    `privacy.html` — the privacy policy *for this origin* — describes the server
+    product: "your assessment data stays inside your deployment boundary", "in
+    the default deterministic mode (`LLM_PROVIDER=none`)", "processed entirely
+    within the container you run. We never see them." The deployment-boundary
+    sentence is also the page's meta, og and twitter description, so it is what
+    a link preview shows. A visitor reading it is using a browser tab and runs
+    no container. `index.html` carries `LLM_PROVIDER=none` / `=ollama` too.
+    **`#138` holds as well:** `SECURITY.md` line 5 says the build "stores
+    nothing outside the page", and `demo-standalone.html` calls
+    `localStorage.setItem(ONB_STORAGE_KEY, '1')` for the onboarding dismissal,
+    which outlives the page. A trivial flag, but the sentence is unqualified.
 
 61. **`terms.html`: "certified 3PAO"; first paragraph is not EXAMINE-only; demos described as synthetic only.** (`#149`) — **PARTIAL**
     "certified 3PAO" reads "FedRAMP Recognized assessment service" and is in
@@ -436,8 +484,22 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 72. **`ci.yml` header: everything the README claims is checked on every PR.** (`#154`) — **OPEN**
     `check_published.mjs` runs on the Monday cron (`17 6 * * 1`) or `workflow_dispatch`. A broken deploy can sit until Monday.
 
-73. **`pages.mjs` loads `/404.html` (has CSP), not an unmatched path.** (`#155`, `#141`) — **UNVERIFIED**
-    `404.html` no longer appears in `tests/pages.mjs`, so this may already be addressed. The underlying hole — unmatched Netlify routes get `/*` and no CSP, and `/3pao` without `.html` is not redirected (`#140`) — was not re-checked.
+73. **`pages.mjs` loads `/404.html` (has CSP), not an unmatched path.** (`#155`, `#141`) — **PARTIAL** *(verified 2026-09-16)*
+    `#155` is closed: `pages.mjs` no longer loads `/404.html`; it walks the
+    published files and requires each to be served under its own `_headers`
+    policy.
+    `#141` is **not a defect**, and the re-baseline was wrong to carry it as
+    one. `/*` deliberately declares no CSP: Netlify combines every matching
+    rule and a browser enforces two policies as their intersection, so a
+    wildcard CSP could only silently tighten each page's own. `_headers` says
+    this in its header and `check.mjs` pins it (`no wildcard path declares a
+    CSP`). The residue is that an unmatched path serves the 404 body under the
+    `/*` headers only — and `404.html` carries no inline script, so there is
+    nothing there for a CSP to protect.
+    Still open: **`#140`** — `_redirects` maps `/3pao.html → /assessors.html`
+    and nothing maps `/3pao`. Pretty URLs are pinned off in `netlify.toml`, so
+    `/3pao` does not resolve to the `.html` form; it 404s.
+    `check_published.mjs` only exercises `/3pao.html`.
 
 74. **`status-data.json` `published_at: null`; `check.mjs` requires it stay null.** (`#139`) — **OPEN**
     `status-data.json:28` and the assertion at `tests/check.mjs:1574`. Public `/status` cannot ship a real snapshot without changing the test.
@@ -445,7 +507,10 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 75. **`.github/ISSUE_TEMPLATE/config.yml` `blank_issues_enabled: true`.** (`#165`) — **OPEN**
     Security is a mailto contact link, not a gate. A visitor can still open a public issue with a crafted-document recipe.
 
-76. **Clipboard copies `[kind] meta` only.** (`#129`) — **UNVERIFIED**
+76. **Clipboard copies `[kind] meta` only.** (`#129`) — **OPEN** *(verified 2026-09-16)*
+    The citation-row handler builds ``const text = `[${kind}] ${meta}` `` from
+    `.cite-kind` and `.cite-meta` and writes that. Neither the objective nor the
+    determination statement is in what lands on the clipboard.
 
 77. **Private vulnerability reporting is off.** (`CONTRIBUTING.md` / `SECURITY.md`) — **OPEN**
     The email path works; the GitHub form is hypothetical.
