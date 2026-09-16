@@ -362,7 +362,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div><div class="h">Deterministic</div><div class="b">No wall-clock in the verdict path, no randomness, no model drift. The same evidence, catalog, ruleset and assessment date yield the same determinations on any machine, on any day — and every run emits a reproducibility receipt naming those inputs and the resulting verdict digest. Exports derive their identifiers and timestamps from that receipt, so they are byte-identical too.</div></div>
       <div><div class="h">Zero data out</div><div class="b">The default install makes no outbound calls: no HTTP, no DNS, no CDN, no telemetry. CUI never transits a vendor cloud because there is none in the path. Nothing leaves the network unless you turn that on. Whether a given deployment is suitable for CUI still depends on how you deploy and accredit it: the software supports the boundary, it does not confer the authorization.</div></div>
       <div><div class="h">Satisfied has to clear published floors</div><div class="b">A Satisfied verdict requires all seven gates to pass — evidence above the retrieval threshold, concept coverage at or above 40%, traceable references, resolved ODPs, no contradiction, temporal currency — and those thresholds are constants hashed into the ruleset digest, so the bar is published with every result. The floors are lexical: retrieval matches words, not subject matter, and evidence that clears them can still fail to address the objective. Every determination is a draft for an assessor to adopt, override or reject.</div></div>
-      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results and POA&amp;M, validated against the vendored NIST 1.1.2 schema on every build. Structured from the start, whatever shape the mandate takes.</div></div>
+      <div><div class="h">Machine-readable</div><div class="b">Native OSCAL 1.1.2 assessment-results, validated against the vendored NIST 1.1.2 schema on every build. The POA&amp;M this build writes is CSV; OSCAL POA&amp;M is a server-product export. Structured from the start, whatever shape the mandate takes.</div></div>
     </div>
     <p class="hx-trust"><strong>This site loads no trackers, no analytics, and no third-party scripts or fonts.</strong> The engine, by default, makes no outbound calls. The browser demo assesses the package on your machine and uploads nothing.</p>
   </div>
@@ -408,7 +408,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <div>
         <span class="eyebrow">Whose tool it is</span>
         <h3>Neither side’s instrument</h3>
-        <p>Not the provider’s self-assessment tool, not the assessor’s in-house one. Think of it as Tenable for the package itself: it scans, finds, exports; your GRC tool tracks.</p>
+        <p>Not the provider’s self-assessment tool, not the assessor’s in-house one. It reads the package rather than the running system: it retrieves, applies seven gates, and exports what it decided and why; your GRC tool tracks.</p>
       </div>
     </div>
   </div>
@@ -489,7 +489,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <div class="section-sub">The commercial server product is reviewed and tested in the private product repository. Those reviews and that suite are not published here and are not claimed as a number. The public reference build carries its own conformance suite — schema validation, catalog counts, a determinism golden, a headless-browser run — on public CI.</div>
         </div>
         <dl class="hx-spec">
-          <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives (447 controls, 1,513 objectives in the full catalog); FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>
+          <div><dt>Catalog</dt><dd>NIST SP 800-53 Rev 5 with 800-53A assessment objectives (447 controls, 1,513 objectives carried here — the FedRAMP High baseline plus the PT and PM controls, not the complete Rev 5 catalog); FedRAMP Rev5 baselines and CORE controls in the FedRAMP profile.</dd></div>
           <div><dt>Analysis</dt><dd>Ten local services: BM25 retrieval, concept coverage, evidence strength, defensibility, contradiction detection, temporal coherence, ODP lifecycle, gap engine (25 types), confidence, citations.</dd></div>
           <div><dt>Exports</dt><dd>OSCAL JSON (assessment-results, POA&amp;M), CSV; SAR and SAP (JSON + DOCX), RET, CRM, CIS, TCW in the FedRAMP profile — 14+ formats.</dd></div>
           <div><dt>Intake</dt><dd>Nessus, ZAP and generic CSV scans; pen-test reports; vulnerabilities mapped to controls for POA&amp;M generation.</dd></div>
@@ -591,7 +591,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
       <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
     </div>
     <div class="foot-rule"></div>
-    <div>NIST SP 800-53A Rev 5 · full catalog 447 controls · 1,513 objectives · FedRAMP High baseline 410 / 1,429 · Self-contained by default</div>
+    <div>NIST SP 800-53A Rev 5 · catalog 447 controls · 1,513 objectives · FedRAMP High baseline 410 / 1,429 · Self-contained by default</div>
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO, webhooks, email, SIEM, and cloud storage are all opt-in via explicit configuration. The deterministic assessment path runs entirely inside the deployment boundary; no telemetry, no auto-update, no calls home.
     </div>

@@ -242,9 +242,15 @@ const checks = [
   ['a filter narrowing the run to 40 rows or fewer keeps every examine statement and Revise control',
     narrowed.rows > 0 && narrowed.rows <= 40 && narrowed.blocks === narrowed.rows && narrowed.revise === narrowed.rows,
     'rows=' + narrowed.rows + ' statements=' + narrowed.blocks + ' revise=' + narrowed.revise],
-  ['the statement uses the SAR examine phrasing', /^During the assessment, the assessor examined /.test(engineStatement.trim()), engineStatement.slice(0, 80)],
+  // The engine's sentence is in the engine's voice. It used to open "During the
+  // assessment, the assessor examined ..." and, on a Satisfied, close with "and
+  // confirmed" — an account of work an assessor had not done, which CONTRIBUTING
+  // line 24 forbids and which this assertion held in place.
+  ['the engine statement speaks as the engine, not as the assessor',
+    /^The engine (examined|retrieved) /.test(engineStatement.trim()) &&
+    !/the assessor examined/.test(engineStatement), engineStatement.slice(0, 90)],
   ['the objective is reworded, not quoted as "Determine if"', !/Determine if/i.test(engineStatement), ''],
-  ['an unsatisfied objective says "could not confirm"', /could not confirm/.test(engineStatement), engineStatement.slice(0, 80)],
+  ['an unsatisfied objective says the gates did not pass', /gates did not pass/.test(engineStatement), engineStatement.slice(0, 90)],
   ['a revision is attributed to the assessor on screen', /engine verdict/.test(flag), flag.trim()],
   ['exactly one OSCAL finding is marked assessor-revised', revised.length === 1, 'n=' + revised.length],
   ['the revised objective reads satisfied', revised[0] && revised[0].target.status.state === 'satisfied', revised[0] && revised[0].target.status.state],

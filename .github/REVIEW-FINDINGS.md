@@ -25,6 +25,10 @@ and between them they closed most of it:
 - **1.5.1** ("the exports say what the engine decided") closed items 22, 23, 25,
   27, 28 and 29. No determination moved; the verdict digest did, because the
   verdict line carries the review flag now.
+- **2026-09-16** ("the pages say what the build does") closed the copy: items
+  18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
+  part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
+  every phrase that pass removed, so none of them can come back unnoticed.
 
 What remains is mostly the later passes (`#78`–`#166`), which 1.4.0 did not cover.
 **Every item below now carries a status**, so nobody starts work that is already
@@ -32,9 +36,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 34 |
-| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
-| **CLOSED** | fixed in 1.4.0 – 1.5.1, verified on this tree | 33 |
+| **OPEN** | reproduced on the current tree | 18 |
+| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
+| **CLOSED** | fixed in 1.4.0 – 1.5.1 or the 2026-09-16 copy pass, verified on this tree | 48 |
 | **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -140,20 +144,23 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
 
 ### Public copy that is operationally dangerous
 
-18. **`assessors.html`: "Skip the controls that clearly pass."** (`#146`) — **OPEN**
-    Still present. Combined with the thin Satisfied the sample carries
-    (`review_required`), the enhancement-ID miss, ZWSP, catalog `o` and the
-    one-term subjects, this is advice a recognized assessment service could
-    follow off a public page.
+18. **`assessors.html`: "Skip the controls that clearly pass."** (`#146`) — **CLOSED (2026-09-16)**
+    Replaced with what a Satisfied here is: a lexical result an assessor checks,
+    sixty of which carry a review flag. The phrase is in `BANNED`.
 
-19. **Homepage and assessors claim native OSCAL 1.1.2 assessment-results and POA&M, schema-validated on every build.** (`#145`) — **OPEN**
-    This repo emits OSCAL AR JSON and **POA&M CSV**. README puts OSCAL POA&M in the commercial column. CI vendors only `oscal_assessment-results_schema.json`.
+19. **Homepage and assessors claim native OSCAL 1.1.2 assessment-results and POA&M, schema-validated on every build.** (`#145`) — **CLOSED (2026-09-16)**
+    The homepage says assessment-results is the OSCAL this build validates and
+    that its POA&M is CSV, OSCAL POA&M being a server-product export.
 
-20. **Integrations og/twitter: "Same 7-gate engine as the 3PAO UI."** (`#148`) — **OPEN**
-    Still in `integrations.html:15` and `:29`. Social cards are what LinkedIn and Slack show.
+20. **Integrations og/twitter: "Same 7-gate engine as the 3PAO UI."** (`#148`) — **CLOSED (2026-09-16)**
+    Off both social cards and the body; the "10 Analytical Services · Optional
+    LLM" line is attributed to the server product. In `BANNED`.
 
-21. **`examineStatement` says the assessor "confirmed."** (`#104`, `#152`) — **OPEN**
-    Engine Satisfied, including `review_required`, is exported in that voice, and `tests/assessor.mjs` **locks the phrasing**. CONTRIBUTING forbids narrating work the engine did not perform.
+21. **`examineStatement` says the assessor "confirmed."** (`#104`, `#152`) — **CLOSED (2026-09-16)**
+    The engine speaks as the engine in every branch, a flagged Satisfied says a
+    floor was not met, and `tests/assessor.mjs` — which locked the old phrasing —
+    holds the new one. See also item 68, the Not Reviewed branch of the same
+    function.
 
 ---
 
@@ -285,14 +292,23 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 
 Marketing, legal, onboarding, and walkthrough banners that the pages say and the code does not do. `tests/check.mjs` `BANNED` is five phrases and will not catch this list (`#162`).
 
-52. **README "Complete NIST SP 800-53A Rev 5 catalog | 447 | 1,513."** (`#130`) — **OPEN**
-    Counted on this tree: **215 base + 232 enhancements = 447**, 1,513 objectives. AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16 are all absent. 447 is the size of what is here, not evidence of completeness. `check.mjs` locks 447 as correct.
+52. **README "Complete NIST SP 800-53A Rev 5 catalog | 447 | 1,513."** (`#130`) — **CLOSED (2026-09-16)**
+    447 is stated as what this build carries: 215 base + 232 enhancements, which
+    is exactly the FedRAMP High baseline (410) plus the 37 baseline-less PT and
+    PM controls. `check.mjs` asserts both that partition and the absence of
+    AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16. Seven footers stop saying "full
+    catalog", which is now in `BANNED`.
 
-53. **37 controls have `b: []` (all PT and PM, including PM-1).** (`#131`) — **OPEN**
-    Confirmed: exactly **37**, families PT and PM, PM-1 among them. They inflate "447 complete" and never run in any profile. PM-1 is also the only control whose subject term list is empty, so `mentionsSubject` returns true for it unconditionally.
+53. **37 controls have `b: []` (all PT and PM, including PM-1).** (`#131`) — **CLOSED (2026-09-16)** *(as a claim)*
+    The README states that they carry no baseline, that no profile selects them,
+    and that they are in the count and in no assessment. They are still in the
+    catalog: removing them would move the catalog digest, which is a product
+    call, not a copy fix.
 
-54. **LI-SaaS is in the catalog and nowhere else.** (`#132`) — **OPEN**
-    Confirmed: LI-SaaS 156 controls / **789** objectives against Low's 156 / **981**, and **77** LI-tagged controls have zero LI-tagged objectives. The profile select is Low | Moderate | High only.
+54. **LI-SaaS is in the catalog and nowhere else.** (`#132`) — **CLOSED (2026-09-16)** *(as a claim)*
+    The README states the tagging (156 controls, 789 objectives) and that no
+    profile stands behind it, so it decides nothing in this build. Removing the
+    tags would move the catalog digest — a product call, not a copy fix.
 
 55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`) — **UNVERIFIED**
     The counts were not re-derived in the re-baseline.
@@ -303,37 +319,67 @@ Marketing, legal, onboarding, and walkthrough banners that the pages say and the
 57. **§02–§09 idle copy says the engine will ingest / execute.** (`#42`, `#76`) — **CLOSED (1.4.0)**
     Idle copy says it is a walkthrough; the ConMon walkthrough ends at the package shape, not "ready for submission."
 
-58. **Walkthrough CloudVault `initial.sat: 287` vs the live engine's Satisfied count.** (`#136`) — **OPEN**
-    `sat: 287` and ten references to the dead `_realRun` branch are still in `demo-standalone.html`. The gap is now wider than the finding recorded: 1.4.0 took the live sample to **153** Satisfied.
+58. **Walkthrough CloudVault `initial.sat: 287` vs the live engine's Satisfied count.** (`#136`) — **CLOSED (2026-09-16)**
+    The permanently-null `_realRun` and the two branches it guarded are gone, so
+    §02–§09 no longer carry a path that looks like a live run. The authored
+    figures say they are authored and name the live engine's 153.
 
-59. **Rail `cv-meta` always appends `· v2.4` (SSP version) after live profile counts.** (`#135`) — **OPEN**
-    Ten occurrences. The engine is 1.4.1 and the catalog is `2026-07-21`; changing Low → High keeps `v2.4`.
+59. **Rail `cv-meta` always appends `· v2.4` (SSP version) after live profile counts.** (`#135`) — **CLOSED (2026-09-16)**
+    Reads `sample SSP v2.4`, in the markup and in the profile-change handler, so
+    it is attached to the thing it versions.
 
 60. **Privacy / index: "deployment boundary," `LLM_PROVIDER=none`, "container you run."** (`#137`) — **UNVERIFIED**
     Not re-checked, including the `SECURITY.md` / `localStorage` contradiction (`#138`).
 
-61. **`terms.html`: "certified 3PAO"; first paragraph is not EXAMINE-only; demos described as synthetic only.** (`#149`) — **OPEN**
-    "certified 3PAO" still present. `/demo` accepts a visitor's real SSP in-tab, and FedRAMP says Recognized, not certified.
+61. **`terms.html`: "certified 3PAO"; first paragraph is not EXAMINE-only; demos described as synthetic only.** (`#149`) — **PARTIAL**
+    "certified 3PAO" reads "FedRAMP Recognized assessment service" and is in
+    `BANNED`. The EXAMINE-only framing of the opening paragraph and the
+    synthetic-demos description are legal copy and were not rewritten here.
 
-62. **Index: "Tenable for the package itself."** (`#150`) — **OPEN**
+62. **Index: "Tenable for the package itself."** (`#150`) — **CLOSED (2026-09-16)**
+    Replaced with what it does: reads the package rather than the running
+    system, retrieves, applies seven gates, exports what it decided and why.
 
-63. **`assessors.html` ODP copy: "90-day vs FedRAMP 60-day requirement."** (`#147`) — **OPEN**
-    Still present, and Gate 4 still never reads catalog `o` (item 6).
+63. **`assessors.html` ODP copy: "90-day vs FedRAMP 60-day requirement."** (`#147`) — **CLOSED (2026-09-16)**
+    The page says what gate 4 does — a parameter of the right kind, in a clause
+    about the objective — and says outright that it does not compare the stated
+    value to the catalog's. The phrase is in `BANNED`. The underlying gap is
+    item 6 and still open.
 
-64. **Gap taxonomy names do not exist in code.** (`#159–161`, `#166` class) — **OPEN**
-    The marketed names (`odp_frequency_mismatch`, `insufficient_scope`, `stale_documentation`, `scan_gap`) appear nowhere in the engine; the actual constants (`missing_implementation`, `temporal_gap`, and the rest of the six) are what it emits. "13 pattern types … across DIFs … severity levels" is six `NEGATION_PAIRS` in one string with no severity. "Exact API enum values FedRAMP expects" — this build emits `Satisfied` / `Other Than Satisfied` / `Not Reviewed`.
+64. **Gap taxonomy names do not exist in code.** (`#159–161`, `#166` class) — **CLOSED (2026-09-16)**
+    The assessors page names the six the code emits. The "13 pattern types …
+    with severity levels" line reads as the six negation pairs the reference
+    build actually has, carrying no severity, with the typed-and-severity
+    version attributed to the server product. The four invented type names are
+    in `BANNED`.
 
-65. **README / CHANGELOG / `results.json`: "16 cases · 15 correct · 0 false passes."** (`#151`) — **OPEN**
-    True of that file. False as a site-level accuracy claim: items 1, 4, 5, 6 and 8 are all uncased by the benchmark, and `--strict` stays green.
+65. **README / CHANGELOG / `results.json`: "16 cases · 15 correct · 0 false passes."** (`#151`) — **CLOSED (2026-09-16)**
+    The README already separated the two populations; it now also states that
+    the cases run `chunkText` over embedded strings rather than `parsePackage`,
+    so no ZIP, DOCX, entity or archive path is exercised by any of the sixteen
+    (item 71), and names gate 4's uncased parameter comparison (item 6).
 
-66. **SHA-1 is the reproducibility seal.** (`#122`) — **OPEN**
-    Nine references in `demo-exports.js`. Receipt, catalog, ruleset, evidence and verdict digests are SHA-1 and the toast prints `sha1`, while `demo-20x.html` shows an illustrative `sha256:`.
+66. **SHA-1 is the reproducibility seal.** (`#122`) — **CLOSED (2026-09-16)** *(as a claim)*
+    The download toast calls it a reproducibility identifier rather than leaving
+    a bare `sha1` for a reader to interpret. The digests are still SHA-1:
+    changing them moves every digest in the tuple and is a product call.
 
-67. **`demo-20x.html` is in `sitemap.xml` (priority 0.6).** (`#156`) — **OPEN**
-    The assessors page says SparkAE does not support FedRAMP 20x; the walkthrough still shows `fails_closed: false`.
+67. **`demo-20x.html` is in `sitemap.xml` (priority 0.6).** (`#156`) — **CLOSED (2026-09-16)**
+    The page now says on itself what the assessors page says — SparkAE does not
+    support FedRAMP 20x — and that nothing on it is produced by the engine this
+    origin publishes. It stays in the sitemap: it is legitimate linked content,
+    and dropping it from the sitemap would hide rather than correct it.
+    `fails_closed: false` is not a defect — the walkthrough is showing a
+    validation method that fails open being caught, which is its point.
 
-68. **NR statement: "found no documentation establishing that …"** (`#105`) — **CLOSED**
-    The phrase no longer appears in `demo-engine.js`.
+68. **NR statement: "found no documentation establishing that …"** (`#105`) — **CLOSED (2026-09-16)**
+    The Not Reviewed branch says retrieval surfaced no passage above the
+    evidence threshold, and says outright that this is not a finding that the
+    package lacks the documentation.
+
+    *Correction: the 2026-09-15 re-baseline marked this CLOSED on a grep of
+    `demo-engine.js` alone. The sentence was in `demo-standalone.html`, in
+    `examineStatement`, beside item 21. It was OPEN until this change.*
 
 69. **`RULESET` omits the matchers that decide verdicts.** (`#19`) — **CLOSED (1.4.0)**
     Refuting patterns, draft markers, negation pairs, the homoglyph map, stem suffixes, ODP value shapes, strength signals and date patterns are all hashed now.
@@ -426,11 +472,11 @@ objectives; origination, the detection date and the unfilled FedRAMP columns say
 what they are instead of implying a value. No determination moved — the verdict
 digest moved because the verdict line carries the flag, which is the change.
 
-**PR 3 — claims match code**
-Items **18, 19, 20, 21, 52, 53, 54, 58, 59, 61, 62, 63, 64, 65, 66, 67**. Copy
-only. Split 447 into 215 + 232 and name what is absent; reconcile or remove
-LI-SaaS; drop "skip the controls that clearly pass," "3PAO UI" and OSCAL POA&M.
-Widen `check.mjs` `BANNED` past its five phrases so this class cannot regress.
+**PR 3 — claims match code** — **LANDED 2026-09-16**
+Items **18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67, 68**, and
+**61** in part. The engine stopped writing in the assessor's voice, the catalog
+claim became what the catalog is, and `BANNED` went from five phrases to every
+phrase this pass removed. No part of the tuple moves.
 
 **PR 4 — product calls, not silent patches**
 Item **6** is the substantive one: consult catalog `o` so "every 10 years" fails a

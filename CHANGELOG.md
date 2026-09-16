@@ -41,6 +41,64 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-09-16 (the pages say what the build does)
+
+No part of the tuple moves. Engine 1.5.1, catalog `2026-07-21` / `91ad1b17138f`,
+ruleset `dbacaaed27dc`, verdict digest `5ded83f4010c` — the engine, the
+exporters and the golden fixture are untouched. This is the copy, and one
+sentence the engine was writing that was copy in disguise.
+
+- **The engine stops writing in the assessor's voice.** Every examine statement
+  opened "During the assessment, the assessor examined …", and a Satisfied one
+  closed "and confirmed" — an account of an assessor reading documents and
+  reaching a conclusion, composed by an engine that had done neither, and
+  emitted for the sixty Satisfied a floor had just flagged as needing exactly
+  that assessor. CONTRIBUTING line 24 forbids narration of activity the engine
+  did not perform. The engine speaks as the engine now; the assessor's sentence
+  still travels beside it, in the assessor's voice, whenever Revise records one.
+  `tests/assessor.mjs` held the old phrasing in place and now holds the new.
+- **A Not Reviewed says what happened.** "Found no documentation establishing
+  that …" is a claim about the package. What happened is that retrieval
+  surfaced no passage above the evidence threshold — a refused PDF beside an
+  unrelated `.txt` is enough to produce it — and that is what it says.
+- **447 is what this build carries, not the size of Rev 5.** It is 215 base
+  controls and 232 enhancements, and it is exactly the FedRAMP High baseline
+  (410) plus the 37 PT and PM controls that sit in no baseline: every control
+  here is in one of those two groups, which `check.mjs` now asserts. AC-16,
+  AC-23, AC-24, AC-25, IA-13 and SC-16 are absent, which it also asserts. Seven
+  footers stop saying "full catalog". The 37 baseline-less controls and the
+  dead `LI-SaaS` tagging (156 controls, 789 objectives, no profile behind it)
+  are stated in the README rather than left inside the count.
+- **Claims trimmed to this origin.** No OSCAL POA&M (this build writes POA&M
+  CSV; the OSCAL one is a server-product export). No "same 7-gate engine as the
+  3PAO UI" on the integrations social cards, which is what LinkedIn and Slack
+  render. No "Tenable for the package itself". No "certified 3PAO" in the terms
+  — FedRAMP recognises, it does not certify. The gap-type names on the
+  assessors page are the six the code actually emits.
+- **Gate 4 copy matches gate 4.** The assessors page advertised a mismatch this
+  build cannot detect — "90-day vs FedRAMP 60-day requirement" — when gate 4
+  checks that a parameter of the right kind is stated and never compares it to
+  the value the catalog carries. The page says what the gate does; the gap
+  itself is item 6 and still open.
+- **Advice that acts on a lexical Satisfied.** "Skip the controls that clearly
+  pass" is gone, and so is the claim, on three social cards and in the body,
+  that the floors are something every Satisfied clears — sixty do not, and since
+  1.5.1 each says so on the artifact.
+- **The walkthrough stops looking like a run.** `runInitialWalkthrough` carried
+  a permanently-null `_realRun` guarding branches that read live gate tallies
+  and a live corpus label: dead code that made §02–§09 look like tabs a live run
+  could drive. Gone. Its authored figures say they are authored, and say that
+  the live engine returns 153 Satisfied on the same package. The rail's `v2.4`
+  is labelled as the sample SSP's version rather than trailing two live profile
+  counts unattached to anything. The download toast calls its SHA-1 a
+  reproducibility identifier rather than leaving the reader to assume otherwise.
+  The 20x walkthrough now says on its own page what the assessors page says:
+  SparkAE does not support FedRAMP 20x.
+- **`BANNED` is not five phrases.** It was five, and the whole of the above
+  passed it. It now holds every phrase this change removed, so each one fails a
+  push if it comes back; the suite proves the guard fires rather than passing
+  vacuously.
+
 ## 2026-09-15 (the exports say what the engine decided · engine 1.5.1)
 
 Engine 1.5.0 → **1.5.1** · ruleset `d10ea7075a64` → `dbacaaed27dc` (the version is

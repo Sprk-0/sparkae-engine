@@ -154,6 +154,15 @@ The other eleven are ours in both halves and test what their author already
 believed, which is weaker evidence. The two populations are scored separately
 and never merged into one headline number.
 
+It is also not a measurement of the engine as a whole, because the cases run
+`chunkText` over embedded strings rather than `parsePackage` over a file: no ZIP,
+DOCX, entity-decoding or archive-integrity path is exercised by any of the
+sixteen, so a defect in one of those cannot move this figure or turn `--strict`
+red. The adversarial cases for those live in `check.mjs` §25 and §26 instead.
+Known and uncased here: gate 4 does not compare a stated parameter value against
+the FedRAMP value the catalog carries for it (see
+`.github/REVIEW-FINDINGS.md` item 6).
+
 The one current error is a false fail, and it is in the file rather than
 excluded from it: AC-2_d.(2), where the document does answer the objective but
 the retriever does not surface the paragraph that does. Eight objectives like
@@ -169,10 +178,24 @@ issue with the documents and the determination you expected.
 
 | Scope | Controls | Determination statements |
 |---|---:|---:|
-| Complete NIST SP 800-53A Rev 5 catalog | 447 | 1,513 |
+| Carried by this build | 447 | 1,513 |
 | FedRAMP High profile | 410 | 1,429 |
 | FedRAMP Moderate profile | 323 | 1,307 |
 | FedRAMP Low profile | 156 | 981 |
+
+**447 is what this build carries, not the size of Rev 5.** It is 215 base
+controls and 232 enhancements, and it is exactly the FedRAMP High baseline (410)
+plus the 37 PT and PM controls that sit in no baseline at all — every control
+here is in one of those two groups. Controls outside the FedRAMP baselines are
+absent, among them AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16, so this is not
+the complete 800-53A Rev 5 catalog and a run against it is scoped to FedRAMP.
+
+The 37 PT and PM controls carry no baseline, so no profile selects them and they
+never run; they are in the count and not in any assessment. `LI-SaaS` is tagged
+through the catalog (156 controls, 789 objectives) and has no profile behind it —
+the selector offers Low, Moderate and High — so those tags decide nothing in this
+build either. Both are counted above because the table reports what the file
+holds.
 
 Catalog version `2026-07-21` · digest `91ad1b17138f`. Both travel in the
 reproducibility receipt of every artifact the engine emits, and the digest is

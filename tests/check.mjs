@@ -1470,10 +1470,21 @@ check(new RegExp(`${fmt(high.objectives)}</div><div class="label">[^<]*High base
   'the homepage labels the High-baseline objective count as High, with its control count');
 check(home.replace(/\s+/g, ' ').includes(`${high.controls}</div><div class="label">Controls · FedRAMP High profile`) && !/410<\/div><div class="label">[^<]*NIST[^<]*High/.test(home),
   '410 is labelled the FedRAMP High profile, not NIST High (which is 426)');
-const footerLine = `full catalog ${full.controls} controls · ${fmt(full.objectives)} objectives · FedRAMP High baseline ${high.controls} / ${fmt(high.objectives)}`;
-const footerPages = allPages.filter(f => /full catalog/.test(pageText[f]));
+// "full catalog" is the word that came out: 447 is what this build carries, and
+// it is the FedRAMP High baseline plus the PT and PM controls, not the whole of
+// 800-53A Rev 5 — AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16 are not in it.
+// The figures are unchanged; the claim around them is.
+const footerLine = `catalog ${full.controls} controls · ${fmt(full.objectives)} objectives · FedRAMP High baseline ${high.controls} / ${fmt(high.objectives)}`;
+const footerPages = allPages.filter(f => /catalog \d+ controls/.test(pageText[f]));
 check(footerPages.length >= 6 && footerPages.every(f => pageText[f].includes(footerLine)),
   `${footerPages.length} footers state the catalog figures, each labelled and matching the catalog`);
+check(!allPages.some(f => /full catalog/.test(pageText[f])),
+  'no page calls what this build carries the full 800-53A Rev 5 catalog');
+const absentFromCatalog = ['AC-16', 'AC-23', 'AC-24', 'AC-25', 'IA-13', 'SC-16'];
+check(absentFromCatalog.every(id => !CATALOG[id]),
+  'the controls the README names as absent are absent — ' + absentFromCatalog.join(', '));
+check(Object.keys(CATALOG).every(id => (CATALOG[id].b || []).includes('High') || (CATALOG[id].b || []).length === 0),
+  'every control carried is either in the FedRAMP High baseline or in no baseline at all, which is what the README says it is');
 check(!/447 Controls · 1,513 DIFs/.test(allText) && !/v0\.7\.0-rc1/.test(allText),
   'no unlabelled catalog count and no release-candidate tag survives as a badge');
 // The server product's plain-NIST install is a deployment profile, not a job
@@ -1530,7 +1541,31 @@ check(v5.size > a.findings.length, `the OSCAL document carries ${v5.size} distin
 
 // Independence. Phrases that assert a status SparkAE does not hold, or a
 // readiness the product's own trackers say generated bundles do not have.
-const BANNED = ['ready for FedRAMP submission', 'submission-ready', 'submission-grade', 'Authoritative downloads', 'CUI-safe'];
+// Five phrases caught the 2026-09 review's worst copy and none of the rest of
+// it: a page could tell an assessor to skip what passed, call 447 the complete
+// Rev 5 catalog, promise OSCAL POA&M this build writes as CSV, or advertise a
+// 3PAO UI this origin does not ship, and the suite stayed green. Each entry
+// below is a phrase that was on a published page and is not true of this build.
+// A claim the server product can back belongs on a page that says so.
+const BANNED = [
+  // what the reference build cannot back
+  'ready for FedRAMP submission', 'submission-ready', 'submission-grade',
+  'Authoritative downloads', 'CUI-safe',
+  // advice that acts on a lexical Satisfied as though it were an assessed one
+  'Skip the controls that clearly pass',
+  'every Satisfied must clear',
+  // capability this origin does not ship
+  'same 7-gate engine as the 3PAO UI',
+  'OSCAL 1.1.2 assessment-results and POA&M',
+  // catalog scope
+  'full catalog', 'Complete NIST SP 800-53A Rev 5 catalog',
+  // gap-type names that exist only in marketing
+  'odp_frequency_mismatch', 'insufficient_scope', 'stale_documentation', 'scan_gap',
+  // FedRAMP vocabulary this build does not have the standing to use
+  'certified 3PAO',
+  // a parameter comparison gate 4 does not perform
+  '90-day vs FedRAMP 60-day requirement',
+];
 const bannedHits = allPages.flatMap(f => BANNED.filter(b => pageText[f].toLowerCase().includes(b.toLowerCase())).map(b => `${f}: ${b}`));
 check(!bannedHits.length, 'no page makes a claim the product cannot back' + (bannedHits.length ? ' — ' + bannedHits.join('; ') : ''));
 const homeFlat = home.replace(/\s+/g, ' ');

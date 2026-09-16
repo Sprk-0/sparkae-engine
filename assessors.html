@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SparkAE for Independent Assessment Services — Rev5 Examine Engine</title>
-<meta name="description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors every Satisfied must clear, and the same engine as the GRC API. Not the assessor of record.">
+<meta name="description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors, with each Satisfied marked when one was not met, and the same engine as the GRC API. Not the assessor of record.">
 <link rel="canonical" href="https://sparkae.ai/assessors.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
@@ -12,7 +12,7 @@
 <meta property="og:site_name" content="SparkAE">
 <meta property="og:url" content="https://sparkae.ai/assessors.html">
 <meta property="og:title" content="SparkAE for Independent Assessment Services — Rev5 Examine Engine">
-<meta property="og:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors every Satisfied must clear, and the same engine as the GRC API. Not the assessor of record.">
+<meta property="og:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors, with each Satisfied marked when one was not met, and the same engine as the GRC API. Not the assessor of record.">
 <!-- The social card is a real 1200x630 image: a link shared to LinkedIn or Slack
      otherwise renders as a bare text row. It is rendered from og-card.src.html
      in the private repository and copied into static/ here; its numbers mirror
@@ -26,7 +26,7 @@
 <meta name="twitter:image" content="https://sparkae.ai/static/og-card.png">
 <meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:title" content="SparkAE for Independent Assessment Services — Rev5 Examine Engine">
-<meta name="twitter:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors every Satisfied must clear, and the same engine as the GRC API. Not the assessor of record.">
+<meta name="twitter:description" content="For FedRAMP Recognized independent assessment services — historically 3PAOs. SparkAE is the Rev5 7-gate Examine engine: default self-contained / zero outbound, published evidence floors, with each Satisfied marked when one was not met, and the same engine as the GRC API. Not the assessor of record.">
 <link rel="stylesheet" href="ae-editorial.css">
 <style>
 /* ── Assessor page-specific components (editorial tokens only) ── */
@@ -245,7 +245,7 @@
     </div>
 
     <div class="pullquote">
-      SparkAE examines the package so the assessor can examine the system. Deterministic 7-gate Examine engine, self-contained by default; evidence floors the reference build publishes as its ruleset, which every Satisfied must clear — they are lexical thresholds, not a guarantee the objective was addressed; the same engine behind the assessor UI and the GRC API.
+      SparkAE examines the package so the assessor can examine the system. Deterministic 7-gate Examine engine, self-contained by default; evidence floors the reference build publishes as its ruleset; a Satisfied that does not clear them is still returned, flagged for review rather than withheld, and they are lexical thresholds, not a guarantee the objective was addressed; the same engine behind the assessor UI and the GRC API.
     </div>
   </div>
 </section>
@@ -272,7 +272,7 @@
         </div>
         <div class="wf-step fade-up fade-up-3">
           <div class="wf-num">4</div>
-          <div><h4>Focus INTERVIEW &amp; TEST on what matters</h4><p>OTS findings tell you exactly where to probe. Skip the controls that clearly pass. Spend time where risk lives.</p></div>
+          <div><h4>Focus INTERVIEW &amp; TEST on what matters</h4><p>OTS findings tell you where to probe first. A Satisfied here is a lexical result an assessor still checks — sixty of the bundled sample&rsquo;s Satisfied carry a review flag — so it narrows the order of work, not the scope of it.</p></div>
         </div>
         <div class="wf-step fade-up fade-up-4">
           <div class="wf-num">5</div>
@@ -284,9 +284,9 @@
         <div><strong>Per-DIF verdicts</strong> — Satisfied / Other Than Satisfied for every "Determine if" objective, with the exact API enum values FedRAMP expects.</div>
         <div><strong>Evidence citations</strong> — BM25 lexical retrieval with scored citations: "SSP §3.2, Account Management (BM25 score: 0.87)".</div>
         <div><strong>Defensibility grades</strong> — 5-factor composite score (A–F): specificity, completeness, consistency, traceability, clarity. Low grade = assessor should dig deeper.</div>
-        <div><strong>ODP validation</strong> — every organization-defined parameter checked. Mismatches flagged with gate-4 failure: "90-day vs FedRAMP 60-day requirement."</div>
-        <div><strong>Gap taxonomy</strong> — 25 FedRAMP-aligned gap types in the server product — the public reference build classifies six (missing_evidence, incomplete_policy, odp_frequency_mismatch, insufficient_scope, stale_documentation, scan_gap...).</div>
-        <div><strong>Contradiction indicators</strong> — 13 pattern types of conflicting assertions across DIFs, flagged with severity levels (pattern-based, not semantic).</div>
+        <div><strong>ODP validation</strong> — gate 4 checks that a parameter of the right kind is stated: a frequency, a period, a role, a threshold, in a clause about the objective. It does not compare the stated value against the FedRAMP value in the catalog, so a policy reviewed &ldquo;every 10 years&rdquo; still resolves a three-year parameter. Untyped parameters are recorded as unverified, not passed.</div>
+        <div><strong>Gap taxonomy</strong> — 25 FedRAMP-aligned gap types in the server product. The public reference build classifies six, and these are their names in it: <code>missing_implementation</code>, <code>incomplete_policy</code>, <code>missing_evidence</code>, <code>contradictory_evidence</code>, <code>temporal_gap</code>, <code>other_gap</code>.</div>
+        <div><strong>Contradiction indicators</strong> — the reference build reads six negation pairs (implemented, documented, reviewed, required, configured, and disabled against enabled) within a control&rsquo;s own evidence. Pattern-based, not semantic, and carrying no severity of their own; the 13 typed patterns with severity are a server-product feature.</div>
         <div><strong>14+ export formats</strong> — OSCAL JSON (assessment-results + POA&M), SAR (JSON + DOCX), SAP, RET CSV, CRM, CIS, TCW — all from one assessment run. The public reference build ships six of them.</div>
       </div>
     </div>
@@ -424,7 +424,7 @@
       <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
     </div>
     <div class="foot-rule"></div>
-    <div>NIST SP 800-53A Rev 5 · full catalog 447 controls · 1,513 objectives · FedRAMP High baseline 410 / 1,429 · Self-contained by default</div>
+    <div>NIST SP 800-53A Rev 5 · catalog 447 controls · 1,513 objectives · FedRAMP High baseline 410 / 1,429 · Self-contained by default</div>
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO,
       webhooks, email, SIEM, and cloud storage are all opt-in via
