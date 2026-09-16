@@ -1,7 +1,7 @@
 {
   "summary": {
-    "engine_version": "1.5.0",
-    "ruleset_digest": "d10ea7075a64",
+    "engine_version": "1.6.0",
+    "ruleset_digest": "fc6ad10cbb39",
     "assessment_date": "2026-06-01",
     "baseline": "Low",
     "overall": {
@@ -159,6 +159,7 @@
       "failed_gates": [
         2,
         3,
+        6,
         7
       ]
     },
@@ -214,7 +215,7 @@
       "error_kind": null,
       "status": "Satisfied",
       "satisfied": true,
-      "review_required": false,
+      "review_required": true,
       "confidence": 0.74,
       "gate2": "2a=true 2b=true",
       "failed_gates": []
@@ -257,6 +258,7 @@
       "failed_gates": [
         2,
         3,
+        6,
         7
       ]
     },
@@ -277,6 +279,7 @@
       "gate2": "2a=true 2b=true",
       "failed_gates": [
         3,
+        6,
         7
       ]
     },

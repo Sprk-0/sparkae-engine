@@ -672,7 +672,8 @@ const MIN_CONCEPT_COVERAGE = 0.40;
 
 // A Satisfied verdict resting on thin support is still Satisfied — the gates
 // are the rule — but it is flagged for a human before anyone relies on it.
-// Below either floor the result carries `review_required: true` and says why.
+// Below either floor — or where gate 4 could not verify an organization-defined
+// parameter — the result carries `review_required: true` and says why.
 const REVIEW_CONFIDENCE_FLOOR = 0.60;
 const REVIEW_COVERAGE_FLOOR = 0.60;
 
@@ -701,7 +702,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.5.0';
+const ENGINE_VERSION = '1.6.0';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -1048,6 +1049,21 @@ function scoreEvidence(text) {
 // A passage is stuffed when a five-word sequence repeats, and repeats often
 // enough relative to its length to be padding rather than house style. Both
 // parameters are published in RULESET and hashed into the ruleset digest.
+// What an artifact shows of the evidence. The gates read the whole string; a
+// CSV cell, an OSCAL description and a TCW row got the first 500 characters
+// with nothing to say so, and a refutation or a date past that offset simply
+// was not in the artifact — the determination accounted for it and the record
+// of the determination did not. The cut stays (an OSCAL file with every
+// evidence body in full is megabytes of duplicated corpus), but it says it is a
+// cut, and how much it left behind.
+const EVIDENCE_DESCRIPTION_MAX = 500;
+function evidenceDescription(text) {
+  const s = String(text == null ? '' : text);
+  if (s.length <= EVIDENCE_DESCRIPTION_MAX) return s;
+  return s.slice(0, EVIDENCE_DESCRIPTION_MAX) +
+    ' […truncated for this artifact; ' + s.length + ' characters of evidence were assessed]';
+}
+
 const STUFFING_MIN_DUPES = 3;
 const STUFFING_DUPE_SHARE = 0.15;
 
@@ -1177,10 +1193,36 @@ function objectiveAnchorStems(difText) {
   return contentStems(bare);
 }
 
-function validateOdps(difText, evidenceText) {
+// The catalog carries FedRAMP's own value for 236 of its 1,513 objectives — the
+// `o` field, "AC-1 (c) (1): at least every 3 years" — and nothing read it. Gate
+// 4 checks that a value of the right KIND is stated in a clause about the
+// objective; it does not check that the stated value is the required one, so a
+// policy reviewed every ten years resolves a three-year parameter.
+//
+// It stays that way, and the reason is worth recording rather than leaving for
+// someone to rediscover. Comparing needs the stated duration bound to the
+// parameter it answers, and an anchored clause routinely carries a duration
+// belonging to a different parameter: the sample's AC-2 section says accounts
+// are reviewed quarterly, and AC-2_h.(1) requires accounts be DISABLED within
+// twenty-four hours. Measured over the bundled sample, a clause-scoped
+// comparison found three mismatches and all three were of that shape — three
+// false refusals, no true ones. A gate that is wrong every time it fires is
+// worse than a gate that does not fire.
+//
+// So the value travels instead of being judged. `expected` puts FedRAMP's text
+// on the determination and into the artifacts, next to the parameter it belongs
+// to, where the assessor doing the comparison can see it. Consulting the
+// catalog is what item 6 asked for; asserting a comparison this build cannot
+// make is what it warned against.
+function stripOdpPrefix(value) {
+  return String(value == null ? '' : value).replace(/^[A-Z]{2}-\d{1,3}[^:]*?:\s*/, '').trim();
+}
+
+function validateOdps(difText, evidenceText, catalogValue) {
   const odps = extractOdps(difText);
   const required = odps.map(o => o.text);
-  if (!odps.length) return { required, resolved: [], missing: [], unverified: [], satisfied: true };
+  const expected = stripOdpPrefix(catalogValue);
+  if (!odps.length) return { required, resolved: [], missing: [], unverified: [], expected, satisfied: true };
   const anchors = objectiveAnchorStems(difText);
   const clauses = String(evidenceText || '').split(CLAUSE_SPLIT).filter(c => c.trim())
     .filter(c => !NEGATION_RE.test(c))
@@ -1219,7 +1261,7 @@ function validateOdps(difText, evidenceText) {
     }
     (ok ? resolved : missing).push(odp.text);
   }
-  return { required, resolved, missing, unverified, satisfied: !missing.length };
+  return { required, resolved, missing, unverified, expected, satisfied: !missing.length };
 }
 
 // ── Gate 5: Refutation & Contradiction Detection ──
@@ -1738,6 +1780,9 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       assessment_date: asOfDay,
       confidence: 0, defensibility_score: 0, concept_coverage: 0,
       gap_description: 'No evidence above the relevance threshold for this objective',
+      // FedRAMP's parameter value is a property of the objective, not of the
+      // run, so it travels on the early returns too, where no gate 4 was reached.
+      odp_expected: stripOdpPrefix(dif.o),
       review_required: false,
       gates: [
         {gate:1, name:'Presence', pass:false},
@@ -1814,7 +1859,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   // neighbour's "ISSO" used to resolve a role parameter this control never
   // named. The record says what was resolved, what was missing and what this
   // build cannot verify; only a missing typed value fails the gate.
-  const odp = validateOdps(dif.t, ownEvidence || evidenceText);
+  const odp = validateOdps(dif.t, ownEvidence || evidenceText, dif.o);
   gates.push({gate:4, name:'ODP', pass:odp.satisfied, checks:[
     {id:'4a', name:'Typed values', pass:!odp.missing.length},
   ], resolved: odp.resolved, missing: odp.missing, unverified: odp.unverified});
@@ -1839,7 +1884,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       dif_id: dif.i, control_id: controlId, objective_id: dif.i,
       status: 'Other Than Satisfied', determination: 'Other Than Satisfied',
       finding: 'Refuting evidence found: ' + allRefutations[0],
-      evidence_description: evidenceText.slice(0, 500), evidence_references: strongHits.slice(0,3).map(h => h.filename),
+      evidence_description: evidenceDescription(evidenceText), evidence_references: strongHits.slice(0,3).map(h => h.filename),
       weakness_name: 'Control Not Implemented — ' + controlId,
       weakness_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
       weakness_type: 'Significant Deficiency',
@@ -1852,6 +1897,9 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
       confidence: computeConfidence('Other Than Satisfied', evidenceText, strength, coverageResult.ratio, defScore, 1),
       defensibility_score: defScore, concept_coverage: coverageResult.ratio,
       gap_description: 'Evidence contains explicit negative status: ' + allRefutations.join('; '),
+      // FedRAMP's parameter value is a property of the objective, not of the
+      // run, so it travels on the early returns too, where no gate 4 was reached.
+      odp_expected: stripOdpPrefix(dif.o),
       review_required: false,
       gates
     };
@@ -1871,13 +1919,19 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   const temporalText = ownEvidence || evidenceText;
   const dates = extractDates(temporalText);
   const currency = checkCurrency(dates, asOf);
-  // null is undated: nothing to fail on, nothing to call current. The gate is
-  // not failed for it — 6b–6d likewise pass when they find nothing to check —
-  // but the result says 'undated', not 'current', and is flagged for review.
+  // Undated evidence is not current. 1.4.0 stopped calling it current and
+  // flagged it; it still PASSED gate 6a, so currency meant "no evidence it is
+  // stale" rather than "evidence it is current" — and an objective whose
+  // evidence carries no date at all had nothing establishing the thing gate 6
+  // exists to establish. It fails now. On the bundled sample this moves no
+  // determination (no Satisfied objective there is undated), which is the whole
+  // argument for taking the strict reading: it costs nothing here and refuses
+  // the claim on the packages where it would.
   const undated = currency.isCurrent === null;
-  let g6pass = currency.isCurrent !== false;
+  let g6pass = currency.isCurrent === true;
   const g6concerns = [];
   if (currency.isCurrent === false) g6concerns.push(currency.concerns[0] || 'no current dates');
+  else if (undated) g6concerns.push('evidence carries no date — currency not established');
 
   // Gate 6b: Scan Cadence (FedRAMP ConMon 30-day)
   const cadenceIssue = checkScanCadence(dates, asOf);
@@ -1892,7 +1946,7 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   if (slaIssue) { g6pass = false; g6concerns.push(slaIssue); }
 
   gates.push({gate:6, name:'Temporal', pass:g6pass, checks:[
-    {id:'6a', name:'Currency', pass:currency.isCurrent !== false, undated},
+    {id:'6a', name:'Currency', pass:currency.isCurrent === true, undated},
     {id:'6b', name:'Scan cadence', pass:!cadenceIssue},
     {id:'6c', name:'Future dates', pass:!futureDateIssue},
     {id:'6d', name:'Finding SLA', pass:!slaIssue}
@@ -1912,14 +1966,21 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
   const reviewReasons = [];
   if (allPassed && conf < REVIEW_CONFIDENCE_FLOOR) reviewReasons.push('confidence ' + Math.round(conf * 100) + '% is below the ' + Math.round(REVIEW_CONFIDENCE_FLOOR * 100) + '% floor');
   if (allPassed && coverageResult.ratio < REVIEW_COVERAGE_FLOOR) reviewReasons.push('concept coverage ' + Math.round(coverageResult.ratio * 100) + '% is below the ' + Math.round(REVIEW_COVERAGE_FLOOR * 100) + '% floor');
-  if (allPassed && undated) reviewReasons.push('evidence carries no date — currency not established');
+  // Undated no longer reaches here: gate 6a fails on it, so the determination
+  // is Other Than Satisfied and the gate record says why. What replaces it as a
+  // floor is the parameter the build could not verify — an objective that
+  // passed every gate while one of its organization-defined parameters was
+  // never checked is exactly a Satisfied a human should look at. 36 of the
+  // bundled sample's 153 carry one, and since 1.5.1 the flag travels on every
+  // artifact.
+  if (allPassed && odp.unverified.length) reviewReasons.push(odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; '));
   const evRefs = strongHits.slice(0,3).map(h => h.filename).filter((v,i,a) => a.indexOf(v)===i);
 
   const result = {
     dif_id: dif.i, control_id: controlId, objective_id: dif.i,
     status: determination, determination: determination,
     finding: allPassed ? 'All 7 gates passed' : gaps[0] || 'Gate failure',
-    evidence_description: evidenceText.slice(0, 500),
+    evidence_description: evidenceDescription(evidenceText),
     evidence_references: evRefs,
     assessment_method: 'EXAMINE',
     assessment_date: asOfDay,
@@ -1927,9 +1988,10 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
     defensibility_score: defScore,
     concept_coverage: coverageResult.ratio,
     evidence_strength: strength.tier,
-    temporal_status: !g6pass ? 'stale' : undated ? 'undated' : 'current',
+    temporal_status: undated ? 'undated' : !g6pass ? 'stale' : 'current',
     odp_resolved: odp.resolved,
     odp_unverified: odp.unverified,
+    odp_expected: odp.expected,
     gap_description: gaps.join('; ') || '',
     review_required: reviewReasons.length > 0,
     review_reason: reviewReasons.join('; '),
@@ -1938,8 +2000,10 @@ function assessDif(dif, retriever, controlId, controlTitle, familyName, refutati
 
   if (allPassed) {
     result.assessor_notes = 'Deterministic mode — all 7 gates passed. Strength: ' + strength.tier + ', coverage: ' + Math.round(coverageResult.ratio*100) + '%.' +
-      (odp.unverified.length ? ' ' + odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; ') + '.' : '') +
-      (undated ? ' Evidence carries no date; currency not established.' : '');
+      // No undated clause here: since 1.6.0 undated fails gate 6a, so a run
+      // that reaches this branch has a date. The undated case says so through
+      // the gate record and the gap description instead.
+      (odp.unverified.length ? ' ' + odp.unverified.length + ' organization-defined parameter(s) not verified by this build: ' + odp.unverified.join('; ') + '.' : '');
   } else {
     const gapType = classifyGapType(gaps[0] || '');
     const gapTypes = [gapType];
@@ -2000,6 +2064,7 @@ const RULESET = Object.freeze({
     homoglyphs: Object.keys(HOMOGLYPHS).sort().map(k => [k, HOMOGLYPHS[k]]),
     invisible: rx(INVISIBLE_RE),
     stuffing: { min_dupes: STUFFING_MIN_DUPES, dupe_share: STUFFING_DUPE_SHARE },
+    evidence_description_max: EVIDENCE_DESCRIPTION_MAX,
     entities: { pattern: rx(ENTITY_RE), named: Object.keys(XML_ENTITIES).sort().map(k => [k, XML_ENTITIES[k]]) },
     control_id: rx(CONTROL_ID_RE),
     dates: DATE_PATTERNS.map(([re, fmt]) => ({ format: fmt, pattern: rx(re) })),
@@ -2055,6 +2120,8 @@ global.SparkAEEngine = {
   docxText: docxText,
   decodeEntities: decodeEntities,
   evidenceLooksStuffed: evidenceLooksStuffed,
+  evidenceDescription: evidenceDescription,
+  stripOdpPrefix: stripOdpPrefix,
   unzip: unzip,
   chunkText: chunkText,
   checkCoverage: checkCoverage,

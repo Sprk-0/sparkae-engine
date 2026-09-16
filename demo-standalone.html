@@ -2614,7 +2614,7 @@ html,body{
         <div class="ssp-list" id="ssp-list">
           <button class="ssp-option selected" data-id="cloudvault">
             <div class="ssp-name">CloudVault Storage Platform <span class="uc-badge live">§01 live engine</span></div>
-            <div class="ssp-meta" id="cv-meta">FedRAMP Low · 156 controls · 981 objectives · v2.4</div>
+            <div class="ssp-meta" id="cv-meta">FedRAMP Low · 156 controls · 981 objectives · sample SSP v2.4</div>
             <div class="ssp-meta" id="cv-engine-meta" style="display:none"></div>
           </button>
           <!-- MeshGate is the subject of the §02–§09 walkthroughs and this
@@ -3208,6 +3208,9 @@ const SAMPLES = {
 
     initial: {
       files: ['ssp_cloudvault_v2_4.docx', 'nessus_scan_20260418.csv', 'cloudtrail_q1.json', 'access_policy_v3.pdf'],
+      // Authored walkthrough figures, not this engine's. The live engine on
+      // this same package at FedRAMP Low returns 153 Satisfied, and the two
+      // have never been the same number; §01 is the tab that runs.
       sat: 287, ots: 38, nr: 9, na: 18, nt: 0, ra: 4, or_: 2, fp: 7, def: 87,
       findings: [
         { ctrl: 'AC-3.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
@@ -5485,8 +5488,13 @@ async function runInitial(sample) {
   return runInitialWalkthrough(sample);
 }
 
+// A walkthrough, and only ever a walkthrough. This function used to carry a
+// `_realRun` binding, permanently null, guarding branches that read live gate
+// tallies and a live corpus label — dead code that made §02-§09 look like tabs a
+// live run could drive, and kept the walkthrough's authored figures standing
+// next to a path that would have produced different ones. The engine's own run
+// is §01. The branches are gone; the figures below are authored and say so.
 async function runInitialWalkthrough(sample) {
-  const _realRun = null;
   const d = sample.initial;
   renderStages(USE_CASES.initial.stages);
   renderGates();
@@ -5498,12 +5506,7 @@ async function runInitialWalkthrough(sample) {
   // ── Stage 1 · SSP & Appendices · 17 mandatory appendices A–Q ──
   setStage(1);
   setStatus('◆ SSP REVIEW · 17 mandatory appendices A through Q · per fedramp.gov SSP Template Rev5');
-  if (_realRun) {
-    log('00:00.0', 'init', `<span class="key">live engine</span> · ${engEsc(_realRun.corpusLabel)} · ${_realRun.fileCount} file(s) · ${_realRun.chunkCount} chunks indexed`);
-    log('00:00.2', 'init', `BM25 index built · ${_realRun.controlCount} controls / ${_realRun.summary.findings.length} determination statements at ${engineBaseline()} baseline`, 'ok');
-  } else {
-    log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${sample.controls} controls · FIPS 199 ${engEsc(inventory.fips199 ? inventory.fips199.overall : 'Low')} baseline`);
-  }
+  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${sample.controls} controls · FIPS 199 ${engEsc(inventory.fips199 ? inventory.fips199.overall : 'Low')} baseline`);
   await wait(300);
   // For custom uploads, reflect the actually-detected materials. Otherwise use baked-in CSP narrative.
   const isCustom = sample === SAMPLES['custom'];
@@ -5749,15 +5752,7 @@ async function runInitialWalkthrough(sample) {
   // demo should show that rather than a reassuring row of green.
   const GATE_NAMES = ['Presence','Concepts','Strength','ODP','Contradiction','Temporal','Determination'];
   for (let g = 1; g <= 7; g++) {
-    if (_realRun) {
-      const reached = _realRun.gateReached[g - 1], passed = _realRun.gatePassed[g - 1];
-      const ok = reached > 0 && passed / reached >= 0.5;
-      setGate(g, reached === 0 ? '' : ok ? 'pass' : 'fail');
-      log('01:0' + g + '.0', 'gate', 'gate ' + g + ' · ' + GATE_NAMES[g - 1] + ' · ' +
-          passed + '/' + reached + ' objectives passed', ok ? 'ok' : 'warn');
-    } else {
-      setGate(g, 'pass');
-    }
+    setGate(g, 'pass');
     await wait(140);
   }
   log('01:01.0', 'out', 'OSCAL SAR schema validation · ✓ valid', 'ok');
@@ -8775,7 +8770,10 @@ function downloadLive(kind) {
   catch (e) { _toast('Export failed: ' + (e && e.message ? e.message : e), true); return; }
   const name = 'sparkae-' + _fileSafe(st.baseline.toLowerCase()) + '-' + st.assessment_date + '-' + spec.ext;
   _saveBlob(new Blob([body], { type: spec.mime + ';charset=utf-8' }), name);
-  _toast(name + ' · ' + body.length.toLocaleString() + ' bytes · sha1 ' + DEMO_EXPORTS.sha1Hex(body).slice(0, 12));
+  // SHA-1, said as SHA-1. Every digest in the receipt is SHA-1 and the label
+  // has always read `sha1`; what was missing is anywhere saying why that is
+  // acceptable, which is that these identify a build rather than protect it.
+  _toast(name + ' · ' + body.length.toLocaleString() + ' bytes · sha1 ' + DEMO_EXPORTS.sha1Hex(body).slice(0, 12) + ' (reproducibility identifier, not a security digest)');
 }
 
 // ── Main runner — dispatches by use case ──
@@ -9165,20 +9163,44 @@ function citedSection(f) {
   return m ? '\u00a7' + m[1] : '';
 }
 
+// The sentence that travels with a determination, in the voice of whoever did
+// the work. Every branch here used to open "During the assessment, the assessor
+// examined ..." and a Satisfied one ended "and confirmed" — an account of an
+// assessor examining documents and reaching a conclusion, written by an engine
+// that had done neither, and emitted for the sixty Satisfied a floor had
+// flagged as needing exactly that assessor. CONTRIBUTING line 24: do not add
+// narration that describes activity the engine did not perform.
+//
+// The engine speaks as the engine. The assessor's own sentence still travels
+// beside it whenever one is recorded through Revise, in the assessor's voice,
+// because an assessor wrote it.
 function examineStatement(f) {
   const req = rewordDif(difText(f.dif_id || ''));
   if (!req) return '';
   const docs = (f.evidence_references || []).filter(Boolean);
   if (!docs.length) {
-    return 'During the assessment, the assessor examined the submitted package and found no documentation establishing that ' + req + '.';
+    // What happened is that retrieval surfaced no passage above the evidence
+    // threshold. "Found no documentation establishing that ..." is a different
+    // and much larger claim — it says the package does not contain the
+    // documentation, which this build cannot know and which a refused PDF
+    // beside an unrelated .txt is enough to produce.
+    return 'The engine retrieved no passage above its evidence threshold for this objective: ' + req +
+      '. That is what retrieval surfaced from the submitted package, not a finding that the package lacks the documentation.';
   }
   const sec = citedSection(f);
-  const per = sec ? ' per ' + sec : '';
+  const per = sec ? ' at ' + sec : '';
+  const cited = docs.join(', ');
   if (f.status === 'Satisfied') {
-    return 'During the assessment, the assessor examined ' + docs.join(', ') + ', and confirmed' + per + ' that ' + req + '.';
+    const base = 'The engine examined ' + cited + ' and its seven gates passed' + per + ' for this objective: ' + req + '.';
+    // A Satisfied the engine itself flagged does not get a sentence that reads
+    // like a clean one.
+    return f.review_required
+      ? base + ' A review floor was not met (' + String(f.review_reason || 'see the review flag') +
+        '), so this determination needs an assessor before it is relied on.'
+      : base + ' EXAMINE preparation only — an assessor confirms it.';
   }
   const gap = f.gap_description ? ' ' + String(f.gap_description).replace(/\s*;\s*$/, '') + '.' : '';
-  return 'During the assessment, the assessor examined ' + docs.join(', ') + ', and could not confirm' + per + ' that ' + req + '.' + gap;
+  return 'The engine examined ' + cited + ' and its gates did not pass' + per + ' for this objective: ' + req + '.' + gap;
 }
 
 // Assessor revisions live here and nowhere else. They are deliberately NOT fed
@@ -9448,7 +9470,11 @@ document.getElementById('engine-profile').addEventListener('change', () => {
   const b = engineBaseline();
   const c = profileCounts(b);
   const cv = document.getElementById('cv-meta');
-  if (cv) cv.textContent = 'FedRAMP ' + b + ' · ' + c.controls + ' controls · ' + c.objectives + ' objectives · v2.4';
+  // 'v2.4' is the bundled SSP's own version, not the engine's and not the
+  // catalog's. It sat unlabelled after two live profile counts, so changing
+  // Low to High rewrote the numbers beside it and left it reading like the
+  // version of whatever had just been recalculated.
+  if (cv) cv.textContent = 'FedRAMP ' + b + ' · ' + c.controls + ' controls · ' + c.objectives + ' objectives · sample SSP v2.4';
 });
 
 // One delegated listener for every statement block: the painter batches rows

@@ -22,8 +22,8 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-15 (the state this build is in)
 
-Engine 1.5.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `d10ea7075a64` ·
-verdict digest `614ab4597d07`
+Engine 1.6.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `fc6ad10cbb39` ·
+verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
 identified by what it decided rather than by a label, so it can be reproduced,
@@ -40,6 +40,222 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-16 (the golden run, delivered as a package)
+
+No part of the tuple moves. Engine 1.6.0, ruleset `fc6ad10cbb39`, verdict digest
+`20cd7ee2ae8e`; the engine, the exporters, the golden fixture and the benchmark
+are untouched. This is `check.mjs` §28, and it closes item 71.
+
+Every determination the golden fixture pins was produced by `chunkText` over a
+string embedded in the test file. Nothing that decides whether a push is
+accepted ever called `parsePackage`, so the archive reader, the DOCX reader, the
+CRC check and the housekeeping skip list were invisible to it: any of them could
+break without moving the golden digest.
+
+The bundled sample is now assessed a second time, delivered the way a real
+submission arrives — a ZIP holding a DOCX — and has to produce the same verdict
+digest as the embedded text. It does, and the equality is the assertion, so
+there is no second fixture to regenerate.
+
+The package is deliberately adversarial, because a clean one is not enough: a
+ZIP of a well-formed DOCX catches a defect in paragraph handling and nothing
+else, which was measured rather than assumed. It carries
+
+- a control id written as `AC&#45;1`, so a defect in the entity decoder drops
+  the id and the section stops being AC-1's own evidence;
+- a `__MACOSX/._…` member holding "the access control policy is not
+  implemented", so a defect in the skip list reads it and refuses AC-1;
+- a `scan-notes.txt` whose stored CRC does not describe its bytes, holding the
+  same refutation, so a defect in the CRC check reads it.
+
+Each of the four readers was mutated in turn to confirm the fixture fails when
+it should: merging paragraphs, dropping entity decoding, disabling the skip list
+and disabling the CRC check each move the digest and fail the suite.
+
+The benchmark still runs `chunkText`, deliberately. Those sixteen cases are an
+accuracy record with a published score, and widening what they measure to
+include delivery would blur what the figure means for a weaker net than this
+one. The README says so where the figure is quoted.
+
+## 2026-09-16 (the product calls · engine 1.6.0)
+
+Engine 1.5.1 → **1.6.0** · ruleset `dbacaaed27dc` → `fc6ad10cbb39` · verdict
+digest `5ded83f4010c` → **`20cd7ee2ae8e`** · golden regenerated.
+
+**No determination moves.** 153 Satisfied, 808 Other Than Satisfied, 20 Not
+Reviewed — the same objectives, with the same statuses. What moves is gate 6's
+record on 92 objectives that were already Other Than Satisfied, and the review
+flag on 21 more Satisfied, so the verdict line changes and the digest with it.
+
+Three decisions the 1.3.0 review left open. It called them product calls and
+said not to make them quietly, so they are made here, with what each one costs.
+
+- **Gate 4 consults the catalog's FedRAMP value, and does not compare it.** 236
+  of the catalog's 1,513 objectives carry FedRAMP's own value in `o` — AC-1's
+  policy review is "at least every 3 years" — and nothing read it. It is read
+  now, and it travels: on the determination as `odp_expected`, in a findings-CSV
+  column, and as a `fedramp-parameter-value` prop on the OSCAL finding, on all
+  159 of the bundled run's objectives that have one, including the Not Reviewed
+  ones, because the requirement is a property of the objective rather than of
+  the run.
+
+  It is not compared, and that is the decision rather than an omission.
+  Comparing needs the stated duration bound to the parameter it answers, and an
+  anchored clause routinely carries a duration belonging to a different
+  parameter: the sample's AC-2 section says accounts are reviewed quarterly, and
+  AC-2_h.(1) requires that accounts be *disabled* within twenty-four hours.
+  Measured over the bundled sample, a clause-scoped comparison found three
+  mismatches and all three were of exactly that shape — three false refusals and
+  no true ones. A gate that is wrong every time it fires is worse than one that
+  does not fire, so the requirement goes to the assessor who can bind it, and
+  `check.mjs` §27 asserts that "every 10 years" still resolves a three-year
+  parameter, so a later change cannot claim the comparison without making it.
+
+- **Undated evidence fails currency.** 1.4.0 stopped calling it current and
+  flagged it, but gate 6a still *passed*, so currency meant "no evidence it is
+  stale" rather than "evidence it is current" — and gate 6 exists to establish
+  the latter. It fails now. On this sample that costs nothing: 92 objectives are
+  undated and every one of them was already Other Than Satisfied, so no
+  determination moves. That is the argument for taking the strict reading —
+  it is free here and refuses the claim on the packages where it would not be.
+
+- **An unverified parameter is a floor, not a refusal.** An untyped
+  organization-defined parameter — one with no frequency, period, role or
+  threshold to match — is recorded `odp_unverified` and gate 4 still passes.
+  Failing it closed would have taken Satisfied from 153 to 117. It stays a
+  floor: the gates decide the verdict, the floors decide whether a human must
+  look before it is used, which is the rule the rest of this build follows. What
+  changes is that it is now one of the floors — 36 of the 153 carry one, 21 of
+  them were not otherwise flagged, and since 1.5.1 the flag and its reason
+  travel on every artifact. The undated review reason retires into gate 6a,
+  where it is now a refusal rather than a note.
+
+That closes the last of the P0 engine items. `.github/REVIEW-FINDINGS.md` has
+what remains: parser hardening, the verification twins, and process.
+
+## 2026-09-16 (the pages say what the build does)
+
+No part of the tuple moves. Engine 1.5.1, catalog `2026-07-21` / `91ad1b17138f`,
+ruleset `dbacaaed27dc`, verdict digest `5ded83f4010c` — the engine, the
+exporters and the golden fixture are untouched. This is the copy, and one
+sentence the engine was writing that was copy in disguise.
+
+- **The engine stops writing in the assessor's voice.** Every examine statement
+  opened "During the assessment, the assessor examined …", and a Satisfied one
+  closed "and confirmed" — an account of an assessor reading documents and
+  reaching a conclusion, composed by an engine that had done neither, and
+  emitted for the sixty Satisfied a floor had just flagged as needing exactly
+  that assessor. CONTRIBUTING line 24 forbids narration of activity the engine
+  did not perform. The engine speaks as the engine now; the assessor's sentence
+  still travels beside it, in the assessor's voice, whenever Revise records one.
+  `tests/assessor.mjs` held the old phrasing in place and now holds the new.
+- **A Not Reviewed says what happened.** "Found no documentation establishing
+  that …" is a claim about the package. What happened is that retrieval
+  surfaced no passage above the evidence threshold — a refused PDF beside an
+  unrelated `.txt` is enough to produce it — and that is what it says.
+- **447 is what this build carries, not the size of Rev 5.** It is 215 base
+  controls and 232 enhancements, and it is exactly the FedRAMP High baseline
+  (410) plus the 37 PT and PM controls that sit in no baseline: every control
+  here is in one of those two groups, which `check.mjs` now asserts. AC-16,
+  AC-23, AC-24, AC-25, IA-13 and SC-16 are absent, which it also asserts. Seven
+  footers stop saying "full catalog". The 37 baseline-less controls and the
+  dead `LI-SaaS` tagging (156 controls, 789 objectives, no profile behind it)
+  are stated in the README rather than left inside the count.
+- **Claims trimmed to this origin.** No OSCAL POA&M (this build writes POA&M
+  CSV; the OSCAL one is a server-product export). No "same 7-gate engine as the
+  3PAO UI" on the integrations social cards, which is what LinkedIn and Slack
+  render. No "Tenable for the package itself". No "certified 3PAO" in the terms
+  — FedRAMP recognises, it does not certify. The gap-type names on the
+  assessors page are the six the code actually emits.
+- **Gate 4 copy matches gate 4.** The assessors page advertised a mismatch this
+  build cannot detect — "90-day vs FedRAMP 60-day requirement" — when gate 4
+  checks that a parameter of the right kind is stated and never compares it to
+  the value the catalog carries. The page says what the gate does; the gap
+  itself is item 6 and still open.
+- **Advice that acts on a lexical Satisfied.** "Skip the controls that clearly
+  pass" is gone, and so is the claim, on three social cards and in the body,
+  that the floors are something every Satisfied clears — sixty do not, and since
+  1.5.1 each says so on the artifact.
+- **The walkthrough stops looking like a run.** `runInitialWalkthrough` carried
+  a permanently-null `_realRun` guarding branches that read live gate tallies
+  and a live corpus label: dead code that made §02–§09 look like tabs a live run
+  could drive. Gone. Its authored figures say they are authored, and say that
+  the live engine returns 153 Satisfied on the same package. The rail's `v2.4`
+  is labelled as the sample SSP's version rather than trailing two live profile
+  counts unattached to anything. The download toast calls its SHA-1 a
+  reproducibility identifier rather than leaving the reader to assume otherwise.
+  The 20x walkthrough now says on its own page what the assessors page says:
+  SparkAE does not support FedRAMP 20x.
+- **`BANNED` is not five phrases.** It was five, and the whole of the above
+  passed it. It now holds every phrase this change removed, so each one fails a
+  push if it comes back; the suite proves the guard fires rather than passing
+  vacuously.
+
+## 2026-09-15 (the exports say what the engine decided · engine 1.5.1)
+
+Engine 1.5.0 → **1.5.1** · ruleset `d10ea7075a64` → `dbacaaed27dc` (the version is
+in it) · verdict digest `614ab4597d07` → **`5ded83f4010c`** · golden regenerated.
+
+**No determination moves.** All 981 objectives on the bundled sample come out of
+this change with the status they went in with: 153 Satisfied, 808 Other Than
+Satisfied, 20 Not Reviewed, 60 flagged. The verdict digest moves because the
+verdict LINE moves — it carries the review flag now, which is the point of the
+change, and is the one time a digest that moves does not mean a determination
+did.
+
+The engine has flagged thin Satisfied since 1.2.0: all seven gates passed, and
+then a floor did not — confidence under 60%, concept coverage under 60%, or
+evidence carrying no date at all. Sixty of the sample's 153 Satisfied are
+flagged. None of that left the tab. OSCAL, all four CSVs, the summary and the
+receipt's verdict lines each carried the determination without the qualification
+the engine had put on it, so a downstream reader — the GRC tool, the reviewer,
+the package — saw 153 clean Satisfied.
+
+- **The flag travels on every artifact.** Two columns on the findings CSV
+  (`Review Required`, `Review Reason`) and on the TCW, a `review-required` prop
+  with its reason on the OSCAL finding, and a line in the summary beside the
+  count it qualifies. It follows the engine's determination rather than the
+  effective one: once an assessor revises an objective, a human has looked at
+  it, which is what the flag was asking for.
+- **The receipt attests it.** `review_required` is part of the verdict line, so
+  a run where sixty Satisfied are flagged no longer hashes the same as one where
+  none are. Without that, an export could drop the flag from every row and still
+  verify against its own receipt — the hole restated. `check.mjs` §26 strips the
+  flags from a copy of the run and requires the digest to differ.
+- **The POA&M is open weaknesses.** It filtered on "anything but Satisfied",
+  which swept in every Not Reviewed — twenty on the sample, hundreds on a live
+  Low run — and put untested objectives in front of a reader as findings with a
+  remediation owed. Not Reviewed means no evidence cleared the retrieval floor:
+  a gap in the package, not a weakness in the system. The RET already read it
+  this way; the two agree now.
+- **Control origination is not invented.** Every TCW row was stamped
+  `Service Provider Corporate`. Origination is a property of how the system is
+  built, stated by the system owner; this build does not read it and does not
+  derive it. The row says `not determined by this build`.
+- **A column this build does not fill says so.** Applicable Threats and the
+  three post-remediation risk columns were empty on every findings row, and
+  empty reads as "none" — no threats, no residual risk — which is a claim. They
+  name themselves as not produced, and only on a row that carries a weakness: on
+  a Satisfied row there is no threat and no residual risk to state, and blank is
+  the honest answer.
+- **The detection date says which detection it is.** The RET and POA&M stamped
+  the assessment date into Original Detection Date, so a 2018 finding in the
+  evidence was dated 2026-06-01. The engine reads a package, not a history, and
+  cannot establish an earlier detection; the date stays and the comment says
+  what it is.
+- **A truncated evidence body says it was truncated.** The gates read the whole
+  string and the artifact got its first 500 characters with nothing to mark the
+  cut, so a refutation or a date past that offset was accounted for in the
+  determination and absent from the record of it. The cut stays — an OSCAL file
+  carrying every evidence body in full is megabytes of duplicated corpus — and
+  now names the length the gates actually read.
+
+Still open, and next: the catalog's own parameter values are unread (gate 4
+checks keyword classes, not the 236 objectives that carry a FedRAMP value), and
+the pages still claim things this build does not do — including, on
+`assessors.html`, that every Satisfied clears the floors, which the sixty
+flagged determinations contradict. `.github/REVIEW-FINDINGS.md` has the rest.
 
 ## 2026-09-15 (normalise before you match · engine 1.5.0)
 

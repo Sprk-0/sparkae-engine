@@ -8,7 +8,7 @@
   "satisfied": 153,
   "other_than_satisfied": 808,
   "not_reviewed": 20,
-  "review_required": 60,
+  "review_required": 81,
   "gate_reached": [
     981,
     961,
@@ -24,15 +24,15 @@
     852,
     898,
     504,
-    927,
+    835,
     153
   ],
-  "engine_version": "1.5.0",
+  "engine_version": "1.6.0",
   "catalog_version": "2026-07-21",
   "catalog_digest": "91ad1b17138f7e0707fe19e65d9b8c3c77833401",
-  "ruleset_digest": "d10ea7075a649a8083e792a0f9896a1b7d4e6b93",
+  "ruleset_digest": "fc6ad10cbb3953e3c3b52782efb6a7364929acd1",
   "evidence_digest": "946ce09b5bf0c2fd3694c53997d2f6077847ce1f",
-  "verdict_digest": "614ab4597d07cad1046a7e7492d0be7db359a5fe",
-  "oscal_ar_sha1": "7cfc00adfc92c84e54b0e6dd770f00f81d8f6706",
-  "oscal_ar_bytes": 2602342
+  "verdict_digest": "20cd7ee2ae8e22a44abbf8e478208e8a21cb213e",
+  "oscal_ar_sha1": "8cf8f530c2c2d8bfdb6c056d26e9c4b51497b914",
+  "oscal_ar_bytes": 2693178
 }

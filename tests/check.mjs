@@ -1470,10 +1470,21 @@ check(new RegExp(`${fmt(high.objectives)}</div><div class="label">[^<]*High base
   'the homepage labels the High-baseline objective count as High, with its control count');
 check(home.replace(/\s+/g, ' ').includes(`${high.controls}</div><div class="label">Controls · FedRAMP High profile`) && !/410<\/div><div class="label">[^<]*NIST[^<]*High/.test(home),
   '410 is labelled the FedRAMP High profile, not NIST High (which is 426)');
-const footerLine = `full catalog ${full.controls} controls · ${fmt(full.objectives)} objectives · FedRAMP High baseline ${high.controls} / ${fmt(high.objectives)}`;
-const footerPages = allPages.filter(f => /full catalog/.test(pageText[f]));
+// "full catalog" is the word that came out: 447 is what this build carries, and
+// it is the FedRAMP High baseline plus the PT and PM controls, not the whole of
+// 800-53A Rev 5 — AC-16, AC-23, AC-24, AC-25, IA-13 and SC-16 are not in it.
+// The figures are unchanged; the claim around them is.
+const footerLine = `catalog ${full.controls} controls · ${fmt(full.objectives)} objectives · FedRAMP High baseline ${high.controls} / ${fmt(high.objectives)}`;
+const footerPages = allPages.filter(f => /catalog \d+ controls/.test(pageText[f]));
 check(footerPages.length >= 6 && footerPages.every(f => pageText[f].includes(footerLine)),
   `${footerPages.length} footers state the catalog figures, each labelled and matching the catalog`);
+check(!allPages.some(f => /full catalog/.test(pageText[f])),
+  'no page calls what this build carries the full 800-53A Rev 5 catalog');
+const absentFromCatalog = ['AC-16', 'AC-23', 'AC-24', 'AC-25', 'IA-13', 'SC-16'];
+check(absentFromCatalog.every(id => !CATALOG[id]),
+  'the controls the README names as absent are absent — ' + absentFromCatalog.join(', '));
+check(Object.keys(CATALOG).every(id => (CATALOG[id].b || []).includes('High') || (CATALOG[id].b || []).length === 0),
+  'every control carried is either in the FedRAMP High baseline or in no baseline at all, which is what the README says it is');
 check(!/447 Controls · 1,513 DIFs/.test(allText) && !/v0\.7\.0-rc1/.test(allText),
   'no unlabelled catalog count and no release-candidate tag survives as a badge');
 // The server product's plain-NIST install is a deployment profile, not a job
@@ -1530,7 +1541,31 @@ check(v5.size > a.findings.length, `the OSCAL document carries ${v5.size} distin
 
 // Independence. Phrases that assert a status SparkAE does not hold, or a
 // readiness the product's own trackers say generated bundles do not have.
-const BANNED = ['ready for FedRAMP submission', 'submission-ready', 'submission-grade', 'Authoritative downloads', 'CUI-safe'];
+// Five phrases caught the 2026-09 review's worst copy and none of the rest of
+// it: a page could tell an assessor to skip what passed, call 447 the complete
+// Rev 5 catalog, promise OSCAL POA&M this build writes as CSV, or advertise a
+// 3PAO UI this origin does not ship, and the suite stayed green. Each entry
+// below is a phrase that was on a published page and is not true of this build.
+// A claim the server product can back belongs on a page that says so.
+const BANNED = [
+  // what the reference build cannot back
+  'ready for FedRAMP submission', 'submission-ready', 'submission-grade',
+  'Authoritative downloads', 'CUI-safe',
+  // advice that acts on a lexical Satisfied as though it were an assessed one
+  'Skip the controls that clearly pass',
+  'every Satisfied must clear',
+  // capability this origin does not ship
+  'same 7-gate engine as the 3PAO UI',
+  'OSCAL 1.1.2 assessment-results and POA&M',
+  // catalog scope
+  'full catalog', 'Complete NIST SP 800-53A Rev 5 catalog',
+  // gap-type names that exist only in marketing
+  'odp_frequency_mismatch', 'insufficient_scope', 'stale_documentation', 'scan_gap',
+  // FedRAMP vocabulary this build does not have the standing to use
+  'certified 3PAO',
+  // a parameter comparison gate 4 does not perform
+  '90-day vs FedRAMP 60-day requirement',
+];
 const bannedHits = allPages.flatMap(f => BANNED.filter(b => pageText[f].toLowerCase().includes(b.toLowerCase())).map(b => `${f}: ${b}`));
 check(!bannedHits.length, 'no page makes a claim the product cannot back' + (bannedHits.length ? ' — ' + bannedHits.join('; ') : ''));
 const homeFlat = home.replace(/\s+/g, ' ');
@@ -1774,10 +1809,16 @@ const dated = E.extractDates('Last reviewed: 2023-01-10. Most recent scan: 2026-
 check(dated.length === 2 && dated.find(d => d.dateStr === '2023-01-10').ctxType === 'review_date' && dated.find(d => d.dateStr === '2026-05-28').ctxType === 'unknown',
   'a date\'s type is read from its own sentence, not from the forty characters around it — ' + JSON.stringify(dated.map(d => d.dateStr + ':' + d.ctxType)));
 
-// 17: undated evidence is undated, not current
+// 17: undated evidence is undated, not current. 1.4.0 stopped calling it
+// current and flagged it while still PASSING gate 6a; since 1.6.0 it fails,
+// because currency meant "no evidence it is stale" rather than "evidence it is
+// current" and gate 6 exists to establish the latter.
 const undatedRun = verdictFor([['ac2.txt', 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2, version 2.4.']], 'AC-2', AC2G);
-check(undatedRun.temporal_status === 'undated' && undatedRun.review_required === true && /no date/.test(undatedRun.review_reason) && undatedRun.gates.find(g => g.gate === 6).checks[0].undated === true,
-  'evidence with no date is recorded as undated and flagged for review, not called current — ' + undatedRun.temporal_status + ' / ' + undatedRun.review_reason);
+const undatedG6 = undatedRun.gates.find(g => g.gate === 6);
+check(undatedRun.temporal_status === 'undated' && undatedG6.checks[0].undated === true &&
+      undatedG6.checks[0].pass === false && undatedG6.pass === false &&
+      undatedRun.status === 'Other Than Satisfied' && /no date/.test(undatedRun.gap_description),
+  'evidence with no date fails currency rather than passing it — ' + undatedRun.temporal_status + ' / ' + undatedRun.status + ' / ' + undatedRun.gap_description);
 
 // 66 (18): the SLA check reads every date format
 const slaMonth = E.checkOpenFindingSla('The high vulnerability CVE-2024-0001 remains open since January 1, 2024.', asOfDate);
@@ -2012,6 +2053,197 @@ const unionText = E.foldHomoglyphs(unionRetriever.query(ir2.t, 8, 'IR-2').map(h 
 check(unionText.split(/\s+/).length > 200 && !E.evidenceLooksStuffed(unionText),
   "the bundled sample's own retrieval union, whose sections share a house-style opening, is not stuffed — " +
   unionText.split(/\s+/).length + ' words');
+
+
+// ── 26. the exports say what the engine decided ─────────────────────────────
+// A determination the engine qualified, or a column it cannot fill, has to
+// reach the artifact a reader acts on. None of this changes a determination:
+// the sample's 153 / 808 / 20 are the same objectives as before.
+console.log('26. the exports say what the engine decided');
+
+const flaggedFindings = a.findings.filter(f => f.review_required);
+const csv26 = csvRecords(EX.buildFindingsCSV(a.state, {}));
+const head26 = csv26[0];
+const colOf = (name) => head26.indexOf(name);
+check(flaggedFindings.length > 0 && a.findings.every(f => !f.review_required || f.status === 'Satisfied'),
+  'the engine flags only Satisfied determinations for review — ' + flaggedFindings.length + ' of them');
+check(colOf('Review Required') > -1 && colOf('Review Reason') > -1,
+  'the findings CSV carries Review Required and Review Reason');
+check(csv26.slice(1).filter(r => r[colOf('Review Required')] === 'Yes').length === flaggedFindings.length,
+  'every flagged determination is marked Yes in the findings CSV');
+check(csv26.slice(1).every(r => r[colOf('Review Required')] !== 'Yes' || r[colOf('Review Reason')]),
+  'a flagged row states the reason the floor was not met');
+const tcw26 = csvRecords(EX.buildTCW(a.state, {}));
+check(tcw26[0].indexOf('Review Required') > -1 &&
+      tcw26.slice(1).filter(r => r[tcw26[0].indexOf('Review Required')] === 'Yes').length === flaggedFindings.length,
+  'the TCW carries the flag too');
+const arProps = JSON.stringify(a.ar);
+check((arProps.match(/"review-required"/g) || []).length === flaggedFindings.length,
+  'OSCAL carries a review-required prop on each flagged finding');
+check(EX.buildSummary(a.state, {}).includes('of which flagged for review: ' + flaggedFindings.length),
+  'the summary states how many of its Satisfied are flagged');
+// The receipt attests the flag, so an export that drops it no longer verifies.
+const flagStripped = EX.buildReceipt({
+  engineVersion: E.ENGINE_VERSION, catalogVersion, catalog: CATALOG, ruleset: E.RULESET,
+  chunks: E.chunkText(sample, 'CloudVault-Federal-SSP.txt'),
+  findings: a.findings.map(f => ({ ...f, review_required: false })),
+  assessmentDate: SAMPLE_DATE, baseline: 'Low',
+});
+check(flagStripped.verdict_digest !== a.state.receipt.verdict_digest,
+  'the verdict digest covers the review flag: a run with the flags stripped does not hash the same');
+
+// 23: Not Reviewed is a gap in the package, not an open weakness
+const poam26 = csvRecords(EX.buildPOAM(a.state, {})).slice(1);
+const ret26 = csvRecords(EX.buildRET(a.state, {})).slice(1);
+const ots26 = a.findings.filter(f => f.status === 'Other Than Satisfied').length;
+const nr26 = a.findings.filter(f => f.status === 'Not Reviewed').length;
+check(nr26 > 0 && poam26.length === ots26 && poam26.length === ret26.length,
+  'the POA&M carries the Other Than Satisfied and not the ' + nr26 + ' Not Reviewed, and agrees with the RET');
+
+// 29: the detection date says which detection it is
+check(poam26[0].some(c => c.includes('Original Detection Date is the date of this assessment')) &&
+      ret26[0].some(c => c.includes('cannot establish an earlier detection')),
+  'the RET and POA&M say that their detection date is this assessment, not an earlier one');
+
+// 27: no invented FedRAMP origination
+check(!EX.buildTCW(a.state, {}).includes('Service Provider Corporate') &&
+      EX.buildTCW(a.state, {}).includes('not determined by this build'),
+  'the TCW states that control origination is not determined rather than stamping a FedRAMP value');
+
+// 28: a column this build does not fill says so, and only where it would mean something
+const otsRow26 = csv26.slice(1).find(r => r[2] === 'Other Than Satisfied');
+const satRow26 = csv26.slice(1).find(r => r[2] === 'Satisfied');
+check(otsRow26.filter(c => c === 'not produced by this build').length === 4,
+  'the four FedRAMP columns this build does not produce say so on a row that carries a weakness');
+check(!satRow26.some(c => c === 'not produced by this build'),
+  'and stay blank on a Satisfied row, which has no threat or residual risk to state');
+
+// 25: a cut evidence body says it was cut
+const cut = a.findings.find(f => (f.evidence_description || '').includes('truncated for this artifact'));
+check(!!cut && /\d+ characters of evidence were assessed/.test(cut.evidence_description),
+  'an evidence body the artifact truncates says so and names the length the gates read');
+check(E.evidenceDescription('short') === 'short', 'a body under the limit is untouched');
+
+
+// ── 27. the product calls ───────────────────────────────────────────────────
+// Three decisions the 1.3.0 review left open, taken deliberately rather than
+// patched quietly. None of them moves a determination on the bundled sample.
+console.log('27. the product calls');
+
+// ITEM 6: the catalog's FedRAMP value is carried, and NOT compared.
+const withValue = a.findings.filter(f => f.odp_expected);
+check(withValue.length > 0, 'the catalog value reaches the determination — ' + withValue.length + ' of ' + a.findings.length + ' objectives carry one');
+const ac1c11 = a.findings.find(f => f.objective_id === 'AC-1_c.1-1');
+check(!!ac1c11 && ac1c11.odp_expected === 'at least every 3 years',
+  "the value is FedRAMP's text with the objective prefix stripped — " + (ac1c11 && JSON.stringify(ac1c11.odp_expected)));
+check(a.findings.every(f => !f.odp_expected || !/^[A-Z]{2}-\d/.test(f.odp_expected)),
+  'no carried value still has its "AC-1 (c) (1):" prefix');
+// The comparison is deliberately not made: a value of the right kind resolves
+// the parameter whether or not it is the required one. Asserting this keeps a
+// later change from claiming the comparison without doing it.
+const threeYear = 'Determine if the current access control policy is reviewed and updated [organization-defined frequency];';
+const tooRare = E.validateOdps(threeYear, 'The access control policy is reviewed and updated every 10 years.', 'AC-1 (c) (1): at least every 3 years');
+check(tooRare.satisfied === true && tooRare.expected === 'at least every 3 years',
+  'gate 4 resolves a parameter of the right kind without judging the value, and carries the required value beside it');
+const csv27 = csvRecords(EX.buildFindingsCSV(a.state, {}));
+const valueCol = csv27[0].indexOf('FedRAMP Parameter Value');
+check(valueCol > -1 && csv27.slice(1).filter(r => r[valueCol]).length === withValue.length,
+  'every carried value reaches the findings CSV');
+check((JSON.stringify(a.ar).match(/"fedramp-parameter-value"/g) || []).length === withValue.length,
+  'and the OSCAL findings, as a FedRAMP-namespaced prop');
+
+// ITEM 9: undated fails currency. It costs nothing here, which is the argument.
+const undatedCount = a.findings.filter(f => f.temporal_status === 'undated').length;
+check(undatedCount > 0 && a.findings.every(f => f.temporal_status !== 'undated' || f.status === 'Other Than Satisfied'),
+  'no objective is Satisfied on evidence carrying no date — ' + undatedCount + ' are undated and every one is Other Than Satisfied');
+check(a.findings.every(f => f.temporal_status !== 'undated' || (f.gates.find(g => g.gate === 6) || {}).pass === false),
+  'undated fails gate 6 rather than passing it');
+
+// ITEM 11: an unverified parameter is a floor, not a refusal.
+const unver = a.findings.filter(f => (f.odp_unverified || []).length);
+const unverSat = unver.filter(f => f.status === 'Satisfied');
+check(unverSat.length > 0 && unverSat.every(f => f.review_required),
+  'every Satisfied carrying a parameter this build could not verify is flagged for review — ' + unverSat.length + ' of them');
+check(unverSat.every(f => /not verified by this build/.test(f.review_reason)),
+  'and the reason names the unverified parameter');
+check(unver.some(f => f.status === 'Satisfied'),
+  'an unverified parameter does not by itself refuse the objective — the gates decide the verdict, the floors decide whether a human must look');
+
+
+// ── 28. the golden run, delivered as a package ──────────────────────────────
+// Every determination above is produced by chunkText over a string embedded in
+// this file, so no ZIP or DOCX defect could move the golden digest or turn
+// --strict red: the archive reader, the DOCX reader, the CRC check and the
+// housekeeping skip list were all invisible to the fixture that decides whether
+// a push is accepted.
+//
+// The same document is assessed again here, delivered the way a real submission
+// arrives — a ZIP holding a DOCX — and the determinations have to be the same
+// ones. The package is deliberately adversarial, because a clean one only
+// catches defects in paragraph handling: it carries a control id written as a
+// character reference (a decoding defect drops the id and the section stops
+// being that control's own evidence), a __MACOSX member holding a refutation
+// (a skip-list defect reads it and refuses AC-1), and a member whose stored CRC
+// does not match its bytes and which also holds a refutation (a CRC defect
+// reads it). Each of those four is a different reader, and each one moves this
+// digest if it breaks.
+console.log('28. the golden run, delivered as a package');
+
+const xmlEsc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function buildDocx(text) {
+  // Runs, as a real DOCX has them. docxText turns </w:r> into a space, so the
+  // text it returns is not byte-identical to the source — the determinations
+  // are, which is what this pins.
+  const paras = text.split(/\n\n+/)
+    .map(p => '<w:p><w:r><w:t xml:space="preserve">' + xmlEsc(p) + '</w:t></w:r></w:p>').join('');
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:body>' + paras + '</w:body></w:document>';
+  // One control id as a character reference. Decoded it is "AC-1" and the
+  // section is AC-1's own evidence; left as written the id is not there.
+  xml = xml.replace('AC-1', 'AC&#45;1');
+  return buildZip([{ name: 'word/document.xml', text: xml }]);
+}
+const REFUTATION = 'AC-1 Access Control Policy. The access control policy is not implemented.';
+const pkgBytes = buildZip([
+  { name: 'CloudVault-Federal-SSP.docx', bytes: buildDocx(sample) },
+  // Housekeeping: refused by name, so its refutation never reaches the corpus.
+  { name: '__MACOSX/._CloudVault-Federal-SSP.docx', text: REFUTATION },
+  // Stored CRC does not describe the bytes: refused as corrupt, so its
+  // refutation never reaches the corpus either.
+  { name: 'scan-notes.txt', text: REFUTATION, crc: 0x00000001, raw: new TextEncoder().encode(REFUTATION), method: 0 },
+]);
+const pkgReport = await E.parsePackage([asFile(pkgBytes, 'CloudVault-package.zip')]);
+const pkgRun = (() => {
+  const retr = new E.BM25Retriever(pkgReport.chunks);
+  const pidx = E.buildRefutationIndex(retr);
+  const asOf = new Date(SAMPLE_DATE + 'T00:00:00Z');
+  const findings = [];
+  for (const [cid, c] of Object.entries(CATALOG)) {
+    if (!c.b.includes('Low')) continue;
+    for (const d of c.d) { if (d.b.includes('Low')) findings.push(E.assessDif(d, retr, cid, c.T, c.F, pidx, asOf)); }
+  }
+  const receipt = EX.buildReceipt({ engineVersion: E.ENGINE_VERSION, catalogVersion, catalog: CATALOG,
+    ruleset: E.RULESET, chunks: pkgReport.chunks, findings, assessmentDate: SAMPLE_DATE, baseline: 'Low' });
+  const by = (st) => findings.filter(f => f.status === st).length;
+  return { findings, receipt, satisfied: by('Satisfied'), ots: by('Other Than Satisfied'), nr: by('Not Reviewed') };
+})();
+
+check(pkgReport.parsed.includes('CloudVault-Federal-SSP.docx'),
+  'the SSP is read out of the archive as a DOCX — parsed: ' + JSON.stringify(pkgReport.parsed));
+check(refusals(pkgReport).some(r => /__MACOSX/.test(r)) && refusals(pkgReport).some(r => /CRC-32/.test(r)),
+  'the housekeeping member and the member whose CRC does not match are refused by name — ' + JSON.stringify(refusals(pkgReport)));
+check(!pkgReport.chunks.some(c => /not implemented/i.test(c.text || '')),
+  'neither refused member put its refutation into the corpus');
+check(pkgRun.receipt.verdict_digest === a.summary.verdict_digest,
+  'the same document delivered as a ZIP of a DOCX produces the same determinations as the embedded text — ' +
+  pkgRun.receipt.verdict_digest.slice(0, 12) + ' vs ' + a.summary.verdict_digest.slice(0, 12));
+check(pkgRun.satisfied === a.summary.satisfied && pkgRun.ots === a.summary.other_than_satisfied && pkgRun.nr === a.summary.not_reviewed,
+  'and the same counts — ' + pkgRun.satisfied + ' / ' + pkgRun.ots + ' / ' + pkgRun.nr);
+// The character reference has to have been decoded: if it were not, the section
+// would not be AC-1's own evidence and AC-1's determinations would differ.
+check(pkgReport.chunks.some(c => (c.control_ids || []).includes('AC-1')),
+  'the control id written as "AC&#45;1" is read as AC-1 by the DOCX reader');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

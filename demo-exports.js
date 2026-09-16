@@ -184,10 +184,16 @@ var DEMO_EXPORTS = (function () {
       return (c.filename || '') + '\u001e' + (c.offset != null ? c.offset : '') + '\u001e' + (c.text || '');
     }).join('\u001d');
     var findings = input.findings || [];
+    // The review flag is part of the verdict line. Without it two runs that
+    // differ only in which Satisfied were flagged hashed identically, so the
+    // digest that is supposed to attest what the tree decided could not tell a
+    // Satisfied a human must check from one it need not — and stripping the
+    // flag out of every export left the receipt still verifying.
     var verdictLines = findings.map(function (f) {
       return [f.dif_id || f.objective_id || '', f.status || '', f.control_id || '',
         f.confidence != null ? Number(f.confidence).toFixed(4) : '',
-        f.defensibility_score != null ? f.defensibility_score : ''].join('|');
+        f.defensibility_score != null ? f.defensibility_score : '',
+        reviewRequired(f) ? 'review-required' : ''].join('|');
     }).sort();
     var receipt = {
       engine_version: input.engineVersion || '',
@@ -276,6 +282,45 @@ var DEMO_EXPORTS = (function () {
   // where one was recorded, the engine's otherwise.
   function effectiveStatus(f, rev) {
     return rev && rev.status ? String(rev.status) : String(f.status || '');
+  }
+
+  // A Satisfied determination the engine flagged for review. The engine sets
+  // review_required only where all seven gates passed and a floor did not —
+  // thin confidence, thin coverage, or an organization-defined parameter this
+  // build could not verify — so it marks a Satisfied that a human has to look
+  // at before it is relied on. (Undated evidence was a fourth floor until
+  // 1.6.0, when it became a gate 6a failure instead: it cannot be Satisfied
+  // and flagged now, it is Other Than Satisfied.) None of it reached the
+  // artifacts before 1.5.1: OSCAL, all four CSVs, the summary and the receipt's
+  // verdict lines each carried the determination without the flag, and a
+  // downstream reader saw the sixty flagged Satisfied of that run as clean.
+  //
+  // It travels on the determination, so it follows the ENGINE's, not the
+  // assessor's: once an assessor revises an objective a human has looked at
+  // it, which is what the flag was asking for.
+  function reviewRequired(f) { return !!(f && f.review_required); }
+  function reviewReason(f) { return reviewRequired(f) ? String(f.review_reason || '') : ''; }
+
+  // A FedRAMP column this build does not produce a value for. Empty reads as
+  // "none" — no applicable threats, no residual risk — which is a claim. This
+  // says what is true: the column was not filled in. Only on rows that carry a
+  // weakness; on a Satisfied row there is no threat and no residual risk to
+  // state, and the blank is the honest answer.
+  var NOT_PRODUCED = 'not produced by this build';
+
+  // Original Detection Date is the date of THIS assessment. The engine reads a
+  // package, not a history: where the evidence carries an older scan or finding
+  // date, this build cannot establish that the weakness was detected then. The
+  // column says when it was detected here and the comment says so, rather than
+  // letting an assessment-day date stand unremarked for an older finding.
+  var DETECTION_NOTE = 'Original Detection Date is the date of this assessment; ' +
+    'this build reads a package rather than a history and cannot establish an earlier detection.';
+  function detectionNote(f) {
+    var notes = (f && f.assessor_notes) ? String(f.assessor_notes) + ' ' : '';
+    return notes + DETECTION_NOTE;
+  }
+  function notProduced(f, effective) {
+    return (effective === 'Other Than Satisfied' || f.weakness_name) ? NOT_PRODUCED : '';
   }
 
   // The character a spreadsheet reads first is the first one it does not
@@ -391,6 +436,20 @@ var DEMO_EXPORTS = (function () {
         finding.props.push({ name: 'assessor-determination', ns: SPARKAE_NS, value: effective });
         finding.props.push({ name: 'determination-source', ns: SPARKAE_NS, value: 'assessor-revision' });
         if (rev.statement) finding.remarks = String(rev.statement);
+      }
+
+      // FedRAMP's value for this objective's parameter, where the catalog
+      // carries one, so an OSCAL reader has the requirement beside the
+      // determination rather than having to go back to the catalog for it.
+      if (f.odp_expected) {
+        finding.props.push({ name: 'fedramp-parameter-value', ns: FEDRAMP_NS, value: String(f.odp_expected) });
+      }
+
+      // A Satisfied the engine flagged travels as a prop beside it, with the
+      // reason, so an OSCAL reader sees the same qualification the tab shows.
+      if (reviewRequired(f)) {
+        finding.props.push({ name: 'review-required', ns: SPARKAE_NS, value: 'true' });
+        if (reviewReason(f)) finding.props.push({ name: 'review-reason', ns: SPARKAE_NS, value: reviewReason(f) });
       }
 
       // "Not Reviewed" is not an OSCAL objective state — it collapses to
@@ -573,28 +632,37 @@ var DEMO_EXPORTS = (function () {
     'Risk Exposure (Before)', 'Risk Statement', 'Mitigating Factors', 'Likelihood (After)',
     'Impact (After)', 'Risk Exposure (After)', 'Recommendation', 'Proposed Remediation',
     'Assessed At', 'Evidence Strength', 'Defensibility Score', 'Concept Coverage',
-    'Temporal Status'];
+    'Temporal Status', 'Review Required', 'Review Reason', 'FedRAMP Parameter Value'];
 
   function buildFindingsCSV(state, opts) {
     opts = opts || {};
     var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || []).map(function (f) {
       var rev = revisionFor(opts, f);
+      var st = effectiveStatus(f, rev);
       return csvRow([
-        f.control_id, f.objective_id || f.dif_id, effectiveStatus(f, rev),
+        f.control_id, f.objective_id || f.dif_id, st,
         String(f.status || ''),
         rev && rev.status ? String(rev.status) : '',
         rev && rev.status ? 'assessor' : 'engine',
         rev && rev.statement ? String(rev.statement) : '',
         f.evidence_description || '', (f.evidence_references || []).join('; '), f.assessor_notes || '',
-        f.weakness_name || '', f.weakness_description || '', f.weakness_type || '', '',
+        f.weakness_name || '', f.weakness_description || '', f.weakness_type || '',
+        notProduced(f, st),
         f.likelihood_before || '', f.impact_before || '', f.risk_exposure_before || '',
-        f.risk_statement || '', f.mitigating_factors || '', '', '', '',
+        f.risk_statement || '', f.mitigating_factors || '',
+        notProduced(f, st), notProduced(f, st), notProduced(f, st),
         f.recommendation || '', f.proposed_remediation || '',
         today, f.evidence_strength || '',
         f.defensibility_score != null ? f.defensibility_score : '',
         f.concept_coverage != null ? f.concept_coverage.toFixed(2) : '',
-        f.temporal_status || ''
+        f.temporal_status || '',
+        reviewRequired(f) ? 'Yes' : 'No', reviewReason(f),
+        // FedRAMP's own value for this objective's parameter, carried from the
+        // catalog. The engine does not compare it to what the evidence states —
+        // it cannot bind a stated value to the parameter it answers — so it
+        // puts the requirement in front of the assessor who can.
+        f.odp_expected || ''
       ]);
     });
     return csvDoc(FINDINGS_HEADERS, rows);
@@ -616,7 +684,7 @@ var DEMO_EXPORTS = (function () {
           'RET-' + String(i + 1).padStart(4, '0'), f.control_id, f.weakness_name || f.finding,
           f.weakness_description || f.gap_description || '', 'SparkAE Automated Assessment',
           f.objective_id || f.dif_id, '', today, 'No', '',
-          f.risk_exposure_before || 'Moderate', '', 'No', 'No', 'No', '', f.assessor_notes || ''
+          f.risk_exposure_before || 'Moderate', '', 'No', 'No', 'No', '', detectionNote(f)
         ]);
       });
     return csvDoc(RET_HEADERS, rows);
@@ -635,7 +703,12 @@ var DEMO_EXPORTS = (function () {
     opts = opts || {};
     var today = stampFor(state, opts).slice(0, 10);
     var rows = (state.findings || [])
-      .filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) !== 'Satisfied'; })
+      // Other Than Satisfied, not "anything but Satisfied". Not Reviewed means
+      // no evidence cleared the retrieval floor, which is a gap in the package
+      // and not an open weakness in the system: filing it here put hundreds of
+      // untested objectives in front of a reader as though each were a finding
+      // with a remediation owed. The RET already read it this way.
+      .filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) === 'Other Than Satisfied'; })
       .map(function (f, i) {
         return csvRow([
           'POAM-' + String(i + 1).padStart(4, '0'), f.control_id, f.weakness_name || f.finding,
@@ -643,7 +716,7 @@ var DEMO_EXPORTS = (function () {
           f.objective_id || f.dif_id, '', '', 'Assessment team review',
           f.proposed_remediation || 'Requires remediation',
           today, '', today, 'No', '', '',
-          f.risk_exposure_before || 'Moderate', '', 'No', 'No', 'No', '', '', f.assessor_notes || '',
+          f.risk_exposure_before || 'Moderate', '', 'No', 'No', 'No', '', '', detectionNote(f),
           '', '', ''
         ]);
       });
@@ -652,7 +725,16 @@ var DEMO_EXPORTS = (function () {
 
   var TCW_HEADERS = ['Control ID', 'Objective ID', 'Assessment Method', 'Implementation Status',
     'Control Origination', 'Assessment Status', 'Testing Performed', 'Evidence Description',
-    'Citations', 'Assessor Notes'];
+    'Citations', 'Assessor Notes', 'Review Required', 'Review Reason'];
+
+  // Control origination -- corporate, system specific, hybrid, configured by
+  // customer, provided by customer, shared, inherited -- is a property of how
+  // the system is built, stated by the system owner in the SSP. This build does
+  // not read it and does not derive it, and every row used to be stamped
+  // 'Service Provider Corporate' regardless: a FedRAMP value, in a FedRAMP
+  // column, that nothing in the run supports. Naming the gap is the only answer
+  // that is not a guess.
+  var ORIGINATION_NOT_DETERMINED = 'not determined by this build';
 
   function buildTCW(state, opts) {
     opts = opts || {};
@@ -661,11 +743,12 @@ var DEMO_EXPORTS = (function () {
       return csvRow([
         f.control_id, f.objective_id || f.dif_id, f.assessment_method || 'EXAMINE',
         st === 'Satisfied' ? 'implemented' : st === 'Not Reviewed' ? 'planned' : 'partial',
-        'Service Provider Corporate',
+        ORIGINATION_NOT_DETERMINED,
         st === 'Satisfied' ? 'SAT' : st === 'Not Reviewed' ? 'NR' : 'OTS',
         'Deterministic 7-gate engine assessment (EXAMINE method)',
         f.evidence_description || '', (f.evidence_references || []).join('; '),
-        f.assessor_notes || ''
+        f.assessor_notes || '',
+        reviewRequired(f) ? 'Yes' : 'No', reviewReason(f)
       ]);
     });
     return csvDoc(TCW_HEADERS, rows);
@@ -685,6 +768,7 @@ var DEMO_EXPORTS = (function () {
       return findings.filter(function (f) { return effectiveStatus(f, revisionFor(opts, f)) === s; });
     };
     var sat = by('Satisfied').length;
+    var flagged = by('Satisfied').filter(reviewRequired).length;
     var otsList = by('Other Than Satisfied');
     var ots = otsList.length;
     var nr = by('Not Reviewed').length;
@@ -726,6 +810,11 @@ var DEMO_EXPORTS = (function () {
       '-'.repeat(56),
       'Total Assessment Objectives: ' + total,
       'Satisfied (SAT): ' + sat + (total ? ' (' + Math.round(sat / total * 100) + '%)' : ''),
+      // A Satisfied the engine flagged is stated beside the count it is part
+      // of, not left for a reader to discover in the tab. The summary said
+      // "Satisfied: 153" while sixty of them were flagged for review.
+      '  of which flagged for review: ' + flagged +
+        (flagged ? ' — a floor was not met; see the Review Required column of the findings CSV' : ''),
       'Other Than Satisfied (OTS): ' + ots,
       '  High Risk: ' + otsByRisk.High,
       '  Moderate Risk: ' + otsByRisk.Moderate,
@@ -733,7 +822,8 @@ var DEMO_EXPORTS = (function () {
       'Not Reviewed (NR): ' + nr,
       'Avg finding-trace quality: ' + avgDef + '/100 (Grade ' + gradeFn(avgDef) + ')',
       'Evidence coverage: ' + (total ? Math.round(sat / total * 100) : 0) + '% of objectives carry' +
-        ' evidence sufficient for a Satisfied determination',
+        ' evidence sufficient for a Satisfied determination' +
+        (flagged ? ' (' + flagged + ' of them flagged for review)' : ''),
       '',
       'TOP OTHER-THAN-SATISFIED FINDINGS',
       '-'.repeat(56)
