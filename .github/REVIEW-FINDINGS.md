@@ -49,6 +49,14 @@ Statuses come from running the engine on this tree, not from reading the
 changelog — see item 43, which no entry ever claimed and which would otherwise
 have been assumed closed alongside its neighbours.
 
+**Re-checked in full on 2026-09-16 at `f106edf`** (after 1.6.0, `#40` and
+`#41`): every OPEN and PARTIAL item above was reproduced again on that tree —
+all but item 77, which is a repository setting and not a fact about any tree —
+and none had closed on its own. The pass changed no status. It did correct three
+things this file had wrong — item 30 understated the defect, item 46's wording
+predates 1.5.0, and five items cited line numbers the releases since had moved —
+and it recorded that item 77 is a repository setting this tree cannot see.
+
 **How to read the rest.** Items are grouped by what to do first, not by the order they were found. Original review IDs (`#1` … `#166`) are in parentheses so earlier notes still map. Later IDs that only restated an earlier item are aliases, not extra bugs. Numbering is unchanged from the 1.3.0 edition: **do not renumber**, the aliases at the foot of the file depend on it.
 
 **The product calls named in the 1.3.0 edition have been made** (1.6.0, items 6,
@@ -233,12 +241,22 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     and POA&M row says so, so an assessment-day date no longer stands unremarked
     for an older finding.
 
-30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **OPEN** *(verified 2026-09-16)*
+30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **OPEN** *(verified 2026-09-16, and worse than reported)*
     `buildOSCALPOAM` emits `'related-observations': [{ 'observation-uuid': uuid() }]`
-    — a freshly minted UUID that no observation in the document declares. The
-    live OSCAL path was fixed in 1.4.0 and `check.mjs` §21 requires every
-    `observation-uuid` there to resolve; the walkthrough builder was never part
-    of that change and nothing tests it.
+    at `demo-standalone.html:6656` — a freshly minted UUID that no observation in
+    the document declares. The live OSCAL path was fixed in 1.4.0 and `check.mjs`
+    §21 requires every `observation-uuid` there to resolve; the walkthrough
+    builder was never part of that change.
+    What the re-check found: the walkthrough **already has** the check that
+    catches this, pointed at the other document. `validateOSCALPackage` asserts
+    F-104 at `:6869` — `obsByUuid.has(ro['observation-uuid'])` — over the SAR's
+    `findings`, while the dangling reference is on the POA&M's `poam-items`. The
+    POA&M arm of the same function (`:6891`) checks its items for the
+    `risk-level` and `scheduled-completion-date` props and nothing else. So no
+    check looks, and the walkthrough displays F-104 as a pass and the package as
+    valid while it carries a cross-reference that resolves to nothing — which is
+    the failure mode a viewer is least able to catch, because the page has just
+    told them a 3PAO examined exactly this.
 
 31. **Executive summary says "25-column" findings CSV.** (`#30`, `#121`) — **CLOSED (1.4.0)**
     The summary prints `FINDINGS_HEADERS.length`.
@@ -252,7 +270,7 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     `demo-engine.js:133` boosts only when `raw > 0`.
 
 34. **`extractControlIds` stops at 50 IDs per chunk.** (`#89`, `#166`) — **OPEN**
-    `demo-engine.js:155`, `ids.size < 50`. A control-list appendix can drop the ID that would have tagged the chunk.
+    `demo-engine.js:179`, `ids.size >= CONTROL_IDS_PER_CHUNK_MAX` (50). A control-list appendix can drop the ID that would have tagged the chunk.
 
 35. **ZIP `findEOCD` accepts the first `PK\x05\x06` in the last 64KiB.** (`#20`, `#72`) — **CLOSED (1.4.0)**
     The record has to end the file; two self-consistent records are refused as ambiguous.
@@ -273,22 +291,32 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     No CP437 or encryption handling in `demo-engine.js`. Flag 11 / GP bit 0 inflate as a generic failure; spanned archives are treated as single-disk.
 
 41. **ZIP64 sentinels refused (good); nested `.zip` members refused as unsupported type.** (`#86`) — **OPEN**
-    `zip` is absent from the member extension list at `demo-engine.js:564`, so an inner archive falls to the unsupported branch. Not silent — but a package whose SSP is `ssp.zip` is never read.
+    `zip` is absent from the member extension list at `demo-engine.js:629` (`['xml','txt','md','csv','json','nessus']`, plus `docx` beside it), so an inner archive falls to the unsupported branch. Not silent — but a package whose SSP is `ssp.zip` is never read.
 
 42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **OPEN**
-    ZIP is bounded by `ZIP_MAX_BYTES` (64 MB); `demo-engine.js:228` calls `await file.text()` with no cap. `SECURITY.md` says large packages are "limited by the browser, not by this code" — false for ZIP, true for loose text.
+    ZIP is bounded by `ZIP_MAX_BYTES` (64 MB); `demo-engine.js:252` calls `await file.text()` with no cap. `SECURITY.md` says large packages are "limited by the browser, not by this code" — false for ZIP, true for loose text.
 
 43. **`runDemo` has no `try/finally`.** (`#123`, `#126`) — **OPEN**
-    `demo-standalone.html:8782` sets `running = true` and clears it on the normal path only. A throw leaves it stuck and hash aliases and tab clicks silently no-op. Not part of the 1.4.0 set.
+    `demo-standalone.html:8782` sets `running = true`, and `running = false`
+    appears exactly once, at `:8810`, on the normal path; there is no `try` or
+    `finally` in the function. A throw leaves it stuck and hash aliases and tab
+    clicks silently no-op. Not part of the 1.4.0 set.
 
 44. **Two findings painters; filter to ≤40 rows drops assessor UI.** (`#34–35`, `#74`, `#127`) — **CLOSED (1.4.0)**
     One painter builds every row through `buildFindingRow`.
 
 45. **Homoglyph fold runs after BM25.** (`#106`, `#144`) — **OPEN**
-    `demo-engine.js:1627` folds the retrieved text, after retrieval. All-Cyrillic chunks still tokenize to nothing → Not Reviewed (fail-closed miss, not Satisfied); mixed ASCII plus folded Cyrillic still reaches Gate 5.
+    `demo-engine.js:1796` and `:1812` fold the retrieved text, after retrieval. All-Cyrillic chunks still tokenize to nothing → Not Reviewed (fail-closed miss, not Satisfied); mixed ASCII plus folded Cyrillic still reaches Gate 5.
 
-46. **`.nessus` / `.xml` / `.json` tokenized as raw markup.** (`#107`) — **OPEN**
-    Read as text at `demo-engine.js:227` with no markup handling. Scanner XML full of `not` / `failed` can trip Gate 5; JSON keys can look like control IDs. No real `.nessus` fixture.
+46. **`.nessus` / `.xml` / `.json` tokenized as raw markup.** (`#107`) — **OPEN** *(verified 2026-09-16, wording corrected)*
+    "No markup handling" is no longer true and was left over from before 1.5.0:
+    `markupText(ext, text)` (`demo-engine.js:347`) decodes entities for `xml` and
+    `nessus`, which is what item 5 closed. Everything else the finding describes
+    stands — it decodes entities and returns, so tags are not stripped, and
+    `csv` / `json` are passed through untouched. The text reaching `chunkText`
+    at `:254` (loose files) and `:630` (archive members) is still markup:
+    scanner XML full of `not` / `failed` can trip Gate 5, and JSON keys can look
+    like control IDs. No real `.nessus` fixture.
 
 47. **Multi-control `ownEvidence` still runs unscoped 5b.** (`#108`) — **OPEN** *(verified 2026-09-16, and worse than reported)*
     Reproduced with one chunk naming AC-1 and AC-2, where AC-1 is refuted and
@@ -502,7 +530,7 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
     `check_published.mjs` only exercises `/3pao.html`.
 
 74. **`status-data.json` `published_at: null`; `check.mjs` requires it stay null.** (`#139`) — **OPEN**
-    `status-data.json:28` and the assertion at `tests/check.mjs:1574`. Public `/status` cannot ship a real snapshot without changing the test.
+    `status-data.json:28` and the assertion at `tests/check.mjs:1641`. Public `/status` cannot ship a real snapshot without changing the test.
 
 75. **`.github/ISSUE_TEMPLATE/config.yml` `blank_issues_enabled: true`.** (`#165`) — **OPEN**
     Security is a mailto contact link, not a gate. A visitor can still open a public issue with a crafted-document recipe.
@@ -512,8 +540,11 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
     `.cite-kind` and `.cite-meta` and writes that. Neither the objective nor the
     determination statement is in what lands on the clipboard.
 
-77. **Private vulnerability reporting is off.** (`CONTRIBUTING.md` / `SECURITY.md`) — **OPEN**
-    The email path works; the GitHub form is hypothetical.
+77. **Private vulnerability reporting is off.** (`CONTRIBUTING.md` / `SECURITY.md`) — **OPEN** *(not verifiable from this tree)*
+    The email path works; the GitHub form is hypothetical. Unlike every other
+    item here, this one cannot be checked by running anything: it is a
+    repository setting, and `CONTRIBUTING.md:75` is a statement about it rather
+    than evidence of it. Whoever closes this should read the setting itself.
 
 ---
 
