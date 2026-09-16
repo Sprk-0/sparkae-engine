@@ -2,7 +2,7 @@
 
 Inventory of defects found against `main` at engine **1.3.0**, catalog `2026-07-21` / `91ad1b17138f`, golden verdict digest `04b1f79d6f44` (CloudVault sample, FedRAMP Low, assessed as of 2026-06-01).
 
-**Re-baselined 2026-09-15 against engine 1.4.1** (`6558408`); **PR 1 landed as engine 1.5.0** and **PR 2 as 1.5.1**; ruleset `dbacaaed27dc`, verdict digest `5ded83f4010c`.
+**Re-baselined 2026-09-15 against engine 1.4.1** (`6558408`); **PR 1 landed as engine 1.5.0**, **PR 2 as 1.5.1**, **PR 3 as the 2026-09-16 copy pass** and **PR 4 as 1.6.0**; ruleset `fc6ad10cbb39`, verdict digest `20cd7ee2ae8e`.
 
 This file is a working review list, not a site page. It lives under `.github/` so it is not part of the published tree `check_published.mjs` compares to sparkae.ai. The GitHub repository is already public.
 
@@ -25,6 +25,10 @@ and between them they closed most of it:
 - **1.5.1** ("the exports say what the engine decided") closed items 22, 23, 25,
   27, 28 and 29. No determination moved; the verdict digest did, because the
   verdict line carries the review flag now.
+- **1.6.0** ("the product calls") closed items 6, 11 and 12 and moved 9 forward:
+  the catalog's FedRAMP values are consulted and carried but deliberately not
+  compared, undated evidence fails currency, and an unverified parameter is a
+  review floor rather than a refusal. No determination moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -36,9 +40,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 18 |
-| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.5.1 or the 2026-09-16 copy pass, verified on this tree | 48 |
+| **OPEN** | reproduced on the current tree | 17 |
+| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 3 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0 or the 2026-09-16 copy pass, verified on this tree | 50 |
 | **UNVERIFIED** | not re-checked in the re-baseline; treat the 1.3.0 text as a lead, not a fact | 7 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -47,7 +51,10 @@ have been assumed closed alongside its neighbours.
 
 **How to read the rest.** Items are grouped by what to do first, not by the order they were found. Original review IDs (`#1` … `#166`) are in parentheses so earlier notes still map. Later IDs that only restated an earlier item are aliases, not extra bugs. Numbering is unchanged from the 1.3.0 edition: **do not renumber**, the aliases at the foot of the file depend on it.
 
-**Do not start with** Gate 4 fail-closed, Gate 2 quorum, or 6a-with-no-dates unless you make an explicit product call: those move the golden digest.
+**The product calls named in the 1.3.0 edition have been made** (1.6.0, items 6,
+11 and 12; see the PR 4 note below for what each one cost). Gate 2 quorum is the
+one still open, in item 7. Anything else that would move the golden digest is
+still a call to make deliberately rather than a patch to slip in.
 
 ---
 
@@ -82,12 +89,21 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
    `.nessus` uploads are decoded the same way; `.txt`, `.md`, `.csv` and `.json`
    are left as typed.
 
-6. **Catalog ODP values are dead.** (`#115`) — **OPEN**
-   **236** of the catalog's 1,513 objectives carry a non-empty `o` (AC-1_c.1-1 is
-   `"AC-1 (c) (1): at least every 3 years"`). The engine never reads `dif.o` — no
-   reference to it anywhere in `demo-engine.js`. Gate 4 is keyword classes only:
-   `validateOdps(dif, "…reviewed and updated every 10 years.")` returns
-   `satisfied: true` against a three-year parameter.
+6. **Catalog ODP values are dead.** (`#115`) — **CLOSED (1.6.0)** *(consulted, deliberately not compared)*
+   The 236 values are read. Each travels as `odp_expected` on the determination,
+   a findings-CSV column and a `fedramp-parameter-value` OSCAL prop — 159 on the
+   bundled run, the Not Reviewed included, since the requirement belongs to the
+   objective rather than to the run.
+
+   Gate 4 does **not** compare the stated value to it, and that is the decision.
+   Comparing needs a stated duration bound to the parameter it answers, and an
+   anchored clause routinely carries one belonging to a different parameter: the
+   sample's AC-2 section says accounts are reviewed quarterly while AC-2_h.(1)
+   requires they be *disabled* within twenty-four hours. A clause-scoped
+   comparison over the sample found three mismatches, all of that shape — three
+   false refusals, no true ones. `check.mjs` §27 pins that "every 10 years"
+   still resolves a three-year parameter, so a later change cannot claim the
+   comparison without making it.
 
 7. **AC-1 Gate 2b collapses to stem `acces`.** (`#157`) — **PARTIAL**
    The named false pass is gone. On 1.4.1 AC-1's subject is `["access"]` (the
@@ -107,23 +123,29 @@ Visitor-facing false **Satisfied**, XSS on `file://`, fabricated 3PAO determinat
    union as not stuffed.
 
 9. **Gate 6d only sees ISO dates.** (`#18`, `#117`) — **PARTIAL**
-   The ISO-only defect is closed: `DATE_TOKEN_RE` is gone and the SLA check reads
-   every format `extractDates` reads. Still open: `CLOSURE_RE` is dead code —
-   `demo-engine.js:1408` already `continue`s unless `OPEN_STATUS_RE` matches, so
-   the `&& !OPEN_STATUS_RE.test(sent)` at 1409 can never be true.
+   The ISO-only defect closed in 1.4.0. Undated evidence now fails gate 6a
+   (1.6.0): 92 objectives on the sample are undated and every one was already
+   Other Than Satisfied, so no determination moved. Still open: `CLOSURE_RE` is
+   dead code — `demo-engine.js` `continue`s unless `OPEN_STATUS_RE` matches, so
+   the `&& !OPEN_STATUS_RE.test(sent)` beside it can never be true.
 
 10. **One-term subjects + one distinguishing stem + lone BM25 hit.** (`#4–6`) — **CLOSED (1.4.0)**
     Gate 1 is absolute (share of the objective's distinct stems, not min-maxed BM25); a concept needs two terms; a one-word subject needs an anchor beside it.
 
-11. **Untyped ODPs and `[Selection …]` pass.** (`#10–12`) — **PARTIAL**
-    The engine side is closed: typed values must sit in an affirmative clause
-    sharing a word with the objective, `[Selection …]` is extracted, and untyped
-    placeholders are recorded `odp_unverified` rather than passed. The product
-    call was not taken (unverified is not fail-closed), and `index.html` still
-    carries the "resolved ODPs" copy (`#93`).
+11. **Untyped ODPs and `[Selection …]` pass.** (`#10–12`) — **CLOSED (1.6.0)** *(as a floor, not a refusal)*
+    Typed values must sit in an affirmative clause sharing a word with the
+    objective, `[Selection …]` is extracted, and an untyped placeholder is
+    recorded `odp_unverified`. As of 1.6.0 it also flags the objective for
+    review, named in the reason, so it travels on every artifact. The call was
+    taken deliberately: failing closed would move Satisfied 153 → 117, and the
+    rule this build follows is that the gates decide the verdict and the floors
+    decide whether a human must look. `index.html`'s "resolved ODPs" copy was
+    corrected in the 2026-09-16 copy pass.
 
-12. **Gate 6a passes with no dates; newest date launders a stale review.** (`#16–17`) — **CLOSED (1.4.0)**
-    A review or update date decides currency when there is one; evidence with no date is recorded `undated` and flagged rather than called current.
+12. **Gate 6a passes with no dates; newest date launders a stale review.** (`#16–17`) — **CLOSED (1.6.0)**
+    The laundering half closed in 1.4.0. As of 1.6.0 undated fails gate 6a
+    outright rather than passing with a flag: currency now means evidence that
+    it is current, not the absence of evidence that it is stale.
 
 13. **Uppercase homoglyphs miss the fold.** (`#13–14`) — **CLOSED (1.4.0)**
     `HOMOGLYPHS` carries both cases and folds per character.
@@ -448,7 +470,6 @@ Same fact, two implementations; suite locks the quirk; or the check is on the wr
 What PR 1 and PR 2 needed is in `check.mjs` §25 and §26. These do not exist;
 each holds an item that is still **OPEN**:
 
-- `"every 10 years"` must not resolve a three-year catalog `o` — or Gate 4 copy stops claiming it does (item 6).
 - A golden or benchmark case that runs through `parsePackage`, so the ZIP and DOCX items can fail a push (item 71).
 
 ---
@@ -478,10 +499,14 @@ Items **18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67, 68**, and
 claim became what the catalog is, and `BANNED` went from five phrases to every
 phrase this pass removed. No part of the tuple moves.
 
-**PR 4 — product calls, not silent patches**
-Item **6** is the substantive one: consult catalog `o` so "every 10 years" fails a
-three-year parameter, or stop implying FedRAMP parameter values are checked. Then
-the rest of items **9, 11** — fail-closed or rename. Moves the digest again.
+**PR 4 — product calls** — **LANDED as engine 1.6.0**
+Items **6, 11, 12** closed and **9** advanced, each decided rather than patched:
+the catalog values are consulted and carried but not compared (a comparison
+produced three false refusals and no true ones on the sample), undated evidence
+fails currency (free on this sample, strict on others), and an unverified
+parameter flags for review rather than refusing (failing closed would have cost
+36 Satisfied). No determination moved; the verdict digest did, because gate 6's
+record and the review flag are in the verdict line.
 
 **Deferred** — real, but none produces a false Satisfied: items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items

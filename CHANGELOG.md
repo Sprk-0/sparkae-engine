@@ -22,8 +22,8 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-15 (the state this build is in)
 
-Engine 1.5.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `dbacaaed27dc` ·
-verdict digest `5ded83f4010c`
+Engine 1.6.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `fc6ad10cbb39` ·
+verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
 identified by what it decided rather than by a label, so it can be reproduced,
@@ -40,6 +40,62 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-16 (the product calls · engine 1.6.0)
+
+Engine 1.5.1 → **1.6.0** · ruleset `dbacaaed27dc` → `fc6ad10cbb39` · verdict
+digest `5ded83f4010c` → **`20cd7ee2ae8e`** · golden regenerated.
+
+**No determination moves.** 153 Satisfied, 808 Other Than Satisfied, 20 Not
+Reviewed — the same objectives, with the same statuses. What moves is gate 6's
+record on 92 objectives that were already Other Than Satisfied, and the review
+flag on 21 more Satisfied, so the verdict line changes and the digest with it.
+
+Three decisions the 1.3.0 review left open. It called them product calls and
+said not to make them quietly, so they are made here, with what each one costs.
+
+- **Gate 4 consults the catalog's FedRAMP value, and does not compare it.** 236
+  of the catalog's 1,513 objectives carry FedRAMP's own value in `o` — AC-1's
+  policy review is "at least every 3 years" — and nothing read it. It is read
+  now, and it travels: on the determination as `odp_expected`, in a findings-CSV
+  column, and as a `fedramp-parameter-value` prop on the OSCAL finding, on all
+  159 of the bundled run's objectives that have one, including the Not Reviewed
+  ones, because the requirement is a property of the objective rather than of
+  the run.
+
+  It is not compared, and that is the decision rather than an omission.
+  Comparing needs the stated duration bound to the parameter it answers, and an
+  anchored clause routinely carries a duration belonging to a different
+  parameter: the sample's AC-2 section says accounts are reviewed quarterly, and
+  AC-2_h.(1) requires that accounts be *disabled* within twenty-four hours.
+  Measured over the bundled sample, a clause-scoped comparison found three
+  mismatches and all three were of exactly that shape — three false refusals and
+  no true ones. A gate that is wrong every time it fires is worse than one that
+  does not fire, so the requirement goes to the assessor who can bind it, and
+  `check.mjs` §27 asserts that "every 10 years" still resolves a three-year
+  parameter, so a later change cannot claim the comparison without making it.
+
+- **Undated evidence fails currency.** 1.4.0 stopped calling it current and
+  flagged it, but gate 6a still *passed*, so currency meant "no evidence it is
+  stale" rather than "evidence it is current" — and gate 6 exists to establish
+  the latter. It fails now. On this sample that costs nothing: 92 objectives are
+  undated and every one of them was already Other Than Satisfied, so no
+  determination moves. That is the argument for taking the strict reading —
+  it is free here and refuses the claim on the packages where it would not be.
+
+- **An unverified parameter is a floor, not a refusal.** An untyped
+  organization-defined parameter — one with no frequency, period, role or
+  threshold to match — is recorded `odp_unverified` and gate 4 still passes.
+  Failing it closed would have taken Satisfied from 153 to 117. It stays a
+  floor: the gates decide the verdict, the floors decide whether a human must
+  look before it is used, which is the rule the rest of this build follows. What
+  changes is that it is now one of the floors — 36 of the 153 carry one, 21 of
+  them were not otherwise flagged, and since 1.5.1 the flag and its reason
+  travel on every artifact. The undated review reason retires into gate 6a,
+  where it is now a refusal rather than a note.
+
+That closes the last of the P0 engine items. `.github/REVIEW-FINDINGS.md` has
+what remains: parser hardening, the verification twins, and process.
 
 ## 2026-09-16 (the pages say what the build does)
 

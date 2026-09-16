@@ -1809,10 +1809,16 @@ const dated = E.extractDates('Last reviewed: 2023-01-10. Most recent scan: 2026-
 check(dated.length === 2 && dated.find(d => d.dateStr === '2023-01-10').ctxType === 'review_date' && dated.find(d => d.dateStr === '2026-05-28').ctxType === 'unknown',
   'a date\'s type is read from its own sentence, not from the forty characters around it — ' + JSON.stringify(dated.map(d => d.dateStr + ':' + d.ctxType)));
 
-// 17: undated evidence is undated, not current
+// 17: undated evidence is undated, not current. 1.4.0 stopped calling it
+// current and flagged it while still PASSING gate 6a; since 1.6.0 it fails,
+// because currency meant "no evidence it is stale" rather than "evidence it is
+// current" and gate 6 exists to establish the latter.
 const undatedRun = verdictFor([['ac2.txt', 'AC-2 Account Management. Account use is monitored continuously by the ISSO per SSP section 5.2, version 2.4.']], 'AC-2', AC2G);
-check(undatedRun.temporal_status === 'undated' && undatedRun.review_required === true && /no date/.test(undatedRun.review_reason) && undatedRun.gates.find(g => g.gate === 6).checks[0].undated === true,
-  'evidence with no date is recorded as undated and flagged for review, not called current — ' + undatedRun.temporal_status + ' / ' + undatedRun.review_reason);
+const undatedG6 = undatedRun.gates.find(g => g.gate === 6);
+check(undatedRun.temporal_status === 'undated' && undatedG6.checks[0].undated === true &&
+      undatedG6.checks[0].pass === false && undatedG6.pass === false &&
+      undatedRun.status === 'Other Than Satisfied' && /no date/.test(undatedRun.gap_description),
+  'evidence with no date fails currency rather than passing it — ' + undatedRun.temporal_status + ' / ' + undatedRun.status + ' / ' + undatedRun.gap_description);
 
 // 66 (18): the SLA check reads every date format
 const slaMonth = E.checkOpenFindingSla('The high vulnerability CVE-2024-0001 remains open since January 1, 2024.', asOfDate);
@@ -2117,6 +2123,51 @@ const cut = a.findings.find(f => (f.evidence_description || '').includes('trunca
 check(!!cut && /\d+ characters of evidence were assessed/.test(cut.evidence_description),
   'an evidence body the artifact truncates says so and names the length the gates read');
 check(E.evidenceDescription('short') === 'short', 'a body under the limit is untouched');
+
+
+// ── 27. the product calls ───────────────────────────────────────────────────
+// Three decisions the 1.3.0 review left open, taken deliberately rather than
+// patched quietly. None of them moves a determination on the bundled sample.
+console.log('27. the product calls');
+
+// ITEM 6: the catalog's FedRAMP value is carried, and NOT compared.
+const withValue = a.findings.filter(f => f.odp_expected);
+check(withValue.length > 0, 'the catalog value reaches the determination — ' + withValue.length + ' of ' + a.findings.length + ' objectives carry one');
+const ac1c11 = a.findings.find(f => f.objective_id === 'AC-1_c.1-1');
+check(!!ac1c11 && ac1c11.odp_expected === 'at least every 3 years',
+  "the value is FedRAMP's text with the objective prefix stripped — " + (ac1c11 && JSON.stringify(ac1c11.odp_expected)));
+check(a.findings.every(f => !f.odp_expected || !/^[A-Z]{2}-\d/.test(f.odp_expected)),
+  'no carried value still has its "AC-1 (c) (1):" prefix');
+// The comparison is deliberately not made: a value of the right kind resolves
+// the parameter whether or not it is the required one. Asserting this keeps a
+// later change from claiming the comparison without doing it.
+const threeYear = 'Determine if the current access control policy is reviewed and updated [organization-defined frequency];';
+const tooRare = E.validateOdps(threeYear, 'The access control policy is reviewed and updated every 10 years.', 'AC-1 (c) (1): at least every 3 years');
+check(tooRare.satisfied === true && tooRare.expected === 'at least every 3 years',
+  'gate 4 resolves a parameter of the right kind without judging the value, and carries the required value beside it');
+const csv27 = csvRecords(EX.buildFindingsCSV(a.state, {}));
+const valueCol = csv27[0].indexOf('FedRAMP Parameter Value');
+check(valueCol > -1 && csv27.slice(1).filter(r => r[valueCol]).length === withValue.length,
+  'every carried value reaches the findings CSV');
+check((JSON.stringify(a.ar).match(/"fedramp-parameter-value"/g) || []).length === withValue.length,
+  'and the OSCAL findings, as a FedRAMP-namespaced prop');
+
+// ITEM 9: undated fails currency. It costs nothing here, which is the argument.
+const undatedCount = a.findings.filter(f => f.temporal_status === 'undated').length;
+check(undatedCount > 0 && a.findings.every(f => f.temporal_status !== 'undated' || f.status === 'Other Than Satisfied'),
+  'no objective is Satisfied on evidence carrying no date — ' + undatedCount + ' are undated and every one is Other Than Satisfied');
+check(a.findings.every(f => f.temporal_status !== 'undated' || (f.gates.find(g => g.gate === 6) || {}).pass === false),
+  'undated fails gate 6 rather than passing it');
+
+// ITEM 11: an unverified parameter is a floor, not a refusal.
+const unver = a.findings.filter(f => (f.odp_unverified || []).length);
+const unverSat = unver.filter(f => f.status === 'Satisfied');
+check(unverSat.length > 0 && unverSat.every(f => f.review_required),
+  'every Satisfied carrying a parameter this build could not verify is flagged for review — ' + unverSat.length + ' of them');
+check(unverSat.every(f => /not verified by this build/.test(f.review_reason)),
+  'and the reason names the unverified parameter');
+check(unver.some(f => f.status === 'Satisfied'),
+  'an unverified parameter does not by itself refuse the objective — the gates decide the verdict, the floors decide whether a human must look');
 
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

@@ -435,6 +435,13 @@ var DEMO_EXPORTS = (function () {
         if (rev.statement) finding.remarks = String(rev.statement);
       }
 
+      // FedRAMP's value for this objective's parameter, where the catalog
+      // carries one, so an OSCAL reader has the requirement beside the
+      // determination rather than having to go back to the catalog for it.
+      if (f.odp_expected) {
+        finding.props.push({ name: 'fedramp-parameter-value', ns: FEDRAMP_NS, value: String(f.odp_expected) });
+      }
+
       // A Satisfied the engine flagged travels as a prop beside it, with the
       // reason, so an OSCAL reader sees the same qualification the tab shows.
       if (reviewRequired(f)) {
@@ -622,7 +629,7 @@ var DEMO_EXPORTS = (function () {
     'Risk Exposure (Before)', 'Risk Statement', 'Mitigating Factors', 'Likelihood (After)',
     'Impact (After)', 'Risk Exposure (After)', 'Recommendation', 'Proposed Remediation',
     'Assessed At', 'Evidence Strength', 'Defensibility Score', 'Concept Coverage',
-    'Temporal Status', 'Review Required', 'Review Reason'];
+    'Temporal Status', 'Review Required', 'Review Reason', 'FedRAMP Parameter Value'];
 
   function buildFindingsCSV(state, opts) {
     opts = opts || {};
@@ -647,7 +654,12 @@ var DEMO_EXPORTS = (function () {
         f.defensibility_score != null ? f.defensibility_score : '',
         f.concept_coverage != null ? f.concept_coverage.toFixed(2) : '',
         f.temporal_status || '',
-        reviewRequired(f) ? 'Yes' : 'No', reviewReason(f)
+        reviewRequired(f) ? 'Yes' : 'No', reviewReason(f),
+        // FedRAMP's own value for this objective's parameter, carried from the
+        // catalog. The engine does not compare it to what the evidence states —
+        // it cannot bind a stated value to the parameter it answers — so it
+        // puts the requirement in front of the assessor who can.
+        f.odp_expected || ''
       ]);
     });
     return csvDoc(FINDINGS_HEADERS, rows);
