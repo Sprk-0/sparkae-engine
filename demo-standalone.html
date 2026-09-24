@@ -1361,12 +1361,12 @@ html,body{
   min-width:72px;
   text-align:center;
 }
-.cite-kind.ssp,.cite-kind.sar{color:#FF8A6B;border-color:rgba(225,77,42,0.45)}
-.cite-kind.poam,.cite-kind.vdr{color:#E8C572;border-color:rgba(212,160,23,0.45)}
-.cite-kind.log,.cite-kind.scan{color:#A8C39A;border-color:rgba(61,82,53,0.55)}
-.cite-kind.policy,.cite-kind.proc{color:#B8C0CC;border-color:#3A4250}
-.cite-kind.interview{color:#D4A017;border-color:rgba(212,160,23,0.45)}
-.cite-kind.config,.cite-kind.evidence,.cite-kind.change,.cite-kind.test,.cite-kind.conmon{color:#B8C0CC;border-color:#3A4250}
+.cite-kind.kind-ssp,.cite-kind.kind-sar{color:#FF8A6B;border-color:rgba(225,77,42,0.45)}
+.cite-kind.kind-poam,.cite-kind.kind-vdr{color:#E8C572;border-color:rgba(212,160,23,0.45)}
+.cite-kind.kind-log,.cite-kind.kind-scan{color:#A8C39A;border-color:rgba(61,82,53,0.55)}
+.cite-kind.kind-policy,.cite-kind.kind-proc{color:#B8C0CC;border-color:#3A4250}
+.cite-kind.kind-interview{color:#D4A017;border-color:rgba(212,160,23,0.45)}
+.cite-kind.kind-config,.cite-kind.kind-evidence,.cite-kind.kind-change,.cite-kind.kind-test,.cite-kind.kind-conmon{color:#B8C0CC;border-color:#3A4250}
 .cite-meta{color:#7A8290;flex:1}
 .cite-title{color:#B8C0CC}
 
@@ -1633,7 +1633,7 @@ html,body{
 .verdict-tag.warn{background:rgba(212,160,23,0.2);color:#E8C572}
 .verdict-tag.fail{background:rgba(225,77,42,0.2);color:#FF8A6B}
 .method-tag.qa{color:#FF8A6B;border-color:rgba(225,77,42,0.45)}
-.cite-kind.rule{color:#FF8A6B;border-color:rgba(225,77,42,0.45)}
+.cite-kind.kind-rule{color:#FF8A6B;border-color:rgba(225,77,42,0.45)}
 
 /* ── ConMon scan-type bands (RA-5 categories) ── */
 .scan-bands{
@@ -5129,12 +5129,15 @@ function renderExportBar() {
 
 // Citation metadata is text — an engine citation carries an uploaded file's
 // name — and is escaped here, at the sink, whoever built the cite.
+// The kind modifier is prefixed. A bare kind class matched the page's own
+// rules: a LOG citation became `.log`, the console log panel, and drew as a
+// 280px box.
 function renderCites(cites) {
   if (!cites || !cites.length) return '';
   const rows = cites.map(c => {
     const meta = [c.title, c.version, c.date, c.section].filter(p => p && String(p).length).join(' · ');
     const kind = String(c.kind || '');
-    return `<div class="cite-row"><span class="cite-kind ${engEsc(kind.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}">${engEsc(kind)}</span><span class="cite-meta">${engEsc(meta)}</span></div>`;
+    return `<div class="cite-row"><span class="cite-kind kind-${engEsc(kind.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}">${engEsc(kind)}</span><span class="cite-meta">${engEsc(meta)}</span></div>`;
   }).join('');
   return `<div class="cite-block">${rows}</div>`;
 }
