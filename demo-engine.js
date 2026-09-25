@@ -65,13 +65,17 @@ function tokenize(text) {
 
 class BM25Retriever {
   constructor(chunks) {
+    // Every chunk stays in `chunks`, which the refutation index reads. A chunk
+    // marked refute_only (a DOCX's hidden text) is not evidence: it is
+    // tokenized as empty, so it adds nothing to the collection statistics and
+    // no query can score it — a corpus without one ranks exactly as before.
     this.chunks = chunks;
-    this._tokenized = chunks.map(c => tokenize(c.text || ''));
+    this._tokenized = chunks.map(c => c.refute_only ? [] : tokenize(c.text || ''));
     this._docFreqs = this._tokenized.map(toks => {
       const f = {}; toks.forEach(t => f[t] = (f[t]||0)+1); return f;
     });
     this._docLens = this._tokenized.map(t => t.length);
-    const n = chunks.length || 1;
+    const n = chunks.filter(c => !c.refute_only).length || 1;
     this._avgdl = this._docLens.reduce((s,l) => s+l, 0) / n || 1;
     this._df = {}; this._tokenized.forEach(toks => {
       const seen = new Set(toks);
@@ -378,17 +382,31 @@ async function docxText(buf, label, budget) {
   const partUnreadable = refused.find(r => DOCX_NOTE_PARTS.some(p => p.name === r.name) || DOCX_PAGE_PART_RE.test(r.name));
   if (partUnreadable) throw unsupported(label, 'DOCX ' + partUnreadable.name + ' could not be read: ' + partUnreadable.reason);
 
+  // A tracked-changes document carries two documents: the one it says now and
+  // the one it used to say. Deleted and moved-away text is the second, and it
+  // used to be read as the first — so a claim the author struck through still
+  // carried AC-2 to Satisfied. Hidden text is the author's own words, unseen:
+  // it may refute a control but never satisfy one. The document as displayed is
+  // the evidence; when hidden text exists, the document with it is read again,
+  // for refutations only.
+  const shown = assembleDocx(docXml, entries, false);
+  const withHidden = assembleDocx(docXml, entries, true);
+  if (!shown && !withHidden) throw unsupported(label, 'DOCX contains no text');
+  return { shown, withHidden: withHidden !== shown ? withHidden : null };
+}
+
+function assembleDocx(docXml, entries, keepHidden) {
   // Footnotes, endnotes and comments are read where the body cites them, so a
   // refutation in one belongs to the section that cites it rather than to
   // whichever control the document happens to end on. One the body never
   // cites is still read, after the body.
-  let bodyXml = docXml;
+  let bodyXml = wordRevisionText(docXml, keepHidden);
   const uncited = [];
   for (const part of DOCX_NOTE_PARTS) {
     const member = entries.find(m => m.name === part.name && !m.directory);
     if (!member || !member.text) continue;
     const notes = new Map();
-    for (const m of member.text.matchAll(part.itemRe)) {
+    for (const m of wordRevisionText(member.text, keepHidden).matchAll(part.itemRe)) {
       const id = (m[1].match(/\bw:id="(-?\d+)"/) || [])[1];
       const words = wordXmlRawText(m[2]);
       if (id !== undefined && words) notes.set(id, words);
@@ -408,17 +426,34 @@ async function docxText(buf, label, budget) {
     .filter(m => DOCX_PAGE_PART_RE.test(m.name) && !m.directory && m.text)
     .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
     .map(m => {
-      const words = wordXmlRawText(m.text);
+      const words = wordXmlRawText(wordRevisionText(m.text, keepHidden));
       return words ? '[' + m.name.match(DOCX_PAGE_PART_RE)[1] + ': ' + words + ']' : '';
     })
     .filter(Boolean))];
 
-  const text = decodeEntities([...pageFurniture, wordXmlLayout(bodyXml), ...uncited].join('\n\n'))
+  return decodeEntities([...pageFurniture, wordXmlLayout(bodyXml), ...uncited].join('\n\n'))
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-  if (!text) throw unsupported(label, 'DOCX contains no text');
-  return text;
 }
+
+// The words a part says now. Tracked deletions (<w:del>, <w:delText>) and text
+// moved away (<w:moveFrom>) are dropped; the same elements written
+// self-closing only mark a deleted paragraph mark and carry no text, and are
+// dropped first so a paired match cannot run from one of them to a later
+// close. A run whose properties carry <w:vanish/> is hidden, and is kept only
+// when keepHidden is set.
+function wordRevisionText(xml, keepHidden) {
+  let out = String(xml)
+    .replace(/<w:(?:del|moveFrom)\b[^>]*\/>/g, '')
+    .replace(/<w:del\b[^>]*>[\s\S]*?<\/w:del>/g, '')
+    .replace(/<w:moveFrom\b[^>]*>[\s\S]*?<\/w:moveFrom>/g, '')
+    .replace(/<w:delText\b[^>]*>[\s\S]*?<\/w:delText>/g, '');
+  if (!keepHidden) out = out.replace(/<w:r\b[^>]*>[\s\S]*?<\/w:r>/g, run => HIDDEN_RUN_RE.test(run) ? '' : run);
+  return out;
+}
+// <w:vanish/> hides a run; <w:vanish w:val="0"/> (or false/off) is the explicit
+// "not hidden" an inherited style can be overridden with.
+const HIDDEN_RUN_RE = /<w:rPr\b[^>]*>(?:(?!<\/w:rPr>)[\s\S])*<w:vanish\b(?![^>]*\bw:val="(?:0|false|off)")[^>]*\/?>/;
 
 // The body keeps its paragraph breaks, which chunking and headings depend on.
 function wordXmlLayout(xml) {
@@ -449,9 +484,19 @@ const DOCX_NOTE_PARTS = [
 ];
 const DOCX_PAGE_PART_RE = /^word\/(header|footer)\d*\.xml$/;
 
+// The displayed document is the evidence. The document with its hidden text,
+// when it differs, is chunked too and marked refute_only: the retriever never
+// returns such a chunk and scores nothing against it, and the refutation index
+// reads it like any other.
+function docxChunks(texts, name) {
+  const chunks = chunkText(texts.shown, name);
+  if (texts.withHidden) chunks.push(...chunkText(texts.withHidden, name).map(c => Object.assign(c, { refute_only: true })));
+  return chunks;
+}
+
 async function parseDocx(file) {
   try {
-    return chunkText(await docxText(await file.arrayBuffer(), file.name), file.name);
+    return docxChunks(await docxText(await file.arrayBuffer(), file.name), file.name);
   } catch(e) {
     if (e && e.code === 'UNSUPPORTED') throw e;
     throw unsupported(file.name, 'DOCX could not be parsed: ' + (e && e.message ? e.message : e));
@@ -712,8 +757,7 @@ async function parseZipReport(file) {
         refuse(name, 'DOCX member could not be read as binary content', { size });
       } else {
         try {
-          const text = await docxText(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget);
-          chunks.push(...chunkText(text, name));
+          chunks.push(...docxChunks(await docxText(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget), name));
           parsed.push(name);
           members.push({ name, size, bytes });
         } catch (e) {
@@ -776,7 +820,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.2';
+const ENGINE_VERSION = '1.6.3';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

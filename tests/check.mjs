@@ -1885,6 +1885,40 @@ try {
 check(/word\/footnotes\.xml could not be read/.test(brokenNotes),
   'a DOCX whose footnotes will not inflate is refused by name, not read as a document without them — ' + JSON.stringify(brokenNotes));
 
+// ITEM 38: a tracked-changes DOCX is two documents, the one it says now and the
+// one it used to say, and the reader read both as one. A claim the author
+// deleted, or moved away, still carried AC-2 to Satisfied. Hidden text
+// (<w:vanish/>) is the author's words, unseen: it may refute, never satisfy.
+const ac2Head = '<w:p><w:r><w:t>AC-2 Account Management. </w:t></w:r>';
+const W1 = (runs) => W(ac2Head + runs + '</w:p>');
+const CV_BODY = CV_TEXT.replace('AC-2 Account Management. ', '');
+const tracked = async (runs, name) => (await docxVerdict([{ name: 'word/document.xml', text: W1(runs) }], name)).v.status;
+const delClaim = await tracked('<w:del w:id="1" w:author="x"><w:r><w:delText>' + CV_BODY + '</w:delText></w:r></w:del>', 'del.docx');
+const moveClaim = await tracked('<w:moveFrom w:id="2" w:author="x"><w:r><w:t>' + CV_BODY + '</w:t></w:r></w:moveFrom>', 'move.docx');
+const hiddenClaim = await tracked('<w:r><w:rPr><w:vanish/></w:rPr><w:t>' + CV_BODY + '</w:t></w:r>', 'hidden.docx');
+check(delClaim !== 'Satisfied' && moveClaim !== 'Satisfied' && hiddenClaim !== 'Satisfied',
+  'a claim deleted, moved away or hidden does not satisfy AC-2 — ' + [delClaim, moveClaim, hiddenClaim].join(' / '));
+const delNot = await tracked('<w:r><w:t>' + CV_BODY + ' Account monitoring is </w:t></w:r><w:del w:id="3" w:author="x"><w:r><w:delText>not </w:delText></w:r></w:del><w:r><w:t>implemented.</w:t></w:r>', 'del-not.docx');
+check(delNot === 'Satisfied',
+  'a deleted "not" is not read: the document now says it is implemented — ' + delNot);
+const hiddenNot = await tracked('<w:r><w:t>' + CV_BODY + '</w:t></w:r><w:r><w:rPr><w:vanish/></w:rPr><w:t> Account monitoring is not implemented.</w:t></w:r>', 'hidden-not.docx');
+check(hiddenNot === 'Other Than Satisfied',
+  'a hidden "not implemented" still refutes AC-2 — ' + hiddenNot);
+const unhidden = await tracked('<w:r><w:rPr><w:vanish w:val="0"/></w:rPr><w:t>' + CV_BODY + '</w:t></w:r>', 'unhidden.docx');
+check(unhidden === 'Satisfied', 'w:vanish w:val="0" is the explicit "not hidden", and reads as visible — ' + unhidden);
+const markThenText = await docxVerdict([{ name: 'word/document.xml', text: W(ac2Head +
+  '<w:r><w:rPr><w:del w:id="4" w:author="x"/></w:rPr><w:t>' + CV_BODY + '</w:t></w:r></w:p>' +
+  '<w:p><w:del w:id="5" w:author="x"><w:r><w:delText>An old sentence.</w:delText></w:r></w:del></w:p>') }], 'mark.docx');
+check(markThenText.v.status === 'Satisfied' && !/An old sentence/.test(markThenText.chunks.map(c => c.text).join(' ')),
+  'a self-closing deletion mark does not swallow the visible text up to a later deletion — ' + markThenText.v.status);
+const hid = await docxVerdict([{ name: 'word/document.xml', text: W1('<w:r><w:rPr><w:vanish/></w:rPr><w:t>' + CV_BODY + '</w:t></w:r>') }], 'hid.docx');
+const hidRetriever = new E.BM25Retriever(hid.chunks);
+const hidHits = hidRetriever.query(AC2G.t + ' Account Management Access Control', 8, 'AC-2');
+const shownOnly = hid.chunks.filter(c => !c.refute_only);
+check(hid.chunks.some(c => c.refute_only) && !hidHits.some(h => h.refute_only) &&
+      JSON.stringify(hidHits) === JSON.stringify(new E.BM25Retriever(shownOnly).query(AC2G.t + ' Account Management Access Control', 8, 'AC-2')),
+  'hidden text is chunked refute_only, never returned by a query, and leaves ranking exactly as it is without it');
+
 // 64 (13–14): an upper-case homoglyph draft marker
 const upperHomo = verdictFor([['ac2.txt', CV_TEXT + ' Note: Рlaceholder text remains in this section.']], 'AC-2', AC2G);
 check(E.foldHomoglyphs('Рlaceholder') === 'Placeholder' && subOf(upperHomo, 5, '5c') === false && upperHomo.status === 'Other Than Satisfied',

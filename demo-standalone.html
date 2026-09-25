@@ -9379,14 +9379,18 @@ async function runInitialLive(sample) {
     document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
   }
-  log(ts(), 'read', corpus.parsed.length + ' file(s) parsed · ' + corpus.chunks.length + ' evidence chunks' + (corpus.skipped.length ? ' · ' + corpus.skipped.length + ' file(s) refused (listed above — not counted as evidence)' : ''), corpus.skipped.length ? 'warn' : 'ok');
+  // A DOCX's hidden text is read for refutations only (engine 1.6.3), so its
+  // chunks are not evidence and are not counted as evidence.
+  const refuteOnly = corpus.chunks.filter(c => c.refute_only).length;
+  const evidenceChunks = corpus.chunks.length - refuteOnly;
+  log(ts(), 'read', corpus.parsed.length + ' file(s) parsed · ' + evidenceChunks + ' evidence chunks' + (refuteOnly ? ' · ' + refuteOnly + ' chunk(s) of hidden DOCX text read for refutations only' : '') + (corpus.skipped.length ? ' · ' + corpus.skipped.length + ' file(s) refused (listed above — not counted as evidence)' : ''), corpus.skipped.length ? 'warn' : 'ok');
   await wait(200);
 
   // ── 2 · Index ──
   setStage(2);
   setStatus('◆ INDEX · BM25 over the evidence chunks');
   const counts = profileCounts(baseline);
-  log(ts(), 'idx', 'BM25 index built · ' + corpus.chunks.length + ' chunks · k1 1.5 · b 0.75', 'ok');
+  log(ts(), 'idx', 'BM25 index built · ' + evidenceChunks + ' chunks · k1 1.5 · b 0.75', 'ok');
   log(ts(), 'idx', 'profile <span class="key">FedRAMP ' + baseline + '</span> · ' + counts.controls + ' controls · ' + counts.objectives + ' determination statements');
   log(ts(), 'idx', 'assessed as of <span class="key">' + asOfDay + '</span> · declared input (the engine reads no clock)');
   await wait(200);

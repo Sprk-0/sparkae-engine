@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-25 (the state this build is in)
 
-Engine 1.6.2 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `19ad796a9ce7` ·
+Engine 1.6.3 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `75a0d2777e30` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,39 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (the document it says now · engine 1.6.3)
+
+Engine 1.6.2 → 1.6.3; ruleset `19ad796a9ce7` → `75a0d2777e30`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 38.
+
+A tracked-changes DOCX carries two documents: what it says now, and what it
+used to say. The reader stripped the markup and read both as one, so the AC-2_g
+paragraph came out **Satisfied** when the author had deleted it, when it had
+been moved away, and when it was formatted hidden. The review list had filed
+this as fail-closed ("a deleted *not* still refutes"); the claims that were
+struck out were the other half of it, and they failed open.
+
+- **Tracked deletions and moved-away text** (`<w:del>`, `<w:delText>`,
+  `<w:moveFrom>`) are not read, in the body, the notes or the headers. A deleted
+  "not" no longer refutes — the document now says the opposite.
+- **Hidden text** (`<w:vanish/>`) is read for refutations only. It is the
+  author's own words, unseen, so it may refute a control but never satisfy one:
+  a hidden "not implemented" still refuses AC-2, and hidden stuffing no longer
+  satisfies it. The document as displayed is chunked as evidence; when hidden
+  text exists, the document with it is chunked again and marked `refute_only`.
+  The retriever tokenizes those chunks as empty — they add nothing to the
+  collection statistics and no query returns them — and the refutation index
+  reads them like any other. A corpus without hidden text ranks exactly as
+  before.
+
+The §01 console counts refute-only chunks apart from the evidence chunks, and
+the BM25 line counts only what the index was built over. `check.mjs` §25 holds
+every case above and three guards: a hidden refutation still refutes, a
+`<w:vanish w:val="0"/>` override reads as visible, and a self-closing deletion
+mark cannot swallow the visible text up to a later deletion.
 
 ## 2026-09-25 (the words outside the body · engine 1.6.2)
 
