@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-25 (the state this build is in)
 
-Engine 1.6.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `64928573b3c0` ·
+Engine 1.6.2 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `19ad796a9ce7` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,35 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (the words outside the body · engine 1.6.2)
+
+Engine 1.6.1 → 1.6.2; ruleset `64928573b3c0` → `19ad796a9ce7`, again only
+because the ruleset carries the engine version. The verdict digest does not
+move — `20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with
+0 false passes. This closes item 37.
+
+The DOCX reader read `word/document.xml` and nothing else. Word keeps words in
+other parts too, and a refutation in any of them never reached a gate: the
+AC-2_g paragraph delivered as a DOCX with "Account monitoring is not
+implemented" in a footnote, in a comment, or in a page header came out
+**Satisfied** all three ways. Each part is read now:
+
+- footnotes, endnotes and comments are set inline where the body cites them,
+  as `[footnote: …]`, `[endnote: …]` and `[comment: …]`, so a refutation in one
+  belongs to the section that cites it rather than to whichever control the
+  document ends on; one the body never cites is read after the body;
+- headers and footers belong to no section, so they are read first, where a
+  reader meets them, and once each however many sections repeat them.
+
+Reading comments is deliberate. A reviewer's "is this actually implemented?"
+now reaches the gates too, which fails closed: it is text the submitted file
+carries, and the assessor sees it quoted in the evidence.
+
+A part that is present but will not inflate refuses the DOCX by name, as an
+unreadable body already did; skipping it would read as a document that said
+nothing there. `check.mjs` §25 holds all of it — the three refutations, the
+header read once, the refused part — and each fails against the 1.6.1 reader.
 
 ## 2026-09-25 (every id a chunk names · engine 1.6.1)
 

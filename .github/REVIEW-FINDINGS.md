@@ -32,6 +32,9 @@ and between them they closed most of it:
 - **1.6.1** ("every id a chunk names") closed item 34, which turned out to be
   a false Satisfied rather than the parser hardening it was filed as. No
   determination on the sample moved.
+- **1.6.2** ("the words outside the body") closed item 37, a false Satisfied
+  of the same kind: refutations in DOCX footnotes, comments and headers were
+  never read. No determination on the sample moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -43,9 +46,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 20 |
+| **OPEN** | reproduced on the current tree | 19 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 53 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 54 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -302,8 +305,16 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 36. **Member CRC-32 is unread.** (`#21`, `#73`) — **CLOSED (1.4.0)**
     Every member's bytes are checked against the directory CRC and refused by name on mismatch.
 
-37. **DOCX headers, footers, footnotes, comments unread.** (`#85`, `#118`) — **OPEN**
+37. **DOCX headers, footers, footnotes, comments unread.** (`#85`, `#118`) — **CLOSED (1.6.2)** *(and it was a false Satisfied)*
     Only `word/document.xml` is read — no reference to `header1.xml` or `footnotes.xml` anywhere. A refutation in a header never reaches Gate 5.
+    **Worse than filed, the same way as item 34:** the AC-2_g paragraph as a
+    DOCX, with "Account monitoring is not implemented" in a footnote, a comment
+    or a header, came out **Satisfied** on 1.6.1 all three ways.
+    **Closed:** `docxText` reads `footnotes.xml`, `endnotes.xml` and
+    `comments.xml` inline where the body cites them (uncited ones after the
+    body), and every `header*.xml` / `footer*.xml` first, once each. An
+    unreadable part refuses the DOCX by name. `check.mjs` §25 holds each case;
+    all fail on 1.6.1. No determination on the sample moved.
 
 38. **Tracked-change / vanish text is concatenated.** (`#83`, `#143`) — **OPEN**
     No handling of `w:del` anywhere in the engine. Tags are stripped, so `<w:del>not implemented</w:del><w:ins>is implemented</w:ins>` still refutes — fail-closed, but the wrong document.
@@ -642,8 +653,8 @@ parameter flags for review rather than refusing (failing closed would have cost
 36 Satisfied). No determination moved; the verdict digest did, because gate 6's
 record and the review flag are in the verdict line.
 
-**Deferred** — real, and believed not to produce a false Satisfied (item 34
-turned out to, and closed as 1.6.1): items **34, 37, 38,
+**Deferred** — real, and believed not to produce a false Satisfied (items 34
+and 37 turned out to, and closed as 1.6.1 and 1.6.2): items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
 **70, 72–77** (verification and process). Item **71** was pulled forward and is
 done, so the parser items above can now fail a push rather than breaking
