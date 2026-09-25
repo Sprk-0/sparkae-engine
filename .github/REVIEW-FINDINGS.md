@@ -35,6 +35,9 @@ and between them they closed most of it:
 - **1.6.2** ("the words outside the body") closed item 37, a false Satisfied
   of the same kind: refutations in DOCX footnotes, comments and headers were
   never read. No determination on the sample moved.
+- **1.6.3** ("the document it says now") closed item 38: deleted, moved-away
+  and hidden text had been satisfying controls. Deletions are dropped; hidden
+  text is refute-only. No determination on the sample moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -46,9 +49,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 19 |
+| **OPEN** | reproduced on the current tree | 18 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 54 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 55 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -316,8 +319,17 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     unreadable part refuses the DOCX by name. `check.mjs` §25 holds each case;
     all fail on 1.6.1. No determination on the sample moved.
 
-38. **Tracked-change / vanish text is concatenated.** (`#83`, `#143`) — **OPEN**
+38. **Tracked-change / vanish text is concatenated.** (`#83`, `#143`) — **CLOSED (1.6.3)** *(and the other half was a false Satisfied)*
     No handling of `w:del` anywhere in the engine. Tags are stripped, so `<w:del>not implemented</w:del><w:ins>is implemented</w:ins>` still refutes — fail-closed, but the wrong document.
+    **The half not filed failed open:** the AC-2_g paragraph deleted in
+    tracked changes, moved away, or formatted hidden came out **Satisfied** on
+    1.6.2 all three ways.
+    **Closed:** deletions and moved-away text are dropped from every part.
+    Hidden text is refute-only — a product call, made 2026-09-25: it can refute
+    a control, never satisfy one. It is chunked `refute_only`, which the
+    retriever never scores or returns and the refutation index reads.
+    `check.mjs` §25 holds each case; the new-behaviour checks fail on 1.6.2.
+    No determination on the sample moved.
 
 39. **`expandFiles` vs `parseZipReport` disagree.** (`#32–33`, `#71`) — **CLOSED (1.4.0)**
     Housekeeping members are refused in the engine, so inventory and corpus agree, and the package is read once.
@@ -653,8 +665,8 @@ parameter flags for review rather than refusing (failing closed would have cost
 36 Satisfied). No determination moved; the verdict digest did, because gate 6's
 record and the review flag are in the verdict line.
 
-**Deferred** — real, and believed not to produce a false Satisfied (items 34
-and 37 turned out to, and closed as 1.6.1 and 1.6.2): items **34, 37, 38,
+**Deferred** — real, and believed not to produce a false Satisfied (items 34,
+37 and 38 turned out to, and closed as 1.6.1, 1.6.2 and 1.6.3): items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
 **70, 72–77** (verification and process). Item **71** was pulled forward and is
 done, so the parser items above can now fail a push rather than breaking
