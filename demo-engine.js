@@ -543,7 +543,7 @@ const ZIP_MAX_BYTES = 64 * 1024 * 1024;
 // Decoding these to text destroys them. The engine reads DOCX itself; XLSX is
 // a server-product format the engine still refuses for the corpus, but the
 // upload panel classifies it, and it can only do that from the bytes.
-const BINARY_MEMBER_EXTENSIONS = ['docx', 'xlsx'];
+const BINARY_MEMBER_EXTENSIONS = ['docx', 'xlsx', 'zip'];
 const extensionOf = (name) => (name.split('.').pop() || '').toLowerCase();
 
 // `budget` is the archive's remaining expansion allowance, shared across its
@@ -774,15 +774,34 @@ async function unzip(buffer, failures, sharedBudget) {
 // are rather than dropping them in one reader and reading them in another.
 const ARCHIVE_HOUSEKEEPING_RE = /(?:^|\/)(?:__MACOSX\/|\.DS_Store$|Thumbs\.db$|\._[^/]*$)/i;
 
+// An archive inside the package is read like the package: its members join the
+// corpus under the path that reaches them ("ssp.zip!/SSP.docx"), against the
+// same byte allowance and the same member allowance as everything else in the
+// package. A nested .zip used to fall to the unsupported branch, so a package
+// whose SSP was delivered as ssp.zip was assessed without its SSP. Nesting is
+// bounded: the package is level 1, and a member at ZIP_MAX_DEPTH is refused
+// rather than opened, as is every member past ZIP_MAX_MEMBERS across all levels
+// — a package of 512 small archives of 512 members each is not 512 members.
+const ZIP_MAX_DEPTH = 3;
+
 async function parseZipReport(file) {
   const buf = await file.arrayBuffer();
-  const skipped = [];
   // One allowance for the package and everything nested inside it.
-  const budget = { left: ZIP_MAX_BYTES };
+  const state = { chunks: [], parsed: [], skipped: [], members: [], budget: { left: ZIP_MAX_BYTES }, seen: 0 };
   const unzipFailures = [];
-  const raw = await unzip(buf, unzipFailures, budget);
-  skipped.push(...unzipFailures);
-  const chunks = [], parsed = [], members = [];
+  const raw = await unzip(buf, unzipFailures, state.budget);
+  state.skipped.push(...unzipFailures);
+  await readArchiveMembers(raw, '', 1, state);
+  // What unzip() itself refused — duplicates, bad streams, a broken directory —
+  // is listed too, so the inventory and the refusal list are one account.
+  for (const f of unzipFailures) state.members.push({ name: f.name === '(archive)' ? file.name : f.name, refusedReason: f.reason });
+  const { chunks, parsed, skipped, members } = state;
+  if (!parsed.length && !skipped.length) throw unsupported(file.name, 'ZIP contains no readable members');
+  return { chunks, parsed, skipped, members };
+}
+
+async function readArchiveMembers(raw, prefix, depth, state) {
+  const { chunks, parsed, skipped, members, budget } = state;
   const refuse = (name, reason, extra) => {
     skipped.push({ name, reason });
     members.push(Object.assign({ name, refusedReason: reason }, extra || {}));
@@ -790,11 +809,13 @@ async function parseZipReport(file) {
   // unzip() has already refused every member of an ambiguous name, counted from
   // the central directory, so everything here is a member the archive names
   // once. Member order is the archive's own order, fixed for a given file.
-  for (const { name, text: content, bytes, directory } of raw) {
+  for (const { name: memberName, text: content, bytes, directory } of raw) {
     if (directory) continue;
+    const name = prefix + memberName;
     const size = bytes ? bytes.length : (content ? content.length : 0);
-    if (ARCHIVE_HOUSEKEEPING_RE.test(name)) { refuse(name, 'archive housekeeping member (__MACOSX, .DS_Store, Thumbs.db) — not a document, so it is not read', { size }); continue; }
-    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (++state.seen > ZIP_MAX_MEMBERS) { refuse(name, 'package holds more than ' + ZIP_MAX_MEMBERS + ' members across its nested archives — not read', { size }); continue; }
+    if (ARCHIVE_HOUSEKEEPING_RE.test(memberName)) { refuse(name, 'archive housekeeping member (__MACOSX, .DS_Store, Thumbs.db) — not a document, so it is not read', { size }); continue; }
+    const ext = (memberName.split('.').pop() || '').toLowerCase();
     if (['xml', 'txt', 'md', 'csv', 'json', 'nessus'].includes(ext)) {
       if (content && content.trim()) { chunks.push(...chunkText(markupText(ext, content), name)); parsed.push(name); members.push({ name, size, text: content }); }
       else refuse(name, 'archive member is empty', { size, text: content || '' });
@@ -814,17 +835,23 @@ async function parseZipReport(file) {
           refuse(name, (e && e.message) ? e.message : String(e), { size, bytes });
         }
       }
+    } else if (ext === 'zip') {
+      if (!bytes) { refuse(name, 'ZIP member could not be read as binary content', { size }); continue; }
+      if (depth >= ZIP_MAX_DEPTH) { refuse(name, 'archive nested ' + (depth + 1) + ' levels deep — archives are opened to ' + ZIP_MAX_DEPTH + ' levels, so it is not read', { size, bytes }); continue; }
+      const innerFailures = [];
+      const innerRaw = await unzip(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), innerFailures, budget);
+      for (const f of innerFailures) {
+        const at = f.name === '(archive)' ? name : name + '!/' + f.name;
+        skipped.push({ name: at, reason: f.reason });
+        members.push({ name: at, refusedReason: f.reason });
+      }
+      await readArchiveMembers(innerRaw, name + '!/', depth + 1, state);
     } else {
       // Listed with its bytes: the engine does not read it, but a caller
       // building an inventory can still say what kind of file it is.
       refuse(name, 'unsupported archive member type .' + ext, bytes ? { size, bytes } : { size, text: content || '' });
     }
   }
-  // What unzip() itself refused — duplicates, bad streams, a broken directory —
-  // is listed too, so the inventory and the refusal list are one account.
-  for (const f of unzipFailures) members.push({ name: f.name === '(archive)' ? file.name : f.name, refusedReason: f.reason });
-  if (!parsed.length && !skipped.length) throw unsupported(file.name, 'ZIP contains no readable members');
-  return { chunks, parsed, skipped, members };
 }
 
 async function parseZip(file) {
@@ -870,7 +897,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.4';
+const ENGINE_VERSION = '1.6.5';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

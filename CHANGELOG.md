@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-25 (the state this build is in)
 
-Engine 1.6.4 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `cf0a059449c6` ·
+Engine 1.6.5 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `5cfc9030ed18` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,32 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (an archive in the package is part of the package · engine 1.6.5)
+
+Engine 1.6.4 → 1.6.5; ruleset `cf0a059449c6` → `5cfc9030ed18`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 41.
+
+A `.zip` inside the package was refused as an unsupported member type. The
+review list had it as "not silent", and the refusal was listed — but what the
+inner archive said never reached a gate. An SSP delivered as `ssp.zip` was
+assessed without its SSP, and a package whose `reviews.zip` held "AC-2 is not
+implemented" beside a satisfying SSP came out **Satisfied**.
+
+An inner archive is now read like the package. Its members join the corpus
+under the path that reaches them (`ssp.zip!/SSP.docx`, the separator the page
+already uses), inner refusals are named by that path, and a member that is not
+a ZIP at all is refused by its own name. Three bounds hold across the nesting,
+not per archive: the 64 MB expansion allowance, the 512-member allowance (a
+package of 512 small archives of 512 members each is not 512 members), and a
+depth of three levels — the package, an archive in it, an archive in that —
+past which an archive is refused by its path rather than opened.
+
+`check.mjs` holds the nested SSP, the nested refutation, the depth bound, a
+nested zip bomb, the member allowance across two inner archives, and a broken
+inner archive; each fails against the 1.6.4 reader.
 
 ## 2026-09-25 (what the archive says about itself · engine 1.6.4)
 
