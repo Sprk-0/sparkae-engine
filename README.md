@@ -139,7 +139,7 @@ request and on every push to `main`, and fails the build on a wrong
 determination that has no recorded reason.
 
 ```text
-engine 1.6.3 · 16 cases · 15 correct · 0 false passes · 1 false fail
+engine 1.6.4 · 16 cases · 15 correct · 0 false passes · 1 false fail
 external-review 5 cases · 5 correct · engine-repo 11 cases · 10 correct
 ```
 
@@ -288,7 +288,7 @@ repository carries no release tags**, so what identifies a state worth citing is
 the reproducibility tuple rather than a label:
 
 ```text
-engine 1.6.3 · catalog 2026-07-21 / 91ad1b17138f · ruleset 75a0d2777e30
+engine 1.6.4 · catalog 2026-07-21 / 91ad1b17138f · ruleset cf0a059449c6
   → verdict digest 20cd7ee2ae8e   (CloudVault sample, FedRAMP Low, 2026-06-01)
 ```
 

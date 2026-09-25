@@ -517,7 +517,7 @@ function buildZip(members, opts = {}) {
   const central = [];
   let offset = 0;
   for (const m of members) {
-    const name = enc.encode(m.name);
+    const name = m.nameBytes || enc.encode(m.name);
     const source = m.bytes || enc.encode(m.text || '');
     let data, method, uncompSize, crc;
     if (m.raw) {
@@ -581,6 +581,7 @@ function buildZip(members, opts = {}) {
   ev.setUint32(12, cdSize, true);
   ev.setUint32(16, offset, true);
   ev.setUint16(20, 0, true);
+  if (opts.eocdPatch) opts.eocdPatch(ev);
   const parts = [...local, ...central, eocd];
   const total = parts.reduce((s, p) => s + p.length, 0);
   const out = new Uint8Array(total);
@@ -2034,6 +2035,37 @@ check(macosx.parsed.length === 1 && macosx.parsed[0] === 'ssp.txt' && macosx.chu
 check(page.includes('const report = await window.SparkAEEngine.parsePackage(files);') && !page.includes('window.SparkAEEngine.unzip(') &&
   page.includes('CUSTOM_PKG_REPORT = { files, report: pkg.report };') && page.includes('? CUSTOM_PKG_REPORT.report'),
   'the page reads a package once, through parsePackage, and the run reuses that read');
+
+// ITEM 40: what the archive says about itself, read. A name is UTF-8 when bit 11
+// says so, and code page 437 when it does not and is not valid UTF-8; an
+// encrypted member is refused as encrypted rather than as a failed inflate; a
+// split archive is refused rather than read as though it were whole.
+const cp437Zip = await E.parseZipReport(asFile(buildZip([
+  { name: 'x', nameBytes: new Uint8Array([0x53, 0x79, 0x73, 0x74, 0x8a, 0x6d, 0x65, 0x2e, 0x74, 0x78, 0x74]), text: 'CP437 name' },
+  { name: 'Système-utf8.txt', text: 'UTF-8 name, flag set' },
+  { name: 'Système-noflag.txt', text: 'UTF-8 name, flag not set' },
+], { patch: (cv, i) => { if (i === 1) cv.setUint16(8, 0x0800, true); } }), 'names.zip'));
+check(JSON.stringify(cp437Zip.parsed) === JSON.stringify(['Système.txt', 'Système-utf8.txt', 'Système-noflag.txt']),
+  'member names decode as CP437 without bit 11 (0x8A is è), and as UTF-8 with it or when the bytes are UTF-8 — ' + JSON.stringify(cp437Zip.parsed));
+const encZip = await E.parseZipReport(asFile(buildZip([
+  { name: 'locked.txt', text: 'ciphertext stands in here' },
+  { name: 'aes.txt', text: 'ciphertext stands in here' },
+  { name: 'open.txt', text: 'readable member' },
+], { patch: (cv, i) => { if (i === 0) cv.setUint16(8, 0x0001, true); if (i === 1) cv.setUint16(10, 99, true); } }), 'encrypted.zip'));
+check(JSON.stringify(encZip.parsed) === '["open.txt"]' &&
+      refusals(encZip).filter(r => /^(locked|aes)\.txt: archive member is encrypted/.test(r)).length === 2,
+  'an encrypted member (bit 0, or WinZip AES method 99) is refused as encrypted, by name — ' + JSON.stringify(refusals(encZip)));
+const splitZip = await E.parseZipReport(asFile(buildZip([{ name: 'a.txt', text: 'first member' }],
+  { eocdPatch: ev => { ev.setUint16(4, 1, true); ev.setUint16(6, 0, true); } }), 'split.z02.zip'));
+const partZip = await E.parseZipReport(asFile(buildZip([{ name: 'a.txt', text: 'first member' }, { name: 'b.txt', text: 'second member' }],
+  { eocdPatch: ev => ev.setUint16(8, 1, true) }), 'part.zip'));
+const memberDisk = await E.parseZipReport(asFile(buildZip([{ name: 'a.txt', text: 'first member' }, { name: 'b.txt', text: 'second member' }],
+  { patch: (cv, i) => { if (i === 1) cv.setUint16(34, 1, true); } }), 'member-disk.zip'));
+check(splitZip.parsed.length === 0 && refusals(splitZip).some(r => /split across disks/.test(r)) &&
+      partZip.parsed.length === 0 && refusals(partZip).some(r => /1 of 2 members here/.test(r)) &&
+      JSON.stringify(memberDisk.parsed) === '["a.txt"]' && refusals(memberDisk).some(r => /^b\.txt: .*starts on disk 1/.test(r)),
+  'a split archive is refused as split, and a member starting on another disk is refused by name — ' +
+  JSON.stringify([refusals(splitZip), refusals(partZip), refusals(memberDisk)]));
 
 // 72 (20): a comment carrying a fake end-of-directory signature
 const commented = (members, comment) => {
