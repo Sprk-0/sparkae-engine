@@ -20,9 +20,9 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-15 (the state this build is in)
+## 2026-09-25 (the state this build is in)
 
-Engine 1.6.0 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `fc6ad10cbb39` ·
+Engine 1.6.1 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `64928573b3c0` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,32 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (every id a chunk names · engine 1.6.1)
+
+Engine 1.6.0 → 1.6.1; ruleset `fc6ad10cbb39` → `64928573b3c0`, which moves
+because the ruleset carries the engine version and for no other reason. The
+verdict digest does not move: `20cd7ee2ae8e`, 153 / 808 / 20 of 981. The
+benchmark does not move either: 15 of 16, 0 false passes. This closes item 34.
+
+`extractControlIds` stopped after 50 distinct ids and dropped the rest from the
+chunk's tags. The tags are not decoration. They decide which chunks are a
+control's own evidence, and which control a refutation belongs to — so in a
+control-status table naming sixty controls, "SI-6 is not implemented" sat in a
+chunk tagged with the first fifty, and the refutation index recorded nothing
+for SI-6. A cap that drops the refutation fails open, and it produced a false
+Satisfied: a paragraph that satisfies AC-2_g, beside a status table naming
+fifty-five other controls and then "AC-2 is not implemented", came out
+**Satisfied**. It now comes out Other Than Satisfied. The cap is gone: every id
+a chunk names is a tag, and the pass stays linear in the chunk's length.
+
+The review list had deferred this item as one that could not produce a false
+Satisfied. It could; the list now says so.
+
+The bundled sample never names fifty ids in one chunk, which is why no
+determination moved and why the digest cannot hold this. `check.mjs` does: a
+sixty-id list must come back with all sixty, and the AC-2 case above must be
+refused. Both fail against the 1.6.0 engine.
 
 ## 2026-09-16 (the golden run, delivered as a package)
 
