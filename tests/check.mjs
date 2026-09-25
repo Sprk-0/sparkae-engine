@@ -1840,6 +1840,51 @@ const tableV = verdictFor(statusTable, 'AC-2', AC2G);
 check(tableV.status === 'Other Than Satisfied',
   '"AC-2 is not implemented" after fifty-five other ids in one chunk still refuses AC-2 — ' + tableV.status);
 
+// ITEM 37: Word keeps words outside the body. Only word/document.xml used to be
+// read, so a refutation in a footnote, a comment or a page header never reached
+// a gate, and the paragraph beside it carried AC-2 to Satisfied. Each part is
+// read now; notes where the body cites them, headers and footers first.
+const W = (inner) => '<?xml version="1.0"?><w:document xmlns:w="x"><w:body>' + inner + '</w:body></w:document>';
+const ac2Para = (extra = '') => '<w:p><w:r><w:t>' + CV_TEXT + '</w:t></w:r>' + extra + '</w:p>';
+const docxVerdict = async (members, name) => {
+  const chunks = await E.parseFile(asFile(buildZip([{ name: '[Content_Types].xml', text: '<Types/>' }, ...members]), name));
+  const r = new E.BM25Retriever(chunks);
+  return { chunks, v: E.assessDif(AC2G, r, 'AC-2', CATALOG['AC-2'].T, CATALOG['AC-2'].F, E.buildRefutationIndex(r), asOfDate) };
+};
+const plainDocx = await docxVerdict([{ name: 'word/document.xml', text: W(ac2Para()) }], 'plain.docx');
+const footDocx = await docxVerdict([
+  { name: 'word/document.xml', text: W(ac2Para('<w:r><w:footnoteReference w:id="2"/></w:r>')) },
+  { name: 'word/footnotes.xml', text: '<w:footnotes xmlns:w="x"><w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote>' +
+    '<w:footnote w:id="2"><w:p><w:r><w:t>Account monitoring is not implemented.</w:t></w:r></w:p></w:footnote></w:footnotes>' },
+], 'footnote.docx');
+const commentDocx = await docxVerdict([
+  { name: 'word/document.xml', text: W(ac2Para('<w:r><w:commentReference w:id="0"/></w:r>')) },
+  { name: 'word/comments.xml', text: '<w:comments xmlns:w="x"><w:comment w:id="0" w:author="ISSO"><w:p><w:r><w:t>Account monitoring is not implemented.</w:t></w:r></w:p></w:comment></w:comments>' },
+], 'comment.docx');
+const headerDocx = await docxVerdict([
+  { name: 'word/document.xml', text: W(ac2Para()) },
+  { name: 'word/header1.xml', text: '<w:hdr xmlns:w="x"><w:p><w:r><w:t>AC-2 account monitoring is not implemented.</w:t></w:r></w:p></w:hdr>' },
+  { name: 'word/header2.xml', text: '<w:hdr xmlns:w="x"><w:p><w:r><w:t>AC-2 account monitoring is not implemented.</w:t></w:r></w:p></w:hdr>' },
+], 'header.docx');
+check(plainDocx.v.status === 'Satisfied',
+  'the AC-2 paragraph on its own, delivered as a DOCX, is Satisfied — ' + plainDocx.v.status);
+check(footDocx.v.status === 'Other Than Satisfied' && /\[footnote: Account monitoring is not implemented\.\]/.test(footDocx.chunks.map(c => c.text).join('\n')),
+  'a refutation in a footnote is read where the body cites it, and refuses AC-2 — ' + footDocx.v.status);
+check(commentDocx.v.status === 'Other Than Satisfied',
+  'a refutation in a comment is read, and refuses AC-2 — ' + commentDocx.v.status);
+const headerText = headerDocx.chunks.map(c => c.text).join('\n');
+check(headerDocx.v.status === 'Other Than Satisfied' && headerText.startsWith('[header:') && headerText.split('[header:').length === 2,
+  'a refutation in a page header is read first and once, however many sections repeat it, and refuses AC-2 — ' + headerDocx.v.status);
+let brokenNotes = '';
+try {
+  await E.parseFile(asFile(buildZip([
+    { name: 'word/document.xml', text: W(ac2Para()) },
+    { name: 'word/footnotes.xml', raw: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]), uncompSize: 500 },
+  ]), 'broken-notes.docx'));
+} catch (e) { brokenNotes = e.message || String(e); }
+check(/word\/footnotes\.xml could not be read/.test(brokenNotes),
+  'a DOCX whose footnotes will not inflate is refused by name, not read as a document without them — ' + JSON.stringify(brokenNotes));
+
 // 64 (13–14): an upper-case homoglyph draft marker
 const upperHomo = verdictFor([['ac2.txt', CV_TEXT + ' Note: Рlaceholder text remains in this section.']], 'AC-2', AC2G);
 check(E.foldHomoglyphs('Рlaceholder') === 'Placeholder' && subOf(upperHomo, 5, '5c') === false && upperHomo.status === 'Other Than Satisfied',

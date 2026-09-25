@@ -368,16 +368,86 @@ async function docxText(buf, label, budget) {
   }
   const docXml = body.text;
   if (!docXml) throw unsupported(label, 'DOCX has no word/document.xml');
-  const text = decodeEntities(docXml
-    .replace(/<w:br[^>]*\/>/gi, '\n')
-    .replace(/<\/w:p>/gi, '\n\n')
-    .replace(/<\/w:r>/gi, ' ')
-    .replace(/<[^>]+>/g, ''))
+
+  // Word keeps a document's words in more parts than the body. Only the body
+  // used to be read, so "not implemented" in a footnote, a comment or a page
+  // header never reached a gate — a refutation the author wrote, dropped by
+  // the reader. A part that is present but unreadable refuses the document by
+  // name, as the body does: skipping it would read as a document that said
+  // nothing there.
+  const partUnreadable = refused.find(r => DOCX_NOTE_PARTS.some(p => p.name === r.name) || DOCX_PAGE_PART_RE.test(r.name));
+  if (partUnreadable) throw unsupported(label, 'DOCX ' + partUnreadable.name + ' could not be read: ' + partUnreadable.reason);
+
+  // Footnotes, endnotes and comments are read where the body cites them, so a
+  // refutation in one belongs to the section that cites it rather than to
+  // whichever control the document happens to end on. One the body never
+  // cites is still read, after the body.
+  let bodyXml = docXml;
+  const uncited = [];
+  for (const part of DOCX_NOTE_PARTS) {
+    const member = entries.find(m => m.name === part.name && !m.directory);
+    if (!member || !member.text) continue;
+    const notes = new Map();
+    for (const m of member.text.matchAll(part.itemRe)) {
+      const id = (m[1].match(/\bw:id="(-?\d+)"/) || [])[1];
+      const words = wordXmlRawText(m[2]);
+      if (id !== undefined && words) notes.set(id, words);
+    }
+    const cited = new Set();
+    bodyXml = bodyXml.replace(part.refRe, (whole, id) => {
+      if (!notes.has(id)) return whole;
+      cited.add(id);
+      return ' [' + part.label + ': ' + notes.get(id) + '] ';
+    });
+    for (const [id, words] of notes) if (!cited.has(id)) uncited.push('[' + part.label + ': ' + words + ']');
+  }
+
+  // Headers and footers belong to no section. They are read first, where a
+  // reader meets them, and once each however many sections repeat them.
+  const pageFurniture = [...new Set(entries
+    .filter(m => DOCX_PAGE_PART_RE.test(m.name) && !m.directory && m.text)
+    .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    .map(m => {
+      const words = wordXmlRawText(m.text);
+      return words ? '[' + m.name.match(DOCX_PAGE_PART_RE)[1] + ': ' + words + ']' : '';
+    })
+    .filter(Boolean))];
+
+  const text = decodeEntities([...pageFurniture, wordXmlLayout(bodyXml), ...uncited].join('\n\n'))
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   if (!text) throw unsupported(label, 'DOCX contains no text');
   return text;
 }
+
+// The body keeps its paragraph breaks, which chunking and headings depend on.
+function wordXmlLayout(xml) {
+  return xml
+    .replace(/<w:br[^>]*\/>/gi, '\n')
+    .replace(/<\/w:p>/gi, '\n\n')
+    .replace(/<\/w:r>/gi, ' ')
+    .replace(/<[^>]+>/g, '');
+}
+
+// A note or a header is set inline, on one line: its own paragraph marks would
+// otherwise break the body paragraph that cites it. Entities are left encoded
+// here and decoded once, with the body, so nothing is decoded twice.
+function wordXmlRawText(xml) {
+  return wordXmlLayout(xml).replace(/\s+/g, ' ').trim();
+}
+
+const DOCX_NOTE_PARTS = [
+  { name: 'word/footnotes.xml', label: 'footnote',
+    itemRe: /<w:footnote\b([^>]*)>([\s\S]*?)<\/w:footnote>/g,
+    refRe: /<w:footnoteReference\b[^>]*?\bw:id="(-?\d+)"[^>]*\/>/g },
+  { name: 'word/endnotes.xml', label: 'endnote',
+    itemRe: /<w:endnote\b([^>]*)>([\s\S]*?)<\/w:endnote>/g,
+    refRe: /<w:endnoteReference\b[^>]*?\bw:id="(-?\d+)"[^>]*\/>/g },
+  { name: 'word/comments.xml', label: 'comment',
+    itemRe: /<w:comment\b([^>]*)>([\s\S]*?)<\/w:comment>/g,
+    refRe: /<w:commentReference\b[^>]*?\bw:id="(-?\d+)"[^>]*\/>/g },
+];
+const DOCX_PAGE_PART_RE = /^word\/(header|footer)\d*\.xml$/;
 
 async function parseDocx(file) {
   try {
@@ -706,7 +776,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.1';
+const ENGINE_VERSION = '1.6.2';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

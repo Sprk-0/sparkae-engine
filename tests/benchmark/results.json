@@ -1,7 +1,7 @@
 {
   "summary": {
-    "engine_version": "1.6.1",
-    "ruleset_digest": "64928573b3c0",
+    "engine_version": "1.6.2",
+    "ruleset_digest": "19ad796a9ce7",
     "assessment_date": "2026-06-01",
     "baseline": "Low",
     "overall": {
