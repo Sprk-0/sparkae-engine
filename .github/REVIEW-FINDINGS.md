@@ -44,6 +44,9 @@ and between them they closed most of it:
 - **1.6.5** ("an archive in the package is part of the package") closed item
   41: a nested `.zip` is read, and a refutation inside one counts. No
   determination on the sample moved.
+- **1.6.6** ("every upload has a size") closed item 42: every uploaded file is
+  refused above 64 MB before it is read, and `SECURITY.md` states the limits.
+  No determination moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -55,9 +58,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 16 |
+| **OPEN** | reproduced on the current tree | 15 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 57 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 58 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -360,8 +363,13 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     `check.mjs` holds each case; each fails on 1.6.4. No determination on the
     sample moved.
 
-42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **OPEN**
+42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **CLOSED (1.6.6)**
     ZIP is bounded by `ZIP_MAX_BYTES` (64 MB); `demo-engine.js:252` calls `await file.text()` with no cap. `SECURITY.md` says large packages are "limited by the browser, not by this code" — false for ZIP, true for loose text.
+    **Closed:** `refuseOversize` refuses every uploaded file — loose text,
+    `.docx` and `.zip` — above `UPLOAD_MAX_BYTES` (64 MB) from `file.size`,
+    before it is read. `SECURITY.md` now states the per-file, per-archive and
+    nesting limits. `check.mjs` proves the refusal happens without a read.
+    Resource bound only; no determination moved.
 
 43. **`runDemo` has no `try/finally`.** (`#123`, `#126`) — **OPEN**
     `demo-standalone.html:8782` sets `running = true`, and `running = false`

@@ -2111,6 +2111,29 @@ const brokenInner = await E.parseZipReport(asFile(buildZip([
 check(JSON.stringify(brokenInner.parsed) === '["ok.txt"]' && refusals(brokenInner).some(r => /^bad\.zip: no ZIP central directory/.test(r)),
   'an inner archive that is not a ZIP is refused by its own name — ' + JSON.stringify(refusals(brokenInner)));
 
+// ITEM 42: every uploaded file is capped before it is read. A loose .txt was
+// read with file.text() and no limit, while the same bytes in a ZIP were
+// refused past 64 MB. These files throw if read at all: the refusal has to
+// come from the size they report.
+const LIMIT = 64 * 1024 * 1024;
+const unreadable = (name, size) => ({ name, size,
+  text: async () => { throw new Error('read ' + name); },
+  arrayBuffer: async () => { throw new Error('read ' + name); } });
+const oversize = [];
+for (const n of ['huge.txt', 'huge.json', 'huge.docx', 'huge.zip']) {
+  try { await E.parseFile(unreadable(n, LIMIT + 1)); oversize.push(n + ': read'); }
+  catch (e) { oversize.push(n + ': ' + (e.message || e)); }
+}
+check(oversize.every(r => /is 64\.1 MB, above the 64 MB limit for one uploaded file/.test(r)),
+  'a loose file, a DOCX and a ZIP over 64 MB are refused from their size, before a byte is read — ' + JSON.stringify(oversize));
+const atLimit = { name: 'at-limit.txt', size: LIMIT, text: async () => 'AC-2 Account Management. Account use is monitored.' };
+let atLimitErr = '';
+try { await E.parseFile(atLimit); } catch (e) { atLimitErr = e.message || String(e); }
+const pkgOversize = await E.parsePackage([unreadable('huge.txt', LIMIT + 1), Object.assign(asFile(new TextEncoder().encode(CV_TEXT), 'ssp.txt'), { text: async () => CV_TEXT })]);
+check(!atLimitErr && JSON.stringify(pkgOversize.parsed) === '["ssp.txt"]' &&
+      pkgOversize.skipped.some(s => s.name === 'huge.txt' && /64 MB limit/.test(s.reason)),
+  'a file of exactly 64 MB is read, and an oversized one in a package is refused by name while the rest is read — ' + JSON.stringify([atLimitErr, pkgOversize.parsed, pkgOversize.skipped]));
+
 // 72 (20): a comment carrying a fake end-of-directory signature
 const commented = (members, comment) => {
   const z = buildZip(members);

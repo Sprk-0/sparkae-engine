@@ -253,9 +253,21 @@ function unsupported(name, reason) {
 // the evidence set and let the run continue towards a verdict as if the file
 // had been read. parsePackage() below is the tolerant wrapper that records
 // each refusal and reports it.
+// Every uploaded file is capped at the size an archive may expand to. A loose
+// .txt, .json or .xml used to be read with file.text() and no limit at all,
+// while the same bytes inside a ZIP were refused past 64 MB. The size a File
+// reports is checked before a byte is read, so an oversized upload costs
+// nothing to refuse.
+function refuseOversize(file) {
+  if (file && typeof file.size === 'number' && file.size > UPLOAD_MAX_BYTES) {
+    throw unsupported(file.name, 'file is ' + (Math.ceil(file.size / 104857.6) / 10).toFixed(1) + ' MB, above the ' + (UPLOAD_MAX_BYTES / 1048576) + ' MB limit for one uploaded file — not read');
+  }
+}
+
 async function parseFile(file) {
   const name = file.name;
   const ext = (name.split('.').pop() || '').toLowerCase();
+  refuseOversize(file);
   if (ext === 'txt' || ext === 'md' || ext === 'nessus' || ext === 'xml' || ext === 'json' || ext === 'csv') {
     const text = await file.text();
     if (!text || !text.trim()) throw unsupported(name, 'file is empty');
@@ -539,6 +551,7 @@ async function parseDocx(file) {
 // be refused rather than silently resolved.
 const ZIP_MAX_MEMBERS = 512;
 const ZIP_MAX_BYTES = 64 * 1024 * 1024;
+const UPLOAD_MAX_BYTES = ZIP_MAX_BYTES;
 // Member types a reader parses from bytes rather than from decoded text.
 // Decoding these to text destroys them. The engine reads DOCX itself; XLSX is
 // a server-product format the engine still refuses for the corpus, but the
@@ -785,6 +798,7 @@ const ARCHIVE_HOUSEKEEPING_RE = /(?:^|\/)(?:__MACOSX\/|\.DS_Store$|Thumbs\.db$|\
 const ZIP_MAX_DEPTH = 3;
 
 async function parseZipReport(file) {
+  refuseOversize(file);
   const buf = await file.arrayBuffer();
   // One allowance for the package and everything nested inside it.
   const state = { chunks: [], parsed: [], skipped: [], members: [], budget: { left: ZIP_MAX_BYTES }, seen: 0 };
@@ -897,7 +911,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.5';
+const ENGINE_VERSION = '1.6.6';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

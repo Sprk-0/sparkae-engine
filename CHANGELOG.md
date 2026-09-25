@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-25 (the state this build is in)
 
-Engine 1.6.5 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `5cfc9030ed18` ·
+Engine 1.6.6 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `9f3ec3509110` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,33 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (every upload has a size · engine 1.6.6)
+
+Engine 1.6.5 → 1.6.6; ruleset `5cfc9030ed18` → `9f3ec3509110`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 42. No verdict path: this is a resource bound.
+
+A loose `.txt`, `.md`, `.json`, `.csv`, `.xml` or `.nessus` was read with
+`file.text()` and no limit, while the same bytes inside a ZIP were refused past
+64 MB. Every uploaded file — loose text, a `.docx`, a `.zip` — is now refused
+above 64 MB, from the size the file reports and before a byte of it is read, so
+an oversized upload costs nothing to refuse. A package upload refuses the
+oversized file by name and reads the rest.
+
+`SECURITY.md` said very large packages were "limited by the browser, not by
+this code", which was false for archives and is now false for every file. It
+states the limits instead: 64 MB per uploaded file; 64 MB and 512 members of
+expansion per archive, nested archives included; three levels of nesting. How
+many files are uploaded at once is still the browser's to limit, and it says
+so.
+
+`check.mjs` holds it with files that throw if read at all: a loose `.txt`, a
+`.json`, a `.docx` and a `.zip` one byte over the limit are refused from their
+size; a file of exactly 64 MB is read; and an oversized file in a package is
+refused by name beside a file that is read. The first fails against the 1.6.5
+reader, which read all four.
 
 ## 2026-09-25 (an archive in the package is part of the package · engine 1.6.5)
 
