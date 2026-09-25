@@ -40,9 +40,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 22 |
+| **OPEN** | reproduced on the current tree | 21 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass or §28, verified on this tree | 51 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 52 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -241,7 +241,7 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     and POA&M row says so, so an assessment-day date no longer stands unremarked
     for an older finding.
 
-30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **OPEN** *(verified 2026-09-16, and worse than reported)*
+30. **Walkthrough POA&M emits dangling `related-observations`.** (`#98`) — **CLOSED (2026-09-25)** *(was verified 2026-09-16, and worse than reported)*
     `buildOSCALPOAM` emits `'related-observations': [{ 'observation-uuid': uuid() }]`
     at `demo-standalone.html:6656` — a freshly minted UUID that no observation in
     the document declares. The live OSCAL path was fixed in 1.4.0 and `check.mjs`
@@ -257,6 +257,18 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     valid while it carries a cross-reference that resolves to nothing — which is
     the failure mode a viewer is least able to catch, because the page has just
     told them a 3PAO examined exactly this.
+    **Closed:** `buildOSCALPOAM` now declares a top-level `observations[]` —
+    one per item, built from the finding the item was opened for, with its
+    method and its citations as `relevant-evidence` — and each item's
+    `related-observations` points at that item's own observation. The check
+    that was missing is **F-113**, run in the POA&M arm of
+    `validateOSCALPackage` beside F-109 and F-110: every item's
+    `observation-uuid` has to resolve to an observation the POA&M declares.
+    `tests/browser.mjs` runs both over every sample and requires every pointer
+    to resolve and F-113 to pass; with the old `uuid()` pointer put back, F-113
+    fails on 19 of 19 (CloudVault) and 12 of 12 (MeshGate). The POA&M still
+    validates against the NIST OSCAL 1.1.2 POA&M schema, before and after —
+    the schema only asks for a uuid, which is why it never saw this.
 
 31. **Executive summary says "25-column" findings CSV.** (`#30`, `#121`) — **CLOSED (1.4.0)**
     The summary prints `FINDINGS_HEADERS.length`.
@@ -378,7 +390,7 @@ Marketing, legal, onboarding, and walkthrough banners that the pages say and the
 55. **Onboarding: 21 OSCAL constraints vs 24 in `OSCAL_CONSTRAINTS`; 211 fedramp.gov refs vs 209 literals.** (`#133–134`) — **OPEN** *(verified 2026-09-16, counts exact)*
     The onboarding tiles read 9 / 11 / 21 / 211. Counted on this tree:
     **9** use-case tabs ✓, **11** `QA_RULES` ✓, **24** `OSCAL_CONSTRAINTS`
-    entries ✗ (tile says 21), **209** literal `fedramp.gov` occurrences ✗ (tile
+    entries ✗ (tile says 21; **25** since item 30 added F-113), **209** literal `fedramp.gov` occurrences ✗ (tile
     says 211). Two of the four numbers are right; the other two are the ones
     the original review named, to the digit.
 
