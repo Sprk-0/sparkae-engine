@@ -29,6 +29,9 @@ and between them they closed most of it:
   the catalog's FedRAMP values are consulted and carried but deliberately not
   compared, undated evidence fails currency, and an unverified parameter is a
   review floor rather than a refusal. No determination moved.
+- **1.6.1** ("every id a chunk names") closed item 34, which turned out to be
+  a false Satisfied rather than the parser hardening it was filed as. No
+  determination on the sample moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -40,9 +43,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 21 |
+| **OPEN** | reproduced on the current tree | 20 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 52 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 53 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -281,8 +284,17 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 33. **Control-ID boost of BM25 raw 0.** (`#7`, `#63`, `#158`) — **CLOSED (1.4.0)**
     `demo-engine.js:133` boosts only when `raw > 0`.
 
-34. **`extractControlIds` stops at 50 IDs per chunk.** (`#89`, `#166`) — **OPEN**
+34. **`extractControlIds` stops at 50 IDs per chunk.** (`#89`, `#166`) — **CLOSED (1.6.1)** *(and it was a false Satisfied)*
     `demo-engine.js:179`, `ids.size >= CONTROL_IDS_PER_CHUNK_MAX` (50). A control-list appendix can drop the ID that would have tagged the chunk.
+    **Worse than filed.** The tags decide which control a refutation belongs
+    to, so the dropped ids lost their refutations too: a paragraph satisfying
+    AC-2_g beside a status table naming fifty-five other controls and then
+    "AC-2 is not implemented" came out **Satisfied** on 1.6.0. This item was
+    deferred below as one that could not produce a false Satisfied; it could.
+    **Closed:** the cap is removed, so a chunk is tagged with every id it
+    names. `check.mjs` §25 requires a sixty-id list to come back with all sixty
+    and the AC-2 case to be Other Than Satisfied; both fail on 1.6.0. No
+    determination on the sample moved (verdict digest `20cd7ee2ae8e`).
 
 35. **ZIP `findEOCD` accepts the first `PK\x05\x06` in the last 64KiB.** (`#20`, `#72`) — **CLOSED (1.4.0)**
     The record has to end the file; two self-consistent records are refused as ambiguous.
@@ -630,7 +642,8 @@ parameter flags for review rather than refusing (failing closed would have cost
 36 Satisfied). No determination moved; the verdict digest did, because gate 6's
 record and the review flag are in the verdict line.
 
-**Deferred** — real, but none produces a false Satisfied: items **34, 37, 38,
+**Deferred** — real, and believed not to produce a false Satisfied (item 34
+turned out to, and closed as 1.6.1): items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
 **70, 72–77** (verification and process). Item **71** was pulled forward and is
 done, so the parser items above can now fail a push rather than breaking

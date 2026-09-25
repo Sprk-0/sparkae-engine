@@ -168,15 +168,19 @@ class BM25Retriever {
 // keeping two literals is how they drift apart.
 const CONTROL_ID_RE = /\b[A-Z]{2}-\d{1,3}(?:\.\d+)?(?:\(\d+\))?(?![\w(])/g;
 const VALID_FAMILIES = new Set(['AC','AT','AU','CA','CM','CP','IA','IR','MA','MP','PE','PL','PM','PS','PT','RA','SA','SC','SI','SR']);
-const CONTROL_IDS_PER_CHUNK_MAX = 50;
 
+// Every id the chunk names, however many. There used to be a cap of 50, and
+// the ids past it were dropped from the tag set: a control-status table naming
+// sixty controls was tagged with the first fifty, so "SI-6 is not implemented"
+// in the same chunk reached no refutation-index entry for SI-6 — the cap failed
+// open. Nothing needs the cap: one pass over the text, and a chunk cannot name
+// more ids than its length allows.
 function extractControlIds(text) {
   const ids = new Set();
   // matchAll rather than exec: a shared global regex carries `lastIndex`
-  // between calls, and the cap below can leave a loop part-way through the
-  // string. matchAll runs on its own copy, so no reader can strand another.
+  // between calls, so a loop left part-way through one string would strand the
+  // next reader. matchAll runs on its own copy.
   for (const m of String(text).matchAll(CONTROL_ID_RE)) {
-    if (ids.size >= CONTROL_IDS_PER_CHUNK_MAX) break;
     const fam = m[0].split('-')[0];
     if (VALID_FAMILIES.has(fam)) ids.add(m[0]);
   }
@@ -702,7 +706,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.0';
+const ENGINE_VERSION = '1.6.1';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

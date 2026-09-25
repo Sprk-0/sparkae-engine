@@ -1825,6 +1825,21 @@ check(seeHits.some(h => h.filename === 'ssp.txt') && !seeHits.some(h => /^ref\d/
   'eight tagged "See AC-2" chunks do not push the untagged answering paragraph out of the top K — ' + JSON.stringify(seeHits.map(h => h.filename)));
 check(verdictFor(seeAc2, 'AC-2', AC2G).status === 'Satisfied', 'and that paragraph carries the objective to Satisfied');
 
+// ITEM 34: a chunk is tagged with every id it names. extractControlIds used to
+// stop at 50, and the tags decide which control a refutation belongs to — so
+// in a status table naming fifty-five other controls first, "AC-2 is not
+// implemented" was indexed against nothing and the paragraph above took AC-2
+// to Satisfied.
+const sixtyIds = ['AU', 'CM', 'IA', 'SC', 'SI', 'PE'].flatMap(f => Array.from({ length: 10 }, (_, i) => f + '-' + (i + 1)));
+const sixtyTagged = E.extractControlIds('Control summary: ' + sixtyIds.join(', ') + '.');
+check(sixtyTagged.length === 60 && sixtyTagged.includes('PE-10'),
+  'a list naming sixty controls is tagged with all sixty — ' + sixtyTagged.length);
+const statusTable = [['ac2.txt', CV_TEXT],
+  ['crm.txt', 'Control status table. ' + sixtyIds.slice(0, 55).join(' implemented. ') + ' implemented. AC-2 is not implemented.']];
+const tableV = verdictFor(statusTable, 'AC-2', AC2G);
+check(tableV.status === 'Other Than Satisfied',
+  '"AC-2 is not implemented" after fifty-five other ids in one chunk still refuses AC-2 — ' + tableV.status);
+
 // 64 (13–14): an upper-case homoglyph draft marker
 const upperHomo = verdictFor([['ac2.txt', CV_TEXT + ' Note: Рlaceholder text remains in this section.']], 'AC-2', AC2G);
 check(E.foldHomoglyphs('Рlaceholder') === 'Placeholder' && subOf(upperHomo, 5, '5c') === false && upperHomo.status === 'Other Than Satisfied',
