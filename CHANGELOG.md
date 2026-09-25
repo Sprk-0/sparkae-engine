@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-09-25 (the state this build is in)
 
-Engine 1.6.3 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `75a0d2777e30` ·
+Engine 1.6.4 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `cf0a059449c6` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,37 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-09-25 (what the archive says about itself · engine 1.6.4)
+
+Engine 1.6.3 → 1.6.4; ruleset `75a0d2777e30` → `cf0a059449c6`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 40. Unlike 34, 37 and 38, none of this reached a
+verdict: it is the reader naming what it read, and refusing what it cannot, in
+the archive's own terms.
+
+- **Member names.** A name is UTF-8 when general-purpose bit 11 says so and
+  code page 437 when it does not — the ZIP default, and what Windows' built-in
+  archiver writes. Every name used to be decoded as UTF-8, so `Système.txt`
+  from such an archive was listed, refused and cited as `Syst�me.txt`. Writers
+  that emit UTF-8 without the bit are common, so a name that is valid UTF-8 is
+  read as UTF-8; only one that is not falls back to CP437. The table was checked
+  against Python's `cp437` codec, all 128 entries.
+- **Encrypted members** (bit 0, or WinZip AES, method 99) are refused as
+  encrypted, by name. AES failed as "unsupported compression method 99"; a
+  traditionally encrypted member reached the inflater and was refused, if at
+  all, as corrupt — the wrong problem to send an assessor after.
+- **Split archives.** The end-of-directory record's disk fields were never read,
+  so one part of a spanned archive was read as though it were whole. A record
+  that is not disk 0 / directory on disk 0 / every member here is refused as
+  split, and a member whose directory entry starts on another disk is refused by
+  name.
+
+`check.mjs` holds each: a CP437 name, a flagged UTF-8 name and an unflagged one;
+a bit-0 member and a method-99 member beside a readable one; a record on disk
+1, one with fewer members here than in total, and a member on disk 1. Each fails
+against the 1.6.3 reader.
 
 ## 2026-09-25 (the document it says now · engine 1.6.3)
 

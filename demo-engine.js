@@ -622,6 +622,22 @@ function crc32(bytes) {
   return (c ^ 0xFFFFFFFF) >>> 0;
 }
 
+// A member name is UTF-8 when general-purpose bit 11 says so, and IBM code page
+// 437 when it does not — the ZIP specification's default, and what Windows'
+// built-in archiver writes. Names used to be decoded as UTF-8 regardless, so
+// "Système.docx" from such an archive became "Syst�me.docx". Many writers
+// also emit UTF-8 without setting the bit, so a name whose bytes are valid
+// UTF-8 is read as UTF-8; only a name that is not falls back to CP437. Pure
+// ASCII reads the same either way.
+const CP437_HIGH = 'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»' +
+  '░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀' +
+  'αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00A0';
+function zipName(raw, flags) {
+  if (flags & 0x0800) return new TextDecoder().decode(raw);
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(raw); }
+  catch (e) { return Array.from(raw, b => b < 0x80 ? String.fromCharCode(b) : CP437_HIGH[b - 0x80]).join(''); }
+}
+
 // `budget` is optional: a nested archive is handed the enclosing archive's
 // remaining allowance, so a package of many DOCX members cannot expand past the
 // limit one member at a time. Omitted, an archive gets a fresh allowance.
@@ -638,6 +654,18 @@ async function unzip(buffer, failures, sharedBudget) {
   }
   const count = view.getUint16(eocd + 10, true);
   let cd = view.getUint32(eocd + 16, true);
+  // A split (spanned) archive is one of several files, and its offsets point
+  // into the others. It used to be read as though it were whole — members that
+  // live on another disk read as whatever bytes sat at that offset here. The
+  // record says which disk this is, which disk the directory starts on, and how
+  // many of the members are on this one; a single-disk archive says 0, 0, all.
+  const diskNo = view.getUint16(eocd + 4, true);
+  const cdDisk = view.getUint16(eocd + 6, true);
+  const onThisDisk = view.getUint16(eocd + 8, true);
+  if (diskNo !== 0 || cdDisk !== 0 || onThisDisk !== count) {
+    if (failures) failures.push({ name: '(archive)', reason: 'archive is split across disks (disk ' + diskNo + ', directory on disk ' + cdDisk + ', ' + onThisDisk + ' of ' + count + ' members here) — a split archive is not read; join it into one file' });
+    return members;
+  }
   if (count > ZIP_MAX_MEMBERS) {
     if (failures) failures.push({ name: '(archive)', reason: 'archive declares ' + count + ' members, above the ' + ZIP_MAX_MEMBERS + ' limit' });
     return members;
@@ -659,9 +687,12 @@ async function unzip(buffer, failures, sharedBudget) {
     const nameLen = view.getUint16(cd + 28, true);
     const extraLen = view.getUint16(cd + 30, true);
     const commentLen = view.getUint16(cd + 32, true);
-    const name = new TextDecoder().decode(bytes.slice(cd + 46, cd + 46 + nameLen));
+    const flags = view.getUint16(cd + 8, true);
+    const name = zipName(bytes.slice(cd + 46, cd + 46 + nameLen), flags);
     entries.push({
       name,
+      flags,
+      startDisk: view.getUint16(cd + 34, true),
       method: view.getUint16(cd + 10, true),
       crc: view.getUint32(cd + 16, true),
       compSize: view.getUint32(cd + 20, true),
@@ -672,13 +703,25 @@ async function unzip(buffer, failures, sharedBudget) {
   }
 
   // Pass two reads what the inventory says is unambiguous.
-  for (const { name, method, crc, compSize, localAt } of entries) {
+  for (const { name, flags, startDisk, method, crc, compSize, localAt } of entries) {
     if (name.endsWith('/')) { members.push({ name, text: '', directory: true }); continue; }
     // Two members of one name are two documents claiming to be the same one.
     // Reading either is a guess about which the author meant, and the two may
     // contradict each other, so neither is read and both are named.
     if (nameCount[name] > 1) {
       if (failures) failures.push({ name, reason: 'archive carries ' + nameCount[name] + ' members named this — ambiguous, so none of them is read' });
+      continue;
+    }
+    // An encrypted member's bytes are ciphertext. It used to fail as "could not
+    // be inflated", which sends the assessor looking for corruption; it is
+    // refused as what it is. Bit 0 is traditional encryption, method 99 WinZip
+    // AES (which sets bit 0 too, but not every writer does).
+    if ((flags & 0x0001) || method === 99) {
+      if (failures) failures.push({ name, reason: 'archive member is encrypted — the browser build takes no password, so it is not read' });
+      continue;
+    }
+    if (startDisk !== 0) {
+      if (failures) failures.push({ name, reason: 'archive member starts on disk ' + startDisk + ' of a split archive — not read' });
       continue;
     }
     // 0xFFFFFFFF is the ZIP64 sentinel; the real value lives in an extra field
@@ -827,7 +870,7 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.3';
+const ENGINE_VERSION = '1.6.4';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as

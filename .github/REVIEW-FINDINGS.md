@@ -38,6 +38,9 @@ and between them they closed most of it:
 - **1.6.3** ("the document it says now") closed item 38: deleted, moved-away
   and hidden text had been satisfying controls. Deletions are dropped; hidden
   text is refute-only. No determination on the sample moved.
+- **1.6.4** ("what the archive says about itself") closed item 40: CP437
+  member names, encrypted members and split archives are named for what they
+  are. Reporting only; no determination moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -49,9 +52,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 18 |
+| **OPEN** | reproduced on the current tree | 17 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 55 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 56 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -334,8 +337,14 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 39. **`expandFiles` vs `parseZipReport` disagree.** (`#32–33`, `#71`) — **CLOSED (1.4.0)**
     Housekeeping members are refused in the engine, so inventory and corpus agree, and the package is read once.
 
-40. **ZIP names always UTF-8; encrypted members not named as encrypted; EOCD disk fields unread.** (`#87–88`, `#109–110`) — **OPEN**
+40. **ZIP names always UTF-8; encrypted members not named as encrypted; EOCD disk fields unread.** (`#87–88`, `#109–110`) — **CLOSED (1.6.4)**
     No CP437 or encryption handling in `demo-engine.js`. Flag 11 / GP bit 0 inflate as a generic failure; spanned archives are treated as single-disk.
+    **Closed:** `zipName` decodes UTF-8 when bit 11 is set or the bytes are
+    valid UTF-8, and CP437 otherwise (table checked against Python's codec). A
+    bit-0 or method-99 member is refused as encrypted. An EOCD that is not
+    disk 0 / directory on disk 0 / all members here refuses the archive as
+    split, and a member starting on another disk is refused by name. `check.mjs`
+    holds each case; each fails on 1.6.3. Reporting only — no verdict path.
 
 41. **ZIP64 sentinels refused (good); nested `.zip` members refused as unsupported type.** (`#86`) — **OPEN**
     `zip` is absent from the member extension list at `demo-engine.js:629` (`['xml','txt','md','csv','json','nessus']`, plus `docx` beside it), so an inner archive falls to the unsupported branch. Not silent — but a package whose SSP is `ssp.zip` is never read.
