@@ -2067,6 +2067,50 @@ check(splitZip.parsed.length === 0 && refusals(splitZip).some(r => /split across
   'a split archive is refused as split, and a member starting on another disk is refused by name — ' +
   JSON.stringify([refusals(splitZip), refusals(partZip), refusals(memberDisk)]));
 
+// ITEM 41: an archive inside the package is read like the package. A nested
+// .zip used to be refused as an unsupported type, so an SSP delivered as
+// ssp.zip was never read — and a refutation delivered that way never counted.
+const pkgVerdict = (rep) => {
+  const r = new E.BM25Retriever(rep.chunks);
+  return E.assessDif(AC2G, r, 'AC-2', CATALOG['AC-2'].T, CATALOG['AC-2'].F, E.buildRefutationIndex(r), asOfDate).status;
+};
+const innerSsp = buildZip([{ name: 'ssp.txt', text: CV_TEXT }], {});
+const nestedSsp = await E.parseZipReport(asFile(buildZip([
+  { name: 'README.txt', text: 'Package for review.' },
+  { name: 'ssp.zip', bytes: innerSsp, deflate: true },
+]), 'package.zip'));
+check(nestedSsp.parsed.includes('ssp.zip!/ssp.txt') && nestedSsp.chunks.some(c => c.filename === 'ssp.zip!/ssp.txt') &&
+      pkgVerdict(nestedSsp) === 'Satisfied',
+  'an SSP delivered as ssp.zip inside the package is read, under the path that reaches it — ' + JSON.stringify(nestedSsp.parsed) + ' ' + pkgVerdict(nestedSsp));
+const nestedRefute = await E.parseZipReport(asFile(buildZip([
+  { name: 'ssp.txt', text: CV_TEXT },
+  { name: 'reviews.zip', bytes: buildZip([{ name: 'isso-review.txt', text: 'AC-2 Account Management. Account monitoring is not implemented.' }]) },
+]), 'package.zip'));
+check(pkgVerdict(nestedRefute) === 'Other Than Satisfied',
+  'a refutation inside a nested archive counts, and refuses AC-2 — ' + pkgVerdict(nestedRefute));
+const lvl4 = buildZip([{ name: 'deep.txt', text: 'four levels down' }]);
+const lvl3 = buildZip([{ name: 'l3.txt', text: 'three levels down' }, { name: 'l4.zip', bytes: lvl4 }]);
+const lvl2 = buildZip([{ name: 'l3.zip', bytes: lvl3 }]);
+const deepZip = await E.parseZipReport(asFile(buildZip([{ name: 'l2.zip', bytes: lvl2 }]), 'deep.zip'));
+check(deepZip.parsed.includes('l2.zip!/l3.zip!/l3.txt') &&
+      refusals(deepZip).some(r => /^l2\.zip!\/l3\.zip!\/l4\.zip: archive nested 4 levels deep/.test(r)) &&
+      !deepZip.parsed.some(p => /deep\.txt/.test(p)),
+  'archives are opened to three levels, and the fourth is refused by its path — ' + JSON.stringify([deepZip.parsed, refusals(deepZip)]));
+const innerBomb = buildZip([{ name: 'big.txt', bytes: new Uint8Array(70 * 1024 * 1024), deflate: true }]);
+const nestedZipBomb = await E.parseZipReport(asFile(buildZip([{ name: 'inner.zip', bytes: innerBomb }]), 'zip-bomb.zip'));
+check(nestedZipBomb.parsed.length === 0 && refusals(nestedZipBomb).some(r => /^inner\.zip!\/big\.txt: .*MB limit/.test(r)),
+  'a nested archive expands against the package\'s allowance, not its own — ' + JSON.stringify(refusals(nestedZipBomb)));
+const many = (tag) => buildZip(Array.from({ length: 300 }, (_, i) => ({ name: tag + i + '.txt', text: 'member ' + i })));
+const wideZip = await E.parseZipReport(asFile(buildZip([{ name: 'a.zip', bytes: many('a') }, { name: 'b.zip', bytes: many('b') }]), 'wide.zip'));
+check(wideZip.parsed.length <= 512 && refusals(wideZip).some(r => /more than 512 members across its nested archives/.test(r)),
+  'the member allowance holds across nested archives, not per archive — ' + wideZip.parsed.length + ' read');
+const brokenInner = await E.parseZipReport(asFile(buildZip([
+  { name: 'ok.txt', text: 'readable member' },
+  { name: 'bad.zip', bytes: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]) },
+]), 'broken-inner.zip'));
+check(JSON.stringify(brokenInner.parsed) === '["ok.txt"]' && refusals(brokenInner).some(r => /^bad\.zip: no ZIP central directory/.test(r)),
+  'an inner archive that is not a ZIP is refused by its own name — ' + JSON.stringify(refusals(brokenInner)));
+
 // 72 (20): a comment carrying a fake end-of-directory signature
 const commented = (members, comment) => {
   const z = buildZip(members);
