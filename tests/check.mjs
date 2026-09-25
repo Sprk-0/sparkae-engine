@@ -1918,6 +1918,14 @@ const shownOnly = hid.chunks.filter(c => !c.refute_only);
 check(hid.chunks.some(c => c.refute_only) && !hidHits.some(h => h.refute_only) &&
       JSON.stringify(hidHits) === JSON.stringify(new E.BM25Retriever(shownOnly).query(AC2G.t + ' Account Management Access Control', 8, 'AC-2')),
   'hidden text is chunked refute_only, never returned by a query, and leaves ranking exactly as it is without it');
+// docxText is also the upload panel's reader, which scans the string it returns.
+// It returned an object for one commit, and the panel's .slice() threw inside a
+// catch that returned null — every lone .docx upload showed no signals at all.
+const panelBytes = buildZip([{ name: 'word/document.xml', text: W1('<w:r><w:rPr><w:vanish/></w:rPr><w:t>Hidden words.</w:t></w:r>') }]);
+const panelText = await E.docxText(panelBytes.buffer.slice(panelBytes.byteOffset, panelBytes.byteOffset + panelBytes.byteLength), 'panel.docx');
+check(typeof panelText === 'string' && /AC-2 Account Management/.test(panelText) && !/Hidden words/.test(panelText) &&
+      /SparkAEEngine\.docxText\([\s\S]{0,200}?\n\s*return scanTextSignals\(text\.slice\(/.test(read('demo-standalone.html')),
+  'docxText returns the displayed document as a string, which the upload panel slices and scans — ' + typeof panelText);
 
 // 64 (13–14): an upper-case homoglyph draft marker
 const upperHomo = verdictFor([['ac2.txt', CV_TEXT + ' Note: Рlaceholder text remains in this section.']], 'AC-2', AC2G);

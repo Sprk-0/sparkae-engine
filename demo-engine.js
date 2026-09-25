@@ -356,7 +356,14 @@ function markupText(ext, text) {
   return (ext === 'xml' || ext === 'nessus') ? decodeEntities(text) : text;
 }
 
+// The document as displayed, as a string: what the upload panel scans and what
+// docxText has always returned. The run reads docxTexts, which also carries the
+// hidden-text document for the refutation index.
 async function docxText(buf, label, budget) {
+  return (await docxTexts(buf, label, budget)).shown;
+}
+
+async function docxTexts(buf, label, budget) {
   // unzip() returns an array, and refuses every member of a name the archive
   // uses twice — a DOCX carrying two word/document.xml is two documents
   // claiming to be one. The refusals come back through `refused` so that a
@@ -496,7 +503,7 @@ function docxChunks(texts, name) {
 
 async function parseDocx(file) {
   try {
-    return docxChunks(await docxText(await file.arrayBuffer(), file.name), file.name);
+    return docxChunks(await docxTexts(await file.arrayBuffer(), file.name), file.name);
   } catch(e) {
     if (e && e.code === 'UNSUPPORTED') throw e;
     throw unsupported(file.name, 'DOCX could not be parsed: ' + (e && e.message ? e.message : e));
@@ -757,7 +764,7 @@ async function parseZipReport(file) {
         refuse(name, 'DOCX member could not be read as binary content', { size });
       } else {
         try {
-          chunks.push(...docxChunks(await docxText(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget), name));
+          chunks.push(...docxChunks(await docxTexts(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), name, budget), name));
           parsed.push(name);
           members.push({ name, size, bytes });
         } catch (e) {
