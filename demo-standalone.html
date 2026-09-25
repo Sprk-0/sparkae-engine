@@ -6634,6 +6634,37 @@ function buildOSCALPOAM(sample) {
     }
   }
   const partyId = uuid();
+  // Each item's related-observations used to be a freshly minted uuid() that no
+  // observation declared: a well-formed pointer to nothing. A POA&M item's
+  // observations live in the POA&M's own top-level observations[], so every
+  // item now declares the observation it points at, built from the finding the
+  // item was opened for.
+  const observations = [];
+  const items = allFindings.map((f, i) => {
+    const obsUuid = uuid();
+    observations.push({
+      uuid: obsUuid,
+      title: 'Observation for ' + f.ctrl + ' (' + f.useCase + ')',
+      description: f.text,
+      methods: [['EXAMINE', 'INTERVIEW', 'TEST'].includes(f.method) ? f.method : 'UNKNOWN'],
+      types: ['finding'],
+      'relevant-evidence': (f.cites || []).map(c => ({
+        description: [c.kind, c.title, c.version, c.date, c.section].filter(Boolean).join(' · '),
+      })),
+      collected: isoDateTime('2026-04-28'),
+    });
+    return {
+      uuid: uuid(),
+      title: 'V-' + (i + 1).toString().padStart(3, '0') + ' · ' + f.ctrl,
+      description: f.text,
+      props: [
+        { name: 'risk-level', ns: 'https://fedramp.gov/ns/oscal', value: riskToLevel(f.risk) },
+        { name: 'scheduled-completion-date', value: isoDateTime('2026-07-28') },
+        { name: 'implementation-status', value: f.implStatus || 'planned' },
+      ],
+      'related-observations': [{ 'observation-uuid': obsUuid }],
+    };
+  });
   return {
     'plan-of-action-and-milestones': {
       uuid: uuid(),
@@ -6647,17 +6678,8 @@ function buildOSCALPOAM(sample) {
       },
       'import-ssp': { href: '#' + uuid() },
       'system-id': { 'identifier-type': 'https://fedramp.gov', id: 'F2026-' + sample.name.substring(0, 3).toUpperCase() },
-      'poam-items': allFindings.map((f, i) => ({
-        uuid: uuid(),
-        title: 'V-' + (i + 1).toString().padStart(3, '0') + ' · ' + f.ctrl,
-        description: f.text,
-        props: [
-          { name: 'risk-level', ns: 'https://fedramp.gov/ns/oscal', value: riskToLevel(f.risk) },
-          { name: 'scheduled-completion-date', value: isoDateTime('2026-07-28') },
-          { name: 'implementation-status', value: f.implStatus || 'planned' },
-        ],
-        'related-observations': [{ 'observation-uuid': uuid() }],
-      })),
+      observations: observations,
+      'poam-items': items,
     }
   };
 }
@@ -6733,6 +6755,7 @@ const OSCAL_CONSTRAINTS = [
   { id: 'F-108', sev: 'error',   ref: 'FedRAMP POA&M §sys-id',     desc: 'POA&M system-id uses fedramp.gov identifier-type' },
   { id: 'F-109', sev: 'error',   ref: 'FedRAMP POA&M §risk-level', desc: 'POA&M items carry risk-level prop' },
   { id: 'F-110', sev: 'error',   ref: 'FedRAMP POA&M §sched',      desc: 'POA&M items carry scheduled-completion-date prop' },
+  { id: 'F-113', sev: 'error',   ref: 'FedRAMP POA&M §obs-link',   desc: 'every POA&M related-observation resolves to a declared observation' },
   { id: 'F-111', sev: 'warn',    ref: 'FedRAMP SAR §component',    desc: 'local-definitions includes service component' },
   { id: 'F-112', sev: 'warn',    ref: 'FedRAMP SAR §import-ap',    desc: 'SAR imports SAP via import-ap.href' },
   // FRMR.KSI 25.11C structural constraints
@@ -6901,6 +6924,15 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
     allHaveSched
       ? pass('F-110', 'POAM.scheduled-date', 'The 3PAO examined all ' + items.length + ' POA&M items, and found that each carries the scheduled-completion-date prop required by FedRAMP.')
       : fail('F-110', 'POAM.scheduled-date', 'The 3PAO examined the POA&M items, and found one or more missing the scheduled-completion-date prop.');
+
+    // F-113. F-104 checks this link on the SAR's findings; nothing looked at
+    // the POA&M's items, which is where the dangling references were.
+    const poamObs = new Set((poam.observations || []).map(o => o.uuid));
+    const poamRefs = items.flatMap(it => (it['related-observations'] || []).map(ro => ro['observation-uuid']));
+    const dangling = poamRefs.filter(u => !poamObs.has(u));
+    poamRefs.length && !dangling.length
+      ? pass('F-113', 'POAM.obs-link', 'The 3PAO examined the OSCAL POA&M item→observation links, and found that all ' + poamRefs.length + ' references resolve to observations declared in the POA&M.')
+      : fail('F-113', 'POAM.obs-link', 'The 3PAO examined the OSCAL POA&M item→observation links, and found ' + (poamRefs.length ? dangling.length + ' of ' + poamRefs.length + ' references resolving to no declared observation.' : 'no item referencing an observation.'));
   }
 
   if (ksi) {

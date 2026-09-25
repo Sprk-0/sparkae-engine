@@ -312,6 +312,24 @@ for (const uc of WALKTHROUGH_TABS) {
 const undisclosed = walkResults.filter(r => r.missing ||
   !/(authored, not computed from evidence|seeded from your package)/.test(r.log || '') ||
   !/walkthrough/i.test(r.status || ''));
+// The §07 package's POA&M used to give every item a related-observations
+// pointer minted fresh with uuid(), resolving to nothing — while the panel beside
+// it reported the package as passing, because its link check (F-104) only read
+// the SAR. Every pointer has to resolve inside the POA&M, for every sample, and
+// the panel's own POA&M link rule (F-113) has to be the one saying so.
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+const poamLinks = await page.evaluate(() => Object.keys(SAMPLES).map(k => {
+  const s = SAMPLES[k];
+  const poamObj = buildOSCALPOAM(s);
+  const poam = poamObj['plan-of-action-and-milestones'];
+  const declared = new Set((poam.observations || []).map(o => o.uuid));
+  const refs = (poam['poam-items'] || []).flatMap(it => (it['related-observations'] || []).map(r => r['observation-uuid']));
+  const f113 = validateOSCALPackage(buildOSCALSAR(s, 'initial'), poamObj, buildKSIPackage(s), s)
+    .find(f => f.ctrl === 'OSCAL·F-113');
+  return { sample: k, refs: refs.length, dangling: refs.filter(u => !declared.has(u)).length,
+           f113: f113 ? f113.verdict : 'absent' };
+}));
 // §08's own numbers have to agree with each other.
 // The disclosure has to be true of the run that is happening. With a package
 // uploaded, these tabs seed their figures from a hash of the visitor's file
@@ -596,6 +614,9 @@ const checks = [
   ['the seven §02\u2013§08 walkthroughs each say so in the run, not only in the tab badge',
     walkResults.length === WALKTHROUGH_TABS.length && undisclosed.length === 0,
     'undisclosed: ' + JSON.stringify(undisclosed.map(r => r.uc + (r.missing ? ' (tab missing)' : ': ' + r.status)))],
+  ['every POA&M related-observations pointer in the §07 package resolves, and F-113 says so',
+    poamLinks.length > 0 && poamLinks.every(r => r.refs > 0 && r.dangling === 0 && r.f113 === 'SAT'),
+    JSON.stringify(poamLinks)],
   ['a walkthrough run on an uploaded package does not call it sample data',
     /uploaded package/.test(uploadedNotice) && /not parsed/.test(uploadedNotice) &&
     !/authored sample data/.test(uploadedNotice) && !/seeded from your package/.test(uploadedNotice),
