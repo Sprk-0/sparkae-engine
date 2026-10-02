@@ -41,6 +41,21 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-10-02 (the sample names nobody)
+
+Evidence digest `946ce09b5bf0` → `90514fea8129`. The verdict digest does not
+move — `20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0
+false passes. The engine, the exporters and the catalog are untouched.
+
+The bundled sample SSP named its System Owner, Authorizing Official and ISSO
+with three realistic demo names. A fictional system should not carry names
+that could be read as real people, so the three are now plainly fictional
+(`Alex Example`, `Jordan Sample`, `Riley Fictional`); the roles and titles are
+as they were. The same text is a document in one benchmark case, so it changed
+there too, and the golden fixture was regenerated for the evidence digest and
+the OSCAL byte hash that carries it. The page's inline script is unchanged, so
+the CSP hash in `_headers` is not.
+
 ## 2026-09-25 (an archive in the package is part of the package · engine 1.6.5)
 
 Engine 1.6.4 → 1.6.5; ruleset `cf0a059449c6` → `5cfc9030ed18`, only because the
