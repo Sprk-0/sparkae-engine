@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SparkAE Integrations — Export Into Your Existing GRC Stack</title>
-<meta name="description" content="SparkAE is a Rev5 Examine engine — not a GRC platform. Export JSON, CSV, or OSCAL into the tool you already run. Not a certified two-way Drata/Vanta sync.">
+<meta name="description" content="SparkAE is a Rev5 Examine engine, not a GRC platform. The browser demo exports OSCAL 1.1.2 assessment results and CSV for the tool you already run. No certified two-way sync with any vendor.">
 <link rel="canonical" href="https://sparkae.ai/integrations.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
@@ -12,7 +12,7 @@
 <meta property="og:site_name" content="SparkAE">
 <meta property="og:url" content="https://sparkae.ai/integrations.html">
 <meta property="og:title" content="SparkAE Integrations — Export Into Your Existing GRC Stack">
-<meta property="og:description" content="SparkAE exports JSON, CSV, or OSCAL into the GRC tool you already run. The 7-gate engine described here is the server product&rsquo;s; this origin publishes the reference build. Not a certified two-way Drata/Vanta sync.">
+<meta property="og:description" content="SparkAE exports OSCAL, CSV and JSON for the GRC tool you already run. Every export listed, with what is available today and what is in the server edition.">
 <!-- The social card is a real 1200x630 image: a link shared to LinkedIn or Slack
      otherwise renders as a bare text row. It is rendered from og-card.src.html
      in the private repository and copied into static/ here; its numbers mirror
@@ -21,12 +21,12 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://sparkae.ai/static/og-card.png">
-<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:title" content="SparkAE Integrations — Export Into Your Existing GRC Stack">
-<meta name="twitter:description" content="SparkAE exports JSON, CSV, or OSCAL into the GRC tool you already run. The 7-gate engine described here is the server product&rsquo;s; this origin publishes the reference build. Not a certified two-way Drata/Vanta sync.">
+<meta name="twitter:description" content="SparkAE exports OSCAL, CSV and JSON for the GRC tool you already run. Every export listed, with what is available today and what is in the server edition.">
 <link rel="stylesheet" href="ae-editorial.css">
 <style>
 /* ── Page-specific (integrations) — editorial tokens only ── */
@@ -112,35 +112,35 @@
 <section class="hero">
   <div class="container">
     <div class="page-meta fade-up"><span class="dot"></span> Integrations</div>
-    <h1 class="fade-up fade-up-1">SparkAE is <em>Tenable for SSPs.</em></h1>
-    <p class="sub fade-up fade-up-2">It scans the authorization package, finds the gaps, and exports the findings &mdash; JSON, CSV, or OSCAL &mdash; into the GRC tool you already run. Not another platform: the engine inside yours. Package &rarr; SparkAE &rarr; ServiceNow, RegScale, Archer, Jira.</p>
+    <h1 class="fade-up fade-up-1">Works with the GRC tool <em>you already run.</em></h1>
+    <p class="sub fade-up fade-up-2">SparkAE reads the package and finds what the evidence doesn&rsquo;t prove. Your GRC tool tracks the work. They meet at a file: OSCAL, CSV or JSON. Not another platform, and not a certified two-way sync with anyone.</p>
     <div class="ctas fade-up fade-up-3">
-      <a class="btn btn-primary" href="#api">View the API →</a>
-      <a class="btn btn-ghost" href="#how">See How It Fits</a>
+      <a class="btn btn-primary" href="#exports">See every export →</a>
+      <a class="btn btn-ghost" href="#how">See how it fits</a>
     </div>
   </div>
 </section>
 
-<!-- ══ ANALOGY ══ -->
+<!-- ══ HOW IT FITS ══ -->
 <section class="warm" id="how">
   <div class="container">
     <div style="text-align:center;margin-bottom:48px">
-      <div class="section-label" style="justify-content:center">The Analogy</div>
-      <div class="section-title">Nobody says <em>"I have ServiceNow, I don't need Tenable."</em></div>
+      <div class="section-label" style="justify-content:center">How it fits</div>
+      <div class="section-title">A scanner finds the gaps. <em>Your GRC tool tracks them.</em></div>
     </div>
     <div class="analogy-grid">
       <div class="analogy-card">
-        <div class="emoji"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg></div>
-        <h3>Tenable</h3>
-        <div class="role">Vulnerability Scanner</div>
-        <p>Scans infrastructure. Finds vulnerabilities. Exports findings. Your GRC tool ingests them and tracks remediation. Nobody runs Tenable instead of their GRC platform. They run it alongside.</p>
+        <div class="emoji"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg></div>
+        <h3>Your GRC tool</h3>
+        <div class="role">System of record</div>
+        <p>Holds the control library, the risk register, the POA&amp;M and the workflow. It is where remediation is assigned and tracked.</p>
       </div>
-      <div class="analogy-eq">=</div>
+      <div class="analogy-eq">+</div>
       <div class="analogy-card featured">
         <div class="emoji"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg></div>
         <h3>SparkAE</h3>
-        <div class="role">SSP Assessment Scanner</div>
-        <p>Scans authorization packages. Finds compliance gaps. Exports findings. Your GRC tool ingests them and tracks remediation. SparkAE is Tenable for SSPs.</p>
+        <div class="role">Package assessment scanner</div>
+        <p>Checks every Determine-if objective against the documents, cites the evidence passage the engine used for each verdict, flags weak Satisfieds, and writes the findings to a file your tool can import.</p>
       </div>
     </div>
   </div>
@@ -157,20 +157,20 @@
 
     <div class="arch-diagram">
       <div class="arch-row">
-        <div class="arch-node grc" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg>&nbsp; Your GRC Platform<br><span class="meta">Drata · Vanta · ServiceNow · RegScale · Archer</span></div>
+        <div class="arch-node grc" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-chart"/></svg>&nbsp; Your GRC platform<br><span class="meta">any tool that imports OSCAL, CSV or JSON</span></div>
       </div>
-      <div class="arch-arrow">↑ findings (JSON / CSV / OSCAL)</div>
-      <div class="arch-label">You export JSON / CSV / OSCAL and ingest them — not a certified two-way sync</div>
+      <div class="arch-arrow">↑ findings (OSCAL / CSV / JSON)</div>
+      <div class="arch-label">You export and import. Not a certified two-way sync with any vendor.</div>
       <div style="height:10px"></div>
       <div class="arch-row">
-        <div class="arch-node spark" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg>&nbsp; SparkAE Assessment Engine<br><span class="meta">7-Gate Deterministic · server product: 10 Analytical Services · Optional LLM</span></div>
+        <div class="arch-node spark" style="min-width:340px"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-bolt"/></svg>&nbsp; SparkAE Assessment Engine<br><span class="meta">7-gate deterministic · browser demo today · server edition in development</span></div>
       </div>
       <div class="arch-arrow">↑ documents</div>
-      <div class="arch-label">Upload SSP, policies, scan results — or pipe from your doc store</div>
+      <div class="arch-label">SSP, policies and procedures, inventories, scan results</div>
       <div style="height:10px"></div>
       <div class="arch-row" style="gap:16px;flex-wrap:wrap">
         <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-file"/></svg> SSP</div>
-        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-clipboard"/></svg> POA&M</div>
+        <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-clipboard"/></svg> POA&amp;M</div>
         <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-search"/></svg> Scans</div>
         <div class="arch-node grc"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><use href="#i-doc"/></svg> Policies</div>
       </div>
@@ -178,142 +178,82 @@
   </div>
 </section>
 
-<!-- ══ DELIVERY MODELS ══ -->
-<section class="warm">
+<!-- ══ WHAT EXISTS ══ -->
+<section class="warm" id="integrations">
   <div class="container">
-    <div class="section-label">Delivery Models</div>
-    <div class="section-title">Three ways to consume. <em>Pick what fits.</em></div>
-    <div class="section-sub">The same engine, findings, and quality are available through the REST API or a batch export you import into the tool you already run. Pricing follows the assessment, not the seat count; talk to the founder if you want to discuss fit.</div>
-
-    <div class="modes-grid">
-      <div class="mode-card">
-        <span class="mode-tag safe">API</span>
-        <h3>API</h3>
-        <div class="mode-sub">Your tool calls ours</div>
-        <p>Your GRC tool can call SparkAE&rsquo;s REST API, which runs the same seven gates as the reference build published here (the assessor UI it refers to is part of the server product, not this origin). Findings come back as structured JSON for you to ingest.</p>
-        <ul class="mode-specs">
-          <li><span>Integration</span><span>REST API</span></li>
-          <li><span>Effort</span><span>1-2 days</span></li>
-          <li><span>UI changes</span><span>None</span></li>
-        </ul>
-      </div>
-      <div class="mode-card">
-        <span class="mode-tag review">Import</span>
-        <h3>Import</h3>
-        <div class="mode-sub">Batch export → import</div>
-        <p>Run assessments in SparkAE. The browser demo exports CSV and OSCAL JSON; XLSX workbooks are a server-product export. Import into your GRC tool. No API integration needed — the file path works today.</p>
-        <ul class="mode-specs">
-          <li><span>Integration</span><span>File import</span></li>
-          <li><span>Effort</span><span>Zero</span></li>
-          <li><span>UI changes</span><span>None</span></li>
-        </ul>
-      </div>
-      <div class="mode-card">
-        <span class="mode-tag safe">Embedded</span>
-        <h3>Embedded</h3>
-        <div class="mode-sub">OEM / white-label</div>
-        <p>OEM / white-label is a custom conversation, not a shipping SKU. What ships is the Rev5 local engine and the browser demo.</p>
-        <ul class="mode-specs">
-          <li><span>Integration</span><span>SDK / iframe</span></li>
-          <li><span>Effort</span><span>1-2 weeks</span></li>
-          <li><span>UI changes</span><span>Custom</span></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ PLATFORM INTEGRATIONS ══ -->
-<section id="integrations">
-  <div class="container">
-    <div class="section-label">Platform Integrations</div>
-    <div class="section-title">Works with <em>what you already have.</em></div>
-    <div class="section-sub">SparkAE outputs structured data. If your tool can import JSON, CSV, or OSCAL — it works. SparkAE exports; you ingest: it is not a certified two-way sync for Drata or Vanta, and ZenGRC and Splunk are not first-class connectors.</div>
+    <div class="section-label">What exists</div>
+    <div class="section-title">Available today. <em>In the server edition. File exchange.</em></div>
+    <div class="section-sub">Three honest columns. Product names identify formats and tools; no endorsement or partnership is implied.</div>
 
     <div class="int-grid">
       <div class="int-card">
         <div class="int-head">
-          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#9B59B6"/></svg></div>
-          <div><h3>ServiceNow GRC</h3><div class="int-type">Federal Standard</div></div>
-        </div>
-        <p>Export JSON, CSV, or OSCAL. A generic REST path exists; auto-creating ServiceNow risk items is not a certified first-class connector.</p>
-        <div class="int-method">
-          <span class="int-tag accent">REST API</span>
-          <span class="int-tag moss">CSV Import</span>
-        </div>
-      </div>
-
-      <div class="int-card">
-        <div class="int-head">
-          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3B82C4"/></svg></div>
-          <div><h3>Drata</h3><div class="int-type">Compliance Automation</div></div>
-        </div>
-        <p>Export JSON, CSV, or OSCAL. You import into Drata if your workflow supports it. Not a certified two-way Drata sync.</p>
-        <div class="int-method">
-          <span class="int-tag accent">REST API</span>
-          <span class="int-tag moss">CSV Import</span>
-        </div>
-      </div>
-
-      <div class="int-card">
-        <div class="int-head">
           <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3D8B5F"/></svg></div>
-          <div><h3>Vanta</h3><div class="int-type">Compliance Automation</div></div>
+          <div><h3>Available today</h3><div class="int-type">Browser demo · everyone</div></div>
         </div>
-        <p>Export JSON, CSV, or OSCAL. You import into Vanta if your workflow supports it. Not a certified two-way Vanta sync.</p>
+        <p>OSCAL 1.1.2 assessment-results, checked against NIST&rsquo;s published schema on every build. Findings, POA&amp;M, RET and test-case-workbook CSVs, an executive summary and a reproducibility receipt. Any tool that imports OSCAL assessment-results or CSV can take these. We have not tested imports into specific products, so check what your instance accepts.</p>
         <div class="int-method">
-          <span class="int-tag accent">REST API</span>
-          <span class="int-tag moss">CSV Import</span>
+          <span class="int-tag purple">OSCAL 1.1.2 AR</span>
+          <span class="int-tag moss">CSV</span>
+          <span class="int-tag accent">JSON receipt</span>
         </div>
       </div>
 
       <div class="int-card">
         <div class="int-head">
           <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#D4843A"/></svg></div>
-          <div><h3>RegScale</h3><div class="int-type">OSCAL-Native GRC</div></div>
+          <div><h3>Server edition</h3><div class="int-type">In development</div></div>
         </div>
-        <p>SparkAE exports native OSCAL assessment-results JSON. Drops directly into RegScale's OSCAL Hub. Zero format translation needed.</p>
+        <p>OSCAL POA&amp;M and SSP export, OSCAL SSP import, SAR/SAP and FedRAMP workbook exports, and a REST API for your own pipelines. Push connectors for <strong>ServiceNow GRC, Archer and Jira</strong> (findings and POA&amp;M items) are <strong>server-product connectors in development</strong> (Roadmap · untested): not tested against a live tenant and not certified by those vendors.</p>
         <div class="int-method">
-          <span class="int-tag purple">OSCAL JSON</span>
+          <span class="int-tag purple">OSCAL POA&amp;M · SSP</span>
           <span class="int-tag accent">REST API</span>
+          <span class="int-tag moss">ServiceNow · Archer · Jira · Roadmap · untested</span>
         </div>
       </div>
 
       <div class="int-card">
         <div class="int-head">
-          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3E6E4B"/></svg></div>
-          <div><h3>JCAM</h3><div class="int-type">Federal system of record</div></div>
+          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#3B82C4"/></svg></div>
+          <div><h3>File exchange only</h3><div class="int-type">No connector · no partnership</div></div>
         </div>
-        <p>DOJ's assessment and management platform ingests OSCAL and exposes an API. SparkAE writes <strong>NIST OSCAL 1.1.2 assessment-results</strong>, validated against NIST's published schema on every build, plus POA&amp;M as CSV &mdash; so findings arrive as structured data with the evidence trace intact, not as a document somebody re-keys. <strong>There is no JCAM-specific connector today.</strong> The path is the OSCAL file and the CSV. Confirm which OSCAL models and version your instance accepts before planning around it.</p>
+        <p>Drata, Vanta, RegScale, OneTrust, ZenGRC, and DOJ&rsquo;s Joint Cybersecurity Authorization Management (JCAM): import our OSCAL, CSV or JSON if your instance accepts it. There is no connector for these products, and we have not run an import test against any of them.</p>
         <div class="int-method">
-          <span class="int-tag purple">OSCAL 1.1.2 AR</span>
-          <span class="int-tag moss">CSV Import</span>
+          <span class="int-tag purple">OSCAL</span>
+          <span class="int-tag moss">CSV</span>
+          <span class="int-tag accent">JSON</span>
         </div>
       </div>
+    </div>
+  </div>
+</section>
 
-      <div class="int-card">
-        <div class="int-head">
-          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#B23A1C"/></svg></div>
-          <div><h3>Archer / OneTrust</h3><div class="int-type">Enterprise GRC</div></div>
-        </div>
-        <p>Enterprise GRC platforms ingest SparkAE findings via CSV import or REST API. Maps to existing risk registers and control libraries.</p>
-        <div class="int-method">
-          <span class="int-tag moss">CSV Import</span>
-          <span class="int-tag accent">REST API</span>
-        </div>
-      </div>
+<!-- ══ DELIVERY MODELS ══ -->
+<section>
+  <div class="container">
+    <div class="section-label">Delivery Models</div>
+    <div class="section-title">Start with the file. <em>Add the API later.</em></div>
+    <div class="section-sub">The same engine is reachable two ways: a batch export you import into the tool you already run, available in the browser demo today, and the REST API in the server edition.</div>
+  </div>
+</section>
 
-      <div class="int-card">
-        <div class="int-head">
-          <div class="int-icon"><svg class="ico ico-dot" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#2F7DB5"/></svg></div>
-          <div><h3>Jira / ServiceNow ITSM</h3><div class="int-type">Ticket Management</div></div>
-        </div>
-        <p>Export JSON, CSV, or OSCAL. Webhooks are opt-in configuration, not a certified Jira/ServiceNow two-way sync.</p>
-        <div class="int-method">
-          <span class="int-tag accent">REST API</span>
-          <span class="int-tag moss">Webhook</span>
-        </div>
-      </div>
+<!-- ══ EXPORTS ══ -->
+<section id="exports">
+  <div class="container">
+    <div class="section-label">Exports</div>
+    <div class="section-title">Every export, <em>and where it comes from.</em></div>
+    <div class="section-sub">Browser-demo exports are built in your tab from a §01 run of the real engine; nothing is uploaded. They are automated EXAMINE preparation, not submission deliverables.</div>
+    <div class="faq">
+      <div class="q"><span class="qi">◆</span> Available in the browser demo</div>
+      <div class="a">OSCAL 1.1.2 assessment results (.json) · findings (.csv) · Risk Exposure Table (.csv) · POA&amp;M (.csv) · test case workbook, EXAMINE rows (.csv) · executive summary (.txt) · reproducibility receipt (.json) · SAMPLE portfolio briefing (print / save as PDF, walkthrough figures only). <a href="demo-standalone.html">Run the demo to download them →</a></div>
+    </div>
+    <div class="faq">
+      <div class="q"><span class="qi">◇</span> Server edition (in development)</div>
+      <div class="a">OSCAL assessment-results, POA&amp;M and SSP (JSON) · findings, RET, TCW, CRM and CIS (CSV) · SAR and SAP (JSON and DOCX) · POA&amp;M, SRTM, RET, CIS/CRM and deviation-request workbooks (XLSX) · penetration-test and readiness-assessment report templates (DOCX) · system inventory workbook (XLSX) · a ZIP bundle with a signed manifest · KSI posture report (HTML / JSON, prototype) · push to ServiceNow GRC, Archer and Jira (Roadmap · untested: not tested against a live tenant).</div>
+    </div>
+    <div class="faq">
+      <div class="q"><span class="qi">○</span> Not offered</div>
+      <div class="a">No Drata, Vanta, RegScale, OneTrust or JCAM connector, and no FedRAMP 20x KSI package for sale today.</div>
     </div>
   </div>
 </section>
@@ -322,8 +262,9 @@
 <section id="api" class="warm">
   <div class="container">
     <div class="section-label">API Reference</div>
-    <div class="section-title">Real endpoints. X-API-Key auth. <em>OpenAPI at /docs.</em></div>
-    <div class="section-sub">Upload documents, create an assessment job, poll for results, export deliverables. Your GRC tool does the rest.</div>
+    <div class="section-title">The server edition API. <em>Shown for planning.</em></div>
+    <div class="section-sub">Upload documents, create an assessment job, poll for results, export deliverables. There is no public endpoint; these calls run against a server-edition install.</div>
+    <p class="avail-note" style="margin-top:14px;font-size:13px;line-height:1.6;color:var(--ink-soft)"><strong>Availability.</strong> The server product is not generally released yet. A fit call covers what is available today. The browser demo on this site is available to everyone now.</p>
 
     <div class="code-tabs">
       <button type="button" class="code-tab active" data-tab="upload">Upload</button>
@@ -399,14 +340,14 @@
 
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-json    <span class="cm"># OSCAL assessment-results</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-ar      <span class="cm"># OSCAL AR</span>
-<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-poam    <span class="cm"># OSCAL POA&M</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=oscal-poam    <span class="cm"># OSCAL POA&amp;M</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=csv           <span class="cm"># Flat CSV</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=ret-csv       <span class="cm"># Risk Exposure Table</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sar-json      <span class="cm"># FedRAMP SAR JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sar-docx      <span class="cm"># FedRAMP SAR DOCX</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sap-json      <span class="cm"># FedRAMP SAP JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=sap-docx      <span class="cm"># FedRAMP SAP DOCX</span>
-<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=poam-json     <span class="cm"># POA&M JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/export?format=poam-json     <span class="cm"># POA&amp;M JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=crm-json      <span class="cm"># Customer Responsibility Matrix</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=cis-json      <span class="cm"># Control Implementation Summary</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/export?format=tcw-csv       <span class="cm"># Test Case Workbook</span>
@@ -414,7 +355,7 @@
 <span class="cm"># Also available as dedicated endpoints:</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/sar    <span class="cm"># SAR-structured JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/ret    <span class="cm"># Risk Exposure Table</span>
-<span class="kw">GET</span> /v1/assessments/{job_id}/poam   <span class="cm"># POA&M JSON</span>
+<span class="kw">GET</span> /v1/assessments/{job_id}/poam   <span class="cm"># POA&amp;M JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/crm    <span class="cm"># CRM JSON</span>
 <span class="kw">GET</span> /v1/assessments/{job_id}/cis    <span class="cm"># CIS JSON</span></div>
 
@@ -444,9 +385,8 @@
 }
 
 <span class="cm"># Integration patterns:</span>
-<span class="cm"># ServiceNow — Scripted REST + Business Rules or Flow Designer</span>
-<span class="cm"># RSA Archer  — REST Data Feed connector</span>
-<span class="cm"># RegScale    — OSCAL JSON import via Integration Hub</span>
+<span class="cm"># ServiceNow GRC, Archer, Jira — server-edition push connectors (Roadmap · untested)</span>
+<span class="cm"># Other tools — import the OSCAL / CSV / JSON file; confirm what your instance accepts</span>
 <span class="cm"># Generic     — Upload docs → POST assessment → poll/webhook → GET export</span></div>
   </div>
 </section>
@@ -466,17 +406,17 @@
 
     <div class="faq fade-up fade-up-1">
       <div class="q"><span class="qi">Q.</span> "We have ServiceNow GRC — we don't want another dashboard."</div>
-      <div class="a"><strong>Then don't use our dashboard. Use export or the REST API.</strong> SparkAE runs the Rev5 Examine engine — the same engine as the 3PAO UI — and returns structured findings. Wiring those into ServiceNow is your integration, not a certified first-class connector.</div>
+      <div class="a"><strong>Then don't use our dashboard. Use export or the REST API.</strong> SparkAE returns structured findings. A ServiceNow GRC push connector for the server edition is Roadmap · untested (not tested against a live tenant, not certified by ServiceNow); until then, import the file.</div>
     </div>
 
     <div class="faq fade-up fade-up-2">
       <div class="q"><span class="qi">Q.</span> "Our GRC tool already has FedRAMP templates."</div>
-      <div class="a"><strong>Templates help you write the SSP. They don't assess it.</strong> Your GRC tool gives you a template with 323 empty Moderate control boxes and 1,307 DIFs. SparkAE tells you whether what you wrote in those boxes will survive a 3PAO assessment. The template is the form. We're the red pen.</div>
+      <div class="a"><strong>Templates help you write the SSP. They don't assess it.</strong> Your GRC tool gives you a template with 323 empty Moderate control boxes and 1,307 DIFs. SparkAE shows which of those boxes the evidence actually supports, before an independent assessor reads them. The template is the form. We're the red pen.</div>
     </div>
 
     <div class="faq fade-up fade-up-3">
       <div class="q"><span class="qi">Q.</span> "We can't justify another line item in the security budget."</div>
-      <div class="a"><strong>It is Examine-pass preparation, priced against the assessment.</strong> SparkAE runs on the Rev5 local engine inside your boundary — not a hosted subscription, and not a promised savings figure. Run the browser demo on your own package; you keep the gap report either way.</div>
+      <div class="a"><strong>It is Examine-pass preparation, not a promised savings figure.</strong> No prices are published. Run the browser demo on your own package; you keep the gap report either way.</div>
     </div>
 
     <div class="faq fade-up fade-up-4">
@@ -489,8 +429,8 @@
 <!-- ══ CTA ══ -->
 <section class="cta-section">
   <div class="container">
-    <h2>Already have a GRC stack? <em>Perfect. We plug right in.</em></h2>
-    <p>Tell us what you're running. We'll show you the integration path — API, import, or embedded. 30 minutes, no commitment.</p>
+    <h2>Already have a GRC stack? <em>Good. Start with the file.</em></h2>
+    <p>Tell us what you're running. We'll show you the file path that works today and what the server edition adds. 30 minutes, no commitment.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
       <a class="btn btn-vermillion" style="font-size:15px;padding:18px 40px" href="index.html#cta">Talk to the founder →</a>
     </div>
@@ -514,8 +454,6 @@
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="integrations.html">Integrations</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
-      <a href="status.html">Status</a>
-      <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="privacy.html">Privacy</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="terms.html">Terms</a>
@@ -531,7 +469,7 @@
       entirely inside the deployment boundary; no telemetry, no
       auto-update, no calls home.
     </div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE — The Independent Validation Layer for FedRAMP</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE</div>
   </div>
 </footer>
 

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SparkAE — Service Status</title>
 <meta name="description" content="Service status for SparkAE. Component health, incident history, and scheduled maintenance, published from each deployment's live health checks.">
+<meta name="robots" content="noindex">
 <link rel="canonical" href="https://sparkae.ai/status.html">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230F1419'/%3E%3Cpath d='M16 5L25 16L16 27L7 16Z' fill='%23B23A1C'/%3E%3C/svg%3E">
 <!-- Open Graph / social cards -->
@@ -21,10 +22,10 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://sparkae.ai/static/og-card.png">
-<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:title" content="SparkAE — Service Status">
 <meta name="twitter:description" content="Component health, incident history, and scheduled maintenance, published from each deployment's live health checks.">
 <link rel="stylesheet" href="ae-editorial.css">
@@ -71,6 +72,7 @@
   <header class="status-head">
     <h1>Spark<span>AE</span> Status</h1>
     <p class="subtitle">Component health, incident history, and scheduled maintenance</p>
+    <p class="subtitle" style="margin-top:10px"><strong>SparkAE has no hosted service today.</strong> The browser demo runs entirely on your machine, so there is nothing here to report. This page stays empty until a hosted deployment publishes a snapshot.</p>
   </header>
 
   <div class="summary">
@@ -140,7 +142,7 @@
 
   <div class="status-section">
     <h2>Incident history</h2>
-    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:8px">Past 90 days. Older history at the SparkAE trust portal.</p>
+    <p style="color:var(--ink-soft);font-size:14px;margin-bottom:8px">Past 90 days, once a snapshot is published.</p>
     <div id="incident-list">
       <div class="incident">
         <div class="incident-meta">— No snapshot published —</div>
@@ -158,10 +160,8 @@
   <div class="status-section">
     <h2>SLAs &amp; reporting</h2>
     <p style="color:var(--ink-soft);font-size:14px;line-height:1.7">
-      Customer-impacting incidents are notified per the published
-      incident-response runbook (internal; its notification SLAs are reproduced here):
-      SEV-1 confirmed exfiltration ≤ 4 h; suspected ≤ 24 h; SEV-1 outage
-      &gt; 1 h ≤ 1 h; SEV-2 outage &gt; 2 h ≤ 2 h; privacy bug ≤ 24 h.
+      No service-level commitments are published. Any notification terms for a
+      hosted deployment would be set in that customer's agreement.
     </p>
   </div>
 
@@ -179,8 +179,6 @@
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="integrations.html">Integrations</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
-      <a href="status.html">Status</a>
-      <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="privacy.html">Privacy</a>
       <span style="margin:0 8px;color:#2C3540">·</span>
       <a href="terms.html">Terms</a>
@@ -188,7 +186,7 @@
       <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a>
     </div>
     <div class="foot-rule"></div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE — The Independent Validation Layer for FedRAMP</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE</div>
   </div>
 </footer>
 

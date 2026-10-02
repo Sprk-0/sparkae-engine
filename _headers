@@ -1,5 +1,5 @@
 # Netlify header rules for the published site. Netlify reads this file from the
-# publish root; the private repository's build.sh copies it into dist/ via the allowlist.
+# publish root, which is this repository's root (netlify.toml: publish = ".").
 #
 # ── Why the CSP is declared per page instead of once under /* ────────────────
 #
@@ -13,9 +13,9 @@
 # So the CSP is declared once per page on non-overlapping paths, and /* carries
 # only the headers that are identical everywhere (duplicating those is
 # harmless). Every shipped page therefore receives exactly ONE CSP, and
-# The private repository's tests/test_website_csp_scope.py reads the PUBLISH allowlist out of its build.sh
-# and fails if any shipped .html page lacks a rule, if a wildcard path ever
-# declares a CSP, or if any rule's connect-src is broader than 'self'.
+# tests/pages.mjs serves each page under its rule here and fails if a shipped
+# page has none. (The private repository's build.sh, its publish allowlist and
+# its CSP-scope test were retired in September 2026; this repository is the source.)
 #
 # ── The policy itself ────────────────────────────────────────────────────────
 #
@@ -130,10 +130,10 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-+1NY9ltTVNYDhxdXmArBraCu2wFhP3/Wd3agO9fG580='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
 /demo-standalone.html
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-6ft4dJcuMofc2n29z6qOG4cby9PquYthF+bFYirisXA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-lKAxqbEvUntgsPZb9Zhp9+qVyC7hQnKqRBYS1tlOs7Q='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
 /demo-standalone
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-6ft4dJcuMofc2n29z6qOG4cby9PquYthF+bFYirisXA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-lKAxqbEvUntgsPZb9Zhp9+qVyC7hQnKqRBYS1tlOs7Q='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
 /demo-20x.html
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-I02kTIamkucjRKZTp8+UUnhrz/8LCWVyUeAPCGKzRL0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'

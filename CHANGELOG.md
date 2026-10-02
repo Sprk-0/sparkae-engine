@@ -41,6 +41,49 @@ and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
 
+## 2026-10-02 (the site says only what ships)
+
+Site copy only. The engine, the exporters, the catalog and the bundled sample
+are untouched: the verdict digest does not move — `20cd7ee2ae8e`, 153 / 808 /
+20 — and the benchmark stays 15 of 16 with 0 false passes, so `results.json`
+and the golden fixture are unchanged.
+
+The pages made claims nothing in this repository supports. They are removed or
+softened:
+
+- **Time.** "Minutes, not weeks", "days to minutes", "Integrate in a day", "saves
+  your team weeks" and the "two engineers for 6 months" figure are gone, from the
+  pages, the share-card alt text and the share card itself (re-rendered from
+  `static/og-card.src.html`). No time-saved figure has been measured.
+- **Footer.** The tagline "The Independent Validation Layer for FedRAMP" is
+  removed; the footer reads "© 2026 SparkAE".
+- **Status page.** It described a hosted service that does not exist. It is
+  off the nav, the footer and `sitemap.xml`, and carries `noindex`.
+- **Server product.** Every server-product block says it is not generally
+  released yet and that a fit call covers what is available today;
+  "Unlimited assessments" and "Named support engineer" are gone.
+- **FedRAMP 20x.** One line everywhere: FedRAMP 20x support is not part of this
+  product and is not sold. The §05 walkthrough's sample findings use CR26
+  mnemonic KSI ids (KSI-IAM-APM, KSI-CNA-RNT, KSI-MLA-OSM, …), so the note
+  that the sample used pre-CR26 ids is gone with them.
+- **§08 portfolio briefing.** It is watermarked SAMPLE, carries a fixed,
+  labelled sample date, and no longer recommends issuing, conditioning or
+  deferring an ATO; the 85% composite is labelled as this walkthrough's own
+  weighting, not a FedRAMP threshold.
+- **Badges and figures.** The "CONFORMANT" badges are removed. "61%" is now
+  808 of 981 objectives (82%) Other Than Satisfied, and "sixty" flagged
+  Satisfied is 81 of 153.
+- **Integrations.** "Tenable for SSPs", the RegScale "drops directly" line, the
+  effort rows and the pricing sentence are removed. ServiceNow GRC, Archer and
+  Jira are server-product connectors in development, not certified by those
+  vendors; every other tool is file exchange (OSCAL / CSV / JSON), with no
+  partnership. JCAM is Joint Cybersecurity Authorization Management.
+
+The demo page's inline script changed, so its CSP hash in `_headers` follows
+it. `tests/check.mjs` leaves a `noindex` page out of the sitemap check, and an
+upload now pre-fills the visitor's local date rather than the UTC one (after
+8 PM ET that was tomorrow); `tests/browser.mjs` expects the local date.
+
 ## 2026-10-02 (the sample names nobody)
 
 Evidence digest `946ce09b5bf0` → `90514fea8129`. The verdict digest does not
