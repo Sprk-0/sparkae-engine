@@ -1714,7 +1714,7 @@ html,body{
 .asset-strip .as-kev{color:#FF8A6B;font-weight:600}
 .asset-strip .as-asset{color:var(--paper)}
 
-/* ── KSI matrix (11 themes per FRMR.KSI 25.11C) ── */
+/* ── KSI matrix (10 themes per the FedRAMP Consolidated Rules for 2026) ── */
 .ksi-matrix{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -2562,7 +2562,7 @@ html,body{
           <button class="uc-tab" data-uc="ksi">
             <span class="uc-num">§05</span>
             <span class="uc-name">KSI Validation</span>
-            <span class="uc-sub">20x Phase 2 · RFC-0017 PVA <span class="uc-badge walk">walkthrough</span></span>
+            <span class="uc-sub">20x Class B/C · CR26 KSI <span class="uc-badge walk">walkthrough</span></span>
           </button>
         </div>
       </div>
@@ -2575,7 +2575,7 @@ html,body{
           <button class="uc-tab" data-uc="qa">
             <span class="uc-num">§06</span>
             <span class="uc-name">QA Audit</span>
-            <span class="uc-sub">cross-portfolio QC · 11 rules <span class="uc-badge walk">walkthrough</span></span>
+            <span class="uc-sub">cross-portfolio QC · 10 rules <span class="uc-badge walk">walkthrough</span></span>
           </button>
           <button class="uc-tab" data-uc="pkg">
             <span class="uc-num">§07</span>
@@ -3471,12 +3471,12 @@ const SAMPLES = {
     ksi: {
       baseline: '20x Moderate · Pilot Cohort 2',
       submissionDate: '2026-04-12',
-      themes: { 'KSI-AFR': { name: 'Authorization by FedRAMP', total: 11, passed: 11, automated: 8 }, 'KSI-CED': { name: 'Cybersecurity Education', total: 4, passed: 4, automated: 2 }, 'KSI-CMT': { name: 'Change Management', total: 4, passed: 4, automated: 4 }, 'KSI-CNA': { name: 'Cloud Native Architecture', total: 8, passed: 8, automated: 8 }, 'KSI-IAM': { name: 'Identity and Access Management', total: 7, passed: 7, automated: 7 }, 'KSI-INR': { name: 'Incident Response', total: 3, passed: 3, automated: 1 }, 'KSI-MLA': { name: 'Monitoring, Logging, and Auditing', total: 5, passed: 5, automated: 5 }, 'KSI-PIY': { name: 'Policy and Inventory', total: 8, passed: 7, automated: 4 }, 'KSI-RPL': { name: 'Recovery Planning', total: 4, passed: 4, automated: 2 }, 'KSI-SVC': { name: 'Service Configuration', total: 9, passed: 9, automated: 8 }, 'KSI-TPR': { name: 'Third-Party Information Resources', total: 2, passed: 2, automated: 1 } },
-      autoCoverage: 0.77,
+      themes: { 'KSI-CED': { name: 'Cybersecurity Education', total: 1, passed: 1, automated: 0 }, 'KSI-CMT': { name: 'Change Management', total: 4, passed: 4, automated: 4 }, 'KSI-CNA': { name: 'Cloud Native Architecture', total: 8, passed: 8, automated: 8 }, 'KSI-IAM': { name: 'Identity and Access Management', total: 6, passed: 6, automated: 6 }, 'KSI-INR': { name: 'Incident Response', total: 3, passed: 3, automated: 1 }, 'KSI-MLA': { name: 'Monitoring, Logging, and Auditing', total: 5, passed: 5, automated: 5 }, 'KSI-PIY': { name: 'Policy and Inventory', total: 5, passed: 4, automated: 2 }, 'KSI-RPL': { name: 'Recovery Planning', total: 4, passed: 4, automated: 2 }, 'KSI-SCR': { name: 'Supply Chain Risk', total: 2, passed: 2, automated: 1 }, 'KSI-SVC': { name: 'Service Configuration', total: 8, passed: 8, automated: 7 } },
+      autoCoverage: 0.78,
       cadence: { machine: '7 days', nonMachine: '90 days' },
       findings: [
         { ctrl: 'KSI-IAM-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue automated validation; the persistent pipeline meets the FedRAMP 20x Phase 2 70% automation threshold and exceeds it for the IAM theme.',
+          recommendation: 'Continue automated validation; CR26 FRC-CSX-VVK asks 20x Class B providers to implement at least one automated method for each Key Security Indicator, and every IAM indicator in this submission is validated by automation.',
           text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-01, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
           cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-IAM-01 — Phishing-Resistant MFA' }]
         },
@@ -3486,7 +3486,7 @@ const SAMPLES = {
           cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-03 · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-CNA-03 — Enforce Traffic Flow' }]
         },
         { ctrl: 'KSI-MLA-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within RFC-0017 expected thresholds.',
+          recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within the CR26 cadence for machine-based information resources (VDR-TFR-MVX · at least once every 7 days for 20x Class B).',
           text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-01, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
           cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-MLA-01 — Security Information and Event Management (SIEM)' }]
         }
@@ -3702,12 +3702,12 @@ const SAMPLES = {
     ksi: {
       baseline: '20x Moderate · Pilot Cohort 1',
       submissionDate: '2026-03-24',
-      themes: { 'KSI-AFR': { name: 'Authorization by FedRAMP', total: 11, passed: 11, automated: 9 }, 'KSI-CED': { name: 'Cybersecurity Education', total: 4, passed: 4, automated: 2 }, 'KSI-CMT': { name: 'Change Management', total: 4, passed: 4, automated: 4 }, 'KSI-CNA': { name: 'Cloud Native Architecture', total: 8, passed: 8, automated: 8 }, 'KSI-IAM': { name: 'Identity and Access Management', total: 7, passed: 7, automated: 7 }, 'KSI-INR': { name: 'Incident Response', total: 3, passed: 3, automated: 2 }, 'KSI-MLA': { name: 'Monitoring, Logging, and Auditing', total: 5, passed: 5, automated: 5 }, 'KSI-PIY': { name: 'Policy and Inventory', total: 8, passed: 8, automated: 5 }, 'KSI-RPL': { name: 'Recovery Planning', total: 4, passed: 4, automated: 3 }, 'KSI-SVC': { name: 'Service Configuration', total: 9, passed: 9, automated: 8 }, 'KSI-TPR': { name: 'Third-Party Information Resources', total: 2, passed: 2, automated: 2 } },
-      autoCoverage: 0.85,
+      themes: { 'KSI-CED': { name: 'Cybersecurity Education', total: 1, passed: 1, automated: 1 }, 'KSI-CMT': { name: 'Change Management', total: 4, passed: 4, automated: 4 }, 'KSI-CNA': { name: 'Cloud Native Architecture', total: 8, passed: 8, automated: 8 }, 'KSI-IAM': { name: 'Identity and Access Management', total: 6, passed: 6, automated: 6 }, 'KSI-INR': { name: 'Incident Response', total: 3, passed: 3, automated: 2 }, 'KSI-MLA': { name: 'Monitoring, Logging, and Auditing', total: 5, passed: 5, automated: 5 }, 'KSI-PIY': { name: 'Policy and Inventory', total: 5, passed: 5, automated: 3 }, 'KSI-RPL': { name: 'Recovery Planning', total: 4, passed: 4, automated: 3 }, 'KSI-SCR': { name: 'Supply Chain Risk', total: 2, passed: 2, automated: 2 }, 'KSI-SVC': { name: 'Service Configuration', total: 8, passed: 8, automated: 7 } },
+      autoCoverage: 0.89,
       cadence: { machine: '7 days', nonMachine: '90 days' },
       findings: [
         { ctrl: 'KSI-IAM-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue automated validation; the persistent pipeline meets the FedRAMP 20x Phase 2 70% automation threshold and exceeds it for the IAM theme.',
+          recommendation: 'Continue automated validation; CR26 FRC-CSX-VVK asks 20x Class B providers to implement at least one automated method for each Key Security Indicator, and every IAM indicator in this submission is validated by automation.',
           text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-01, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
           cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-IAM-01 — Phishing-Resistant MFA' }]
         },
@@ -3717,7 +3717,7 @@ const SAMPLES = {
           cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-03 · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-CNA-03 — Enforce Traffic Flow' }]
         },
         { ctrl: 'KSI-MLA-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within RFC-0017 expected thresholds.',
+          recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within the CR26 cadence for machine-based information resources (VDR-TFR-MVX · at least once every 7 days for 20x Class B).',
           text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-01, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
           cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-MLA-01 — Security Information and Event Management (SIEM)' }]
         }
@@ -3780,9 +3780,9 @@ const USE_CASES = {
     stages: ['Intake', 'Discovery', 'Validation', 'Persistence', 'Cadence', 'Output'],
     runBtnLabel: 'Run KSI validation',
     idleTitle: 'KSI engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through the FedRAMP 20x Phase 2 Persistent Validation and Assessment (RFC-0017) flow against the eleven KSI themes (AFR · CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SVC · TPR) per FRMR.KSI release 25.11C: the 65 active indicators (60 Low · 65 Moderate), the ≥70% automated-validation coverage threshold, machine-resource cadences (7-day) and non-machine-resource cadences (90-day), and the shape of the KSI evidence package.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through a FedRAMP 20x Key Security Indicator validation flow against the ten KSI themes in the FedRAMP Consolidated Rules for 2026 (CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SCR · SVC): the 46 indicators, the automated validation CR26 asks providers to supply per KSI (FRC-CSX-VVK: at least one automated method per KSI for Class B, at least two for Class C), the verification cadences for machine-based information resources (every 7 days for Class B, VDR-TFR-MVX) and non-machine-based information resources (every 3 months, VDR-TFR-NMV), and the shape of the KSI evidence package.',
     railOutput: 'KSI Package + Evidence Trail',
-    railMode: 'KSI · 20x PHASE 2',
+    railMode: 'KSI · 20x CR26',
     exports: ['KSI Validation Package', 'Automation Coverage Report', 'Persistent Evidence', 'OSCAL Validations'],
   },
   pkg: {
@@ -3807,7 +3807,7 @@ const USE_CASES = {
     stages: ['Aggregate', 'Score', 'Rank', 'Forecast', 'Compare', 'Publish'],
     runBtnLabel: 'Generate portfolio rollup',
     idleTitle: 'Portfolio rollup is idle',
-    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. This guided walkthrough aggregates Authorization, Operations, and Quality results across the sample portfolio, ranks systems by SAR Section 5 satisfaction rate and 20x Phase 2 KSI automation coverage, and produces a comparison matrix suitable for an AO briefing. References <strong style="color:var(--vermillion)">fedramp.gov</strong> Section 5 SAR results and KSI 25.11C Phase 2 thresholds.',
+    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. This guided walkthrough aggregates Authorization, Operations, and Quality results across the sample portfolio, ranks systems by SAR Section 5 satisfaction rate and 20x KSI automation coverage, and produces a comparison matrix suitable for an AO briefing. References <strong style="color:var(--vermillion)">fedramp.gov</strong> Section 5 SAR results and the CR26 KSI catalog.',
     railOutput: 'Portfolio Rollup + Executive Briefing',
     railMode: 'PORTFOLIO · ROLLUP',
     exports: ['Portfolio Briefing', 'System Comparison Matrix', 'Risk Forecast', 'AO Decision Memo'],
@@ -5241,7 +5241,7 @@ function renderScanBands(sample) {
   return `<div class="scan-bands">${cards}</div>`;
 }
 
-// ── KSI matrix renderer (11 themes per FRMR.KSI 25.11C) ──
+// ── KSI matrix renderer (10 themes per the FedRAMP Consolidated Rules for 2026) ──
 function renderKSIMatrix(sample) {
   if (!sample.ksi || !sample.ksi.themes) return '';
   const cards = Object.entries(sample.ksi.themes).map(([id, t]) => {
@@ -5271,35 +5271,34 @@ function renderKSISummary(sample) {
   const passed = Object.values(k.themes).reduce((a, t) => a + t.passed, 0);
   const automated = Object.values(k.themes).reduce((a, t) => a + t.automated, 0);
   const autoPct = Math.round(100 * automated / total);
-  const meets = autoPct >= 70;
   const allPass = passed === total;
   const themeCount = Object.keys(k.themes).length;
   return `
     <div class="sar-section-label">
       <span class="sar-section-num">§1</span>
-      <span class="sar-section-title">KSI Validation Package · 20x Phase 2</span>
-      <span class="sar-section-ref">per fedramp.gov/docs/key-security-indicators · FRMR.KSI 25.11C</span>
+      <span class="sar-section-title">KSI Validation Package · 20x</span>
+      <span class="sar-section-ref">per the FedRAMP Consolidated Rules for 2026 · KSI catalog</span>
       <span class="sar-section-total">${themeCount} themes · ${total} indicators · submission ${k.submissionDate}</span>
     </div>
     <div class="verdict-summary">
       <div class="verdict-cell sat"><div class="num">${passed}</div><div class="lbl">Indicators Satisfied</div><div class="sub">${total} total · ${allPass ? '100%' : Math.round(100 * passed / total) + '%'} pass</div></div>
-      <div class="verdict-cell ${meets ? 'sat' : 'ots'}"><div class="num">${autoPct}%</div><div class="lbl">Automation Coverage</div><div class="sub">RFC-0017 · min 70%</div></div>
-      <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.machine}</div><div class="lbl">Machine Cadence</div><div class="sub">PVA · per-resource</div></div>
-      <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.nonMachine}</div><div class="lbl">Non-Machine Cadence</div><div class="sub">PVA · documented</div></div>
+      <div class="verdict-cell def"><div class="num">${autoPct}%</div><div class="lbl">Automation Coverage</div><div class="sub">FRC-CSX-VVK · automated method per KSI</div></div>
+      <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.machine}</div><div class="lbl">Machine Cadence</div><div class="sub">VDR-TFR-MVX · machine-based</div></div>
+      <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.nonMachine}</div><div class="lbl">Non-Machine Cadence</div><div class="sub">VDR-TFR-NMV · non-machine</div></div>
     </div>
     <div class="ret-section-label">
       <span class="sar-section-num">§2</span>
       <span class="sar-section-title">Authorization Baseline · Persistent Validation</span>
-      <span class="sar-section-ref">per fedramp.gov/rfcs/0017 · Persistent Validation and Assessment Standard</span>
+      <span class="sar-section-ref">per CR26 FRC-CSX-VVK · Automated Verification and Validation of Key Security Indicators</span>
     </div>
     <div class="def-strip">
       <span class="def-label">Baseline · ${k.baseline}</span>
-      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${meets && allPass ? '#A8C39A' : '#E8C572'}">${meets && allPass ? '✓ READY FOR SUBMISSION' : '⚠ ASSESSOR REVIEW REQUIRED'}</span>
+      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${allPass ? '#A8C39A' : '#E8C572'}">${allPass ? '✓ ALL INDICATORS PASS' : '⚠ ASSESSOR REVIEW REQUIRED'}</span>
       <span class="def-max"></span>
     </div>`;
 }
 
-// ── KSI runner (20x Phase 2 · RFC-0017 PVA) ──
+// ── KSI runner (20x · CR26 KSI catalog) ──
 // Eight of the nine tabs are guided walkthroughs. Each carries a `walkthrough`
 // badge in the nav, but the badge is 8px of muted text and the run that follows
 // reads like a finished assessment — a sentence a visitor can screenshot and a
@@ -5346,7 +5345,7 @@ async function runKSI(sample) {
   setStatus('◆ INTAKE · loading KSI submission · ' + k.baseline);
   log('00:00.0', 'init', 'KSI submission · ' + engEsc(sample.name) + ' · ' + engEsc(k.baseline));
   await wait(400);
-  log('00:01.4', 'load', 'KSI release <span class="key">25.11C</span> · 11 themes · ' + total + ' indicators', 'ok');
+  log('00:01.4', 'load', 'CR26 KSI catalog <span class="key">2026.09.13.02</span> · ' + themeIds.length + ' themes · ' + total + ' indicators', 'ok');
   await wait(300);
 
   setStage(2);
@@ -5364,7 +5363,7 @@ async function runKSI(sample) {
 
   setStage(3);
   setStatus('◆ VALIDATION · executing automated and documented validations');
-  log('00:14.0', 'val', 'walking ' + total + ' indicator validations · automated coverage target ≥70%');
+  log('00:14.0', 'val', 'walking ' + total + ' indicator validations · CR26 FRC-CSX-VVK asks 20x Class B providers for at least one automated method per KSI');
   await wait(450);
   for (let i = 0; i < themeIds.length; i++) {
     const id = themeIds[i];
@@ -5378,19 +5377,15 @@ async function runKSI(sample) {
   }
 
   setStage(4);
-  setStatus('◆ PERSISTENCE · validating per-resource cadence (RFC-0017 PVA)');
+  setStatus('◆ PERSISTENCE · validating per-resource cadence (CR26 VDR-TFR-MVX · VDR-TFR-NMV)');
   log('00:24.0', 'pers', 'machine-resource cadence: ' + k.cadence.machine + ' · non-machine: ' + k.cadence.nonMachine);
   await wait(400);
   log('00:25.4', 'pers', 'last continuous validation timestamp: 2026-04-26 14:00 UTC · within cadence window', 'ok');
   await wait(400);
 
   setStage(5);
-  setStatus('◆ CADENCE · checking automation coverage threshold');
-  if (autoPct >= 70) {
-    log('00:27.4', 'cad', 'automation coverage <span class="key">' + autoPct + '%</span> · ' + (autoPct >= 80 ? 'exceeds' : 'meets') + ' Phase 2 ≥70% requirement', 'ok');
-  } else {
-    log('00:27.4', 'cad', 'automation coverage ' + autoPct + '% · below 70% Phase 2 threshold', 'warn');
-  }
+  setStatus('◆ CADENCE · summarising automation coverage');
+  log('00:27.4', 'cad', 'automation coverage <span class="key">' + autoPct + '%</span> of indicators validated by automation · CR26 FRC-CSX-VVK (Class B: SHOULD, at least one automated method per KSI)', 'ok');
   await wait(400);
   if (passed < total) {
     log('00:28.8', 'cad', (total - passed) + ' indicators flagged for assessor review', 'warn');
@@ -5401,7 +5396,7 @@ async function runKSI(sample) {
   setStatus('◆ OUTPUT · compiling KSI Validation Package');
   log('00:31.0', 'out', 'KSI Validation Package · Automation Coverage Report · OSCAL Validations compiled', 'ok');
   await wait(400);
-  log('00:32.4', 'done', 'KSI assessment complete · 20x Phase 2 evidence package ready', 'ok');
+  log('00:32.4', 'done', 'KSI walkthrough complete · KSI evidence package assembled', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
   setStatus('◆ COMPLETE · walkthrough · KSI Package · ' + autoPct + '% automated · ' + passed + '/' + total + ' pass');
@@ -6052,7 +6047,6 @@ const QA_RULES = [
   { id: 'R8',  name: 'Risk · RET',            ref: '§7.8' },
   { id: 'R9',  name: 'Pen Test · CA-8',       ref: '§7.9' },
   { id: 'R10', name: 'Recommendation · SRTM', ref: '§7.10' },
-  { id: 'R11', name: 'KSI · RFC-0017 PVA',    ref: '§7.11' },
 ];
 
 const FEDRAMP_QA_GUIDE = { kind: 'POLICY', title: 'FedRAMP SAR Quality Guide', version: 'v3.0', date: '2024-08-01' };
@@ -6077,7 +6071,6 @@ function computeQAReport() {
     R8:  { checks: 0, passed: 0 },
     R9:  { checks: 0, passed: 0 },
     R10: { checks: 0, passed: 0 },
-    R11: { checks: 0, passed: 0 },
   };
   let totalFindings = 0, totalCites = 0;
   // Per FedRAMP RA-5(d) traditional Rev5: Critical and High both 30 days; Moderate 90; Low 180.
@@ -6246,30 +6239,6 @@ function computeQAReport() {
         });
       }
     }
-
-    // R11 — KSI Coverage per RFC-0017 (11 themes per FRMR.KSI 25.11C, ≥70% automation, current cadence)
-    if (s.ksi) {
-      r.R11.checks++;
-      const expectedThemes = ['KSI-AFR','KSI-CED','KSI-CMT','KSI-CNA','KSI-IAM','KSI-INR','KSI-MLA','KSI-PIY','KSI-RPL','KSI-SVC','KSI-TPR'];
-      const presentThemes = Object.keys(s.ksi.themes || {});
-      const totalKSIs = Object.values(s.ksi.themes).reduce((a, t) => a + t.total, 0);
-      const automatedKSIs = Object.values(s.ksi.themes).reduce((a, t) => a + t.automated, 0);
-      const autoPct = totalKSIs > 0 ? automatedKSIs / totalKSIs : 0;
-      const allThemesPresent = expectedThemes.every(t => presentThemes.includes(t));
-      const meetsAutomation = autoPct >= 0.70;
-      if (allThemesPresent && meetsAutomation) {
-        r.R11.passed++;
-      } else {
-        const reasons = [];
-        if (!allThemesPresent) reasons.push('missing ' + expectedThemes.filter(t => !presentThemes.includes(t)).join(', '));
-        if (!meetsAutomation) reasons.push('automation ' + Math.round(autoPct*100) + '% < 70% Phase 2 threshold');
-        failures.push({
-          rule: 'R11', sample: s.name, useCase: 'ksi', ctrl: 'KSI-AFR-02',
-          method: 'EXAMINE',
-          diagnosis: 'KSI submission does not satisfy 20x Phase 2 RFC-0017 requirements (' + reasons.join('; ') + ')',
-        });
-      }
-    }
   }
 
   // Build observations: auto-generated discrepancies first, then hand-curated context
@@ -6342,15 +6311,6 @@ function computeQAReport() {
       ]
     },
     {
-      ctrl: 'QA·R11', verdict: 'PASS', method: 'QA', status: 'PASS',
-      text: 'The QA agent verified KSI submission coverage across all systems pursuing the 20x Phase 2 path, and confirmed that each KSI package addresses all eleven themes per FRMR.KSI release 25.11C (Authorization by FedRAMP · Cybersecurity Education · Change Management · Cloud Native Architecture · Identity and Access Management · Incident Response · Monitoring, Logging, and Auditing · Policy and Inventory · Recovery Planning · Service Configuration · Third-Party Information Resources), tracks the 65 active indicators, meets the 70% automation threshold required by RFC-0017 Persistent Validation and Assessment Standard, and operates within the prescribed cadence (machine resources every 7 days, non-machine every 90 days).',
-      cites: [
-        { kind: 'POLICY', title: 'FedRAMP RFC-0017 Persistent Validation and Assessment Standard', version: '25.09', date: '2025-09-15', section: 'Phase 2 KSI coverage and cadence requirements' },
-        { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: '11 themes · 60 Low / 65 Moderate active indicators' },
-        { kind: 'EVIDENCE', title: 'SPARKAE KSI Coverage Audit Trail', version: '', date: '2026-04-28', section: r.R11.passed + '/' + r.R11.checks + ' systems satisfy Phase 2 KSI requirements' },
-      ]
-    },
-    {
       ctrl: 'QA·OBS-1', verdict: 'NR', method: 'QA', status: 'INFO',
       text: 'The QA agent reviewed the MeshGate SCR (now classified as Adaptive per RFC-0007), and observed that 1 finding was surfaced across 18 affected controls. While Adaptive changes warrant lighter assessment scope, the QA agent flags this for assessor verification of test coverage given the cryptographic nature of the change.',
       cites: [
@@ -6419,10 +6379,10 @@ function renderQASummary(report) {
     <div class="ret-section-label">
       <span class="sar-section-num">§2</span>
       <span class="sar-section-title">Quality Score · Discrepancy Summary</span>
-      <span class="sar-section-ref">per fedramp.gov · 11 SAR Quality Rules · R1–R11</span>
+      <span class="sar-section-ref">per fedramp.gov · 10 SAR Quality Rules · R1–R10</span>
     </div>
     <div class="verdict-summary">
-      <div class="verdict-cell def"><div class="num" id="r-score">0</div><div class="lbl">Quality Score</div><div class="sub">aggregate · 11 rules</div></div>
+      <div class="verdict-cell def"><div class="num" id="r-score">0</div><div class="lbl">Quality Score</div><div class="sub">aggregate · 10 rules</div></div>
       <div class="verdict-cell sat"><div class="num" id="r-passed">0</div><div class="lbl">Checks Passed</div><div class="sub">SAR conformity</div></div>
       <div class="verdict-cell ots"><div class="num" id="r-fails">0</div><div class="lbl">Failures</div><div class="sub">remediation required</div></div>
       <div class="verdict-cell nr"><div class="num" id="r-warns">0</div><div class="lbl">Warnings</div><div class="sub">review recommended</div></div>
@@ -6501,11 +6461,6 @@ async function runQA() {
   log('00:30.2', 'comp', `R10 · Recommendation · ${report.rules.R10.passed}/${report.rules.R10.checks} findings carry a substantive Recommendation per SAR RET Appendix A`, r10cls);
   await wait(400);
   setQARule('R10', false);
-  setQARule('R11', true);
-  const r11cls = report.rules.R11.passed === report.rules.R11.checks ? 'ok' : 'warn';
-  log('00:31.4', 'comp', `R11 · KSI Coverage · ${report.rules.R11.passed}/${report.rules.R11.checks} systems satisfy 20x Phase 2 RFC-0017 (11 themes · ≥70% automation)`, r11cls);
-  await wait(400);
-  setQARule('R11', false);
 
   // Surface observations
   if (report.warnings > 0) {
@@ -6684,7 +6639,7 @@ function buildOSCALPOAM(sample) {
   };
 }
 
-// Build KSI Validation Package per FRMR.KSI 25.11C structure
+// Build KSI Validation Package over the CR26 KSI catalog (FedRAMP Consolidated Rules for 2026)
 function buildKSIPackage(sample) {
   if (!sample.ksi) return null;
   const k = sample.ksi;
@@ -6698,8 +6653,8 @@ function buildKSIPackage(sample) {
         title: sample.name + ' KSI Validation Package',
         'submission-date': k.submissionDate,
         baseline: k.baseline,
-        'frmr-ksi-version': '25.11C',
-        'rfc-0017-version': '25.09',
+        'rules-source': 'FedRAMP Consolidated Rules for 2026',
+        'rules-version': '2026.09.13.02',
       },
       'cloud-service-offering': {
         name: sample.name,
@@ -6710,7 +6665,6 @@ function buildKSIPackage(sample) {
         'passing-indicators': passed,
         'automated-indicators': automated,
         'automation-coverage-pct': Math.round(100 * automated / total),
-        'meets-phase-2-threshold': automated / total >= 0.70,
       },
       cadence: k.cadence,
       themes: Object.fromEntries(Object.entries(k.themes).map(([id, t]) => [id, {
@@ -6758,10 +6712,9 @@ const OSCAL_CONSTRAINTS = [
   { id: 'F-113', sev: 'error',   ref: 'FedRAMP POA&M §obs-link',   desc: 'every POA&M related-observation resolves to a declared observation' },
   { id: 'F-111', sev: 'warn',    ref: 'FedRAMP SAR §component',    desc: 'local-definitions includes service component' },
   { id: 'F-112', sev: 'warn',    ref: 'FedRAMP SAR §import-ap',    desc: 'SAR imports SAP via import-ap.href' },
-  // FRMR.KSI 25.11C structural constraints
-  { id: 'K-201', sev: 'error',   ref: 'FRMR.KSI §coverage',        desc: 'KSI package covers all 11 themes' },
-  { id: 'K-202', sev: 'error',   ref: 'RFC-0017 §threshold',       desc: 'automation coverage ≥70% for Phase 2' },
-  { id: 'K-203', sev: 'warn',    ref: 'RFC-0017 §cadence',         desc: 'machine cadence ≤7 days, non-machine ≤90 days' },
+  // CR26 KSI catalog structural constraints (FedRAMP Consolidated Rules for 2026)
+  { id: 'K-201', sev: 'error',   ref: 'CR26 KSI §themes',          desc: 'KSI package covers all 10 CR26 themes' },
+  { id: 'K-203', sev: 'warn',    ref: 'CR26 VDR-TFR-MVX / NMV',    desc: 'machine-based cadence ≤7 days (Class B), non-machine ≤3 months' },
   { id: 'K-204', sev: 'error',   ref: 'FRMR.KSI §retired-ids',     desc: 'no retired KSI IDs (MLA-03/04/06, SVC-03, CMT-05, TPR-01/02)' },
 ];
 
@@ -6775,7 +6728,9 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   const fail = (id, ctrl, text, sev = 'error') => {
     const c = OSCAL_CONSTRAINTS.find(x => x.id === id);
     const docCite = c.id.startsWith('K-')
-      ? { kind: 'POLICY', title: 'fedramp.gov · Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: c.ref + ' · ' + c.desc }
+      ? (c.id === 'K-204'
+          ? { kind: 'POLICY', title: 'fedramp.gov · Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: c.ref + ' · ' + c.desc }
+          : { kind: 'POLICY', title: 'FedRAMP Consolidated Rules for 2026 · KSI catalog', version: '2026.09.13.02', date: '2026-09-13', section: c.ref + ' · ' + c.desc })
       : c.id.startsWith('F-') && c.ref.includes('POA&M')
         ? { kind: 'POLICY', title: 'fedramp.gov · Guide to OSCAL-based FedRAMP POA&M', version: 'Rev5', date: '2024-09-10', section: c.ref + ' · ' + c.desc }
         : c.id.startsWith('F-')
@@ -6799,7 +6754,9 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   const pass = (id, ctrl, text) => {
     const c = OSCAL_CONSTRAINTS.find(x => x.id === id);
     const docCite = c.id.startsWith('K-')
-      ? { kind: 'POLICY', title: 'fedramp.gov · Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: c.ref + ' · ' + c.desc }
+      ? (c.id === 'K-204'
+          ? { kind: 'POLICY', title: 'fedramp.gov · Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: c.ref + ' · ' + c.desc }
+          : { kind: 'POLICY', title: 'FedRAMP Consolidated Rules for 2026 · KSI catalog', version: '2026.09.13.02', date: '2026-09-13', section: c.ref + ' · ' + c.desc })
       : c.id.startsWith('F-') && c.ref.includes('POA&M')
         ? { kind: 'POLICY', title: 'fedramp.gov · Guide to OSCAL-based FedRAMP POA&M', version: 'Rev5', date: '2024-09-10', section: c.ref + ' · ' + c.desc }
         : c.id.startsWith('F-')
@@ -6938,18 +6895,12 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   if (ksi) {
     // K-201
     const themes = Object.keys(ksi.themes || {});
-    const expected11 = ['AFR','CED','CMT','CNA','IAM','INR','MLA','PIY','RPL','SVC','TPR'];
-    const allPresent = expected11.every(t => themes.includes(t) || themes.includes('KSI-' + t));
-    const missing = expected11.filter(t => !(themes.includes(t) || themes.includes('KSI-' + t)));
+    const expected10 = ['CED','CMT','CNA','IAM','INR','MLA','PIY','RPL','SCR','SVC'];
+    const allPresent = expected10.every(t => themes.includes(t) || themes.includes('KSI-' + t));
+    const missing = expected10.filter(t => !(themes.includes(t) || themes.includes('KSI-' + t)));
     allPresent
-      ? pass('K-201', 'KSI.themes', 'The 3PAO examined the KSI Validation Package, and found that all eleven FRMR.KSI 25.11C themes are present (' + expected11.join(', ') + ').')
-      : fail('K-201', 'KSI.themes', 'The 3PAO examined the KSI Validation Package, and found ' + missing.length + ' theme(s) missing from the eleven FRMR.KSI 25.11C themes (' + missing.join(', ') + ').');
-
-    // K-202
-    const meets = ksi['coverage-summary'] && ksi['coverage-summary']['meets-phase-2-threshold'];
-    meets
-      ? pass('K-202', 'KSI.threshold', 'The 3PAO examined the KSI automation coverage, and found that ' + ksi['coverage-summary']['automation-coverage-pct'] + '% meets the RFC-0017 Phase 2 threshold of ≥70%.')
-      : fail('K-202', 'KSI.threshold', 'The 3PAO examined the KSI automation coverage, and found that ' + ksi['coverage-summary']['automation-coverage-pct'] + '% falls below the RFC-0017 Phase 2 threshold of ≥70%.');
+      ? pass('K-201', 'KSI.themes', 'The 3PAO examined the KSI Validation Package, and found that all ten CR26 KSI themes are present (' + expected10.join(', ') + ').')
+      : fail('K-201', 'KSI.themes', 'The 3PAO examined the KSI Validation Package, and found ' + missing.length + ' theme(s) missing from the ten CR26 KSI themes (' + missing.join(', ') + ').');
 
     // K-204 (no retired IDs in validations)
     const RETIRED = new Set(['KSI-MLA-03','KSI-MLA-04','KSI-MLA-06','KSI-SVC-03','KSI-CMT-05','KSI-TPR-01','KSI-TPR-02']);
@@ -7030,7 +6981,7 @@ async function runPackageValidator(sample) {
   await wait(400);
   log('00:08.8', 'cstr', 'cross-referencing <span class="key">fedramp.gov</span> OSCAL Registry for FedRAMP extensions, defined identifiers, and accepted values');
   await wait(400);
-  log('00:09.6', 'cstr', 'KSI constraints sourced from <span class="key">fedramp.gov/docs/key-security-indicators</span> (FRMR.KSI 25.11C)');
+  log('00:09.6', 'cstr', 'KSI constraints sourced from the <span class="key">FedRAMP Consolidated Rules for 2026</span> (CR26 · 2026.09.13.02)');
   await wait(400);
   log('00:10.4', 'cstr', 'NOTE: GSA/fedramp-automation archived 2025-07-01 · constraints migrating to NIST metaschema-based extensions per fedramp.gov roadmap', 'warn');
   await wait(400);
@@ -8407,7 +8358,7 @@ function renderExecOnePager(systems) {
   </div>
 
   <h1 class="op-title">Portfolio Authorization Posture · Cross-System Rollup</h1>
-  <div class="op-subtitle">${systems.length} cloud service offerings · ${totalObjectives.toLocaleString()} control objectives assessed · per fedramp.gov · SAR Template Rev5 §5 + KSI 25.11C + ConMon Strategy v3.2</div>
+  <div class="op-subtitle">${systems.length} cloud service offerings · ${totalObjectives.toLocaleString()} control objectives assessed · per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI + ConMon Strategy v3.2</div>
 
   <h2 class="op-section-title">§1 · Executive Summary <span class="op-section-ref">per fedramp.gov · Authorization Process</span></h2>
   <div class="op-summary">
@@ -8450,7 +8401,7 @@ function renderExecOnePager(systems) {
     <ul>
       ${ready > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'sat').map(s => s.shortName).join(', ')}</strong> — issue ATO; continue ConMon at standard cadence; next Annual Reassessment per fedramp.gov Annual Assessment Guidance.</li>` : ''}
       ${minor > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'nr').map(s => s.shortName).join(', ')}</strong> — issue conditional ATO with remediation timeline; recommend follow-up within next ConMon cycle to verify automation coverage and SAR §5 satisfaction reach authorization-ready threshold (≥85%).</li>` : ''}
-      ${material > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'ots').map(s => s.shortName).join(', ')}</strong> — defer or condition ATO; 3PAO recommends material remediation across SAR §5 satisfaction rate, KSI 25.11C automation coverage, and ConMon SLA compliance prior to AO authorization decision.</li>` : ''}
+      ${material > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'ots').map(s => s.shortName).join(', ')}</strong> — defer or condition ATO; 3PAO recommends material remediation across SAR §5 satisfaction rate, CR26 KSI automation coverage, and ConMon SLA compliance prior to AO authorization decision.</li>` : ''}
       ${totalKev > 0 ? `<li><strong>CISA KEV remediation priority:</strong> ${totalKev} CISA Known Exploited Vulnerabilities (BOD 22-01) require remediation within the catalog-specified due dates regardless of severity, per fedramp.gov ConMon guidance.</li>` : ''}
     </ul>
   </div>
@@ -8461,8 +8412,8 @@ function renderExecOnePager(systems) {
     <strong>SAR Section 5 · Assessment Results:</strong> fedramp.gov · SAR Template Rev5 §5 (Satisfied / OTS / NA / NT)<br>
     <strong>RET Risk Exposure Table:</strong> fedramp.gov · SAR Appendix A · NIST SP 800-30<br>
     <strong>ConMon SLA · RA-5(d):</strong> fedramp.gov · Continuous Monitoring Strategy Guide (Rev5) (30d / 90d / 180d windows)<br>
-    <strong>20x Phase 2 · KSI:</strong> fedramp.gov/docs/key-security-indicators · FRMR.KSI 25.11C (≥70% automation)<br>
-    <strong>Persistent Validation:</strong> fedramp.gov/rfcs/0017 · Persistent Validation and Assessment Standard<br>
+    <strong>20x · KSI:</strong> FedRAMP Consolidated Rules for 2026 · KSI catalog (10 themes · 46 indicators) · FRC-CSX-VVK automated validation per KSI<br>
+    <strong>Persistent Validation:</strong> FedRAMP Consolidated Rules for 2026 · VDR-TFR-MVX (machine-based, every 7 days for Class B) · VDR-TFR-NMV (non-machine, every 3 months)<br>
     <strong>OSCAL Output:</strong> fedramp.gov · Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5)<br>
     <strong>Penetration Testing:</strong> fedramp.gov · Penetration Test Guidance v3.0 (six mandatory attack vectors)<br>
     <strong>CISA KEV:</strong> CISA Binding Operational Directive 22-01 · Known Exploited Vulnerabilities Catalog
@@ -8496,7 +8447,7 @@ function openExecOnePager() {
 // Aggregates Authorization (§01-§03), Operations (§04-§05), and Quality (§06-§07) results
 // across the sample portfolio into a single comparison matrix. References:
 // - fedramp.gov · SAR Template Rev5 §5 (Satisfied / OTS / NA / NT proportions)
-// - fedramp.gov/docs/key-security-indicators · FRMR.KSI 25.11C automation threshold
+// - FedRAMP Consolidated Rules for 2026 · KSI catalog · FRC-CSX-VVK automated validation per KSI
 // - fedramp.gov · ConMon Strategy Guide (Rev5) · RA-5(d) SLA compliance
 
 function computePortfolioMetrics() {
@@ -8618,9 +8569,9 @@ async function runPortfolio() {
   setStatus('◆ AGGREGATE · pulling Authorization · Operations · Quality results');
   log('00:00.0', 'init', 'cross-portfolio rollup · ' + systems.length + ' system' + (systems.length === 1 ? '' : 's') + ' · 3 lifecycle phases');
   await wait(400);
-  log('00:01.4', 'agg', 'pulling SAR §5 results from Initial · ConMon SLA from Operations · KSI from 20x Phase 2');
+  log('00:01.4', 'agg', 'pulling SAR §5 results from Initial · ConMon SLA from Operations · KSI from §05');
   await wait(450);
-  log('00:02.8', 'agg', 'aggregating per-system metrics per fedramp.gov · SAR Template Rev5 §5 + KSI 25.11C', 'ok');
+  log('00:02.8', 'agg', 'aggregating per-system metrics per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI', 'ok');
   await wait(400);
 
   // Stage 2 — Score
@@ -8687,13 +8638,13 @@ async function runPortfolio() {
     <div class="sar-section-label">
       <span class="sar-section-num">§1</span>
       <span class="sar-section-title">Portfolio Executive Summary · Cross-System Rollup</span>
-      <span class="sar-section-ref">per fedramp.gov · SAR Template Rev5 §5 + KSI 25.11C + ConMon Strategy v3.2</span>
+      <span class="sar-section-ref">per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI + ConMon Strategy v3.2</span>
       <span class="sar-section-total">${systems.length} systems · ${totalObjectives.toLocaleString()} control objectives assessed</span>
     </div>
     <div class="verdict-summary">
       <div class="verdict-cell sat"><div class="num">${ready}</div><div class="lbl">Authorization Ready</div><div class="sub">posture ≥ 85%</div></div>
       <div class="verdict-cell nr"><div class="num">${minor}</div><div class="lbl">Minor Remediation</div><div class="sub">posture 70-84%</div></div>
-      <div class="verdict-cell ots"><div class="num">${material}</div><div class="lbl">Material Remediation</div><div class="sub">posture &lt; 70%</div></div>
+      <div class="verdict-cell ots"><div class="num">${material}</div><div class="lbl">Material Remediation</div><div class="sub">posture 0–69%</div></div>
       <div class="verdict-cell def"><div class="num">${avgPosture}<span style="font-size:18px">%</span></div><div class="lbl">Portfolio Posture</div><div class="sub">weighted average</div></div>
     </div>
     <div class="ret-section-label">
@@ -8722,14 +8673,14 @@ async function runPortfolio() {
     risk: s.statusClass === 'sat' ? 'Low' : (s.statusClass === 'nr' ? 'Moderate' : 'High'),
     implStatus: s.statusClass === 'sat' ? 'implemented' : 'partial',
     recommendation: s.statusClass === 'sat'
-      ? 'Continue current authorization posture; ' + s.name + ' meets the FedRAMP authorization-ready threshold (composite posture ≥ 85%) per fedramp.gov SAR §5 satisfaction rate, ConMon SLA compliance, and KSI 25.11C automation coverage criteria.'
+      ? 'Continue current authorization posture; ' + s.name + ' meets the FedRAMP authorization-ready threshold (composite posture ≥ 85%) per fedramp.gov SAR §5 satisfaction rate, ConMon SLA compliance, and CR26 KSI automation coverage.'
       : (s.statusClass === 'nr'
-          ? 'The CSP shall address the minor remediation items identified across SAR §5, ConMon SLAs, and KSI Phase 2 thresholds; remediation expected within the next ConMon cycle to reach authorization-ready posture (≥85%).'
-          : 'The CSP shall undertake material remediation across multiple lifecycle phases; the AO is advised to delay or condition authorization pending demonstrated improvement in SAR §5 satisfaction rate, ConMon SLA compliance, and KSI 25.11C automation coverage per fedramp.gov.'),
+          ? 'The CSP shall address the minor remediation items identified across SAR §5, ConMon SLAs, and KSI automation coverage; remediation expected within the next ConMon cycle to reach authorization-ready posture (≥85%).'
+          : 'The CSP shall undertake material remediation across multiple lifecycle phases; the AO is advised to delay or condition authorization pending demonstrated improvement in SAR §5 satisfaction rate, ConMon SLA compliance, and CR26 KSI automation coverage.'),
     text: 'The 3PAO examined the cross-system rollup for ' + s.name + ', and found that the composite authorization posture is ' + Math.round(s.posture * 100) + '% (rank ' + (idx + 1) + ' of ' + systems.length + ') with SAR §5 satisfaction at ' + Math.round(s.satRate * 100) + '%, ConMon SLA compliance at ' + Math.round(s.slaCompliance * 100) + '%, KSI automation at ' + Math.round(s.ksiAutoRate * 100) + '%, and 3PAO defensibility at ' + s.defensibility + '/100.',
     cites: [
       { kind: 'POLICY', title: 'fedramp.gov · SAR Template Rev5 §5', version: 'Rev5', date: '2024-09-10', section: 'Section 5 · Security Assessment Results · Satisfied / OTS / NA / NT' },
-      { kind: 'POLICY', title: 'fedramp.gov · Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'Phase 2 · 70% automation threshold per RFC-0017' },
+      { kind: 'POLICY', title: 'FedRAMP Consolidated Rules for 2026 · KSI catalog', version: '2026.09.13.02', date: '2026-09-13', section: 'FRC-CSX-VVK · Automated Verification and Validation of Key Security Indicators' },
       { kind: 'POLICY', title: 'fedramp.gov · ConMon Strategy Guide', version: 'v3.2', date: '2024-09-10', section: 'RA-5(d) SLA windows · 30d / 90d / 180d' },
       { kind: 'EVIDENCE', title: 'SPARKAE Cross-System Rollup', version: '', date: '2026-04-28', section: s.shortName + ' rank ' + (idx + 1) + ' · posture ' + Math.round(s.posture * 100) + '%' },
     ]
