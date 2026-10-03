@@ -2455,5 +2455,49 @@ check(pkgRun.satisfied === a.summary.satisfied && pkgRun.ots === a.summary.other
 check(pkgReport.chunks.some(c => (c.control_ids || []).includes('AC-1')),
   'the control id written as "AC&#45;1" is read as AC-1 by the DOCX reader');
 
+// ── 29. an upload is bounded before it is read ──────────────────────────────
+// Section 13 holds the archive allowance: a member that EXPANDS past 64 MB is
+// refused. Nothing held what was read in the first place. A loose .nessus,
+// .json or .csv was read whole by file.text() whatever its size, and an
+// archive was read whole by arrayBuffer() before its allowance was consulted
+// (REVIEW-FINDINGS item 42). The cap is read from the size the browser
+// reports, so the refusal has to come before the file is opened, and the
+// fixtures here count their own reads to prove it does.
+console.log('29. an upload is bounded before it is read');
+const CAP = E.UPLOAD_MAX_BYTES;
+check(CAP === 64 * 1024 * 1024, 'the upload cap is 64 MB, the archive allowance — ' + CAP + ' bytes');
+let oversizeReads = 0;
+const oversize = (name) => ({
+  name, size: CAP + 1,
+  text: async () => { oversizeReads++; return IMPLEMENTED; },
+  arrayBuffer: async () => { oversizeReads++; return new ArrayBuffer(0); },
+});
+const bigRep = await E.parsePackage([oversize('scan.nessus'), oversize('ssp.json'), oversize('findings.csv'), oversize('ssp.docx'), oversize('package.zip')]);
+const CAP_REASON = /^file is 64\.1 MB, above the 64 MB limit for one upload — not read$/;
+check(bigRep.parsed.length === 0 && bigRep.chunks.length === 0 && bigRep.skipped.length === 5 &&
+  bigRep.skipped.every(s => CAP_REASON.test(s.reason)),
+  'a text, OSCAL JSON, CSV, DOCX or ZIP upload one byte over the cap is refused by name, with the figure — ' +
+  JSON.stringify(refusals(bigRep)[0]));
+check(oversizeReads === 0, 'and none of the five was read: the refusal comes from the reported size, before a byte is loaded');
+check(bigRep.members.length === 5 && bigRep.members.every(m => m.refusedReason && CAP_REASON.test(m.refusedReason)),
+  'each refused upload is still listed in the inventory, carrying the reason');
+// The cap is a bound on the upload, not a change to what is read under it: a
+// file of exactly the limit is read as before, and a package of one oversize
+// file beside one readable file reads the one and refuses the other.
+let atLimitReads = 0;
+const atLimit = { name: 'at-limit.txt', size: CAP, text: async () => { atLimitReads++; return IMPLEMENTED; } };
+const mixedRep = await E.parsePackage([oversize('export.json'), atLimit]);
+check(mixedRep.parsed.length === 1 && mixedRep.parsed[0] === 'at-limit.txt' && atLimitReads === 1 && mixedRep.chunks.length > 0 &&
+  mixedRep.skipped.length === 1 && mixedRep.skipped[0].name === 'export.json',
+  'a file of exactly the limit is read, beside an oversize one that is refused — parsed ' + JSON.stringify(mixedRep.parsed));
+// A fixture with no size — the shape every other section hands the engine —
+// is read, so the cap cannot refuse a file the browser said nothing about.
+const sizeless = await E.parsePackage([{ name: 'no-size.txt', text: async () => IMPLEMENTED }]);
+check(sizeless.parsed.length === 1, 'a file that reports no size is read rather than refused');
+// Zipping an oversize file is not a way around the cap: the archive-wide
+// allowance section 13 holds is the same figure, so the two limits agree.
+check(refusals(bombZip).some(r => /64 MB limit/.test(r)),
+  'the archive allowance names the same 64 MB, so zipping a file past the cap does not get it read');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

@@ -17,8 +17,10 @@ Known limits of this build (not vulnerabilities, but worth knowing before
 you rely on a verdict): retrieval is lexical, contradiction and draft
 detection are pattern-based, the evidence-support score is not calibrated
 against independently labelled assessments, and the defensibility score is an
-internal rubric. Uploads are processed in memory in your browser; very large
-packages are limited by the browser, not by this code.
+internal rubric. Uploads are processed in memory in your browser. Each file you
+select is held to 64 MB from the size the browser reports, before it is read,
+and an archive may expand to the same 64 MB across all its members; a file or
+member past either limit is refused by name with the figure, not read.
 
 ## Dependencies
 

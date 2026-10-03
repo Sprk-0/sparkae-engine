@@ -544,6 +544,31 @@ const meshStop = await page.evaluate(() => ({
   log: document.getElementById('log').textContent.replace(/\s+/g, ' ').trim(),
 }));
 
+// ── an upload past the cap is refused before it is read ────────────────────
+// check.mjs §29 holds the engine's refusal against fixtures that report a size.
+// This is the same refusal reaching a visitor: a file one byte over the 64 MB
+// cap, selected through the real input. The file is sparse — one byte written
+// at the end — so the disk holds almost nothing and the cap is decided from the
+// size the browser reports, which is what the engine reads. If it were read
+// first, this would cost 64 MB of memory and a noticeable wait; the timeout is
+// what fails it then.
+const CAP_BYTES = 64 * 1024 * 1024;
+const oversizePath = path.join(tmp, 'scan-export.nessus');
+fs.writeFileSync(oversizePath, '');
+fs.truncateSync(oversizePath, CAP_BYTES + 1);
+await page.goto('file://' + path.join(root, 'demo-standalone.html'));
+await dismissOnboarding();
+await page.setInputFiles('#ssp-upload-input', [oversizePath]);
+await page.waitForFunction(
+  () => /Upload failed|above the .* limit/.test((document.getElementById('ssp-upload-status') || {}).textContent + (document.querySelector('#ssp-upload-btn .ssp-name') || {}).textContent),
+  null, { timeout: 15000 }).catch(() => {});
+const oversizePanel = await page.evaluate(() => ({
+  name: (document.querySelector('#ssp-upload-btn .ssp-name') || {}).textContent || '',
+  meta: (document.querySelector('#ssp-upload-btn .ssp-meta') || {}).textContent || '',
+  status: (document.getElementById('ssp-upload-status') || {}).textContent || '',
+  bound: typeof CUSTOM_PKG_FILES === 'undefined' ? -1 : CUSTOM_PKG_FILES.length,
+}));
+
 const conmonRun = walkResults.find(r => r.uc === 'conmon') || {};
 const exportBar = { hashLinks: conmonRun.exportHashLinks, note: conmonRun.exportNote || '' };
 
@@ -668,6 +693,11 @@ const checks = [
     brokenPanel.name + ' | ' + brokenPanel.status.slice(0, 120)],
   ['a failed upload leaves nothing runnable bound to the engine',
     brokenPanel.bound === 0, String(brokenPanel.bound)],
+  ['a file one byte over the 64 MB cap is refused, and the visitor is told the size and the limit',
+    /Upload failed/.test(oversizePanel.name) && /scan-export\.nessus: file is 64\.1 MB, above the 64 MB limit for one upload — not read/.test(oversizePanel.status),
+    oversizePanel.name + ' | ' + oversizePanel.status.slice(0, 160)],
+  ['the oversize upload leaves nothing runnable bound to the engine',
+    oversizePanel.bound === 0, String(oversizePanel.bound)],
 ];
 let failures = 0;
 for (const [msg, pass, detail] of checks) {
