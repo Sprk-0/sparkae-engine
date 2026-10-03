@@ -354,7 +354,7 @@ check(/\[build\.processing\.html\]/.test(toml) && /^\s*pretty_urls\s*=\s*false\s
 // same one, in all three places a reader or a crawler would look.
 const ORIGIN = 'https://sparkae.ai';
 const sitemapLocs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-const indexable = published.filter(f => f.endsWith('.html') && f !== '404.html');
+const indexable = published.filter(f => f.endsWith('.html') && f !== '404.html' && !/<meta name="robots" content="[^"]*noindex/.test(read(f)));
 for (const f of indexable) {
   const text = read(f);
   const want = f === 'index.html' ? ORIGIN + '/' : ORIGIN + '/' + f;

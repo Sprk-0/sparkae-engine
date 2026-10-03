@@ -590,7 +590,7 @@ const checks = [
   ['console narrates no scripted lifecycle activity', !/appendices reviewed|functional test report on file|penetration test|SAR ready for AO/.test(log), ''],
   ['console narrates gate 7 · Determination', /gate 7 · Determination/.test(log), ''],
   ['an empty assessment date stops the run with a visible message', /assessment date required/.test(emptyDateStatus), emptyDateStatus],
-  ['upload defaults the date field to today', uploadDate === new Date().toISOString().slice(0, 10), uploadDate],
+  ['upload defaults the date field to today (local date)', uploadDate === (d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'))(new Date()), uploadDate],
   ['upload: PDF refusal logged', /refused scan\.pdf/.test(log2), ''],
   ['upload: refusal shown in the results', /scan\.pdf/.test(refused), ''],
   ['a file name cannot execute: no handler ran', xss.fired === null, 'data-upload-audit=' + xss.fired],

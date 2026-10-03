@@ -19,10 +19,10 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta property="og:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://sparkae.ai/static/og-card.png">
-<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. Minutes, not weeks. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
+<meta name="twitter:image:alt" content="SparkAE: every determination, traced to evidence. 410 controls, 1,429 objectives, FedRAMP High baseline, 7 deterministic gates.">
 <style>
 /* Self-hosted editorial typography — same faces and same files as the rest of
    the site (static/fonts/, matched by ae-editorial.css). Replaces the 24 Google-Fonts subsets the export
@@ -2461,8 +2461,8 @@ html,body{
       <p class="onb-body"><strong>§08 Portfolio</strong> is a guided walkthrough. Its one-pager is an illustrative AO briefing generated from the walkthrough’s reference portfolio, not from a §01 live-engine run, and it is not an official Security Assessment Report.</p>
       <div class="onb-checklist">
         <div class="onb-check">✓ Walkthrough one-pager structured like a SAR outline (§5 · Appendix A · §1-§4)</div>
-        <div class="onb-check">✓ Composite Authorization Posture per system (SAR Sat · ConMon SLA · KSI Auto · Defensibility)</div>
-        <div class="onb-check">✓ AO Recommendations broken out by system tier (ATO · conditional ATO · defer)</div>
+        <div class="onb-check">✓ Illustrative composite posture per system (SAR Sat · ConMon SLA · KSI Auto · Defensibility; SparkAE-authored weighting)</div>
+        <div class="onb-check">✓ Review-readiness notes by system tier (sample wording · not an authorization recommendation)</div>
         <div class="onb-check">✓ References block citing fedramp.gov authoritative sources</div>
         <div class="onb-check">✓ Print-optimized for letter size · save as PDF from print dialog</div>
       </div>
@@ -2788,15 +2788,15 @@ html,body{
       Built on
       <span>NIST SP 800-53 Rev5</span>
       <span>NIST SP 800-53A Rev5</span>
-      <br>Conformant with
+      <br>Fields follow
       <span>FedRAMP SAR Template Rev5</span>
       <span>FedRAMP POA&amp;M Template</span>
       <span>FedRAMP ConMon Strategy Guide (Rev5)</span>
     </div>
   </div>
   <div class="colophon-bottom">
-    <span><a href="index.html">Home</a> · <a href="assessors.html">For Assessors</a> · <a href="integrations.html">Integrations</a> · <a href="status.html">Status</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
-    <span>© 2026 SparkAE — The Independent Validation Layer for FedRAMP</span>
+    <span><a href="index.html">Home</a> · <a href="assessors.html">For Assessors</a> · <a href="integrations.html">Integrations</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://github.com/Sprk-0/sparkae-engine" rel="noopener">Source</a></span>
+    <span>© 2026 SparkAE</span>
     <span>Set in Fraunces &amp; IBM Plex · Reference build</span>
   </div>
 </footer>
@@ -3236,7 +3236,7 @@ const SAMPLES = {
           ]},
         { ctrl: 'CP-9.a', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'No remediation required; the control implementation is verified to satisfy the control objective per FedRAMP SAR Test Case Workbook §SAT criteria. The 3PAO will continue to assess this control under the standard ⅓ rotation cadence at the next Annual Reassessment.',
-          text: "The 3PAO tested the system backup procedure for KSI-RPL-03 and SSP §CP-9, and found that the documented backup capability executes successfully and the backup integrity check passes per the recovery objective.",
+          text: "The 3PAO tested the system backup procedure for KSI-RPL-ABO and SSP §CP-9, and found that the documented backup capability executes successfully and the backup integrity check passes per the recovery objective.",
           cites: [
             { ...CV_SSP, section: '§CP-9 — System Backup' },
             { kind: 'TEST', title: 'CloudVault Backup Recovery Test · April 2026', version: '', date: '2026-04-22', section: 'RPO=4h · RTO=8h · integrity hash matched' },
@@ -3475,20 +3475,20 @@ const SAMPLES = {
       autoCoverage: 0.78,
       cadence: { machine: '7 days', nonMachine: '90 days' },
       findings: [
-        { ctrl: 'KSI-IAM-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
+        { ctrl: 'KSI-IAM-APM', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'Continue automated validation; CR26 FRC-CSX-VVK asks 20x Class B providers to implement at least one automated method for each Key Security Indicator, and every IAM indicator in this submission is validated by automation.',
-          text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-01, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
-          cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-IAM-01 — Phishing-Resistant MFA' }]
+          text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-APM, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
+          cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-IAM-APM — Adopting Passwordless Methods' }]
         },
-        { ctrl: 'KSI-CNA-03', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue automated VPC flow log monitoring and security-group drift detection; the 7-day machine validation cadence for KSI-CNA-03 is being met.',
-          text: "The 3PAO examined the traffic-flow enforcement evidence pipeline for KSI-CNA-03, and found that VPC flow logs, security groups, and AWS Config rules together demonstrate logical traffic-flow controls with continuous drift detection across the boundary.",
-          cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-03 · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-CNA-03 — Enforce Traffic Flow' }]
+        { ctrl: 'KSI-CNA-RNT', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
+          recommendation: 'Continue automated VPC flow log monitoring and security-group drift detection; the 7-day machine validation cadence for KSI-CNA-RNT is being met.',
+          text: "The 3PAO examined the traffic-flow enforcement evidence pipeline for KSI-CNA-RNT, and found that VPC flow logs, security groups, and AWS Config rules together demonstrate logical traffic-flow controls with continuous drift detection across the boundary.",
+          cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-RNT · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-CNA-RNT — Restricting Network Traffic' }]
         },
-        { ctrl: 'KSI-MLA-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
+        { ctrl: 'KSI-MLA-OSM', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within the CR26 cadence for machine-based information resources (VDR-TFR-MVX · at least once every 7 days for 20x Class B).',
-          text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-01, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
-          cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-MLA-01 — Security Information and Event Management (SIEM)' }]
+          text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-OSM, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
+          cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-MLA-OSM — Operating SIEM Capability' }]
         }
       ]
     },
@@ -3521,7 +3521,7 @@ const SAMPLES = {
           ]},
         { ctrl: 'AU-3.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
           recommendation: 'No remediation required; the control implementation is verified to satisfy the control objective per FedRAMP SAR Test Case Workbook §SAT criteria. The 3PAO will continue to assess this control under the standard ⅓ rotation cadence at the next Annual Reassessment.',
-          text: "The 3PAO examined the audit record content and the documented event schema, and found that all required content elements are captured per SSP §AU-3 and KSI-MLA-01.",
+          text: "The 3PAO examined the audit record content and the documented event schema, and found that all required content elements are captured per SSP §AU-3 and KSI-MLA-OSM.",
           cites: [
             { ...MG_SSP, section: '§AU-3 — Content of Audit Records' },
             { kind: 'CONFIG', title: 'MeshGate Audit Schema · v1.4', version: '', date: '2026-04-22', section: 'all NIST 800-53 AU-3 fields present' },
@@ -3535,7 +3535,7 @@ const SAMPLES = {
           ]},
         { ctrl: 'SC-8.a', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'No remediation required; the control implementation is verified to satisfy the control objective per FedRAMP SAR Test Case Workbook §SAT criteria. The 3PAO will continue to assess this control under the standard ⅓ rotation cadence at the next Annual Reassessment.',
-          text: "The 3PAO tested the transmission confidentiality and integrity controls, and found that all data flows use TLS 1.3 with FIPS 140-3 validated cryptographic modules per KSI-AFR-11.",
+          text: "The 3PAO tested the transmission confidentiality and integrity controls, and found that all data flows use TLS 1.3 with FIPS 140-3 validated cryptographic modules (the KSI cited here has no direct CR26 equivalent).",
           cites: [
             { ...MG_SSP, section: '§SC-8 — Transmission Confidentiality and Integrity' },
             { kind: 'TEST', title: 'MeshGate TLS Configuration Test', version: '', date: '2026-04-22', section: 'all flows · TLS 1.3 · FIPS-validated modules' },
@@ -3549,7 +3549,7 @@ const SAMPLES = {
           ]},
         { ctrl: 'SC-23.a', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
           recommendation: 'No remediation required; the control implementation is verified to satisfy the control objective per FedRAMP SAR Test Case Workbook §SAT criteria. The 3PAO will continue to assess this control under the standard ⅓ rotation cadence at the next Annual Reassessment.',
-          text: "The 3PAO examined the session authenticity controls and the SSP §SC-23 narrative, and found that all sessions implement the documented integrity protections including bound tokens per KSI-IAM-01.",
+          text: "The 3PAO examined the session authenticity controls and the SSP §SC-23 narrative, and found that all sessions implement the documented integrity protections including bound tokens per KSI-IAM-APM.",
           cites: [
             { ...MG_SSP, section: '§SC-23 — Session Authenticity' },
             { kind: 'CONFIG', title: 'MeshGate Session Configuration', version: '', date: '2026-04-22', section: 'WebAuthn-bound tokens · 8h max lifetime' },
@@ -3706,20 +3706,20 @@ const SAMPLES = {
       autoCoverage: 0.89,
       cadence: { machine: '7 days', nonMachine: '90 days' },
       findings: [
-        { ctrl: 'KSI-IAM-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
+        { ctrl: 'KSI-IAM-APM', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'Continue automated validation; CR26 FRC-CSX-VVK asks 20x Class B providers to implement at least one automated method for each Key Security Indicator, and every IAM indicator in this submission is validated by automation.',
-          text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-01, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
-          cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-IAM-01 — Phishing-Resistant MFA' }]
+          text: "The 3PAO tested the automated WebAuthn-only MFA enforcement for KSI-IAM-APM, and found that the IdP policy export confirms phishing-resistant authentication is required for all interactive logins with no SMS/TOTP fallback path enabled.",
+          cites: [{ kind: 'CONFIG', title: 'Okta MFA Policy Export · automated', version: '', date: '2026-04-25', section: 'allowed_factors=[webauthn,fido2] · fallback_allowed=false' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-IAM-APM — Adopting Passwordless Methods' }]
         },
-        { ctrl: 'KSI-CNA-03', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
-          recommendation: 'Continue automated VPC flow log monitoring and security-group drift detection; the 7-day machine validation cadence for KSI-CNA-03 is being met.',
-          text: "The 3PAO examined the traffic-flow enforcement evidence pipeline for KSI-CNA-03, and found that VPC flow logs, security groups, and AWS Config rules together demonstrate logical traffic-flow controls with continuous drift detection across the boundary.",
-          cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-03 · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-CNA-03 — Enforce Traffic Flow' }]
+        { ctrl: 'KSI-CNA-RNT', verdict: 'SAT', method: 'EXAMINE', risk: 'Low', implStatus: 'implemented',
+          recommendation: 'Continue automated VPC flow log monitoring and security-group drift detection; the 7-day machine validation cadence for KSI-CNA-RNT is being met.',
+          text: "The 3PAO examined the traffic-flow enforcement evidence pipeline for KSI-CNA-RNT, and found that VPC flow logs, security groups, and AWS Config rules together demonstrate logical traffic-flow controls with continuous drift detection across the boundary.",
+          cites: [{ kind: 'EVIDENCE', title: 'AWS Config Rules · VPC compliance summary', version: 'continuous', date: '2026-04-26', section: 'KSI-CNA-RNT · 0 drift events past 30d' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-CNA-RNT — Restricting Network Traffic' }]
         },
-        { ctrl: 'KSI-MLA-01', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
+        { ctrl: 'KSI-MLA-OSM', verdict: 'SAT', method: 'TEST', risk: 'Low', implStatus: 'implemented',
           recommendation: 'Continue tamper-resistant SIEM ingestion at current cadence; persistent validation is operating within the CR26 cadence for machine-based information resources (VDR-TFR-MVX · at least once every 7 days for 20x Class B).',
-          text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-01, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
-          cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (FRMR.KSI)', version: '25.11C', date: '2025-12-01', section: 'KSI-MLA-01 — Security Information and Event Management (SIEM)' }]
+          text: "The 3PAO tested the SIEM ingestion pipeline for KSI-MLA-OSM, and found that all required event categories (auth, change, network, data-access) reach the centralized tamper-resistant log store within 60 seconds with cryptographic integrity validation enabled.",
+          cites: [{ kind: 'TEST', title: 'SIEM Ingestion Latency Test · synthetic load', version: '', date: '2026-04-23', section: 'p95 latency 47s · integrity hash matched' }, { kind: 'POLICY', title: 'FedRAMP Key Security Indicators (CR26)', version: 'CR26', date: '2026-07-04', section: 'KSI-MLA-OSM — Operating SIEM Capability' }]
         }
       ]
     },
@@ -3780,7 +3780,7 @@ const USE_CASES = {
     stages: ['Intake', 'Discovery', 'Validation', 'Persistence', 'Cadence', 'Output'],
     runBtnLabel: 'Run KSI validation',
     idleTitle: 'KSI engine is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through a FedRAMP 20x Key Security Indicator validation flow against the ten KSI themes in the FedRAMP Consolidated Rules for 2026 (CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SCR · SVC): the 46 indicators, the automated validation CR26 asks providers to supply per KSI (FRC-CSX-VVK: at least one automated method per KSI for Class B, at least two for Class C), the verification cadences for machine-based information resources (every 7 days for Class B, VDR-TFR-MVX) and non-machine-based information resources (every 3 months, VDR-TFR-NMV), and the shape of the KSI evidence package.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Run KSI validation</strong>. This section is a guided walkthrough over authored sample data — it does not run the assessment engine, and nothing it shows was adjudicated from evidence. It steps through a FedRAMP 20x Key Security Indicator validation flow against the ten KSI themes in the FedRAMP Consolidated Rules for 2026 (CED · CMT · CNA · IAM · INR · MLA · PIY · RPL · SCR · SVC): the 46 indicators, the automated validation CR26 asks providers to supply per KSI (FRC-CSX-VVK: at least one automated method per KSI for Class B, at least two for Class C), the verification cadences for machine-based information resources (every 7 days for Class B, VDR-TFR-MVX) and non-machine-based information resources (every 3 months, VDR-TFR-NMV), and the shape of the KSI evidence package. FedRAMP 20x support is not part of this product and is not sold.',
     railOutput: 'KSI Package + Evidence Trail',
     railMode: 'KSI · 20x CR26',
     exports: ['KSI Validation Package', 'Automation Coverage Report', 'Persistent Evidence', 'OSCAL Validations'],
@@ -3789,7 +3789,7 @@ const USE_CASES = {
     stages: ['Assemble', 'Schema', 'Constraints', 'Cross-ref', 'Severity', 'Output'],
     runBtnLabel: 'Validate OSCAL package',
     idleTitle: 'Package validator is idle',
-    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. This section is a guided walkthrough — it does not run the assessment engine. It assembles OSCAL 1.1.2 SAR + POA&amp;M output from the authored walkthrough findings and steps through the checks a validator would apply: NIST OSCAL schema checks on every required field, the FedRAMP constraints (which accept OSCAL 1.0.4 or later), and FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the FRMR.KSI 25.11C release at fedramp.gov/docs/key-security-indicators — surfacing schema errors and constraint violations as findings. This is the gate before submission.',
+    idleCopy: 'Select an SSP and press <strong style="color:var(--vermillion)">Validate OSCAL package</strong>. This section is a guided walkthrough — it does not run the assessment engine. It assembles OSCAL 1.1.2 SAR + POA&amp;M output from the authored walkthrough findings and steps through the checks a validator would apply: NIST OSCAL schema checks on every required field, the FedRAMP constraints (which accept OSCAL 1.0.4 or later), and FedRAMP-specific constraints sourced from <strong style="color:var(--vermillion)">fedramp.gov</strong> — the Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&amp;M (Rev5), the FedRAMP OSCAL Registry of extensions and defined identifiers, and the CR26 Key Security Indicators at fedramp.gov/2026/reference/key-security-indicators — surfacing schema errors and constraint violations as findings. This is the gate before submission.',
     railOutput: 'Validated OSCAL Package + SVRL Report',
     railMode: 'PKG · OSCAL 1.1.2',
     exports: ['OSCAL SAR (JSON)', 'OSCAL POA&M (JSON)', 'SVRL Validation Report', 'Submission Readiness Report'],
@@ -3807,7 +3807,7 @@ const USE_CASES = {
     stages: ['Aggregate', 'Score', 'Rank', 'Forecast', 'Compare', 'Publish'],
     runBtnLabel: 'Generate portfolio rollup',
     idleTitle: 'Portfolio rollup is idle',
-    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. This guided walkthrough aggregates Authorization, Operations, and Quality results across the sample portfolio, ranks systems by SAR Section 5 satisfaction rate and 20x KSI automation coverage, and produces a comparison matrix suitable for an AO briefing. References <strong style="color:var(--vermillion)">fedramp.gov</strong> Section 5 SAR results and the CR26 KSI catalog.',
+    idleCopy: 'Press <strong style="color:var(--vermillion)">Generate portfolio rollup</strong> to produce the cross-system executive view. This guided walkthrough aggregates Authorization, Operations, and Quality results across the sample portfolio, ranks systems on an illustrative composite of sample figures (SAR Section 5 satisfaction rate, ConMon SLA, KSI automation), and produces a comparison matrix and a printable SAMPLE briefing. The weighting is SparkAE-authored and is not a FedRAMP criterion.',
     railOutput: 'Portfolio Rollup + Executive Briefing',
     railMode: 'PORTFOLIO · ROLLUP',
     exports: ['Portfolio Briefing', 'System Comparison Matrix', 'Risk Forecast', 'AO Decision Memo'],
@@ -4670,7 +4670,7 @@ document.getElementById('ssp-upload-input').addEventListener('change', async (ev
   // date becomes their own — read once, here, into a visible field they can
   // edit. The engine itself never reads the clock.
   const dateEl = document.getElementById('assessment-date');
-  if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
+  if (dateEl) { const d = new Date(); dateEl.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
   btn.classList.add('has-files');
   btn.dataset.id = 'custom';
@@ -5251,11 +5251,11 @@ function renderKSIMatrix(sample) {
     return `<div class="ksi-theme ${passClass}" data-theme="${id}">
       <div class="ksi-theme-id">${id}</div>
       <div class="ksi-theme-name">${t.name}</div>
-      <div class="ksi-theme-stats">${t.passed}/${t.total} indicators</div>
-      <div class="ksi-theme-auto ${autoClass}">${autoPercent}% automated</div>
+      <div class="ksi-theme-stats">${t.passed}/${t.total} indicators · sample</div>
+      <div class="ksi-theme-auto ${autoClass}">${autoPercent}% automated · sample</div>
     </div>`;
   }).join('');
-  return `<div class="ksi-matrix">${cards}</div>`;
+  return `<div class="ksi-sample-note" style="font-size:11.5px;color:#B8C0CC;margin:0 0 8px">Indicator totals per theme follow the CR26 KSI catalog (46). Pass and automation counts are sample values, not results.</div><div class="ksi-matrix">${cards}</div>`;
 }
 
 function setKSITheme(id, active) {
@@ -5281,8 +5281,8 @@ function renderKSISummary(sample) {
       <span class="sar-section-total">${themeCount} themes · ${total} indicators · submission ${k.submissionDate}</span>
     </div>
     <div class="verdict-summary">
-      <div class="verdict-cell sat"><div class="num">${passed}</div><div class="lbl">Indicators Satisfied</div><div class="sub">${total} total · ${allPass ? '100%' : Math.round(100 * passed / total) + '%'} pass</div></div>
-      <div class="verdict-cell def"><div class="num">${autoPct}%</div><div class="lbl">Automation Coverage</div><div class="sub">FRC-CSX-VVK · automated method per KSI</div></div>
+      <div class="verdict-cell sat"><div class="num">${passed}</div><div class="lbl">Indicators Satisfied · sample</div><div class="sub">${total} total · ${allPass ? '100%' : Math.round(100 * passed / total) + '%'} pass</div></div>
+      <div class="verdict-cell def"><div class="num">${autoPct}%</div><div class="lbl">Automation Coverage · sample</div><div class="sub">FRC-CSX-VVK · automated method per KSI</div></div>
       <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.machine}</div><div class="lbl">Machine Cadence</div><div class="sub">VDR-TFR-MVX · machine-based</div></div>
       <div class="verdict-cell def"><div class="num" style="font-size:18px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">${k.cadence.nonMachine}</div><div class="lbl">Non-Machine Cadence</div><div class="sub">VDR-TFR-NMV · non-machine</div></div>
     </div>
@@ -5293,10 +5293,9 @@ function renderKSISummary(sample) {
     </div>
     <div class="def-strip">
       <span class="def-label">Baseline · ${k.baseline}</span>
-      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${allPass ? '#A8C39A' : '#E8C572'}">${allPass ? '✓ ALL INDICATORS PASS' : '⚠ ASSESSOR REVIEW REQUIRED'}</span>
+      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${allPass ? '#A8C39A' : '#E8C572'}">${allPass ? '✓ SAMPLE CHECKS PASS · assessor review still required' : '⚠ ASSESSOR REVIEW REQUIRED'}</span>
       <span class="def-max"></span>
-    </div>
-    <div style="margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7A8290;letter-spacing:0.03em">Sample data uses pre-CR26 KSI identifiers (FRMR.KSI 25.11C); see the CR26 catalog for current IDs.</div>`;
+    </div>`;
 }
 
 // ── KSI runner (20x · CR26 KSI catalog) ──
@@ -5397,7 +5396,7 @@ async function runKSI(sample) {
   setStatus('◆ OUTPUT · compiling KSI Validation Package');
   log('00:31.0', 'out', 'KSI Validation Package · Automation Coverage Report · OSCAL Validations compiled', 'ok');
   await wait(400);
-  log('00:32.4', 'done', 'KSI walkthrough complete · KSI evidence package assembled', 'ok');
+  log('00:32.4', 'done', 'KSI walkthrough complete · sample evidence package assembled', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
   setStatus('◆ COMPLETE · walkthrough · KSI Package · ' + autoPct + '% automated · ' + passed + '/' + total + ' pass');
@@ -6904,11 +6903,11 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
       : fail('K-201', 'KSI.themes', 'The 3PAO examined the KSI Validation Package, and found ' + missing.length + ' theme(s) missing from the ten CR26 KSI themes (' + missing.join(', ') + ').');
 
     // K-204 (no retired IDs in validations)
-    const RETIRED = new Set(['KSI-MLA-03','KSI-MLA-04','KSI-MLA-06','KSI-SVC-03','KSI-CMT-05','KSI-TPR-01','KSI-TPR-02']);
+    const RETIRED = { has: id => /^KSI-[A-Z]{3}-\d{2}$/.test(String(id)) };  // pre-CR26 numeric ids
     const validations = ksi.validations || [];
     const noRetired = validations.every(v => !RETIRED.has(v['ksi-id']));
     noRetired
-      ? pass('K-204', 'KSI.retired', 'The 3PAO examined the KSI validations array, and found that no validation references a retired KSI ID per FRMR.KSI 25.11C.')
+      ? pass('K-204', 'KSI.retired', 'The 3PAO examined the KSI validations array, and found that no validation references a pre-CR26 numeric KSI ID.')
       : fail('K-204', 'KSI.retired', 'The 3PAO examined the KSI validations array, and found one or more validations referencing a retired KSI ID.');
   }
 
@@ -7038,11 +7037,11 @@ async function runPackageValidator(sample) {
     <div class="ret-section-label">
       <span class="sar-section-num">§2</span>
       <span class="sar-section-title">Package Components · Schema Conformity</span>
-      <span class="sar-section-ref">per fedramp.gov OSCAL Registry · NIST OSCAL 1.0.4</span>
+      <span class="sar-section-ref">NIST OSCAL 1.1.2 · sample walkthrough</span>
     </div>
     <div class="def-strip">
       <span class="def-label">SAR · ${(JSON.stringify(sarObj).length / 1024).toFixed(1)} KB · POA&amp;M · ${(JSON.stringify(poamObj).length / 1024).toFixed(1)} KB${ksiObj ? ' · KSI · ' + (JSON.stringify(ksiObj).length / 1024).toFixed(1) + ' KB' : ''}</span>
-      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${submissionReady ? '#A8C39A' : '#FF8A6B'}">${submissionReady ? '✓ NIST + FedRAMP CONFORMANT' : '⚠ ' + errors + ' CONSTRAINT VIOLATIONS'}</span>
+      <span class="def-num" style="font-size:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;color:${submissionReady ? '#A8C39A' : '#FF8A6B'}">${submissionReady ? '✓ No schema or constraint errors (sample walkthrough)' : '⚠ ' + errors + ' CONSTRAINT VIOLATIONS'}</span>
       <span class="def-max"></span>
     </div>`;
   renderExportBar();
@@ -7061,7 +7060,7 @@ async function runPackageValidator(sample) {
 // Reference: automate.fedramp.gov SAR-to-OSCAL mapping
 const CANONICAL_EVIDENCE_SCHEMA = {
   description: 'SPARKAE internal normalized evidence record · OSCAL-aligned with namespaced extension support',
-  oscalAlignment: 'NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
+  oscalAlignment: 'NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping · FedRAMP Extensions and Accepted Values',
   extensionNamespace: 'https://sparkae.ai/ns/oscal',
   extensionPattern: 'OSCAL prop assembly with ns flag · per fedramp.gov · standards-conformant vendor extensions',
   fields: [
@@ -7071,11 +7070,11 @@ const CANONICAL_EVIDENCE_SCHEMA = {
     { name: 'source_native_id',   type: 'string',   required: true,  oscal: 'observation.links.native',         desc: 'Native ID in the source system for traceability' },
     { name: 'evidence_kind',      type: 'enum',     required: true,  oscal: 'observation.types',                desc: 'SSP|POLICY|PROC|CONFIG|EVIDENCE|LOG|SCAN|TEST|INTERVIEW|CHANGE|CONMON|POAM|SAR' },
     { name: 'fedramp_artifact',   type: 'enum',     required: true,  oscal: 'observation.props.target',         desc: 'Target deliverable: ssp|sap|sar|poam|conmon|pt|ksi (per fedramp.gov)' },
-    { name: 'control_or_ksi',     type: 'string',   required: true,  oscal: 'observation.related-controls',     desc: 'NIST 800-53 Rev 5 control ID or KSI ID (e.g., AC-2, KSI-IAM-01)' },
+    { name: 'control_or_ksi',     type: 'string',   required: true,  oscal: 'observation.related-controls',     desc: 'NIST 800-53 Rev 5 control ID or KSI ID (e.g., AC-2, KSI-IAM-APM)' },
     { name: 'subject_uuid',       type: 'uuid',     required: true,  oscal: 'observation.subjects.subject-uuid',desc: 'UUID of the asset/component this evidence is about' },
     { name: 'asset_id',           type: 'string',   required: true,  oscal: 'observation.subjects.title',       desc: 'Human-readable asset identifier per CM-8 inventory' },
     { name: 'collected_at',       type: 'datetime', required: true,  oscal: 'observation.collected',            desc: 'ISO-8601 timestamp · when the evidence was gathered' },
-    { name: 'integrity_hash',     type: 'sha256',   required: true,  oscal: 'observation.props.hash',           desc: 'SHA-256 hash for tamper detection · KSI-MLA-04 alignment' },
+    { name: 'integrity_hash',     type: 'sha256',   required: true,  oscal: 'observation.props.hash',           desc: 'SHA-256 hash for tamper detection · no direct CR26 KSI equivalent' },
     { name: 'method',             type: 'enum',     required: true,  oscal: 'observation.methods',              desc: 'EXAMINE | INTERVIEW | TEST per NIST 800-53A' },
     { name: 'payload',            type: 'object',   required: false, oscal: 'observation.relevant-evidence',    desc: 'Source-specific structured payload preserved for traceability' },
     // Extension fields for unstructured / non-conforming inputs
@@ -7135,7 +7134,7 @@ const RUNTIME_VALIDATORS = [
   { id: 'V-001', sev: 'error', name: 'Required field present',     desc: 'All 11 required canonical fields populated', fedrampRef: 'fedramp.gov · OSCAL Schema · required fields' },
   { id: 'V-002', sev: 'error', name: 'UUID v4 format',              desc: 'evidence_id and subject_uuid match RFC 4122 v4', fedrampRef: 'NIST OSCAL 1.0.4 · uuid datatype' },
   { id: 'V-003', sev: 'error', name: 'ISO-8601 timestamp',          desc: 'collected_at parses as ISO-8601 with timezone', fedrampRef: 'NIST OSCAL · dateTime-with-timezone' },
-  { id: 'V-004', sev: 'error', name: 'Control ID resolves',          desc: 'control_or_ksi resolves to a real NIST 800-53 Rev 5 control or KSI ID', fedrampRef: 'fedramp.gov · FedRAMP Moderate Baseline + KSI 25.11C' },
+  { id: 'V-004', sev: 'error', name: 'Control ID resolves',          desc: 'control_or_ksi resolves to a real NIST 800-53 Rev 5 control or KSI ID', fedrampRef: 'fedramp.gov · FedRAMP Moderate Baseline + CR26 KSI catalog' },
   { id: 'V-005', sev: 'error', name: 'evidence_kind enum valid',     desc: 'Value is one of SSP|POLICY|PROC|CONFIG|EVIDENCE|LOG|SCAN|TEST|INTERVIEW|CHANGE|CONMON|POAM|SAR', fedrampRef: 'fedramp.gov OSCAL Registry · accepted values' },
   { id: 'V-006', sev: 'error', name: 'fedramp_artifact enum valid',  desc: 'Value is one of ssp|sap|sar|poam|conmon|pt|ksi', fedrampRef: 'fedramp.gov · authorization deliverable taxonomy' },
   { id: 'V-007', sev: 'warn',  name: 'Schema drift · missing field', desc: 'Native source field referenced in mapping not present in payload (vendor API change)', fedrampRef: 'SPARKAE operational · auto-surfaced as QA finding' },
@@ -7273,9 +7272,9 @@ const CONNECTOR_SCHEMAS = {
       { from: 'contents.path',        to: 'asset_id',           transform: 'repo path → IaC artifact identifier' },
       { from: 'pull.merged_at',       to: 'collected_at',       transform: 'ISO-8601 → ISO-8601' },
       { from: 'path pattern',         to: 'evidence_kind',      transform: '*.tf → CONFIG, *.yml workflow → CHANGE, *.md policy → POLICY' },
-      { from: 'path + repo',          to: 'fedramp_artifact',   transform: 'IaC paths → ksi (KSI-MLA-05); change records → poam' },
+      { from: 'path + repo',          to: 'fedramp_artifact',   transform: 'IaC paths → ksi (KSI-MLA-EVC); change records → poam' },
     ],
-    fedrampDestination: 'KSI-MLA-05 IaC · KSI-PIY-04 CISA Secure By Design · CM-2 · CM-3 (fedramp.gov)',
+    fedrampDestination: 'KSI-MLA-EVC IaC · KSI-PIY-RSD CISA Secure By Design · CM-2 · CM-3 (fedramp.gov)',
     samplePayload: '{ "path": "terraform/prod/network.tf", "sha": "abc123...", "size": 4821, "encoding": "base64", "url": "https://api.github.com/repos/csp/infra/contents/terraform/prod/network.tf" }',
   },
   jira: {
@@ -7319,13 +7318,13 @@ const CONNECTOR_SCHEMAS = {
     nativeFields: ['policy.id', 'policy.type', 'policy.settings.factors', 'log.eventType', 'log.actor.id', 'log.outcome.result', 'user.profile.email', 'user.status'],
     mapping: [
       { from: 'policy.id',              to: 'source_native_id',   transform: 'Okta policy ID → unique config ID' },
-      { from: 'policy.settings.factors',to: 'payload.factors',    transform: 'allowed factors → KSI-IAM-01 evidence' },
+      { from: 'policy.settings.factors',to: 'payload.factors',    transform: 'allowed factors → KSI-IAM-APM evidence' },
       { from: 'log.eventType',          to: 'method',             transform: 'auth.* → TEST, account.* → EXAMINE' },
       { from: 'log.published',          to: 'collected_at',       transform: 'ISO-8601 → ISO-8601' },
-      { from: 'fixed mapping',          to: 'control_or_ksi',     transform: 'policy → KSI-IAM-01, JML log → KSI-IAM-07' },
+      { from: 'fixed mapping',          to: 'control_or_ksi',     transform: 'policy → KSI-IAM-APM, JML log → KSI-IAM-AAM' },
       { from: 'fixed enum',              to: 'fedramp_artifact',   transform: 'always → ksi' },
     ],
-    fedrampDestination: 'KSI-IAM-01 phishing-resistant MFA · KSI-IAM-07 lifecycle (fedramp.gov · KSI 25.11C)',
+    fedrampDestination: 'KSI-IAM-APM phishing-resistant MFA · KSI-IAM-AAM lifecycle (fedramp.gov · CR26 KSI catalog)',
     samplePayload: '{ "policy": {"id": "00P1abc", "type": "MFA_ENROLL", "settings": {"factors": [{"factorType": "webauthn", "status": "ACTIVE"}]}}, "log": {"eventType": "user.authentication.auth_via_mfa", "outcome": {"result": "SUCCESS"}} }',
   },
   awsconfig: {
@@ -7338,10 +7337,10 @@ const CONNECTOR_SCHEMAS = {
       { from: 'Resource.ResourceId',                to: 'subject_uuid',       transform: 'AWS resource ID → canonical subject_uuid' },
       { from: 'Resource.ResourceType',              to: 'asset_id',           transform: 'AWS resource type + ID → canonical asset_id' },
       { from: 'Finding.LastObservedAt',             to: 'collected_at',       transform: 'ISO-8601 → ISO-8601' },
-      { from: 'rule pattern',                       to: 'control_or_ksi',     transform: 'vpc-flow-logs-enabled → KSI-CNA-03; encrypted-volumes → KSI-AFR-11' },
+      { from: 'rule pattern',                       to: 'control_or_ksi',     transform: 'vpc-flow-logs-enabled → KSI-CNA-RNT; encrypted-volumes → no direct CR26 KSI equivalent' },
       { from: 'fixed enum',                         to: 'fedramp_artifact',   transform: 'always → ksi' },
     ],
-    fedrampDestination: 'KSI-CNA themes · CM-8 inventory · CM-2 baselines (fedramp.gov · KSI-CNA 25.11C)',
+    fedrampDestination: 'KSI-CNA themes · CM-8 inventory · CM-2 baselines (fedramp.gov · CR26 KSI catalog)',
     samplePayload: '{ "ConfigRule": {"ConfigRuleName": "vpc-flow-logs-enabled", "Compliance": {"ComplianceType": "COMPLIANT"}}, "Resource": {"ResourceId": "vpc-0a1b2c", "ResourceType": "AWS::EC2::VPC"} }',
   },
   splunk: {
@@ -7354,10 +7353,10 @@ const CONNECTOR_SCHEMAS = {
       { from: 'result.host',      to: 'asset_id',           transform: 'Splunk host → canonical asset_id' },
       { from: 'result.sourcetype',to: 'evidence_kind',      transform: 'access_combined → LOG, change → CHANGE' },
       { from: 'result.event',     to: 'payload.event',      transform: 'preserved · audit log content per AU-3' },
-      { from: 'fixed mapping',    to: 'control_or_ksi',     transform: 'always → KSI-MLA-01 (SIEM coverage)' },
+      { from: 'fixed mapping',    to: 'control_or_ksi',     transform: 'always → KSI-MLA-OSM (SIEM coverage)' },
       { from: 'fixed enum',       to: 'fedramp_artifact',   transform: 'always → ksi' },
     ],
-    fedrampDestination: 'KSI-MLA-01 SIEM · AU-2 events · AU-11 retention (fedramp.gov · KSI-MLA 25.11C)',
+    fedrampDestination: 'KSI-MLA-OSM SIEM · AU-2 events · AU-11 retention (fedramp.gov · CR26 KSI catalog)',
     samplePayload: '{ "result": {"_time": "1714410123", "host": "cv-app-01", "sourcetype": "linux_secure", "event": "Failed password for root from 192.0.2.5", "severity": "warning"} }',
   },
   confluence: {
@@ -7566,9 +7565,9 @@ const CONNECTORS = [
   {
     id: 'github', name: 'GitHub', category: 'Source Code & IaC',
     auth: 'OAuth 2.0 (GitHub App)', mode: 'real', tier: 'live',
-    feeds: ['Infrastructure as Code (KSI-MLA-05)', 'Configuration baselines (CM-2)', 'Change records (CM-3)', 'Pull request audit trail', 'Secure SDLC evidence (KSI-PIY-04 · CISA SBD)'],
+    feeds: ['Infrastructure as Code (KSI-MLA-EVC)', 'Configuration baselines (CM-2)', 'Change records (CM-3)', 'Pull request audit trail', 'Secure SDLC evidence (KSI-PIY-RSD · CISA SBD)'],
     artifactKinds: ['CONFIG', 'CHANGE', 'EVIDENCE'],
-    fedrampRef: 'fedramp.gov · KSI-MLA-05 Infrastructure as Code · KSI-PIY-04 Secure By Design',
+    fedrampRef: 'fedramp.gov · KSI-MLA-EVC Infrastructure as Code · KSI-PIY-RSD Secure By Design',
     coverage: 0.88,
     lastSync: '2026-04-28 09:11',
     artifactCount: 1247,
@@ -7617,9 +7616,9 @@ const CONNECTORS = [
   {
     id: 'okta', name: 'Okta IdP', category: 'Identity Provider',
     auth: 'API token', mode: 'mock', tier: 'configured',
-    feeds: ['MFA policy export (KSI-IAM-01 · phishing-resistant)', 'Account lifecycle audit log (KSI-IAM-07)', 'Privileged access reviews (AC-2.a)', 'JML workflow evidence'],
+    feeds: ['MFA policy export (KSI-IAM-APM · phishing-resistant)', 'Account lifecycle audit log (KSI-IAM-AAM)', 'Privileged access reviews (AC-2.a)', 'JML workflow evidence'],
     artifactKinds: ['CONFIG', 'EVIDENCE'],
-    fedrampRef: 'fedramp.gov · KSI-IAM-01 through KSI-IAM-07 (FRMR.KSI 25.11C)',
+    fedrampRef: 'fedramp.gov · KSI-IAM-AAM · APM · ELP · JIT · SNU · SUS (CR26 KSI catalog)',
     coverage: 0.94,
     lastSync: '2026-04-28 09:00',
     artifactCount: 217,
@@ -7627,7 +7626,7 @@ const CONNECTORS = [
   {
     id: 'awsconfig', name: 'AWS Config + Security Hub', category: 'Cloud Posture',
     auth: 'IAM Role', mode: 'mock', tier: 'configured',
-    feeds: ['Configuration baseline drift (CM-6)', 'KSI-CNA-01/02/03/08 evidence', 'VPC flow logs · security groups', 'Resource inventory (CM-8)'],
+    feeds: ['Configuration baseline drift (CM-6)', 'KSI-CNA-MAT/RNT/ULN/EIS evidence', 'VPC flow logs · security groups', 'Resource inventory (CM-8)'],
     artifactKinds: ['CONFIG', 'EVIDENCE', 'LOG'],
     fedrampRef: 'fedramp.gov · KSI-CNA Cloud Native Architecture theme',
     coverage: 0.91,
@@ -7637,9 +7636,9 @@ const CONNECTORS = [
   {
     id: 'splunk', name: 'Splunk SIEM', category: 'Logging & Monitoring',
     auth: 'API token', mode: 'mock', tier: 'configured',
-    feeds: ['SIEM event ingestion (KSI-MLA-01)', 'Audit log retention (AU-2 · AU-11)', 'Tamper-resistance attestations', 'Event-type coverage (KSI-MLA-07)'],
+    feeds: ['SIEM event ingestion (KSI-MLA-OSM)', 'Audit log retention (AU-2 · AU-11)', 'Tamper-resistance attestations', 'Event-type coverage (KSI-MLA-LET)'],
     artifactKinds: ['LOG', 'EVIDENCE'],
-    fedrampRef: 'fedramp.gov · KSI-MLA-01 SIEM · KSI-MLA-07 Event Types',
+    fedrampRef: 'fedramp.gov · KSI-MLA-OSM SIEM · KSI-MLA-LET Event Types',
     coverage: 0.86,
     lastSync: '2026-04-28 09:12',
     artifactCount: 12847,
@@ -7870,7 +7869,7 @@ function openSchemaDetail(tier, connectorId) {
     + '  "payload": { /* preserved native payload */ }'
     + (tier === 'custom' ? ',\n  "extensions": { /* namespaced https://sparkae.ai/ns/oscal · ' + (schema.extensionFields || []).slice(0, 2).join(', ') + ', ... */ },\n  "unmapped_payload": { /* raw fields without mapping rules · enables late binding */ },\n  "confidence": 0.0–1.0,\n  "validation_status": "valid | drift | missing_field | unmapped | low_confidence"' : '')
     + '\n}</pre>'
-    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.0.4 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
+    + '<div style="font-size:10px;color:#5A6270;font-family:\'Courier New\',monospace;letter-spacing:0.04em;margin-top:6px">OSCAL alignment: NIST OSCAL 1.1.2 · automate.fedramp.gov SAR-to-OSCAL mapping' + (tier === 'custom' ? ' · OSCAL prop ns extension pattern per fedramp.gov §3 Extensions and Accepted Values' : '') + '</div>'
 
     // A <button>, not an <a> without an href: this closes the window, and an
     // anchor with nothing to navigate to is neither focusable nor the right
@@ -7966,7 +7965,7 @@ async function runDataSources(sample) {
   await wait(400);
   log('00:22.0', 'sync', 'Tier 2 · a sync would pull control and evidence records from ' + grcConnectors.length + ' GRC peer platforms');
   await wait(450);
-  log('00:23.4', 'sync', 'computing SHA-256 integrity hash per record for OSCAL provenance trail (KSI-MLA-04 alignment)', 'ok');
+  log('00:23.4', 'sync', 'computing SHA-256 integrity hash per record for OSCAL provenance trail (no direct CR26 KSI equivalent)', 'ok');
   await wait(400);
 
   // Stage 5 — Map
@@ -8091,12 +8090,14 @@ async function runDataSources(sample) {
 }
 
 // ── Exec one-pager · printable AO briefing from Portfolio data ──
-// Generates a self-contained printable HTML document suitable for AO presentations,
-// referencing fedramp.gov authoritative sources throughout. Opens in a new window
+// Generates a self-contained printable SAMPLE briefing (authored sample data,
+// fixed sample date, not an authorization recommendation). Opens in a new window
 // styled for letter-size printing.
 
 function renderExecOnePager(systems) {
-  const today = displayDate();
+  // A fixed, labelled sample date: the briefing is authored sample data, so it
+  // never carries today's date or the visitor's assessment date.
+  const today = SAMPLE_ASSESSMENT_DATE + ' (fixed sample date)';
   const ready = systems.filter(s => s.statusClass === 'sat').length;
   const minor = systems.filter(s => s.statusClass === 'nr').length;
   const material = systems.filter(s => s.statusClass === 'ots').length;
@@ -8126,7 +8127,7 @@ function renderExecOnePager(systems) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SPARKAE · Portfolio Authorization Briefing · ${today}</title>
+  <title>SPARKAE · SAMPLE portfolio briefing · ${today}</title>
   <style>
     @page { size: letter; margin: 0.5in; }
     * { box-sizing: border-box; }
@@ -8338,38 +8339,42 @@ function renderExecOnePager(systems) {
       text-transform: uppercase;
       border: none;
     }
+    .op-watermark { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%) rotate(-28deg); font-family: 'Courier New', monospace; font-size: 44px; font-weight: 700; color: rgba(178,58,28,0.13); white-space: nowrap; pointer-events: none; z-index: 0; letter-spacing: 0.08em; }
     @media print {
+      .op-watermark { color: rgba(178,58,28,0.16); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .op-print-bar { display: none; }
       body { padding: 0; }
     }
   </style>
 </head>
 <body>
+  <div class="op-watermark" aria-hidden="true">SAMPLE · NOT AN AUTHORIZATION RECOMMENDATION</div>
+  <div style="border:2px solid #B23A1C;color:#B23A1C;padding:8px 12px;margin-bottom:14px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.06em">SAMPLE WALKTHROUGH · Every figure on this page is authored sample data, not an assessment result. SparkAE does not make or recommend authorization decisions; the authorizing official does.</div>
   <button class="op-print-bar" id="op-print">⎙ Print / Save PDF</button>
   <div class="op-header">
     <div>
       <span class="op-brand">SPARKAE</span>
-      <span class="op-brand-sub">FedRAMP Authorization Platform</span>
+      <span class="op-brand-sub">Sample walkthrough · illustrative figures</span>
     </div>
     <div class="op-meta">
-      Portfolio Authorization Briefing<br>
-      Issued: ${today}<br>
-      Audience: Authorizing Official (AO)
+      SAMPLE portfolio briefing<br>
+      Sample date: ${today}<br>
+      Not an authorization recommendation
     </div>
   </div>
 
-  <h1 class="op-title">Portfolio Authorization Posture · Cross-System Rollup</h1>
-  <div class="op-subtitle">${systems.length} cloud service offerings · ${totalObjectives.toLocaleString()} control objectives assessed · per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI + ConMon Strategy v3.2</div>
+  <h1 class="op-title">Portfolio posture (illustrative) · Cross-System Rollup</h1>
+  <div class="op-subtitle">${systems.length} cloud service offerings · ${totalObjectives.toLocaleString()} control objectives assessed · sample walkthrough · illustrative composite, not a FedRAMP criterion</div>
 
-  <h2 class="op-section-title">§1 · Executive Summary <span class="op-section-ref">per fedramp.gov · Authorization Process</span></h2>
+  <h2 class="op-section-title">§1 · Executive Summary <span class="op-section-ref">sample data · illustrative composite</span></h2>
   <div class="op-summary">
-    <div class="op-summary-cell"><div class="op-summary-num sat">${ready}</div><div class="op-summary-lbl">Authorization Ready</div></div>
+    <div class="op-summary-cell"><div class="op-summary-num sat">${ready}</div><div class="op-summary-lbl">Ready for assessor review</div></div>
     <div class="op-summary-cell"><div class="op-summary-num nr">${minor}</div><div class="op-summary-lbl">Minor Remediation</div></div>
     <div class="op-summary-cell"><div class="op-summary-num ots">${material}</div><div class="op-summary-lbl">Material Remediation</div></div>
     <div class="op-summary-cell"><div class="op-summary-num">${avgPosture}%</div><div class="op-summary-lbl">Portfolio Posture</div></div>
   </div>
 
-  <h2 class="op-section-title">§2 · System Comparison Matrix <span class="op-section-ref">posture composite per fedramp.gov criteria</span></h2>
+  <h2 class="op-section-title">§2 · System Comparison Matrix <span class="op-section-ref">illustrative composite · SparkAE weighting, not a FedRAMP criterion</span></h2>
   <table class="op-table">
     <thead>
       <tr>
@@ -8388,7 +8393,7 @@ function renderExecOnePager(systems) {
     <tbody>${systemRows}</tbody>
   </table>
 
-  <h2 class="op-section-title">§3 · Aggregate Risk Profile <span class="op-section-ref">per fedramp.gov · POA&amp;M Template + CISA BOD 22-01</span></h2>
+  <h2 class="op-section-title">§3 · Aggregate Risk Profile <span class="op-section-ref">sample data · fields modelled on the FedRAMP POA&amp;M Template and CISA BOD 22-01</span></h2>
   <div class="op-summary">
     <div class="op-summary-cell"><div class="op-summary-num sat">${portfolioSatRate}%</div><div class="op-summary-lbl">SAR §5 Satisfied</div></div>
     <div class="op-summary-cell"><div class="op-summary-num">${totalPoam}</div><div class="op-summary-lbl">POA&amp;M Open</div></div>
@@ -8396,14 +8401,14 @@ function renderExecOnePager(systems) {
     <div class="op-summary-cell"><div class="op-summary-num ${totalKev > 0 ? 'ots' : 'sat'}">${totalKev}</div><div class="op-summary-lbl">CISA KEV / BOD 22-01</div></div>
   </div>
 
-  <h2 class="op-section-title">§4 · AO Recommendations</h2>
+  <h2 class="op-section-title">§4 · Sample next steps (illustrative)</h2>
   <div class="op-recs">
-    <div class="op-recs-title">▸ Authorization decisions per fedramp.gov · Authorization Process</div>
+    <div class="op-recs-title">▸ Illustrative next steps for the sample systems · the authorization decision belongs to the AO</div>
     <ul>
-      ${ready > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'sat').map(s => s.shortName).join(', ')}</strong> — issue ATO; continue ConMon at standard cadence; next Annual Reassessment per fedramp.gov Annual Assessment Guidance.</li>` : ''}
-      ${minor > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'nr').map(s => s.shortName).join(', ')}</strong> — issue conditional ATO with remediation timeline; recommend follow-up within next ConMon cycle to verify automation coverage and SAR §5 satisfaction reach authorization-ready threshold (≥85%).</li>` : ''}
-      ${material > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'ots').map(s => s.shortName).join(', ')}</strong> — defer or condition ATO; 3PAO recommends material remediation across SAR §5 satisfaction rate, CR26 KSI automation coverage, and ConMon SLA compliance prior to AO authorization decision.</li>` : ''}
-      ${totalKev > 0 ? `<li><strong>CISA KEV remediation priority:</strong> ${totalKev} CISA Known Exploited Vulnerabilities (BOD 22-01) require remediation within the catalog-specified due dates regardless of severity, per fedramp.gov ConMon guidance.</li>` : ''}
+      ${ready > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'sat').map(s => s.shortName).join(', ')}</strong> — ready for independent assessor review; continue ConMon at standard cadence.</li>` : ''}
+      ${minor > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'nr').map(s => s.shortName).join(', ')}</strong> — minor remediation before assessor review; recommend follow-up within next ConMon cycle to verify automation coverage and SAR §5 satisfaction reach the 85% illustrative walkthrough composite (not a FedRAMP threshold).</li>` : ''}
+      ${material > 0 ? `<li><strong>${systems.filter(s => s.statusClass === 'ots').map(s => s.shortName).join(', ')}</strong> — material remediation across SAR §5 satisfaction rate, KSI automation coverage, and ConMon SLA compliance before assessor review.</li>` : ''}
+      ${totalKev > 0 ? `<li><strong>CISA KEV remediation priority:</strong> ${totalKev} CISA Known Exploited Vulnerabilities (BOD 22-01) require remediation within the catalog-specified due dates regardless of severity.</li>` : ''}
     </ul>
   </div>
 
@@ -8421,7 +8426,7 @@ function renderExecOnePager(systems) {
   </div>
 
   <div class="op-footer">
-    <span>SPARKAE · Portfolio Authorization Briefing · ${today}</span>
+    <span>SPARKAE · SAMPLE portfolio briefing · illustrative · ${today}</span>
     <span>Page 1 of 1</span>
   </div>
 </body>
@@ -8489,7 +8494,7 @@ function computePortfolioMetrics() {
 
     // Authorization status determination
     let status, statusClass;
-    if (posture >= 0.85) { status = '✓ AUTHORIZATION READY'; statusClass = 'sat'; }
+    if (posture >= 0.85) { status = '✓ READY FOR ASSESSOR REVIEW'; statusClass = 'sat'; }
     else if (posture >= 0.70) { status = '◇ MINOR REMEDIATION'; statusClass = 'nr'; }
     else { status = '⚠ MATERIAL REMEDIATION'; statusClass = 'ots'; }
 
@@ -8570,9 +8575,9 @@ async function runPortfolio() {
   setStatus('◆ AGGREGATE · pulling Authorization · Operations · Quality results');
   log('00:00.0', 'init', 'cross-portfolio rollup · ' + systems.length + ' system' + (systems.length === 1 ? '' : 's') + ' · 3 lifecycle phases');
   await wait(400);
-  log('00:01.4', 'agg', 'pulling SAR §5 results from Initial · ConMon SLA from Operations · KSI from §05');
+  log('00:01.4', 'agg', 'pulling sample SAR §5 results from Initial · ConMon SLA from Operations · KSI from the 20x walkthrough');
   await wait(450);
-  log('00:02.8', 'agg', 'aggregating per-system metrics per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI', 'ok');
+  log('00:02.8', 'agg', 'aggregating per-system sample metrics into an illustrative composite (SparkAE weighting)', 'ok');
   await wait(400);
 
   // Stage 2 — Score
@@ -8639,11 +8644,11 @@ async function runPortfolio() {
     <div class="sar-section-label">
       <span class="sar-section-num">§1</span>
       <span class="sar-section-title">Portfolio Executive Summary · Cross-System Rollup</span>
-      <span class="sar-section-ref">per fedramp.gov · SAR Template Rev5 §5 + CR26 KSI + ConMon Strategy v3.2</span>
+      <span class="sar-section-ref">illustrative composite over authored sample figures · SparkAE weighting, not a FedRAMP criterion</span>
       <span class="sar-section-total">${systems.length} systems · ${totalObjectives.toLocaleString()} control objectives assessed</span>
     </div>
     <div class="verdict-summary">
-      <div class="verdict-cell sat"><div class="num">${ready}</div><div class="lbl">Authorization Ready</div><div class="sub">posture ≥ 85%</div></div>
+      <div class="verdict-cell sat"><div class="num">${ready}</div><div class="lbl">Ready for review</div><div class="sub">illustrative composite ≥ 85%</div></div>
       <div class="verdict-cell nr"><div class="num">${minor}</div><div class="lbl">Minor Remediation</div><div class="sub">posture 70-84%</div></div>
       <div class="verdict-cell ots"><div class="num">${material}</div><div class="lbl">Material Remediation</div><div class="sub">posture 0–69%</div></div>
       <div class="verdict-cell def"><div class="num">${avgPosture}<span style="font-size:18px">%</span></div><div class="lbl">Portfolio Posture</div><div class="sub">weighted average</div></div>
@@ -8674,14 +8679,14 @@ async function runPortfolio() {
     risk: s.statusClass === 'sat' ? 'Low' : (s.statusClass === 'nr' ? 'Moderate' : 'High'),
     implStatus: s.statusClass === 'sat' ? 'implemented' : 'partial',
     recommendation: s.statusClass === 'sat'
-      ? 'Continue current authorization posture; ' + s.name + ' meets the FedRAMP authorization-ready threshold (composite posture ≥ 85%) per fedramp.gov SAR §5 satisfaction rate, ConMon SLA compliance, and CR26 KSI automation coverage.'
+      ? s.name + ' scores at or above 85% on this walkthrough\'s illustrative composite (SparkAE-authored weighting of sample figures; not a FedRAMP criterion or threshold).'
       : (s.statusClass === 'nr'
-          ? 'The CSP shall address the minor remediation items identified across SAR §5, ConMon SLAs, and KSI automation coverage; remediation expected within the next ConMon cycle to reach authorization-ready posture (≥85%).'
-          : 'The CSP shall undertake material remediation across multiple lifecycle phases; the AO is advised to delay or condition authorization pending demonstrated improvement in SAR §5 satisfaction rate, ConMon SLA compliance, and CR26 KSI automation coverage.'),
+          ? 'The CSP shall address the minor remediation items identified across SAR §5, ConMon SLAs, and KSI sample targets; remediation expected within the next ConMon cycle to reach the review-ready posture (85% on the illustrative walkthrough composite, not a FedRAMP threshold).'
+          : 'The CSP shall undertake material remediation across multiple lifecycle phases (SAR §5 satisfaction rate, ConMon SLA compliance, and KSI automation coverage) before assessor review; the authorization decision belongs to the AO.'),
     text: 'The 3PAO examined the cross-system rollup for ' + s.name + ', and found that the composite authorization posture is ' + Math.round(s.posture * 100) + '% (rank ' + (idx + 1) + ' of ' + systems.length + ') with SAR §5 satisfaction at ' + Math.round(s.satRate * 100) + '%, ConMon SLA compliance at ' + Math.round(s.slaCompliance * 100) + '%, KSI automation at ' + Math.round(s.ksiAutoRate * 100) + '%, and 3PAO defensibility at ' + s.defensibility + '/100.',
     cites: [
       { kind: 'POLICY', title: 'fedramp.gov · SAR Template Rev5 §5', version: 'Rev5', date: '2024-09-10', section: 'Section 5 · Security Assessment Results · Satisfied / OTS / NA / NT' },
-      { kind: 'POLICY', title: 'FedRAMP Consolidated Rules for 2026 · KSI catalog', version: '2026.09.13.02', date: '2026-09-13', section: 'FRC-CSX-VVK · Automated Verification and Validation of Key Security Indicators' },
+      { kind: 'POLICY', title: 'Sample walkthrough composite', version: '', date: '', section: 'SparkAE-authored weighting of sample figures · not a FedRAMP threshold' },
       { kind: 'POLICY', title: 'fedramp.gov · ConMon Strategy Guide', version: 'v3.2', date: '2024-09-10', section: 'RA-5(d) SLA windows · 30d / 90d / 180d' },
       { kind: 'EVIDENCE', title: 'SPARKAE Cross-System Rollup', version: '', date: '2026-04-28', section: s.shortName + ' rank ' + (idx + 1) + ' · posture ' + Math.round(s.posture * 100) + '%' },
     ]
@@ -8756,11 +8761,12 @@ function downloadLive(kind) {
   try { body = spec.build(st); }
   catch (e) { _toast('Export failed: ' + (e && e.message ? e.message : e), true); return; }
   const name = 'sparkae-' + _fileSafe(st.baseline.toLowerCase()) + '-' + st.assessment_date + '-' + spec.ext;
-  _saveBlob(new Blob([body], { type: spec.mime + ';charset=utf-8' }), name);
+  const blob = new Blob([body], { type: spec.mime + ';charset=utf-8' });
+  _saveBlob(blob, name);
   // SHA-1, said as SHA-1. Every digest in the receipt is SHA-1 and the label
   // has always read `sha1`; what was missing is anywhere saying why that is
   // acceptable, which is that these identify a build rather than protect it.
-  _toast(name + ' · ' + body.length.toLocaleString() + ' bytes · sha1 ' + DEMO_EXPORTS.sha1Hex(body).slice(0, 12) + ' (reproducibility identifier, not a security digest)');
+  _toast(name + ' · ' + blob.size.toLocaleString() + ' bytes · sha1 ' + DEMO_EXPORTS.sha1Hex(body).slice(0, 12) + ' (reproducibility identifier, not a security digest)');
 }
 
 // ── Main runner — dispatches by use case ──
@@ -9081,11 +9087,23 @@ function rankLiveRun(findings) {
   const gapRank = GAP_ORDER.filter(g => counts[g]).map(g => ({ type: g, count: counts[g] }))
     .sort((a, b) => b.count - a.count || GAP_ORDER.indexOf(a.type) - GAP_ORDER.indexOf(b.type));
   const riskRank = { High: 0, Moderate: 1, Low: 2 };
-  const topFinding = ots.slice().sort((a, b) =>
+  const ranked = ots.slice().sort((a, b) =>
     (riskRank[a.risk_exposure_before] ?? 3) - (riskRank[b.risk_exposure_before] ?? 3) ||
     (a.defensibility_score || 0) - (b.defensibility_score || 0) ||
-    String(a.dif_id).localeCompare(String(b.dif_id)))[0] || null;
+    String(a.dif_id).localeCompare(String(b.dif_id)));
+  // The lead example is the highest-ranked finding whose quoted excerpt names
+  // its own control. Retrieval matches words, not subject, so the top-ranked
+  // row can quote another control's section (on the bundled sample SI-1 quotes
+  // the SC section). Display only: no verdict, receipt, digest or export reads it.
+  const topFinding = ranked.find(f => (f.evidence_references || []).length && excerptNamesControl(f)) || ranked[0] || null;
   return { gapRank, topFinding };
+}
+
+function excerptNamesControl(f) {
+  const id = String(f.control_id || '').toUpperCase();
+  if (!id) return false;
+  const re = new RegExp('(^|[^A-Z0-9-])' + id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![0-9])', 'i');
+  return re.test(evidenceExcerpt(f).text);
 }
 
 function familyTallies(findings) {
@@ -9244,6 +9262,7 @@ function renderLiveHeadline(run) {
           <span class="verdict-tag ots">OTS</span>
           <span class="lead-finding-meta">evidence-support ${Math.round((f.confidence || 0) * 100)}% · defensibility ${f.defensibility_score || 0}/100 (${SparkAEEngine.grade(f.defensibility_score || 0)}) · risk ${engEsc(f.risk_exposure_before || 'Low')}</span>
         </div>
+        <div class="lead-row"><span class="lead-k">Example</span><span>${excerptNamesControl(f) ? 'The highest-ranked Other-Than-Satisfied (by risk, then defensibility) whose quoted evidence names its own control.' : 'The highest-ranked Other-Than-Satisfied (by risk, then defensibility).'}</span></div>
         <div class="lead-row"><span class="lead-k">Determine if</span><span>${engEsc(difText(f.dif_id) || '—')}</span></div>
         <div class="lead-row"><span class="lead-k">Evidence</span><span>${refs}${excerpt.text ? ' — &ldquo;' + engEsc(excerpt.text) + (excerpt.more ? '…' : '') + '&rdquo;' : ''}</span></div>
         <div class="lead-row"><span class="lead-k">Failed</span><span>${failed.length ? engEsc(failed.join(' · ')) : '—'}</span></div>
@@ -9379,7 +9398,7 @@ async function runInitialLive(sample) {
   setStage(5);
   setStatus('◆ REPORT · receipt · exports');
   for (const row of run.gapRank) log(ts(), 'rank', row.count + ' × ' + GAP_LABELS[row.type], 'warn');
-  if (run.topFinding) log(ts(), 'rank', 'most consequential · <span class="key">' + engEsc(run.topFinding.dif_id) + '</span> · ' + engEsc(run.topFinding.finding), 'warn');
+  if (run.topFinding) log(ts(), 'rank', 'lead example · <span class="key">' + engEsc(run.topFinding.dif_id) + '</span> · ' + engEsc(run.topFinding.finding), 'warn');
   const r = run.receipt;
   log(ts(), 'rcpt', 'engine v' + r.engine_version + ' · catalog ' + r.catalog_version + ' <span class="key">' + r.catalog_digest.slice(0, 12) + '</span> · ruleset <span class="key">' + r.ruleset_digest.slice(0, 12) + '</span>');
   log(ts(), 'rcpt', 'evidence <span class="key">' + r.evidence_digest.slice(0, 12) + '</span> · assessed as of ' + r.assessment_date + ' → verdict digest <span class="key">' + r.verdict_digest.slice(0, 12) + '</span>', 'ok');
