@@ -425,8 +425,19 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 50. **TextDecoder on ZIP text is non-fatal.** (`#164`) — **OPEN**
     `demo-engine.js:471` and `:528` construct `new TextDecoder()` without `{fatal:true}`. Invalid UTF-8 becomes U+FFFD and is still assessed.
 
-51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN**
+51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN** *(re-checked 2026-10-03: not closable as written)*
     Zero `integrity=` attributes in `index.html` or `demo-standalone.html`. Those four are cached `max-age=3600`, so a deploy can mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
+    Tried and reverted: an `integrity` attribute on a same-origin `<script src>`
+    or stylesheet, with or without `crossorigin`, stops the page loading from
+    `file://` in Chromium ("the resource requires the request to be CORS enabled
+    to check the integrity"; with `crossorigin`, a CORS refusal instead), because
+    every `file://` URL is its own opaque origin. The README's "open
+    demo-standalone.html from disk" and the three suites that drive the page
+    over `file://` would both break. There is no third-party script or
+    stylesheet anywhere in the tree for SRI to apply to (`check.mjs` §3 forbids
+    one), so what this item can still mean is the cache-mix exposure, which
+    wants a different fix — a content-addressed filename or a shorter
+    `max-age` for the four files — rather than SRI.
 
 ---
 
