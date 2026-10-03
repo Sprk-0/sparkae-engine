@@ -493,12 +493,19 @@ function wordRevisionText(xml, keepHidden) {
 const HIDDEN_RUN_RE = /<w:rPr\b[^>]*>(?:(?!<\/w:rPr>)[\s\S])*<w:vanish\b(?![^>]*\bw:val="(?:0|false|off)")[^>]*\/?>/;
 
 // The body keeps its paragraph breaks, which chunking and headings depend on.
+// Tags are stripped until nothing that reads as a tag is left: one pass over
+// "<<w:t>script>" removes the inner tag and leaves "<script>", which a reader
+// of the output could then take for markup. Well-formed XML carries no bare
+// "<" in text (it is &lt; until decodeEntities runs, after this), so a second
+// pass changes nothing on a real document and only a malformed one loops.
 function wordXmlLayout(xml) {
-  return xml
+  let text = String(xml)
     .replace(/<w:br[^>]*\/>/gi, '\n')
     .replace(/<\/w:p>/gi, '\n\n')
-    .replace(/<\/w:r>/gi, ' ')
-    .replace(/<[^>]+>/g, '');
+    .replace(/<\/w:r>/gi, ' ');
+  let before;
+  do { before = text; text = text.replace(/<[^>]+>/g, ''); } while (text !== before);
+  return text;
 }
 
 // A note or a header is set inline, on one line: its own paragraph marks would
@@ -663,10 +670,24 @@ function crc32(bytes) {
 const CP437_HIGH = 'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»' +
   '░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀' +
   'αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00A0';
-function zipName(raw, flags) {
-  if (flags & 0x0800) return new TextDecoder().decode(raw);
+// The decoder is strict whether or not the bit is set: a name the bit calls
+// UTF-8 and which is not gets the CP437 reading, not replacement characters.
+function zipName(raw) {
   try { return new TextDecoder('utf-8', { fatal: true }).decode(raw); }
   catch (e) { return Array.from(raw, b => b < 0x80 ? String.fromCharCode(b) : CP437_HIGH[b - 0x80]).join(''); }
+}
+
+// Member text is UTF-8 or it is not read. A lenient decoder turns every byte
+// it cannot read into U+FFFD and the result is assessed as though it were the
+// document — a page of another encoding scoring as evidence, with no sign to
+// the assessor that anything was lost. Returns the text, or null after naming
+// the member in `failures`.
+function zipText(raw, name, failures) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(raw); }
+  catch (e) {
+    if (failures) failures.push({ name, reason: 'archive member is not valid UTF-8 text — not read; a byte the decoder cannot read would otherwise be assessed as a replacement character. Save the file as UTF-8 and add it again' });
+    return null;
+  }
 }
 
 // `budget` is optional: a nested archive is handed the enclosing archive's
@@ -719,7 +740,7 @@ async function unzip(buffer, failures, sharedBudget) {
     const extraLen = view.getUint16(cd + 30, true);
     const commentLen = view.getUint16(cd + 32, true);
     const flags = view.getUint16(cd + 8, true);
-    const name = zipName(bytes.slice(cd + 46, cd + 46 + nameLen), flags);
+    const name = zipName(bytes.slice(cd + 46, cd + 46 + nameLen));
     entries.push({
       name,
       flags,
@@ -788,9 +809,12 @@ async function unzip(buffer, failures, sharedBudget) {
       // parses the bytes — decoding it to a string would destroy it anyway —
       // so decoding it here would spend the time and hold a second copy of the
       // member for a string nothing ever reads.
-      members.push(BINARY_MEMBER_EXTENSIONS.indexOf(extensionOf(name)) !== -1
-        ? { name, bytes: raw }
-        : { name, text: new TextDecoder().decode(raw) });
+      if (BINARY_MEMBER_EXTENSIONS.indexOf(extensionOf(name)) !== -1) {
+        members.push({ name, bytes: raw });
+      } else {
+        const text = zipText(raw, name, failures);
+        if (text !== null) members.push({ name, text });
+      }
     } catch (e) {
       if (failures) failures.push({ name, reason: 'archive member could not be inflated: ' + ((e && (e.message || (e.cause && e.cause.message))) || String(e)) });
     }
@@ -932,7 +956,11 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // 1.6.6: every top-level upload is held to UPLOAD_MAX_BYTES (64 MB, the
 // archive allowance) from its reported size, before it is read; a larger file
 // is refused by name with the figure. Reporting only; no sample verdict moves.
-const ENGINE_VERSION = '1.6.6';
+// 1.6.7: a ZIP member that is not valid UTF-8 is refused by name instead of
+// being read with replacement characters, and DOCX tag stripping runs to a
+// fixed point so a tag formed by removing another cannot survive. Reporting
+// only; no sample verdict moves.
+const ENGINE_VERSION = '1.6.7';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
