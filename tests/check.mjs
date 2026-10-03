@@ -1466,7 +1466,7 @@ const nfRelative = [...nfMarkup.matchAll(/(?:href|src)="(?!\/|https?:|data:|mail
 check(!nfRelative.length, '404.html uses no path-relative URL' + (nfRelative.length ? ' — ' + nfRelative.slice(0, 3).join(', ') : ''));
 check(!/<link[^>]*rel="(?:stylesheet|preload|modulepreload|prefetch|manifest)"[^>]*href="https?:/.test(nfMarkup) && !/<base[\s/>]/.test(nfMarkup),
   '404.html loads with no absolute loader and no <base> element');
-check(notFound.includes('<link rel="stylesheet" href="/ae-editorial.css">'),
+check(/<link rel="stylesheet" href="\/ae-editorial\.css"[^>]*>/.test(notFound),
   '404.html reaches the stylesheet from the site root');
 const nfRule = (cspRules.find(([p]) => p === '/404.html') || [])[1] || '';
 check(/base-uri 'none'/.test(nfRule), "the /404.html policy keeps base-uri 'none'");

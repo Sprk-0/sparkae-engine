@@ -195,10 +195,9 @@
 /static/og-card.png
   Cache-Control: public, max-age=86400
 
-# The same hour for the rest of the static assets, and for the same reason as
-# the card: these keep their names when their contents change, so an hour is
-# what a correction has to wait. The demo page loads three scripts and every
-# page loads one stylesheet — a rule that covers some of them caches half a
+# The same hour for the demo's three scripts, and for the same reason as the
+# card: these keep their names when their contents change, so an hour is what
+# a correction has to wait. A rule that covers some of them caches half a
 # release, which is worse than caching none of it.
 /demo-standalone-catalog.js
   Cache-Control: public, max-age=3600
@@ -209,5 +208,11 @@
 /demo-exports.js
   Cache-Control: public, max-age=3600
 
+# The stylesheet is different: every served page pins it with an integrity
+# hash (tests/check.mjs §30 recomputes it), so a page and an hour-old cached
+# copy from the previous deploy would not be a stale style but a refused one —
+# the site unstyled until the hour ran out. Revalidating on every request is
+# Netlify's default and costs a conditional request answered 304, which is
+# what makes the hash safe to carry.
 /ae-editorial.css
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
