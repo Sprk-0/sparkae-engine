@@ -72,6 +72,20 @@ const ok = (msg) => console.log('  ok   ' + msg);
 const fail = (msg) => { failures++; console.log('  FAIL ' + msg); };
 const check = (cond, msg) => (cond ? ok(msg) : fail(msg));
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+// Strips every match of `re`, and again until nothing matches. One pass over
+// "<!<!---->-- x -->" removes the inner comment and leaves "<!-- x -->", so a
+// scan of the remainder would still be reading a comment. On the pages as
+// written one pass is already the fixed point; the loop is what keeps the
+// scans below from depending on that.
+const stripAll = (text, re) => {
+  let before;
+  do { before = text; text = text.replace(re, ''); } while (text !== before);
+  return text;
+};
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi;
+const STYLE_BLOCK = /<style\b[^>]*>[\s\S]*?<\/style>/gi;
+const reEscape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ── 1. everything parses ────────────────────────────────────────────────────
 console.log('1. syntax');
@@ -87,7 +101,7 @@ for (const f of ['demo-standalone-catalog.js', 'demo-engine.js', 'demo-exports.j
 }
 for (const f of ['demo-standalone.html', 'demo-20x.html', 'index.html', 'assessors.html', 'integrations.html', 'status.html']) {
   const html = read(f);
-  const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
   let bad = 0;
   inline.forEach((src, i) => { try { new vm.Script(src, { filename: f + '#' + i }); } catch (e) { bad++; fail(f + ' inline script ' + i + ': ' + e.message); } });
   if (!bad) ok(f + ': ' + inline.length + ' inline script(s) parse');
@@ -123,8 +137,7 @@ for (const f of published) {
   // not. HTML comments, block comments and whole-line `//` comments are dropped;
   // a `//` later in a line is left alone because it may be the `https://` of a
   // real loader inside a string, which is exactly what must be caught.
-  const text = read(f)
-    .replace(/<!--[\s\S]*?-->/g, '')
+  const text = stripAll(read(f), HTML_COMMENT)
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
   const hits = [];
@@ -321,7 +334,7 @@ const statusStates = (function findEnum(node) {
 check(Array.isArray(statusStates) && statusStates.length,
   'vendored NIST schema declares the finding-status enum: ' + (statusStates || []).join(' | '));
 
-const plainHome = home.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
+const plainHome = stripAll(home, /<[^>]*>/g).replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
 const states = [...plainHome.matchAll(/"state"\s*:\s*"([^"]+)"/g)].map(m => m[1]);
 const badStates = states.filter(s => !statusStates.includes(s));
 check(states.length > 0 && !badStates.length,
@@ -1129,7 +1142,7 @@ const golden19 = JSON.parse(fs.readFileSync(goldenPath, 'utf8'));
 const citeSection = readmeSrc.slice(readmeSrc.indexOf('### Citing a state'));
 const tuple19 = (citeSection.match(/```text\n([\s\S]*?)```/) || [])[1] || '';
 const cited = {
-  engine: new RegExp('engine ' + E.ENGINE_VERSION.replace(/\./g, '\\.')).test(tuple19),
+  engine: new RegExp('engine ' + reEscape(E.ENGINE_VERSION)).test(tuple19),
   catalog_version: tuple19.includes(golden19.catalog_version),
   catalog: tuple19.includes(golden19.catalog_digest.slice(0, 12)),
   ruleset: tuple19.includes(golden19.ruleset_digest.slice(0, 12)),
@@ -1163,7 +1176,7 @@ console.log('20. inline script runs by hash');
 const EXEC_TYPE = /^(?:text\/javascript|application\/javascript|module)$/i;
 const inlineHashes = (src) => {
   const out = [];
-  for (const m of src.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+  for (const m of stripAll(src, HTML_COMMENT).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi)) {
     if (/\bsrc\s*=/.test(m[1])) continue; // a same-origin file; 'self' covers it
     const type = (/\btype\s*=\s*["']([^"']*)["']/.exec(m[1]) || [])[1];
     // demo-standalone.html's embedded sample SSP is markup-delimited data, not
@@ -1181,10 +1194,7 @@ const inlineHashes = (src) => {
 const HANDLER = /<[a-z][^>]*?\son[a-z]+\s*=/gi;
 for (const f of published.filter(f => f.endsWith('.html'))) {
   const src = read(f);
-  const markup = src
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, '');
+  const markup = [HTML_COMMENT, SCRIPT_BLOCK, STYLE_BLOCK].reduce(stripAll, src);
   const handlers = markup.match(HANDLER) || [];
   check(!handlers.length, f + ': no inline event-handler attribute' +
     (handlers.length ? ` — ${handlers.length}, first ${JSON.stringify(handlers[0].trim().slice(-40))}` : ''));
@@ -1444,7 +1454,7 @@ check(!cardOverclaims.length && /interview and test stay with the assessor/.test
 // element would be the other fix and is blocked by the page's own base-uri
 // 'none', which is not the thing to loosen for a layout convenience.
 const notFound = read('404.html');
-const nfMarkup = notFound.replace(/<!--[\s\S]*?-->/g, '');
+const nfMarkup = stripAll(notFound, HTML_COMMENT);
 const nfNav = [...nfMarkup.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/g)].map(m => m[1]).join(' ');
 check(nfNav && ['index.html', 'assessors.html', 'demo-standalone.html', 'integrations.html'].every(t => nfNav.includes(`href="/${t}"`)),
   '404.html carries the site navigation, root-relative');
@@ -1678,7 +1688,7 @@ check(!css.includes('nav .links{display:none}') && mobile.includes('nav .links{d
 // id twice, which makes fragment navigation ambiguous.
 const idsOf = {};
 for (const f of allPages) {
-  const found = [...pageText[f].replace(/<!--[\s\S]*?-->/g, '').matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m => m[1]);
+  const found = [...stripAll(pageText[f], HTML_COMMENT).matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m => m[1]);
   const dupes = [...new Set(found.filter(i => found.indexOf(i) !== found.lastIndexOf(i)))];
   check(!dupes.length, `${f}: no id is defined twice` + (dupes.length ? ' — ' + dupes.slice(0, 5).join(', ') : ''));
   idsOf[f] = new Set(found);

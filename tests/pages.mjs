@@ -65,17 +65,34 @@ const policyFor = (rel) => csp.get('/' + rel) || csp.get('/' + rel.replace(/\.ht
 
 // Netlify's shape, as far as these pages depend on it: the root is index.html
 // and an extensionless path resolves to the .html file beside it.
+//
+// The server listens on the loopback interface for the life of one test run,
+// and it still serves only what is under `root`: the request path is resolved
+// against the root and refused if it names a parent segment or resolves
+// outside, and a file is read in one call rather than checked for and then
+// read, so there is no moment between the two for the file to change.
+const underRoot = (rel) => {
+  if (rel.includes('..') || rel.includes('\0')) return null;
+  const file = path.resolve(root, rel);
+  return file.startsWith(root + path.sep) ? file : null;
+};
+const readFile = (file) => {
+  if (!file) return null;
+  try { return fs.readFileSync(file); } catch (e) { return null; } // ENOENT, EISDIR
+};
 const server = http.createServer((req, res) => {
-  const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+  let urlPath;
+  try { urlPath = decodeURIComponent((req.url || '/').split('?')[0]); }
+  catch (e) { res.writeHead(400); return res.end('bad request'); }
   let rel = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
-  let file = path.join(root, rel);
-  if (!fs.existsSync(file) && fs.existsSync(file + '.html')) { rel += '.html'; file += '.html'; }
-  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('not found'); }
+  let body = readFile(underRoot(rel));
+  if (body === null && !rel.endsWith('.html')) { rel += '.html'; body = readFile(underRoot(rel)); }
+  if (body === null) { res.writeHead(404); return res.end('not found'); }
   const headers = { 'content-type': TYPES[path.extname(rel)] || 'application/octet-stream' };
   const policy = rel.endsWith('.html') ? policyFor(rel) : null;
   if (policy) headers['content-security-policy'] = policy;
   res.writeHead(200, headers);
-  res.end(fs.readFileSync(file));
+  res.end(body);
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const origin = 'http://127.0.0.1:' + server.address().port;
