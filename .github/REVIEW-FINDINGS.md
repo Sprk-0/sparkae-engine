@@ -67,7 +67,7 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 14 |
+| **OPEN** | reproduced on the current tree | 13 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 5 |
 | **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 59 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
