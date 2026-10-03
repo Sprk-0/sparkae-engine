@@ -2516,5 +2516,162 @@ check(sizeless.parsed.length === 1, 'a file that reports no size is read rather 
 check(refusals(bombZip).some(r => /64 MB limit/.test(r)),
   'the archive allowance names the same 64 MB, so zipping a file past the cap does not get it read');
 
+// ── 30. the CodeQL set ──────────────────────────────────────────────────────
+// The first CodeQL run over this tree (2026-10-03) opened five alerts in the
+// shipped files and eighteen in this suite. Each fix below is held by a
+// behaviour, not by the scanner's silence: the walkthrough log renders a
+// hostile name as text, the FedRAMP namespace test is a hostname comparison,
+// the CVE column match is two anchored tests, DOCX tag stripping has no
+// remainder, a ZIP member that is not UTF-8 is refused by name, and the
+// stylesheet every served page loads is pinned by its hash. REVIEW-FINDINGS
+// items 50 and 51 are the last two.
+console.log('30. the CodeQL set');
+
+// The page's log() and key(), run against a DOM small enough to be written
+// here. Every element and text node it makes is recorded, so the check reads
+// what the browser would have been handed, and an innerHTML assignment —
+// the sink CodeQL found — is a failure in itself rather than something to
+// infer from the output.
+const pageFn = (from, to) => page.slice(page.indexOf(from), page.indexOf(to));
+let innerHtmlWrites = 0;
+const fakeNode = (tag) => ({
+  tag, className: '', children: [], _text: '',
+  get textContent() { return this.children.length ? this.children.map(c => c.textContent).join('') : this._text; },
+  set textContent(v) { this._text = String(v); this.children = []; },
+  set innerHTML(v) { innerHtmlWrites++; },
+  appendChild(c) { this.children.push(c); return c; },
+  scrollTop: 0, scrollHeight: 0,
+});
+const logRoot = fakeNode('div');
+const logCtx = vm.createContext({ document: {
+  getElementById: (id) => (id === 'log' ? logRoot : null),
+  createElement: (tag) => fakeNode(tag),
+  createTextNode: (text) => ({ tag: '#text', children: [], textContent: String(text) }),
+} });
+vm.runInContext(pageFn('function key(text)', 'function renderStages'), logCtx, { filename: 'demo-standalone.html#log' });
+const HOSTILE_NAME = '<img src=x onerror="document.documentElement.setAttribute(\'x\',\'1\')">.txt';
+vm.runInContext('log("00:00.0", "read", ["parsed ", key(' + JSON.stringify(HOSTILE_NAME) + ')], "ok");' +
+  'log("00:00.1", "init", "plain " + ' + JSON.stringify(HOSTILE_NAME) + ' + " · <b>bold</b>");' +
+  'log("00:00.2", "warn", ["a ", key("b"), " c ", key("<i>d</i>"), " e"], "warn");', logCtx);
+const tags = (node) => [node.tag, ...node.children.flatMap(tags)];
+const everyTag = new Set(logRoot.children.flatMap(tags));
+const [line1, line2, line3] = logRoot.children;
+check(innerHtmlWrites === 0 && logRoot.children.length === 3,
+  'log() wrote three lines and assigned innerHTML to nothing');
+check([...everyTag].every(t => t === 'div' || t === 'span' || t === '#text'),
+  'the only nodes log() makes are div, span and text — no img from a hostile name (' + [...everyTag].join(', ') + ')');
+check(line1 && line1.children.map(c => c.className).join('|') === 'log-time|log-tag ok|log-msg' &&
+  line1.children[2].children.map(c => c.tag + (c.className ? '.' + c.className : '')).join(' ') === '#text span.key' &&
+  line1.children[2].children[1].textContent === HOSTILE_NAME,
+  'a key() part is one span.key whose text is the hostile name, verbatim');
+check(line2 && line2.children[2].children.length === 1 && line2.children[2].children[0].tag === '#text' &&
+  line2.children[2].textContent === 'plain ' + HOSTILE_NAME + ' · <b>bold</b>',
+  'a plain string is one text node, markup and all');
+check(line3 && line3.children[1].className === 'log-tag warn' &&
+  line3.children[2].children.map(c => c.tag).join(' ') === '#text span #text span #text' &&
+  line3.children[2].textContent === 'a b c <i>d</i> e',
+  'parts render in order, and a key() whose text looks like a tag is still text');
+check(line1.children[2].children[0].textContent === 'parsed ' && line1.children[2].textContent === 'parsed ' + HOSTILE_NAME,
+  'the line reads as the message a caller wrote');
+
+// A FedRAMP namespace is a URL whose host is fedramp.gov, decided by parsing
+// it. The substring test it replaces accepted any URL with those eleven
+// characters anywhere in it.
+const nsCtx = vm.createContext({ URL });
+vm.runInContext(pageFn('function isFedrampUri', 'function validateOSCALPackage'), nsCtx, { filename: 'demo-standalone.html#ns' });
+const isFedramp = (v) => vm.runInContext('isFedrampUri(' + JSON.stringify(v) + ')', nsCtx);
+check(isFedramp('https://fedramp.gov/ns/oscal') && isFedramp('https://fedramp.gov') && isFedramp('https://fedramp.gov/'),
+  'isFedrampUri accepts the FedRAMP OSCAL namespace and the identifier-type the samples write');
+const nsImpostors = ['https://evil.example/fedramp.gov', 'https://fedramp.gov.evil.example/ns/oscal', 'https://notfedramp.gov/ns/oscal',
+  'https://evil.example/?u=https://fedramp.gov', 'https://fedramp.gov@evil.example/', 'http://fedramp.gov/ns/oscal', 'fedramp.gov', 'ns/oscal fedramp.gov', '', null, 42];
+const nsAccepted = nsImpostors.filter((v) => isFedramp(v));
+check(!nsAccepted.length, 'isFedrampUri refuses a URL that merely contains fedramp.gov, a look-alike host, http, a bare string, and a non-string' +
+  (nsAccepted.length ? ' — accepted ' + JSON.stringify(nsAccepted) : ''));
+// The authored samples carry the exact values, so F-101 and F-108 decide as
+// they did: the builders write the namespace on the a2la-cert prop and the
+// identifier-type on the POA&M system-id.
+check(/name: 'a2la-cert', ns: 'https:\/\/fedramp\.gov\/ns\/oscal'/.test(page) && /'identifier-type': 'https:\/\/fedramp\.gov'/.test(page),
+  'the authored SAR prop namespace and POA&M identifier-type are the exact URIs isFedrampUri accepts');
+check(/pp\.name === 'a2la-cert' && isFedrampUri\(pp\.ns\)/.test(page) && /isFedrampUri\(poam\['system-id'\]\['identifier-type'\]\)/.test(page) &&
+  !/\.includes\('fedramp\.gov'\)/.test(page),
+  'F-101 and F-108 call isFedrampUri, and no includes(\'fedramp.gov\') test remains on the page');
+
+// The CVE column of a scanner export. /^cve|cve[_-]?id/ read as anchored and
+// was not; the two tests it became say what each half meant.
+const cveCtx = vm.createContext({});
+vm.runInContext(pageFn('function isCveColumn', 'async function parseScanCSV'), cveCtx, { filename: 'demo-standalone.html#cve' });
+const isCve = (h) => vm.runInContext('isCveColumn(' + JSON.stringify(h) + ')', cveCtx);
+check(['cve', 'cves', 'cve id', 'cve_id', 'cve-id', 'cveid', 'associated_cve_id', 'primary cve-id'].every(isCve),
+  'isCveColumn takes the headers scanners write — cve, cves, cve id, cve_id, cve-id — and a cve_id token anywhere');
+check(!['severity', 'risk', 'host', 'description', 'id', 'cvss', 'recovered', 'archive'].some(isCve),
+  'and not a header that merely contains the letters, or no cve at all');
+
+// DOCX tag stripping runs to a fixed point. One pass over "<<w:t>script>"
+// removes the inner tag and leaves "<script>"; the text the engine chunks
+// must carry no remainder that reads as a tag.
+const docxOf = (xml) => buildZip([{ name: '[Content_Types].xml', text: '<Types/>' }, { name: 'word/document.xml', text: xml }]).buffer;
+const nestedTag = await E.docxText(docxOf('<w:document><w:body><w:p><w:r><w:t>before <<w:t>script>alert(1)</script<w:t>> after</w:t></w:r></w:p></w:body></w:document>'), 'nested.docx');
+check(!/<[^>]+>/.test(nestedTag) && /before/.test(nestedTag) && /after/.test(nestedTag),
+  'a tag formed by removing another is removed too — ' + JSON.stringify(nestedTag));
+const plainBody = await E.docxText(docxOf(docxBody), 'plain.docx');
+check(plainBody.trim() === IMPLEMENTED, 'and an ordinary body reads exactly as before, one pass being its fixed point');
+const ltDocx = await E.docxText(docxOf('<w:document><w:body><w:p><w:r><w:t>a &lt; b &amp;&amp; c &gt; d</w:t></w:r></w:p></w:body></w:document>'), 'lt.docx');
+check(ltDocx.trim() === 'a < b && c > d', 'an encoded < in the text survives: entities are decoded after the strip, not before');
+
+// A ZIP member that is not valid UTF-8 is refused by name (REVIEW-FINDINGS
+// 50). A lenient decoder read it with U+FFFD where the bytes did not parse,
+// and the result scored as evidence.
+const latin1Member = new Uint8Array([...new TextEncoder().encode('AC-2 Account Management. R'), 0xE9, ...new TextEncoder().encode('vision quarterly.')]);
+const badUtf8 = await E.parseZipReport(asFile(buildZip([{ name: 'policy.txt', bytes: latin1Member }, { name: 'ok.txt', text: IMPLEMENTED }]), 'latin1.zip'));
+check(badUtf8.parsed.length === 1 && badUtf8.parsed[0] === 'ok.txt' && badUtf8.skipped.length === 1 &&
+  badUtf8.skipped[0].name === 'policy.txt' && /not valid UTF-8/.test(badUtf8.skipped[0].reason) && /UTF-8/.test(badUtf8.skipped[0].reason),
+  'a member with a byte that is not UTF-8 is refused by name with the reason, and its neighbour is read — ' + JSON.stringify(refusals(badUtf8)));
+check(!badUtf8.chunks.some(c => /\uFFFD/.test(c.text) || /vision quarterly/.test(c.text)),
+  'nothing of the refused member reaches the corpus, as text or as replacement characters');
+const utf8Member = await E.parseZipReport(asFile(buildZip([{ name: 'système.txt', text: 'Système · ' + IMPLEMENTED + ' — naïve façade ✓' }]), 'utf8.zip'));
+check(utf8Member.parsed.length === 1 && utf8Member.skipped.length === 0 && utf8Member.chunks.some(c => /naïve façade ✓/.test(c.text)),
+  'valid UTF-8 beyond ASCII reads as before, name and text');
+let latin1Docx = '';
+try { await E.docxText(buildZip([{ name: 'word/document.xml', bytes: latin1Member }]).buffer, 'latin1.docx'); }
+catch (e) { latin1Docx = e.message || String(e); }
+check(/word\/document\.xml could not be read/.test(latin1Docx) && /not valid UTF-8/.test(latin1Docx),
+  'a DOCX whose body is not UTF-8 says so, rather than that it has no body — ' + JSON.stringify(latin1Docx));
+check(!/new TextDecoder\(\)/.test(read('demo-engine.js')), 'the engine constructs no lenient TextDecoder');
+
+// Subresource Integrity (REVIEW-FINDINGS 51). Every served page's stylesheet
+// carries the hash of the file beside it, and the hash is recomputed here so
+// a stylesheet edit that leaves the attribute behind fails this suite rather
+// than unstyling the site. The three scripts demo-standalone.html loads carry
+// none, deliberately: the README promises that page opens from file://, and
+// an integrity attribute on a same-origin file:// script is refused by
+// Chromium ("the request to be CORS enabled to check the integrity") whether
+// or not crossorigin is set. The exception is pinned so it stays the only
+// one, and the review list records the reason.
+const sri = (f) => 'sha384-' + crypto.createHash('sha384').update(fs.readFileSync(path.join(root, f))).digest('base64');
+for (const f of published.filter(f => f.endsWith('.html'))) {
+  const src = stripAll(read(f), HTML_COMMENT);
+  const links = [...src.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi)].map(m => m[0]);
+  const scripts = [...src.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)];
+  const attr = (tag, name) => (new RegExp('\\b' + name + '=["\']([^"\']*)["\']').exec(tag) || [])[1];
+  const bad = links.filter(tag => {
+    const href = (attr(tag, 'href') || '').replace(/^\/+/, '');
+    return !fs.existsSync(path.join(root, href)) || attr(tag, 'integrity') !== sri(href) || attr(tag, 'crossorigin') !== 'anonymous';
+  });
+  if (links.length) check(!bad.length, `${f}: every stylesheet link carries integrity (sha384 of the file) and crossorigin` + (bad.length ? ' — ' + bad[0].slice(0, 90) : ''));
+  const withIntegrity = scripts.filter(m => /\bintegrity=/.test(m[0]));
+  if (f === 'demo-standalone.html') {
+    check(scripts.length === 3 && !withIntegrity.length,
+      `${f}: its three same-origin scripts carry no integrity attribute — the page must open from file://, where Chromium refuses one (REVIEW-FINDINGS 51)`);
+  } else {
+    const wrong = withIntegrity.filter(m => attr(m[0], 'integrity') !== sri(m[1].replace(/^\/+/, '')));
+    check(!wrong.length, `${f}: ${scripts.length} external script(s), ${withIntegrity.length} with integrity, each matching its file`);
+  }
+}
+// A pinned stylesheet has to be fetched fresh, or a deploy that changes it
+// serves new pages with an hour-old copy the new hash refuses — an unstyled
+// site for the length of the cache. The cache rule says so.
+check(/^\/ae-editorial\.css\n\s+Cache-Control:\s*public, max-age=0, must-revalidate\s*$/m.test(headers),
+  '_headers: the stylesheet revalidates on every request, so its integrity hash and its bytes cannot be from different deploys');
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

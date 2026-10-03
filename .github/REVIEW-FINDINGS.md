@@ -47,6 +47,15 @@ and between them they closed most of it:
 - **1.6.6** ("an upload is bounded before it is read") closed item 42: every
   top-level upload is held to 64 MB, the archive allowance, from its reported
   size and before it is read. Reporting only; no determination moved.
+- **1.6.7** ("the CodeQL set") closed item 50 and part of 51, with the first
+  CodeQL run's five alerts in shipped files: a ZIP member that is not UTF-8 is
+  refused by name, DOCX tag stripping runs to a fixed point, the walkthrough
+  log renders text rather than markup, the FedRAMP namespace test parses a
+  host, and the stylesheet is pinned by hash on every served page. Reporting
+  only; no determination moved. The eighteen alerts in `tests/` were fixed in
+  place, not excluded: `tests/pages.mjs` resolves every request under the root
+  and reads a file in one call, and `check.mjs` strips comments and tags to a
+  fixed point. Nothing is excluded from the scan.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -58,9 +67,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 15 |
-| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 58 |
+| **OPEN** | reproduced on the current tree | 14 |
+| **PARTIAL** | the specific defect is closed, the exposure behind it is not | 5 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 59 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -422,22 +431,51 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 49. **`parsePdfText` / `parsePoamXlsx` still call missing globals.** (`#44–45`) — **CLOSED (1.4.0)**
     Both readers are gone; only copy explaining their absence remains.
 
-50. **TextDecoder on ZIP text is non-fatal.** (`#164`) — **OPEN**
-    `demo-engine.js:471` and `:528` construct `new TextDecoder()` without `{fatal:true}`. Invalid UTF-8 becomes U+FFFD and is still assessed.
+50. **TextDecoder on ZIP text is non-fatal.** (`#164`) — **CLOSED (1.6.7)**
+    `demo-engine.js:471` and `:528` constructed `new TextDecoder()` without `{fatal:true}`. Invalid UTF-8 became U+FFFD and was still assessed.
+    Both decoders are strict now. A member whose text is not valid UTF-8 is
+    refused by name ("archive member is not valid UTF-8 text — not read; …
+    save the file as UTF-8 and add it again") and listed in the inventory like
+    any other refusal; nothing of it reaches the corpus, as text or as
+    replacement characters. A DOCX whose `word/document.xml` is not UTF-8
+    reports that it could not be read, not that it has no body. A member
+    *name* that is not UTF-8 is read as CP437 whether or not bit 11 is set,
+    which is what the unflagged path already did. `check.mjs` §30 holds all
+    three and that the engine constructs no lenient decoder. Reporting only;
+    no determination on the sample moved.
 
-51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN** *(re-checked 2026-10-03: not closable as written)*
-    Zero `integrity=` attributes in `index.html` or `demo-standalone.html`. Those four are cached `max-age=3600`, so a deploy can mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
-    Tried and reverted: an `integrity` attribute on a same-origin `<script src>`
-    or stylesheet, with or without `crossorigin`, stops the page loading from
-    `file://` in Chromium ("the resource requires the request to be CORS enabled
-    to check the integrity"; with `crossorigin`, a CORS refusal instead), because
-    every `file://` URL is its own opaque origin. The README's "open
-    demo-standalone.html from disk" and the three suites that drive the page
-    over `file://` would both break. There is no third-party script or
-    stylesheet anywhere in the tree for SRI to apply to (`check.mjs` §3 forbids
-    one), so what this item can still mean is the cache-mix exposure, which
-    wants a different fix — a content-addressed filename or a shorter
-    `max-age` for the four files — rather than SRI.
+51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **PARTIAL (stylesheet closed 2026-10-03; the three scripts cannot carry it while the demo opens from disk)**
+    Zero `integrity=` attributes in `index.html` or `demo-standalone.html`. Those four were cached `max-age=3600`, so a deploy could mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
+    **The stylesheet.** Every served page's `<link rel="stylesheet">` now
+    carries `integrity="sha384-…"` and `crossorigin="anonymous"`, and
+    `check.mjs` §30 recomputes the hash from `ae-editorial.css` so an edit
+    that leaves the attribute behind fails the suite rather than unstyling the
+    site. Because a pinned file and an hour-old cached copy would now be a
+    *refused* stylesheet rather than a stale one, `_headers` serves
+    `ae-editorial.css` as `max-age=0, must-revalidate` (Netlify's default; a
+    conditional request answered 304), and §30 holds that rule too. No page
+    but `demo-standalone.html` is promised to open from `file://`, and
+    `404.html` already reached the stylesheet root-absolute, so no promised
+    path is lost.
+    **The three scripts.** Not closable: `demo-standalone.html` is the one page
+    the README promises opens from disk, and three suites drive it over
+    `file://`. Re-tested in headless Chromium on 2026-10-03 with the real
+    hashes. `integrity` alone: *"Subresource Integrity: The resource
+    'file:///…/demo-engine.js' has an integrity attribute, but the resource
+    requires the request to be CORS enabled to check the integrity, and it is
+    not. The resource has been blocked because the integrity cannot be
+    enforced."* With `crossorigin="anonymous"`: *"Access to script at
+    'file:///…/demo-engine.js' from origin 'null' has been blocked by CORS
+    policy: Cross origin requests are only supported for protocol schemes:
+    chrome, chrome-untrusted, data, http, https."* Either way
+    `window.SparkAEEngine` is undefined and the page falls back to the
+    walkthrough. Every `file://` document is its own opaque origin, so the
+    integrity check can never be satisfied from disk and there is no attribute
+    form that works in both places. §30 pins the exception — those three tags
+    and no others carry no `integrity` — so it stays deliberate. What remains
+    of this item for the scripts is the cache mix, which still wants a
+    content-addressed filename or a shorter `max-age` rather than SRI; the
+    three script rules in `_headers` are unchanged here.
 
 ---
 
@@ -708,7 +746,8 @@ record and the review flag are in the verdict line.
 
 **Deferred** — real, and believed not to produce a false Satisfied (items 34,
 37, 38 and 41 turned out to, and closed as 1.6.1, 1.6.2, 1.6.3 and 1.6.5; 42
-closed as 1.6.6): items **34, 37, 38,
+closed as 1.6.6; 50 closed as 1.6.7, which also took 51 as far as it goes):
+items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
 **70, 72–77** (verification and process). Item **71** was pulled forward and is
 done, so the parser items above can now fail a push rather than breaking
