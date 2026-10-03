@@ -248,12 +248,42 @@ function unsupported(name, reason) {
   return err;
 }
 
+// An upload is read whole, into memory, before anything else happens to it: a
+// loose file through file.text() or file.arrayBuffer(), an archive through
+// arrayBuffer(). The archive allowance (ZIP_MAX_BYTES, below) bounds what an
+// archive EXPANDS to, and nothing bounded what was read in the first place: a
+// loose .nessus, .json or .csv of any size was read, decoded and chunked — or
+// the tab died trying — and an archive whose every member is refused before
+// inflation (all encrypted, say) spent none of its allowance however large it
+// was. So every top-level upload is held to one figure, from the size the
+// browser reports, before a byte of it is read.
+//
+// The figure is the archive allowance on purpose. A lower cap for loose files
+// would be bypassed by zipping the file; a higher one would let an upload be
+// larger than a package is allowed to expand to. It is far above the real
+// inputs: the NIST SP 800-53 catalog as OSCAL JSON is ~12 MB, a FedRAMP SSP a
+// few MB, and a scan export that reaches it is better delivered as the archive
+// a scanner writes, where the same 64 MB applies after inflation.
+const UPLOAD_MAX_BYTES = 64 * 1024 * 1024;
+
+// Megabytes with one decimal, rounded UP, so a file one byte over the limit is
+// reported as larger than the limit rather than as equal to it.
+const mbOf = (n) => (Math.ceil(n / 1048576 * 10) / 10) + ' MB';
+
+function refuseOversize(file) {
+  const size = file && typeof file.size === 'number' ? file.size : 0;
+  if (size > UPLOAD_MAX_BYTES) {
+    throw unsupported(file.name, 'file is ' + mbOf(size) + ', above the ' + mbOf(UPLOAD_MAX_BYTES) + ' limit for one upload — not read');
+  }
+}
+
 // Parse one uploaded file into evidence chunks. Throws (with `code`) rather
 // than returning a placeholder: a parser failure must never quietly shrink
 // the evidence set and let the run continue towards a verdict as if the file
 // had been read. parsePackage() below is the tolerant wrapper that records
 // each refusal and reports it.
 async function parseFile(file) {
+  refuseOversize(file);
   const name = file.name;
   const ext = (name.split('.').pop() || '').toLowerCase();
   if (ext === 'txt' || ext === 'md' || ext === 'nessus' || ext === 'xml' || ext === 'json' || ext === 'csv') {
@@ -538,7 +568,8 @@ async function parseDocx(file) {
 // local header. Members come back as an ARRAY so a duplicate name survives to
 // be refused rather than silently resolved.
 const ZIP_MAX_MEMBERS = 512;
-const ZIP_MAX_BYTES = 64 * 1024 * 1024;
+// What an archive may expand to is what one upload may be (see UPLOAD_MAX_BYTES).
+const ZIP_MAX_BYTES = UPLOAD_MAX_BYTES;
 // Member types a reader parses from bytes rather than from decoded text.
 // Decoding these to text destroys them. The engine reads DOCX itself; XLSX is
 // a server-product format the engine still refuses for the corpus, but the
@@ -785,6 +816,7 @@ const ARCHIVE_HOUSEKEEPING_RE = /(?:^|\/)(?:__MACOSX\/|\.DS_Store$|Thumbs\.db$|\
 const ZIP_MAX_DEPTH = 3;
 
 async function parseZipReport(file) {
+  refuseOversize(file);
   const buf = await file.arrayBuffer();
   // One allowance for the package and everything nested inside it.
   const state = { chunks: [], parsed: [], skipped: [], members: [], budget: { left: ZIP_MAX_BYTES }, seen: 0 };
@@ -897,7 +929,10 @@ const REVIEW_COVERAGE_FLOOR = 0.60;
 // stems of an objective (gate 2b's one-term subject, gate 4's value clauses)
 // and a selection option's own words are built; a stemmed stop word — `oth`,
 // `dur`, `onli` — could anchor a clause. No sample verdict moves.
-const ENGINE_VERSION = '1.6.5';
+// 1.6.6: every top-level upload is held to UPLOAD_MAX_BYTES (64 MB, the
+// archive allowance) from its reported size, before it is read; a larger file
+// is refused by name with the figure. Reporting only; no sample verdict moves.
+const ENGINE_VERSION = '1.6.6';
 
 // File types this build parses in the browser. Anything else is refused with
 // a reason — never silently turned into a placeholder chunk that reads as
@@ -2304,6 +2339,7 @@ global.SparkAEEngine = {
   RULESET: RULESET,
   GATE_NAMES: RULESET.gates,
   SUPPORTED_EXTENSIONS: SUPPORTED_EXTENSIONS,
+  UPLOAD_MAX_BYTES: UPLOAD_MAX_BYTES,
   BM25Retriever: BM25Retriever,
   assessDif: assessDif,
   buildRefutationIndex: buildRefutationIndex,

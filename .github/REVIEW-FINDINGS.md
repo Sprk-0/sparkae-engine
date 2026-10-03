@@ -44,6 +44,9 @@ and between them they closed most of it:
 - **1.6.5** ("an archive in the package is part of the package") closed item
   41: a nested `.zip` is read, and a refutation inside one counts. No
   determination on the sample moved.
+- **1.6.6** ("an upload is bounded before it is read") closed item 42: every
+  top-level upload is held to 64 MB, the archive allowance, from its reported
+  size and before it is read. Reporting only; no determination moved.
 - **2026-09-16** ("the pages say what the build does") closed the copy: items
   18, 19, 20, 21, 52, 53, 54, 58, 59, 62, 63, 64, 65, 66, 67 and 68, with 61
   part-done. No part of the tuple moves. `BANNED` in `check.mjs` now carries
@@ -55,9 +58,9 @@ done:
 
 | Status | Meaning | Count |
 |---|---|---|
-| **OPEN** | reproduced on the current tree | 16 |
+| **OPEN** | reproduced on the current tree | 15 |
 | **PARTIAL** | the specific defect is closed, the exposure behind it is not | 4 |
-| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 57 |
+| **CLOSED** | fixed in 1.4.0 – 1.6.0, the 2026-09-16 copy pass, §28 or a later single-item fix, verified on this tree | 58 |
 | **UNVERIFIED** | — every item has now been checked against this tree | 0 |
 
 Statuses come from running the engine on this tree, not from reading the
@@ -360,8 +363,15 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
     `check.mjs` holds each case; each fails on 1.6.4. No determination on the
     sample moved.
 
-42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **OPEN**
-    ZIP is bounded by `ZIP_MAX_BYTES` (64 MB); `demo-engine.js:252` calls `await file.text()` with no cap. `SECURITY.md` says large packages are "limited by the browser, not by this code" — false for ZIP, true for loose text.
+42. **Loose `.txt/.md/.json/.csv/.xml/.nessus` have no size cap.** (`#124`) — **CLOSED (1.6.6)**
+    Every top-level upload — loose text, DOCX and the ZIP itself — is held to
+    `UPLOAD_MAX_BYTES` (64 MB, which `ZIP_MAX_BYTES` now equals) from the size
+    the browser reports, before `file.text()` or `arrayBuffer()` is called. A
+    larger file is refused by name with the figure and listed in the
+    inventory like any other refusal. The limit equals the archive allowance so
+    zipping a file is not a way around it. `check.mjs` §29 holds the refusal,
+    that no byte is read first, and that a file of exactly the limit is still
+    read. `SECURITY.md` now states both limits.
 
 43. **`runDemo` has no `try/finally`.** (`#123`, `#126`) — **OPEN**
     `demo-standalone.html:8782` sets `running = true`, and `running = false`
@@ -415,8 +425,19 @@ Export integrity, parser fail-open, and ID/retrieval bugs that widen the P0 path
 50. **TextDecoder on ZIP text is non-fatal.** (`#164`) — **OPEN**
     `demo-engine.js:471` and `:528` construct `new TextDecoder()` without `{fatal:true}`. Invalid UTF-8 becomes U+FFFD and is still assessed.
 
-51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN**
+51. **No Subresource Integrity on `demo-engine.js`, `demo-exports.js`, catalog, CSS.** (`#163`) — **OPEN** *(re-checked 2026-10-03: not closable as written)*
     Zero `integrity=` attributes in `index.html` or `demo-standalone.html`. Those four are cached `max-age=3600`, so a deploy can mix new HTML with an hour-old adjudicator. Inline scripts are hashed; the engine is not.
+    Tried and reverted: an `integrity` attribute on a same-origin `<script src>`
+    or stylesheet, with or without `crossorigin`, stops the page loading from
+    `file://` in Chromium ("the resource requires the request to be CORS enabled
+    to check the integrity"; with `crossorigin`, a CORS refusal instead), because
+    every `file://` URL is its own opaque origin. The README's "open
+    demo-standalone.html from disk" and the three suites that drive the page
+    over `file://` would both break. There is no third-party script or
+    stylesheet anywhere in the tree for SRI to apply to (`check.mjs` §3 forbids
+    one), so what this item can still mean is the cache-mix exposure, which
+    wants a different fix — a content-addressed filename or a shorter
+    `max-age` for the four files — rather than SRI.
 
 ---
 
@@ -686,7 +707,8 @@ parameter flags for review rather than refusing (failing closed would have cost
 record and the review flag are in the verdict line.
 
 **Deferred** — real, and believed not to produce a false Satisfied (items 34,
-37, 38 and 41 turned out to, and closed as 1.6.1, 1.6.2, 1.6.3 and 1.6.5): items **34, 37, 38,
+37, 38 and 41 turned out to, and closed as 1.6.1, 1.6.2, 1.6.3 and 1.6.5; 42
+closed as 1.6.6): items **34, 37, 38,
 40, 41, 42, 43, 45, 46, 50, 51** (parser hardening, `runDemo`, SRI) and items
 **70, 72–77** (verification and process). Item **71** was pulled forward and is
 done, so the parser items above can now fail a push rather than breaking

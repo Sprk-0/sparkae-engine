@@ -27,12 +27,12 @@
     835,
     153
   ],
-  "engine_version": "1.6.5",
+  "engine_version": "1.6.6",
   "catalog_version": "2026-07-21",
   "catalog_digest": "91ad1b17138f7e0707fe19e65d9b8c3c77833401",
-  "ruleset_digest": "5cfc9030ed18112037d2908cd44936bfb01d40e3",
+  "ruleset_digest": "9f3ec3509110cc4ffca68fa9d6cbad6cbc13734b",
   "evidence_digest": "90514fea8129b4ca9fea7d646617224f83c079cf",
   "verdict_digest": "20cd7ee2ae8e22a44abbf8e478208e8a21cb213e",
-  "oscal_ar_sha1": "15eb679432260a778d095ff44edad4f0911759b7",
+  "oscal_ar_sha1": "71578ec041d809a7f113c2bc992db8aedff46b0f",
   "oscal_ar_bytes": 2693178
 }

@@ -20,9 +20,9 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
-## 2026-09-25 (the state this build is in)
+## 2026-10-03 (the state this build is in)
 
-Engine 1.6.5 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `5cfc9030ed18` ·
+Engine 1.6.6 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `9f3ec3509110` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,37 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-10-03 (an upload is bounded before it is read · engine 1.6.6)
+
+Engine 1.6.5 → 1.6.6; ruleset `5cfc9030ed18` → `9f3ec3509110`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 42.
+
+The archive allowance bounded what a ZIP may *expand* to, and nothing bounded
+what was read in the first place. A loose `.nessus`, `.json`, `.csv`, `.xml`,
+`.txt` or `.md` was read whole by `file.text()` whatever its size, a `.docx` or
+`.zip` by `arrayBuffer()` before any allowance was consulted — so a scan export
+of any size was read, decoded and chunked, or the tab died trying. Every
+top-level upload is now held to `UPLOAD_MAX_BYTES`, **64 MB**, from the size
+the browser reports and before a byte of it is read; a larger file is refused
+by name with the figure ("file is 64.1 MB, above the 64 MB limit for one
+upload — not read"), listed in the inventory like any other refusal, and an
+upload with nothing readable in it is reported as failed. The figure is the
+archive allowance on purpose: a lower cap for loose files would be bypassed by
+zipping the file, and a higher one would let an upload be larger than a package
+may expand to. `check.mjs` §29 holds the refusal, that it comes before the file
+is opened, that a file of exactly the limit is still read, and that the two
+limits agree. Reporting only: no determination on the bundled sample moves.
+
+Alongside, and outside the engine: a CodeQL workflow
+(`.github/workflows/codeql.yml`, JavaScript/TypeScript and Python) runs on every
+pull request, every push to `main` and weekly. The pages load no third-party
+script or stylesheet, so there is nothing to carry Subresource Integrity; the
+review list's item 51 records why the same-origin engine files cannot carry it
+either (the demo would stop opening from disk). `SECURITY.md` now states the
+limit instead of saying there is none.
 
 ## 2026-10-02 (the site says only what ships)
 
