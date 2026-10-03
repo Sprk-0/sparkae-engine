@@ -1,0 +1,68 @@
+# CodeQL static analysis for the public reference build.
+#
+# The conformance suite (ci.yml) asks whether this tree does what the README
+# says. This asks a different question of the same tree: whether the code
+# carries a pattern CodeQL recognises as a vulnerability — an unescaped sink,
+# a prototype-pollution path, an unsafe regular expression. The site is a
+# static page plus three scripts that read a visitor's own documents in their
+# own browser, so the surface is small; it is still worth a scanner that does
+# not share the suite's assumptions.
+#
+# Languages: the engine, the exporters, the catalog, the pages' inline scripts
+# and the Node test suites are JavaScript; tests/check_oscal_schema.py is
+# Python. Both are interpreted, so there is no build to run. Results go to the
+# repository's Security tab (code scanning), which is free for a public
+# repository and needs no setup beyond the `security-events: write` grant
+# below. If GitHub's "default setup" for CodeQL is ever switched on in the
+# repository settings, this workflow's upload is rejected — the two cannot run
+# together — so it is one or the other, and this file is the one that is
+# versioned with the tree.
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # A weekly run picks up query-pack updates against an unchanged tree, so a
+  # newly recognised pattern is reported without waiting for a commit.
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # The default suite plus the broader security queries. The tree is
+          # small enough that the extra coverage costs little, and a finding
+          # here is read by a human before it is acted on.
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
