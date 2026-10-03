@@ -2153,9 +2153,16 @@ const customBlock = page.slice(page.indexOf("  SAMPLES['custom'] = {"), page.ind
 check(/annual: null,/.test(customBlock) && /scr: null,/.test(customBlock) && /ksi: null,/.test(customBlock) && !/themes: \{ AFR/.test(customBlock) &&
   /if \(!sample\.annual\) return stopWalkthroughWithoutRecord/.test(page) && /if \(!sample\.scr\) return stopWalkthroughWithoutRecord/.test(page) && /if \(!sample\.ksi\) return stopWalkthroughWithoutRecord/.test(page),
   'an upload carries no annual, SCR or KSI record — no placeholder cohorts or KSI themes — and each of those runners stops rather than reads one');
-// 46–56: every name a walkthrough logs is escaped
-const rawLogNames = [...page.matchAll(/log\([^\n]*\$\{(?:sample\.name|f|SAMPLES\[k\]\.name)\}/g)].concat([...page.matchAll(/log\([^\n]*' \+ sample\.name \+ '/g)]);
-check(!rawLogNames.length, 'no log() call interpolates a sample or file name unescaped' + (rawLogNames.length ? ' — ' + rawLogNames[0][0].slice(0, 80) : ''));
+// 46–56: every name a walkthrough logs is text. log() used to assign an HTML
+// string, so each caller had to escape every name it interpolated, and this
+// check read the call sites for the ones that did not. It builds text nodes
+// now (§30 runs it), so what is left to hold is that it still does, and that
+// no caller has gone back to handing it markup.
+const logSrc = page.slice(page.indexOf('function log(time, tag, msg'), page.indexOf('function renderStages'));
+check(logSrc.length > 0 && !/innerHTML|outerHTML|insertAdjacentHTML/.test(logSrc) && /createTextNode/.test(logSrc),
+  'log() builds its line from text nodes and never assigns innerHTML');
+const markupLogs = [...page.matchAll(/\blog\([^\n]*<\/?[a-z][a-z0-9]*[\s>/]/g)];
+check(!markupLogs.length, 'no log() call passes markup' + (markupLogs.length ? ' — ' + markupLogs[0][0].slice(0, 80) : ''));
 // 34–36: one painter, escaping at the sink
 check(!page.includes('_paintFindingsCascade') && (page.match(/^function paintFindings\(/gm) || []).length === 1 && !/^paintFindings = function/m.test(page) &&
   page.includes("'<td>' + engEsc(f.text) + (f.metaHtml || '') + renderCites(f.cites)"),

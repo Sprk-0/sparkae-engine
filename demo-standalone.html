@@ -4190,6 +4190,15 @@ async function expandFiles(files) {
   return out;
 }
 
+// The CVE column of a scanner export: a header that is or starts with "cve"
+// (Nessus and Tenable "CVE", OpenVAS "CVEs", Qualys "CVE ID"), or that carries
+// a "cve_id" / "cve-id" / "cveid" token anywhere. Two tests rather than one
+// alternation: /^cve|cve[_-]?id/ anchored only its first branch, which read as
+// though the whole pattern were anchored.
+function isCveColumn(header) {
+  return header.startsWith('cve') || /cve[_-]?id/.test(header);
+}
+
 async function parseScanCSV(blob) {
   try {
     const text = await readTextBlob(blob, 4 * 1024 * 1024);
@@ -4199,7 +4208,7 @@ async function parseScanCSV(blob) {
     let sevIdx = -1, cveIdx = -1, hostIdx = -1, pluginIdx = -1;
     cols.forEach((c, i) => {
       if (sevIdx < 0 && /(severity|risk|cvss[_-]?severity)/.test(c)) sevIdx = i;
-      if (cveIdx < 0 && /^cve|cve[_-]?id/.test(c)) cveIdx = i;
+      if (cveIdx < 0 && isCveColumn(c)) cveIdx = i;
       if (hostIdx < 0 && /(host|asset|ip|fqdn)/.test(c)) hostIdx = i;
       if (pluginIdx < 0 && /(plugin|qid|finding[_-]?id)/.test(c)) pluginIdx = i;
     });
@@ -4811,17 +4820,43 @@ async function processUploadsWithProgress(files) {
 // The page carries no randomness now — this counter does the same job.
 let _tick = 0;
 
-// `msg` is markup: callers pass <span class="key"> around the values they
-// highlight. That makes every interpolated VALUE a sink — a file name, a sample
-// name, a period — and each caller escapes those with engEsc() before they
-// reach this string. The page runs from file://, where the deployed CSP does
-// not apply, so nothing but that escaping stands between a member named
-// <img onerror=…> and its handler.
+// A log line is text. `msg` is a string, or an array of strings and key()
+// parts; the string parts become text nodes whatever they contain, and the
+// highlight is the one piece of markup a line can carry, produced here and
+// nowhere else. This used to be an innerHTML template that callers fed
+// markup, with every interpolated value — a file name, a sample name, a
+// period — a sink each caller had to remember to escape, and several did not.
+// The page runs from file://, where the deployed CSP does not apply, so this
+// function is all that stands between a member named <img onerror=…> and its
+// handler.
+function key(text) {
+  return { key: text == null ? '' : String(text) };
+}
 function log(time, tag, msg, cls = '') {
   const el = document.getElementById('log');
   const line = document.createElement('div');
   line.className = 'log-line';
-  line.innerHTML = `<span class="log-time">${time}</span><span class="log-tag ${cls}">${tag}</span><span class="log-msg">${msg}</span>`;
+  const timeEl = document.createElement('span');
+  timeEl.className = 'log-time';
+  timeEl.textContent = time;
+  const tagEl = document.createElement('span');
+  tagEl.className = cls ? 'log-tag ' + cls : 'log-tag';
+  tagEl.textContent = tag;
+  const msgEl = document.createElement('span');
+  msgEl.className = 'log-msg';
+  for (const part of Array.isArray(msg) ? msg : [msg]) {
+    if (part && typeof part === 'object' && typeof part.key === 'string') {
+      const k = document.createElement('span');
+      k.className = 'key';
+      k.textContent = part.key;
+      msgEl.appendChild(k);
+    } else {
+      msgEl.appendChild(document.createTextNode(part == null ? '' : String(part)));
+    }
+  }
+  line.appendChild(timeEl);
+  line.appendChild(tagEl);
+  line.appendChild(msgEl);
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
@@ -5325,7 +5360,7 @@ function logWalkthroughNotice() {
   const body = (selected === 'custom')
     ? 'guided walkthrough · this is an uploaded package: the walkthrough names its files and shows only what the upload panel parsed from scan output — anything it did not read says \'not parsed\' — and nothing here is adjudicated from the package\'s contents' + live
     : 'guided walkthrough over authored sample data · figures are authored, not computed from evidence' + live;
-  log('00:00.0', 'init', '<span class="key">walkthrough</span> · ' + body, 'warn');
+  log('00:00.0', 'init', [key('walkthrough'), ' · ' + body], 'warn');
 }
 
 async function runKSI(sample) {
@@ -5343,9 +5378,9 @@ async function runKSI(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · loading KSI submission · ' + k.baseline);
-  log('00:00.0', 'init', 'KSI submission · ' + engEsc(sample.name) + ' · ' + engEsc(k.baseline));
+  log('00:00.0', 'init', 'KSI submission · ' + sample.name + ' · ' + k.baseline);
   await wait(400);
-  log('00:01.4', 'load', 'CR26 KSI catalog <span class="key">2026.09.13.02</span> · ' + themeIds.length + ' themes · ' + total + ' indicators', 'ok');
+  log('00:01.4', 'load', ['CR26 KSI catalog ', key('2026.09.13.02'), ' · ' + themeIds.length + ' themes · ' + total + ' indicators'], 'ok');
   await wait(300);
 
   setStage(2);
@@ -5385,7 +5420,7 @@ async function runKSI(sample) {
 
   setStage(5);
   setStatus('◆ CADENCE · summarising automation coverage');
-  log('00:27.4', 'cad', 'automation coverage <span class="key">' + autoPct + '%</span> of indicators validated by automation · CR26 FRC-CSX-VVK (Class B: SHOULD, at least one automated method per KSI)', 'ok');
+  log('00:27.4', 'cad', ['automation coverage ', key(autoPct + '%'), ' of indicators validated by automation · CR26 FRC-CSX-VVK (Class B: SHOULD, at least one automated method per KSI)'], 'ok');
   await wait(400);
   if (passed < total) {
     log('00:28.8', 'cad', (total - passed) + ' indicators flagged for assessor review', 'warn');
@@ -5496,7 +5531,7 @@ async function runInitialWalkthrough(sample) {
   const d = sample.initial;
   renderStages(USE_CASES.initial.stages);
   renderGates();
-  log('00:00.0', 'init', '<span class="key">walkthrough</span> · the engine script did not load, so this run is the guided walkthrough: its figures are illustrative, not computed', 'warn');
+  log('00:00.0', 'init', [key('walkthrough'), ' · the engine script did not load, so this run is the guided walkthrough: its figures are illustrative, not computed'], 'warn');
 
   const inventory = INVENTORY_WORKBOOK[sample.name] || {};
   const scans = SCAN_PROFILE[sample.name] || {};
@@ -5504,7 +5539,7 @@ async function runInitialWalkthrough(sample) {
   // ── Stage 1 · SSP & Appendices · 17 mandatory appendices A–Q ──
   setStage(1);
   setStatus('◆ SSP REVIEW · 17 mandatory appendices A through Q · per fedramp.gov SSP Template Rev5');
-  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${sample.controls} controls · FIPS 199 ${engEsc(inventory.fips199 ? inventory.fips199.overall : 'Low')} baseline`);
+  log('00:00.0', 'init', [key(sample.name), ` · ${sample.controls} controls · FIPS 199 ${inventory.fips199 ? inventory.fips199.overall : 'Low'} baseline`]);
   await wait(300);
   // For custom uploads, reflect the actually-detected materials. Otherwise use baked-in CSP narrative.
   const isCustom = sample === SAMPLES['custom'];
@@ -5523,7 +5558,7 @@ async function runInitialWalkthrough(sample) {
     log('00:02.4', 'ssp', `boundary description vs ABD · ${inventory.abdAlignment === 'aligned' ? 'aligned · last review ' + inventory.abdLastReview : 'MISMATCH · ' + (inventory.abdGap || 'see Inventory & Boundary stage')}`, inventory.abdAlignment === 'aligned' ? 'ok' : 'warn');
   }
   await wait(400);
-  log('00:04.0', 'app', 'walking 17 mandatory appendices A through Q per <span class="key">fedramp.gov · CSP Authorization Playbook (Rev5)</span>');
+  log('00:04.0', 'app', ['walking 17 mandatory appendices A through Q per ', key('fedramp.gov · CSP Authorization Playbook (Rev5)')]);
   await wait(300);
   // Walk all 17 appendices visibly. For custom uploads, mark each appendix based on whether
   // any artifact in the package matches its tag.
@@ -5624,7 +5659,7 @@ async function runInitialWalkthrough(sample) {
   if (isCustom) {
     const invMissing = fIds.some(c => /^CM-8/.test(c));
     const abdMissing = fIds.some(c => /^CA-3/.test(c));
-    log('00:33.0', 'inv', 'reviewing Appendix M · Integrated Inventory Workbook · per <span class="key">fedramp.gov · IIW Template</span>');
+    log('00:33.0', 'inv', ['reviewing Appendix M · Integrated Inventory Workbook · per ', key('fedramp.gov · IIW Template')]);
     await wait(400);
     if (invMissing) {
       log('00:34.4', 'inv', '✗ no Integrated Inventory Workbook in upload · CM-8 evidence absent · component count cannot be established', 'warn');
@@ -5649,7 +5684,7 @@ async function runInitialWalkthrough(sample) {
     }
     await wait(400);
   } else {
-  log('00:33.0', 'inv', 'reviewing Appendix M · Integrated Inventory Workbook · per <span class="key">fedramp.gov · IIW Template</span>');
+  log('00:33.0', 'inv', ['reviewing Appendix M · Integrated Inventory Workbook · per ', key('fedramp.gov · IIW Template')]);
   await wait(400);
   if (inventory.components) {
     log('00:34.4', 'inv', 'inventory: ' + inventory.components.servers + ' servers · ' + inventory.components.databases + ' databases · ' + inventory.components.networkDevices + ' network devices · ' + inventory.components.virtualAssets + ' virtual assets · ' + inventory.components.total + ' total components', 'ok');
@@ -5680,7 +5715,7 @@ async function runInitialWalkthrough(sample) {
   // ── Stage 5 · Scans & Pen Test ──
   setStage(5);
   setStatus('◆ SCANS & PEN TEST · RA-5 monthly + weekly internal · CA-8 with 6 attack vectors');
-  log('00:44.0', 'scan', 'reviewing scan profile per <span class="key">fedramp.gov · ConMon Strategy Guide (Rev5)</span> + NIST SP 800-70');
+  log('00:44.0', 'scan', ['reviewing scan profile per ', key('fedramp.gov · ConMon Strategy Guide (Rev5)'), ' + NIST SP 800-70']);
   await wait(400);
   if (isCustom) {
     const cm = sample.conmon || {};
@@ -5697,7 +5732,7 @@ async function runInitialWalkthrough(sample) {
       await wait(400);
     }
     const ptMissing = !(sample.annual && sample.annual.penTest && sample.annual.penTest.conducted);
-    log('00:52.0', 'pt', 'reviewing CA-8 annual penetration test · 6 mandatory attack vectors per <span class="key">fedramp.gov · Pen Test Guidance v3.0</span>');
+    log('00:52.0', 'pt', ['reviewing CA-8 annual penetration test · 6 mandatory attack vectors per ', key('fedramp.gov · Pen Test Guidance v3.0')]);
     await wait(400);
     if (ptMissing) {
       log('00:53.4', 'pt', '⚠ no penetration test artifact in upload · advisory only — pen test re-test required at next CA-8 cycle', 'warn');
@@ -5725,7 +5760,7 @@ async function runInitialWalkthrough(sample) {
     log('00:50.0', 'scan', 'container scan · ' + scans.containerScan.tool + ' · ' + scans.containerScan.cadence + ' · ' + scans.containerScan.benchmark + ' · ' + scans.containerScan.findings + ' findings', scans.containerScan.benchmark.includes('drift') ? 'warn' : 'ok');
     await wait(400);
   }
-  log('00:52.0', 'pt', 'reviewing CA-8 annual penetration test · 6 mandatory attack vectors per <span class="key">fedramp.gov · Pen Test Guidance v3.0</span>');
+  log('00:52.0', 'pt', ['reviewing CA-8 annual penetration test · 6 mandatory attack vectors per ', key('fedramp.gov · Pen Test Guidance v3.0')]);
   await wait(400);
   if (scans.penTest) {
     log('00:53.4', 'pt', 'pen test: ' + scans.penTest.vendor + ' · ' + scans.penTest.cadence + ' · ' + scans.penTest.vectors + ' attack vectors tested · last test ' + scans.penTest.lastTest + ' · ' + scans.penTest.findings + ' findings', 'ok');
@@ -5755,7 +5790,7 @@ async function runInitialWalkthrough(sample) {
   }
   log('01:01.0', 'out', 'OSCAL SAR schema validation · ✓ valid', 'ok');
   await wait(400);
-  log('01:02.4', 'out', `defensibility scored · <span class="key">${d.def}/100</span>`, 'ok');
+  log('01:02.4', 'out', ['defensibility scored · ', key(`${d.def}/100`)], 'ok');
   await wait(400);
   log('01:04.8', 'done', 'walkthrough complete · illustrative results · not an engine run', 'ok');
 
@@ -5774,7 +5809,7 @@ async function runInitialWalkthrough(sample) {
 // the package, saying why, and saying what to do instead.
 function stopWalkthroughWithoutRecord(sample, cfg, what) {
   renderStages(cfg.stages);
-  log('00:00.0', 'stop', '✗ no ' + what + ' record for <span class="key">' + engEsc(sample.name) + '</span> — this section is a walkthrough over the authored samples, and an uploaded package carries no ' + what + ' to step through. Pick <span class="key">CloudVault</span> or <span class="key">MeshGate</span> to see the walkthrough, or run <span class="key">§01</span> to assess your package', 'warn');
+  log('00:00.0', 'stop', ['✗ no ' + what + ' record for ', key(sample.name), ' — this section is a walkthrough over the authored samples, and an uploaded package carries no ' + what + ' to step through. Pick ', key('CloudVault'), ' or ', key('MeshGate'), ' to see the walkthrough, or run ', key('§01'), ' to assess your package'], 'warn');
   setStatus('◆ STOPPED · walkthrough · no ' + what + ' record for an uploaded package');
 }
 
@@ -5789,11 +5824,11 @@ async function runConMon(sample) {
   setStatus('◆ INTAKE · Reading scan output · ' + d.period);
   // Names and figures below are text the visitor did not write — a file name
   // is the package author's — so every one of them is escaped into the log.
-  if (d.parsedOnly) log('00:00.0', 'init', 'uploaded package · the figures below are what the upload panel parsed from scan CSVs, and nothing else · a figure the panel did not read says <span class="key">' + NOT_PARSED + '</span>, never a number', 'warn');
-  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${engEsc(d.period)} cycle · in-scope assets ${conmonNum(d.assets)}`);
+  if (d.parsedOnly) log('00:00.0', 'init', ['uploaded package · the figures below are what the upload panel parsed from scan CSVs, and nothing else · a figure the panel did not read says ', key(NOT_PARSED), ', never a number'], 'warn');
+  log('00:00.0', 'init', [key(sample.name), ` · ${d.period} cycle · in-scope assets ${conmonNum(d.assets)}`]);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', ['parsed ', key(f)], 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', `open vulnerabilities ${conmonNum(d.total)} · authenticated ${conmonNum(d.authenticated)} of ${conmonNum(d.assets)}`, 'ok');
@@ -5812,7 +5847,7 @@ async function runConMon(sample) {
   await wait(500);
   for (const sev of SEVERITY_ORDER) {
     setBand(sev, true);
-    log(fmt(12 + SEVERITY_ORDER.indexOf(sev) * 2) + '.0', sev.slice(0, 4), `${SEVERITY_LABELS[sev]} band · ${engEsc(d.severities[sev].sla)} window applied`, 'ok');
+    log(fmt(12 + SEVERITY_ORDER.indexOf(sev) * 2) + '.0', sev.slice(0, 4), `${SEVERITY_LABELS[sev]} band · ${d.severities[sev].sla} window applied`, 'ok');
     await wait(400);
     setBand(sev, false);
   }
@@ -5869,10 +5904,10 @@ async function runAnnual(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · Prior SAR · POA&M · ConMon history · ' + d.cycle);
-  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · ${engEsc(d.cycle)} · ${sample.controls} total controls`);
+  log('00:00.0', 'init', [key(sample.name), ` · ${d.cycle} · ${sample.controls} total controls`]);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', ['parsed ', key(f)], 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'prior cycle artifacts ingested · POA&M state loaded', 'ok');
@@ -5881,7 +5916,7 @@ async function runAnnual(sample) {
   // Stage 2 — Readiness check (7 CSP-required activities per Annual Assessment Guidance (Rev5))
   setStage(2);
   setStatus('◆ READINESS · 7 prerequisites per fedramp.gov Annual Assessment Guidance (Rev5)');
-  log('00:06.0', 'ready', 'verifying CSP prerequisites per <span class="key">fedramp.gov · Annual Assessment Guidance (Rev5)</span>');
+  log('00:06.0', 'ready', ['verifying CSP prerequisites per ', key('fedramp.gov · Annual Assessment Guidance (Rev5)')]);
   await wait(400);
   const readinessItems = (d.readiness || {
     sspUpdate: { status: 'complete', label: 'SSP + appendices reviewed and updated' },
@@ -5972,10 +6007,10 @@ async function runSCR(sample) {
 
   setStage(1);
   setStatus('◆ INTAKE · SCR submission · current SSP · POA&M state');
-  log('00:00.0', 'init', `<span class="key">${engEsc(sample.name)}</span> · SCR review · ${engEsc(d.classification.toLowerCase())} change`);
+  log('00:00.0', 'init', [key(sample.name), ` · SCR review · ${d.classification.toLowerCase()} change`]);
   await wait(400);
   for (const f of d.files) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'read', `parsed <span class="key">${engEsc(f)}</span>`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'read', ['parsed ', key(f)], 'ok');
     await wait(280);
   }
   log('00:0' + d.files.length + '.0', 'init', 'SCR package ingested · prior cycle context loaded', 'ok');
@@ -5985,7 +6020,7 @@ async function runSCR(sample) {
   setStatus('◆ CLASSIFY · significance level per FedRAMP guidance');
   log('00:08.0', 'class', `evaluating change scope · ${d.categories.length} categories declared`);
   await wait(500);
-  log('00:09.6', 'class', `classification · <span class="key">${d.classification.toUpperCase()}</span> · ${d.categories.join(' · ')}`, d.classification === 'Major' ? 'warn' : 'ok');
+  log('00:09.6', 'class', ['classification · ', key(d.classification.toUpperCase()), ` · ${d.categories.join(' · ')}`], d.classification === 'Major' ? 'warn' : 'ok');
   await wait(400);
 
   setStage(3);
@@ -5999,7 +6034,7 @@ async function runSCR(sample) {
     await wait(380);
     setImpact(dim.key, false);
   }
-  log('00:24.0', 'impact', `<span class="key">${d.affectedControls}</span> controls flagged for differential re-test`, 'warn');
+  log('00:24.0', 'impact', [key(d.affectedControls), ' controls flagged for differential re-test'], 'warn');
   await wait(400);
 
   setStage(4);
@@ -6014,9 +6049,9 @@ async function runSCR(sample) {
   log('00:36.0', 'delta', 'comparing pre-change vs post-change risk posture');
   await wait(600);
   const sign = d.riskDelta > 0 ? '+' : '';
-  log('00:38.4', 'delta', `risk delta · <span class="key">${sign}${d.riskDelta}</span> OTS findings vs prior ATO baseline`, d.riskDelta > 0 ? 'warn' : 'ok');
+  log('00:38.4', 'delta', ['risk delta · ', key(`${sign}${d.riskDelta}`), ' OTS findings vs prior ATO baseline'], d.riskDelta > 0 ? 'warn' : 'ok');
   await wait(400);
-  log('00:40.0', 'delta', `recommended decision · <span class="key">${d.decision}</span>`, 'ok');
+  log('00:40.0', 'delta', ['recommended decision · ', key(d.decision)], 'ok');
   await wait(400);
 
   setStage(6);
@@ -6402,10 +6437,10 @@ async function runQA() {
 
   setStage(1);
   setStatus('◆ INTAKE · loading portfolio · ' + report.sampleCount + ' system' + (report.sampleCount === 1 ? '' : 's') + ' · ' + report.useCaseCount + ' use cases');
-  log('00:00.0', 'init', `<span class="key">portfolio scan</span> · ${report.totalFindings} findings · ${report.totalCites} citations`);
+  log('00:00.0', 'init', [key('portfolio scan'), ` · ${report.totalFindings} findings · ${report.totalCites} citations`]);
   await wait(400);
   for (const k of sampleRoster()) {
-    log(fmt(0) + '.' + (_tick++ % 9), 'load', `loaded <span class="key">${engEsc(SAMPLES[k].name)}</span> · ${report.useCaseCount} use cases`, 'ok');
+    log(fmt(0) + '.' + (_tick++ % 9), 'load', ['loaded ', key(SAMPLES[k].name), ` · ${report.useCaseCount} use cases`], 'ok');
     await wait(250);
   }
   log('00:05.0', 'init', `${report.totalChecks.toLocaleString()} rule checks queued`, 'ok');
@@ -6473,7 +6508,7 @@ async function runQA() {
   setStatus('◆ SCORING · computing quality score');
   log('00:30.0', 'score', `aggregating rule outcomes · weighting warnings and failures`);
   await wait(600);
-  log('00:32.4', 'score', `quality score · <span class="key">${report.score}/100</span>`, 'ok');
+  log('00:32.4', 'score', ['quality score · ', key(`${report.score}/100`)], 'ok');
   await wait(400);
   log('00:34.0', 'out', 'QA Audit Report · Discrepancy Log · OSCAL QC trail compiled', 'ok');
   await wait(400);
@@ -6718,6 +6753,17 @@ const OSCAL_CONSTRAINTS = [
   { id: 'K-204', sev: 'error',   ref: 'FRMR.KSI §retired-ids',     desc: 'no retired KSI IDs (MLA-03/04/06, SVC-03, CMT-05, TPR-01/02)' },
 ];
 
+// A FedRAMP namespace or identifier-type is a URL whose host is fedramp.gov —
+// https://fedramp.gov/ns/oscal on a prop, https://fedramp.gov on a system-id.
+// Parsed and compared as a host, not searched for as a substring: the
+// substring test took https://evil.example/fedramp.gov for the namespace.
+function isFedrampUri(value) {
+  if (typeof value !== 'string') return false;
+  let url;
+  try { url = new URL(value); } catch (e) { return false; }
+  return url.protocol === 'https:' && url.hostname === 'fedramp.gov';
+}
+
 function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
   const findings = [];
   const sar = sarObj && sarObj['assessment-results'];
@@ -6830,7 +6876,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
 
     // F-101
     const has3PAOcert = (sar.metadata.parties || []).some(p =>
-      (p.props || []).some(pp => pp.name === 'a2la-cert' && pp.ns && pp.ns.includes('fedramp.gov'))
+      (p.props || []).some(pp => pp.name === 'a2la-cert' && isFedrampUri(pp.ns))
     );
     has3PAOcert
       ? pass('F-101', '3PAO-cert', 'The 3PAO examined the OSCAL SAR party metadata, and found that the 3PAO entity carries the a2la-cert attestation prop in the FedRAMP namespace as required.')
@@ -6865,7 +6911,7 @@ function validateOSCALPackage(sarObj, poamObj, ksiObj, sample) {
 
   if (poam) {
     // F-108
-    const sysIdOk = poam['system-id'] && poam['system-id']['identifier-type'] && poam['system-id']['identifier-type'].includes('fedramp.gov');
+    const sysIdOk = !!poam['system-id'] && isFedrampUri(poam['system-id']['identifier-type']);
     sysIdOk
       ? pass('F-108', 'POAM.system-id', 'The 3PAO examined the OSCAL POA&M system-id metadata, and found that it uses the fedramp.gov identifier-type namespace as required.')
       : fail('F-108', 'POAM.system-id', 'The 3PAO examined the OSCAL POA&M system-id metadata, and found that it does not use the fedramp.gov identifier-type namespace.');
@@ -6948,7 +6994,7 @@ async function runPackageValidator(sample) {
   // Stage 1 — Assemble
   setStage(1);
   setStatus('◆ ASSEMBLE · building OSCAL output from assessment data');
-  log('00:00.0', 'init', '<span class="key">' + engEsc(sample.name) + '</span> · assembling OSCAL 1.1.2 SAR + POA&M + KSI package');
+  log('00:00.0', 'init', [key(sample.name), ' · assembling OSCAL 1.1.2 SAR + POA&M + KSI package']);
   await wait(400);
   log('00:01.4', 'build', 'building Security Assessment Report (SAR) from initial + conmon + annual + scr findings');
   await wait(400);
@@ -6977,11 +7023,11 @@ async function runPackageValidator(sample) {
   // Stage 3 — Constraint validation
   setStage(3);
   setStatus('◆ CONSTRAINTS · FedRAMP business-rule validation');
-  log('00:08.0', 'cstr', 'applying constraints from <span class="key">fedramp.gov</span> Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&M (Rev5)');
+  log('00:08.0', 'cstr', ['applying constraints from ', key('fedramp.gov'), ' Guides to OSCAL-based FedRAMP SSP/SAP/SAR/POA&M (Rev5)']);
   await wait(400);
-  log('00:08.8', 'cstr', 'cross-referencing <span class="key">fedramp.gov</span> OSCAL Registry for FedRAMP extensions, defined identifiers, and accepted values');
+  log('00:08.8', 'cstr', ['cross-referencing ', key('fedramp.gov'), ' OSCAL Registry for FedRAMP extensions, defined identifiers, and accepted values']);
   await wait(400);
-  log('00:09.6', 'cstr', 'KSI constraints sourced from the <span class="key">FedRAMP Consolidated Rules for 2026</span> (CR26 · 2026.09.13.02)');
+  log('00:09.6', 'cstr', ['KSI constraints sourced from the ', key('FedRAMP Consolidated Rules for 2026'), ' (CR26 · 2026.09.13.02)']);
   await wait(400);
   log('00:10.4', 'cstr', 'NOTE: GSA/fedramp-automation archived 2025-07-01 · constraints migrating to NIST metaschema-based extensions per fedramp.gov roadmap', 'warn');
   await wait(400);
@@ -7001,7 +7047,7 @@ async function runPackageValidator(sample) {
   // Stage 5 — Severity summary
   setStage(5);
   setStatus('◆ SEVERITY · classifying validation outcomes');
-  log('00:13.0', 'sev', 'PASS: <span class="key">' + passes + '</span> · WARN: <span class="key">' + warns + '</span> · ERROR: <span class="key">' + errors + '</span>', errors > 0 ? 'warn' : 'ok');
+  log('00:13.0', 'sev', ['PASS: ', key(passes), ' · WARN: ', key(warns), ' · ERROR: ', key(errors)], errors > 0 ? 'warn' : 'ok');
   await wait(500);
 
   // Stage 6 — Output
@@ -7924,13 +7970,13 @@ async function runDataSources(sample) {
   // Stage 1 — Discover
   setStage(1);
   setStatus('◆ DISCOVER · enumerating two tiers · evidence sources + GRC peers');
-  log('00:00.0', 'init', '<span class="key">' + engEsc(sample.name) + '</span> · ' + activeConnectors.length + ' evidence sources · ' + grcConnectors.length + ' GRC peer platforms');
+  log('00:00.0', 'init', [key(sample.name), ' · ' + activeConnectors.length + ' evidence sources · ' + grcConnectors.length + ' GRC peer platforms']);
   await wait(400);
   log('00:01.4', 'disc', 'Tier 1 (evidence): scanners · IdP · cloud posture · doc repos · ticket trackers');
   await wait(300);
   log('00:02.4', 'disc', 'Tier 2 (GRC peers): ServiceNow GRC · Drata · Vanta · ZenGRC · OneTrust · Hyperproof · AuditBoard · Archer');
   await wait(300);
-  log('00:03.4', 'disc', 'mapping all connectors to FedRAMP artifact categories per <span class="key">fedramp.gov/documents-templates</span>');
+  log('00:03.4', 'disc', ['mapping all connectors to FedRAMP artifact categories per ', key('fedramp.gov/documents-templates')]);
   await wait(400);
 
   // Stage 2 — Authenticate
@@ -7950,8 +7996,7 @@ async function runDataSources(sample) {
   for (let i = 0; i < activeConnectors.length; i++) {
     const c = activeConnectors[i];
     setConnector(c.id, true);
-    const fedrampLink = '<span class="key">' + c.fedrampRef + '</span>';
-    log(fmt(11 + i) + '.4', 'enum', 'Tier 1 · ' + c.name + ' · would feed ' + fedrampLink);
+    log(fmt(11 + i) + '.4', 'enum', ['Tier 1 · ' + c.name + ' · would feed ', key(c.fedrampRef)]);
     await wait(180);
     setConnector(c.id, false);
   }
@@ -7973,13 +8018,13 @@ async function runDataSources(sample) {
   setStatus('◆ MAP · canonical schema mapping · native fields → SPARKAE evidence record · validation pipeline');
   log('00:25.0', 'map', 'applying CONNECTOR_SCHEMAS field-mapping rules · native fields → canonical evidence record (16 fields incl. extensions/confidence/validation)');
   await wait(400);
-  log('00:26.0', 'map', 'canonical record OSCAL-aligned per <span class="key">automate.fedramp.gov SAR-to-OSCAL mapping</span> · namespaced extensions per <span class="key">fedramp.gov OSCAL Extensions §3</span>');
+  log('00:26.0', 'map', ['canonical record OSCAL-aligned per ', key('automate.fedramp.gov SAR-to-OSCAL mapping'), ' · namespaced extensions per ', key('fedramp.gov OSCAL Extensions §3')]);
   await wait(400);
   log('00:26.8', 'map', 'running ' + RUNTIME_VALIDATORS.length + ' runtime validators (V-001..V-010) · drift / missing fields / low confidence surface as QA findings', 'ok');
   await wait(400);
   log('00:27.6', 'map', 'Tier 3 custom connectors: ' + CUSTOM_CONNECTOR_EXAMPLES.length + ' examples available · JSON, CSV, PDF/OCR, webhook · namespaced extensions for vendor-specific fields');
   await wait(400);
-  log('00:28.4', 'map', 'binding canonical records to FedRAMP categories per <span class="key">fedramp.gov</span> Authorization Process documentation');
+  log('00:28.4', 'map', ['binding canonical records to FedRAMP categories per ', key('fedramp.gov'), ' Authorization Process documentation']);
   await wait(450);
   // Show artifact category coverage
   const totalCats = ARTIFACT_CATEGORIES.length;
@@ -8588,7 +8633,7 @@ async function runPortfolio() {
   for (let i = 0; i < systems.length; i++) {
     const s = systems[i];
     setPortfolioCard(s.shortName, true);
-    log(fmt(5 + i * 1) + '.0', 'score', s.shortName + ' · posture <span class="key">' + Math.round(s.posture * 100) + '%</span> · ' + s.status, s.statusClass === 'sat' ? 'ok' : (s.statusClass === 'nr' ? 'warn' : 'warn'));
+    log(fmt(5 + i * 1) + '.0', 'score', [s.shortName + ' · posture ', key(Math.round(s.posture * 100) + '%'), ' · ' + s.status], s.statusClass === 'sat' ? 'ok' : (s.statusClass === 'nr' ? 'warn' : 'warn'));
     await wait(280);
     setPortfolioCard(s.shortName, false);
   }
@@ -8596,7 +8641,7 @@ async function runPortfolio() {
   // Stage 3 — Rank
   setStage(3);
   setStatus('◆ RANK · ordering systems by authorization readiness');
-  log('00:11.0', 'rank', 'top: <span class="key">' + systems[0].shortName + '</span> at ' + Math.round(systems[0].posture * 100) + '% · bottom: <span class="key">' + systems[systems.length - 1].shortName + '</span> at ' + Math.round(systems[systems.length - 1].posture * 100) + '%');
+  log('00:11.0', 'rank', ['top: ', key(systems[0].shortName), ' at ' + Math.round(systems[0].posture * 100) + '% · bottom: ', key(systems[systems.length - 1].shortName), ' at ' + Math.round(systems[systems.length - 1].posture * 100) + '%']);
   await wait(450);
   const ready = systems.filter(s => s.statusClass === 'sat').length;
   const minor = systems.filter(s => s.statusClass === 'nr').length;
@@ -8609,7 +8654,7 @@ async function runPortfolio() {
   setStatus('◆ FORECAST · projecting remediation timelines per RA-5(d) SLAs');
   const totalAging = systems.reduce((a, s) => a + s.slaAging, 0);
   const totalKev = systems.reduce((a, s) => a + s.kev, 0);
-  log('00:14.0', 'fcst', `portfolio aging: <span class="key">${totalAging}</span> vulnerabilities past SLA · ${totalKev} CISA KEV / BOD 22-01 items requiring priority remediation`, totalKev > 0 ? 'warn' : 'ok');
+  log('00:14.0', 'fcst', ['portfolio aging: ', key(totalAging), ` vulnerabilities past SLA · ${totalKev} CISA KEV / BOD 22-01 items requiring priority remediation`], totalKev > 0 ? 'warn' : 'ok');
   await wait(450);
   log('00:15.4', 'fcst', 'projected portfolio remediation: 30d window for all High · 90d window for Moderate per fedramp.gov RA-5(d)');
   await wait(400);
@@ -9309,7 +9354,7 @@ async function runInitialLive(sample) {
   if (!asOfDay) {
     // The date is a declared input; an empty field is not a date. Stop here
     // rather than assess against a value the visitor cannot see.
-    log(ts(), 'stop', '✗ no assessment date: enter a date in the rail\'s <span class="key">Assessed as of</span> field and run again', 'warn');
+    log(ts(), 'stop', ['✗ no assessment date: enter a date in the rail\'s ', key('Assessed as of'), ' field and run again'], 'warn');
     setStatus('◆ STOPPED · assessment date required');
     document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('assessment-date');
@@ -9324,7 +9369,7 @@ async function runInitialLive(sample) {
   if (!corpus) {
     if (sample && !sample.liveEngine) {
       const named = sample.name || 'this selection';
-      log(ts(), 'stop', '✗ no live evidence package for <span class="key">' + engEsc(named) + '</span> — it is a walkthrough sample. Pick CloudVault, upload a package, or switch to a walkthrough tab', 'warn');
+      log(ts(), 'stop', ['✗ no live evidence package for ', key(named), ' — it is a walkthrough sample. Pick CloudVault, upload a package, or switch to a walkthrough tab'], 'warn');
       setStatus('◆ STOPPED · walkthrough sample — no live evidence package');
     } else {
       log(ts(), 'stop', 'nothing to assess: no upload and no bundled document set', 'warn');
@@ -9333,9 +9378,9 @@ async function runInitialLive(sample) {
     document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
   }
-  log(ts(), 'init', '<span class="key">live engine</span> · ' + engEsc(corpus.label) + ' · ' + corpus.files.length + ' file(s) received');
-  for (const name of corpus.parsed) log(ts(), 'read', 'parsed <span class="key">' + engEsc(name) + '</span>', 'ok');
-  for (const sk of corpus.skipped) log(ts(), 'read', '✗ refused <span class="key">' + engEsc(sk.name) + '</span> · ' + engEsc(sk.reason), 'warn');
+  log(ts(), 'init', [key('live engine'), ' · ' + corpus.label + ' · ' + corpus.files.length + ' file(s) received']);
+  for (const name of corpus.parsed) log(ts(), 'read', ['parsed ', key(name)], 'ok');
+  for (const sk of corpus.skipped) log(ts(), 'read', ['✗ refused ', key(sk.name), ' · ' + sk.reason], 'warn');
   if (!corpus.chunks.length) {
     log(ts(), 'stop', 'no readable evidence: every file was refused · the run stops here rather than adjudicate against nothing', 'warn');
     // A refusal that names no way forward is a dead end, and the format most
@@ -9344,8 +9389,8 @@ async function runInitialLive(sample) {
     // next. The extension list comes from the engine so it cannot drift.
     const readable = ((window.SparkAEEngine && SparkAEEngine.SUPPORTED_EXTENSIONS) ||
       ['txt', 'md', 'csv', 'json', 'xml', 'nessus', 'docx', 'zip']).map(e => '.' + e).join(' ');
-    log(ts(), 'next', 'this build reads <span class="key">' + readable + '</span> · PDF and XLSX extraction runs in the SparkAE server product, not in the browser', 'warn');
-    log(ts(), 'next', 'to have a PDF or XLSX package assessed, email <span class="key">info@sparkae.ai</span> — or pick the bundled sample above to see a full assessment right now', 'warn');
+    log(ts(), 'next', ['this build reads ', key(readable), ' · PDF and XLSX extraction runs in the SparkAE server product, not in the browser'], 'warn');
+    log(ts(), 'next', ['to have a PDF or XLSX package assessed, email ', key('info@sparkae.ai'), ' — or pick the bundled sample above to see a full assessment right now'], 'warn');
     setStatus('◆ STOPPED · nothing readable — see the log for what this build accepts');
     document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
     return;
@@ -9362,8 +9407,8 @@ async function runInitialLive(sample) {
   setStatus('◆ INDEX · BM25 over the evidence chunks');
   const counts = profileCounts(baseline);
   log(ts(), 'idx', 'BM25 index built · ' + evidenceChunks + ' chunks · k1 1.5 · b 0.75', 'ok');
-  log(ts(), 'idx', 'profile <span class="key">FedRAMP ' + baseline + '</span> · ' + counts.controls + ' controls · ' + counts.objectives + ' determination statements');
-  log(ts(), 'idx', 'assessed as of <span class="key">' + asOfDay + '</span> · declared input (the engine reads no clock)');
+  log(ts(), 'idx', ['profile ', key('FedRAMP ' + baseline), ' · ' + counts.controls + ' controls · ' + counts.objectives + ' determination statements']);
+  log(ts(), 'idx', ['assessed as of ', key(asOfDay), ' · declared input (the engine reads no clock)']);
   await wait(200);
 
   // ── 3 · Adjudicate ──
@@ -9375,11 +9420,11 @@ async function runInitialLive(sample) {
   ENGINE_LAST_RUN = run;
   const d = run.summary;
   for (const fam of run.families) {
-    log(ts(), 'adj', fam.id + ' · ' + engEsc(fam.name) + ' · ' + fam.total + ' objectives · ' + fam.sat + ' SAT · ' + fam.ots + ' OTS' + (fam.nr ? ' · ' + fam.nr + ' NR' : ''), fam.ots + fam.nr > fam.sat ? 'warn' : 'ok');
+    log(ts(), 'adj', fam.id + ' · ' + fam.name + ' · ' + fam.total + ' objectives · ' + fam.sat + ' SAT · ' + fam.ots + ' OTS' + (fam.nr ? ' · ' + fam.nr + ' NR' : ''), fam.ots + fam.nr > fam.sat ? 'warn' : 'ok');
     await wait(40);
   }
   log(ts(), 'adj', run.raw.length + ' objectives adjudicated · Satisfied ' + d.sat + ' · Other Than Satisfied ' + d.ots + ' · Not Reviewed ' + d.nr, 'ok');
-  if (run.reviewCount) log(ts(), 'adj', run.reviewCount + ' Satisfied result(s) fall below the evidence-support floors and are flagged <span class="key">review required</span>', 'warn');
+  if (run.reviewCount) log(ts(), 'adj', [run.reviewCount + ' Satisfied result(s) fall below the evidence-support floors and are flagged ', key('review required')], 'warn');
   await wait(200);
 
   // ── 4 · Gate tallies ──
@@ -9398,12 +9443,12 @@ async function runInitialLive(sample) {
   setStage(5);
   setStatus('◆ REPORT · receipt · exports');
   for (const row of run.gapRank) log(ts(), 'rank', row.count + ' × ' + GAP_LABELS[row.type], 'warn');
-  if (run.topFinding) log(ts(), 'rank', 'lead example · <span class="key">' + engEsc(run.topFinding.dif_id) + '</span> · ' + engEsc(run.topFinding.finding), 'warn');
+  if (run.topFinding) log(ts(), 'rank', ['lead example · ', key(run.topFinding.dif_id), ' · ' + run.topFinding.finding], 'warn');
   const r = run.receipt;
-  log(ts(), 'rcpt', 'engine v' + r.engine_version + ' · catalog ' + r.catalog_version + ' <span class="key">' + r.catalog_digest.slice(0, 12) + '</span> · ruleset <span class="key">' + r.ruleset_digest.slice(0, 12) + '</span>');
-  log(ts(), 'rcpt', 'evidence <span class="key">' + r.evidence_digest.slice(0, 12) + '</span> · assessed as of ' + r.assessment_date + ' → verdict digest <span class="key">' + r.verdict_digest.slice(0, 12) + '</span>', 'ok');
+  log(ts(), 'rcpt', ['engine v' + r.engine_version + ' · catalog ' + r.catalog_version + ' ', key(r.catalog_digest.slice(0, 12)), ' · ruleset ', key(r.ruleset_digest.slice(0, 12))]);
+  log(ts(), 'rcpt', ['evidence ', key(r.evidence_digest.slice(0, 12)), ' · assessed as of ' + r.assessment_date + ' → verdict digest ', key(r.verdict_digest.slice(0, 12))], 'ok');
   log(ts(), 'rcpt', 'same engine + catalog + ruleset + evidence + date → same verdict digest, on any machine, on any day');
-  log(ts(), 'out', 'defensibility (average finding-trace quality) · <span class="key">' + d.def + '/100</span>', 'ok');
+  log(ts(), 'out', ['defensibility (average finding-trace quality) · ', key(d.def + '/100')], 'ok');
   log(ts(), 'done', 'automated EXAMINE preparation complete · INTERVIEW and TEST not performed · an assessor work aid, not a SAR', 'ok');
 
   document.querySelectorAll('.stage').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
@@ -9526,7 +9571,7 @@ document.getElementById('findings-body').addEventListener('click', (ev) => {
 
   if (act === 'reset') {
     ASSESSOR_REVISIONS.delete(id);
-    log('—', 'assessor', 'reverted <span class="key">' + engEsc(id) + '</span> to the engine determination', 'warn');
+    log('—', 'assessor', ['reverted ', key(id), ' to the engine determination'], 'warn');
     paintFindings(currentFindings);
     return;
   }
@@ -9538,8 +9583,7 @@ document.getElementById('findings-body').addEventListener('click', (ev) => {
     const verdict = (sel && sel.value) || 'OTS';
     if (!statement) { ta && ta.focus(); return; }
     ASSESSOR_REVISIONS.set(id, { statement, verdict });
-    log('—', 'assessor', 'revised <span class="key">' + engEsc(id) + '</span> · determination recorded as <span class="key">' +
-      engEsc(verdict) + '</span> · attributed to the assessor, engine record and verdict digest unchanged', 'warn');
+    log('—', 'assessor', ['revised ', key(id), ' · determination recorded as ', key(verdict), ' · attributed to the assessor, engine record and verdict digest unchanged'], 'warn');
     paintFindings(currentFindings);
     return;
   }
