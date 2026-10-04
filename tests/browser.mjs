@@ -384,9 +384,10 @@ for (const uc of ['annual', 'scr', 'ksi']) {
 const recordlessBad = recordless.filter(r => !/STOPPED/.test(r.status) || !/§01/.test(r.log) || r.resultsShown ||
   !/record/.test(r.railNote) || !/§01/.test(r.railNote));
 
-// A file name reaches the §02 log too — "parsed <name>" for each member — and
-// log() assigns innerHTML. On file:// the deployed CSP does not apply, so the
-// name has to be escaped by the caller or it runs.
+// A file name reaches the §02 log too — "parsed <name>" for each member. log()
+// used to assign innerHTML, so on file://, where the deployed CSP does not
+// apply, the name had to be escaped by the caller or it ran; it builds text
+// nodes now (check.mjs §30), and this drives the real page to the same end.
 const XSS_LOG_NAME = '<img src=x onerror="document.documentElement.setAttribute(\'data-log-audit\',\'1\')">.txt';
 fs.writeFileSync(path.join(tmp, XSS_LOG_NAME), 'AC-2 Account Management. Accounts are reviewed quarterly by the ISSO per SSP section 5.2.');
 await page.goto('file://' + path.join(root, 'demo-standalone.html'));

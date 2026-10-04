@@ -22,7 +22,7 @@ reading: it means the determinations are the same ones, byte for byte.
 
 ## 2026-10-03 (the state this build is in)
 
-Engine 1.6.6 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `9f3ec3509110` ·
+Engine 1.6.7 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `e8663a497127` ·
 verdict digest `20cd7ee2ae8e`
 
 The tuple above is how to cite this build — the same tree as the entries below,
@@ -40,6 +40,50 @@ false passes, 1 documented false fail — which is a published, re-runnable reco
 and not a measurement of field accuracy. Read a determination here as work an
 assessor checks, because the evidence behind these determinations is a case set
 its own authors mostly wrote.
+
+## 2026-10-03 (the CodeQL set · engine 1.6.7)
+
+Engine 1.6.6 → 1.6.7; ruleset `9f3ec3509110` → `e8663a497127`, only because the
+ruleset carries the engine version. The verdict digest does not move —
+`20cd7ee2ae8e`, 153 / 808 / 20 — and the benchmark stays 15 of 16 with 0 false
+passes. This closes item 50 and takes item 51 as far as it can go.
+
+The first CodeQL run over this tree opened twenty-three alerts, five of them in
+the files the site serves. Each is closed by a change in behaviour that
+`check.mjs` §30 now holds, not by a suppression:
+
+- **The walkthrough log renders text.** `log()` built each line as an HTML
+  string, so every value a caller interpolated — a file name, a sample name —
+  was a sink the caller had to escape, and several callers did not. It builds
+  text nodes now; the one highlight a line can carry comes from `key()` and
+  nowhere else, and a member named `<img onerror=…>` is shown as that name.
+  The page's inline-script hash in `_headers` follows.
+- **The FedRAMP namespace is a host, not a substring.** F-101 and F-108 asked
+  whether a string *contained* `fedramp.gov`, which `https://evil.example/fedramp.gov`
+  does. `isFedrampUri()` parses the value and compares the host; the authored
+  samples carry the exact URIs and decide as before.
+- **The CVE column match says what it means.** `/^cve|cve[_-]?id/` anchored
+  only its first branch. It is two tests now: a header that starts with `cve`,
+  or one carrying a `cve_id` token anywhere.
+- **DOCX tag stripping has no remainder** (engine). One pass over
+  `<<w:t>script>` removed the inner tag and left `<script>`; the strip runs to
+  a fixed point, which on a well-formed body is the first pass.
+- **A ZIP member that is not UTF-8 is refused by name** (engine; item 50). A
+  lenient decoder read it with U+FFFD where the bytes did not parse and the
+  result scored as evidence. The decoder is strict, the refusal names the
+  member and says to save it as UTF-8, and a DOCX whose body is not UTF-8 says
+  it could not be read rather than that it has no body.
+
+Alongside, and outside the engine: every served page's stylesheet carries an
+`integrity` hash with `crossorigin`, recomputed by §30 from the file, and
+`ae-editorial.css` revalidates on every request so a deploy cannot pair a new
+hash with an hour-old copy (item 51, stylesheet). The three scripts
+`demo-standalone.html` loads carry none — the page is promised to open from
+`file://`, where Chromium refuses an integrity check with or without
+`crossorigin`; the review list records the exact messages, and §30 pins the
+exception. The eighteen alerts in `tests/` were fixed rather than excluded:
+`pages.mjs` resolves every request under the site root and reads a file in one
+call, and `check.mjs` strips comments and tags to a fixed point.
 
 ## 2026-10-03 (an upload is bounded before it is read · engine 1.6.6)
 
