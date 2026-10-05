@@ -142,8 +142,24 @@ of a live session.
 - `docs/reviews/2026-10-05-rank1-zero-post-own-file-stress.md` — this note
 - `tests/own-file-stress.mjs` — the harness
 - `tests/fixtures/own-file-stress/` — `own-file-stress.zip`, its sources under `src/`, `build.mjs`, `README.md`
+- `_redirects` — two forced splat rules keeping this note and the fixture tree off the published site (below)
+- `tests/check.mjs` §22 and `tests/check_published.mjs` — hold those rules offline and on the wire
 
-Note for the maintainers: `netlify.toml` publishes the repository root, so this
-note and the fixture are reachable on the published site unless given a forced
-404 in `_redirects` (the pattern `static/og-card.src.html` uses). That decision
-is left to the CTO/CoS and is not made here.
+## Publication
+
+`netlify.toml` publishes the repository root, so without a rule this note and
+the fixture would be served at their paths. On the CoS and CTO call of
+2026-10-05 they are not: `_redirects` now carries, in the same forced form the
+`static/og-card.src.html` rule uses,
+
+```
+/docs/reviews/*                      /404.html    404!
+/tests/fixtures/own-file-stress/*    /404.html    404!
+```
+
+The splats cover every file under both directories, including anything added
+later. `tests/check.mjs` §22 walks both directories and requires each file's
+first-matching rule to be a forced 404; `tests/check_published.mjs` excludes
+both from the byte comparison and requires the host to answer 404 for each
+file. GitHub is where this note and the fixture are read; the published site
+makes no claim from either.
