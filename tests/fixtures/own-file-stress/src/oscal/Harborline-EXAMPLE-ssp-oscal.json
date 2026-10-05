@@ -1,0 +1,73 @@
+{
+  "system-security-plan": {
+    "uuid": "00000000-0000-4000-8000-00000000e9a1",
+    "metadata": {
+      "title": "EXAMPLE — FICTIONAL — NOT CUI: Lanternwick Ledger System Security Plan (OSCAL stub)",
+      "last-modified": "2026-09-20T00:00:00Z",
+      "version": "0.1-example",
+      "oscal-version": "1.1.2",
+      "remarks": "Synthetic fixture for tests/own-file-stress.mjs. Harborline Example Systems LLC and the Lanternwick Ledger are invented. Canary OWNFILE-CANARY-3f9c7a1e.",
+      "parties": [
+        { "uuid": "00000000-0000-4000-8000-00000000e9a2", "type": "organization", "name": "Harborline Example Systems LLC (fictional)" }
+      ]
+    },
+    "import-profile": { "href": "#example-fedramp-moderate-profile" },
+    "system-characteristics": {
+      "system-ids": [ { "identifier-type": "https://example.invalid/ids", "id": "EXAMPLE-LWL-0001" } ],
+      "system-name": "Lanternwick Ledger (fictional example system)",
+      "description": "An invented ledger service used only as a test fixture. It has no real users, hosts or data.",
+      "security-sensitivity-level": "moderate",
+      "system-information": {
+        "information-types": [
+          { "uuid": "00000000-0000-4000-8000-00000000e9a3", "title": "Example records", "description": "Fictional." }
+        ]
+      },
+      "security-impact-level": {
+        "security-objective-confidentiality": "moderate",
+        "security-objective-integrity": "moderate",
+        "security-objective-availability": "moderate"
+      },
+      "status": { "state": "operational" },
+      "authorization-boundary": { "description": "The fictional Lanternwick Ledger VPC and its bastion service." }
+    },
+    "system-implementation": {
+      "users": [ { "uuid": "00000000-0000-4000-8000-00000000e9a4", "title": "Example ISSO", "role-ids": ["isso"] } ],
+      "components": [
+        { "uuid": "00000000-0000-4000-8000-00000000e9a5", "type": "this-system", "title": "Lanternwick Ledger", "description": "Fictional.", "status": { "state": "operational" } }
+      ]
+    },
+    "control-implementation": {
+      "description": "Two illustrative implemented requirements for a synthetic fixture.",
+      "implemented-requirements": [
+        {
+          "uuid": "00000000-0000-4000-8000-00000000e9a6",
+          "control-id": "ac-2",
+          "statements": [
+            {
+              "statement-id": "ac-2_smt.a",
+              "uuid": "00000000-0000-4000-8000-00000000e9a7",
+              "by-components": [
+                { "component-uuid": "00000000-0000-4000-8000-00000000e9a5", "uuid": "00000000-0000-4000-8000-00000000e9a8",
+                  "description": "AC-2: The ISSO identifies and selects account types; account use is monitored continuously and accounts are reviewed quarterly." }
+              ]
+            }
+          ]
+        },
+        {
+          "uuid": "00000000-0000-4000-8000-00000000e9a9",
+          "control-id": "ia-2",
+          "statements": [
+            {
+              "statement-id": "ia-2_smt",
+              "uuid": "00000000-0000-4000-8000-00000000e9aa",
+              "by-components": [
+                { "component-uuid": "00000000-0000-4000-8000-00000000e9a5", "uuid": "00000000-0000-4000-8000-00000000e9ab",
+                  "description": "IA-2: Every organisational user is uniquely identified and authenticated with WebAuthn/FIDO2 multi-factor authentication." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

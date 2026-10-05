@@ -1,0 +1,5 @@
+Plugin ID,CVE,Severity,Host,Name,Description
+900001,CVE-2099-0001,High,ledger-app-01.example.invalid,EXAMPLE finding: outdated example library,"FICTIONAL — NOT CUI. Synthetic row for tests/own-file-stress.mjs. Canary OWNFILE-CANARY-3f9c7a1e."
+900002,CVE-2099-0002,Medium,ledger-app-01.example.invalid,EXAMPLE finding: example cipher suite enabled,"FICTIONAL — NOT CUI. Synthetic row."
+900003,,Low,ledger-db-01.example.invalid,EXAMPLE finding: example banner disclosure,"FICTIONAL — NOT CUI. Synthetic row."
+900004,CVE-2099-0003,Critical,bastion-01.example.invalid,EXAMPLE finding: example remote code execution,"FICTIONAL — NOT CUI. Synthetic row."
