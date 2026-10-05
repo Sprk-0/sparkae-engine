@@ -77,6 +77,14 @@ const MUST_NOT_BE_SERVED = [
 // case here. check.mjs 22 fails if a path listed here has no such rule, so the
 // two files cannot drift apart between runs of this one.
 const IN_TREE_NOT_SERVED = ['static/og-card.src.html'];
+// Whole directories held off the site the same way, by a forced splat rule in
+// _redirects: engineering review notes, and the synthetic upload package the
+// browser suite feeds the demo. Every file under each is excluded from the byte
+// comparison and required to 404 instead. check.mjs 22 is the offline half: it
+// walks the same directories and requires the splat to be each address's first
+// match, so the list here and the rules there cannot drift apart.
+const UNPUBLISHED_TREES = ['docs/reviews/', 'tests/fixtures/own-file-stress/'];
+const inUnpublishedTree = (f) => UNPUBLISHED_TREES.some((t) => f.startsWith(t));
 
 const SKIP_DIRS = new Set(['.git', '.github', 'node_modules', 'out']);
 
@@ -86,11 +94,14 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =
   return e.isDirectory() ? walk(full) : [path.relative(root, full)];
 });
 
-const files = walk(root)
+const everything = walk(root);
+const files = everything
   .filter((f) => !NOT_SERVED.includes(f))
   .filter((f) => !IN_TREE_NOT_SERVED.includes(f))
+  .filter((f) => !inUnpublishedTree(f))
   .filter((f) => !only || f.includes(only))
   .sort();
+const unpublishedFiles = everything.filter(inUnpublishedTree).sort();
 
 const get = async (urlPath, redirect = 'follow') => {
   const res = await fetch(site + urlPath, { redirect });
@@ -258,6 +269,23 @@ if (!only) {
         const r = await get(addr);
         check(r.status === 404, `${addr} is in the tree and not served (${r.status})`);
       } catch (e) { fail(`${addr}: ${e.message}`); }
+    }
+  }
+  for (const tree of UNPUBLISHED_TREES) {
+    const inTree = unpublishedFiles.filter((f) => f.startsWith(tree));
+    // An empty directory cannot be committed, so a tree listed here with no
+    // files in it is a list entry that has outlived what it named.
+    if (!inTree.length) {
+      fail(`${tree} is in UNPUBLISHED_TREES but holds no file in this tree — the entry has outlived its directory`);
+      continue;
+    }
+    for (const f of inTree) {
+      for (const addr of [...new Set(['/' + f, '/' + f.replace(/\.html$/, '')])]) {
+        try {
+          const r = await get(addr);
+          check(r.status === 404, `${addr} is in the tree and not served (${r.status})`);
+        } catch (e) { fail(`${addr}: ${e.message}`); }
+      }
     }
   }
   for (const f of MUST_NOT_BE_SERVED) {
