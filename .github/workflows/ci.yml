@@ -86,6 +86,9 @@ jobs:
       - name: Drive the demo in headless Chromium with all network aborted
         run: node tests/browser.mjs .
 
+      - name: A visitor's own package is read, and no byte of it leaves the page
+        run: node tests/own-file-stress.mjs .
+
       - name: Assessor statements, revisions, and what reaches the exports
         run: node tests/assessor.mjs .
 

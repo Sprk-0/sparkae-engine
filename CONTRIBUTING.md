@@ -30,8 +30,9 @@ Four constraints, all enforced by `node tests/check.mjs`:
 
 Run `node tests/check.mjs .`, `node tests/benchmark.mjs . --strict` and
 `python tests/check_oscal_schema.py` before opening a PR; CI runs the same
-three commands, plus four suites in a headless browser — `tests/browser.mjs`
-(the demo drives end to end from `file://`), `tests/assessor.mjs` (the
+three commands, plus five suites in a headless browser — `tests/browser.mjs`
+(the demo drives end to end from `file://`), `tests/own-file-stress.mjs` (a
+visitor's own package is read and no byte of it leaves), `tests/assessor.mjs` (the
 assessor layer), `tests/selections.mjs` (every control the console offers
 does what its label says) and `tests/pages.mjs` (every published page loads
 clean when served).

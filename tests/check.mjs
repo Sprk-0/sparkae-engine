@@ -1418,6 +1418,29 @@ for (const addr of ['/' + CARD_SRC, '/' + CARD_SRC.replace(/\.html$/, '')]) {
       first.status !== '404!' ? ` — first match is ${first.from} -> ${first.to} ${first.status}` :
       exact.length !== 1 ? ` — ${exact.length} rules name it` : ''));
 }
+// Two whole directories are kept off the site the same way: review notes and
+// the own-file-stress upload fixture. A splat rule covers each, so this walks
+// every file actually under them and asks the same first-match question of
+// each address — a new file under either directory is held without a new rule,
+// and a rule that stopped matching (renamed directory, splat dropped) fails on
+// the first file it no longer covers. check_published.mjs UNPUBLISHED_TREES is
+// the wire half of this list.
+const UNPUBLISHED_TREES = ['docs/reviews/', 'tests/fixtures/own-file-stress/'];
+const walkTree = (rel) => {
+  const dir = path.join(root, rel);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? walkTree(rel + e.name + '/') : [rel + e.name]);
+};
+for (const tree of UNPUBLISHED_TREES) {
+  const inTree = walkTree(tree);
+  check(inTree.length > 0, `${tree} exists and holds at least one file to keep off the site`);
+  const unheld = [...new Set(inTree.flatMap(f => [f, f.replace(/\.html$/, '')].map(a => '/' + a)))]
+    .filter(addr => { const first = redirectRules.find(r => matches(r, addr)); return !first || first.status !== '404!'; });
+  check(unheld.length === 0,
+    `_redirects answers every address under ${tree} with a forced 404 first (${inTree.length} file(s))` +
+    (unheld.length ? ` — not held: ${unheld.slice(0, 3).join(', ')}${unheld.length > 3 ? ', …' : ''}` : ''));
+}
 const cardFonts = [...cardSrc.matchAll(/url\('([^']*)'\)/g)].map(m => m[1]);
 check(cardFonts.length > 0 && cardFonts.every(u => u.startsWith('fonts/') && fs.existsSync(path.join(root, 'static', u))),
   'the card source uses only this repository\'s own fonts, and each one exists' +

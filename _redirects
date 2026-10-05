@@ -35,3 +35,19 @@
 # redirect whose path resolves to an existing file, and this file exists.
 /static/og-card.src.html    /404.html    404!
 /static/og-card.src         /404.html    404!
+
+# Review notes and test fixtures are in the tree and not on the site. The
+# same publish = "." that exposed the card source would serve every file under
+# these two directories: docs/reviews/ carries engineering review notes (two
+# earlier ones were reachable here until 2026-09-11 and are held gone by
+# check_published.mjs), and tests/fixtures/own-file-stress/ is a synthetic
+# upload package the browser suite feeds to the demo. Neither is a page, so
+# neither has a Content-Security-Policy, and neither is a claim the site makes.
+# GitHub is where both are read.
+#
+# A splat covers whatever is added under either directory later, so a new note
+# does not need a new rule. Forced, because the files exist; check.mjs 22 holds
+# that every file under each directory meets one of these first, and
+# check_published.mjs holds that the host answers 404 for each.
+/docs/reviews/*                      /404.html    404!
+/tests/fixtures/own-file-stress/*    /404.html    404!

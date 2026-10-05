@@ -225,12 +225,15 @@ node tests/benchmark.mjs .             # the accuracy cases above
 pip install jsonschema regex && python tests/check_oscal_schema.py
 ```
 
-There are also four browser-level checks — `node tests/browser.mjs .`,
-`node tests/assessor.mjs .`, `node tests/selections.mjs .` and
-`node tests/pages.mjs .`, after
+There are also five browser-level checks — `node tests/browser.mjs .`,
+`node tests/own-file-stress.mjs .`, `node tests/assessor.mjs .`,
+`node tests/selections.mjs .` and `node tests/pages.mjs .`, after
 `npm i playwright && npx playwright install chromium` (CI's `browser` job runs
-all four). The first three drive the demo in headless Chromium with every
-non-file request aborted. `pages.mjs` serves the whole tree over a local HTTP
+all five). The first four drive the demo in headless Chromium with every
+non-file request aborted. `own-file-stress.mjs` uploads a committed, wholly
+fictional package (`tests/fixtures/own-file-stress/`) through the real input,
+runs §01 on it, and holds that it was read and that no request, body, POST or
+egress call left the page. `pages.mjs` serves the whole tree over a local HTTP
 server and opens every published page, because a page that throws on load
 would otherwise ship green: `check.mjs` only parses the inline scripts, and
 until this existed no page but the demo was ever executed. It asks the least a
