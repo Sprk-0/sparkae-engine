@@ -223,7 +223,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
         <a class="btn btn-primary" href="demo-standalone.html">Run the engine on the sample package →</a>
         <a class="btn btn-ghost" href="#cta">Request a fit call</a>
       </div>
-      <p class="fine fade-up fade-up-3">Sample package · no signup · nothing uploaded · result in about 15 seconds</p>
+      <p class="fine fade-up fade-up-3">Sample package · no signup · nothing uploaded · runs in your browser</p>
       <p class="preview-note fade-up fade-up-3">
         <span class="tag">Public preview</span>
         <span><strong>This build runs the engine, not a recording.</strong> It reads the documents you give it and computes every determination in the baseline. Those determinations are automated EXAMINE preparation an assessor checks, not an authorization decision, and their accuracy rests on a small published case set rather than on real authorization packages — what the engine gets wrong is published beside what it gets right: <a href="https://github.com/Sprk-0/sparkae-engine/tree/main/tests/benchmark" rel="noopener">the accuracy benchmark →</a>. This describes the public build in this repository, not the commercial server product.</span>
@@ -497,7 +497,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
           <div><dt>Access control</dt><dd>Eight assessment roles from system admin to authorizing official, multi-tenant org isolation, permission-gated API.</dd></div>
           <div><dt>Audit</dt><dd>Hash-chained append-only log (AU-2 / AU-3, integrity per AU-9); syslog RFC 5424 and ArcSight CEF exports.</dd></div>
           <div><dt>Interfaces</dt><dd>The same engine behind the assessor UI and the GRC API; JSON, CSV or OSCAL into the GRC tool you already run.</dd></div>
-          <div><dt>Deployment</dt><dd>Production-hardened Docker: non-root, read-only filesystem, cap_drop ALL, health checks, graceful drain.</dd></div>
+          <div><dt>Deployment</dt><dd>Hardened Docker configuration: non-root, read-only filesystem, cap_drop ALL, health checks, graceful drain.</dd></div>
         </dl>
         <p class="avail-note" style="margin-top:14px;font-size:13px;line-height:1.6;color:var(--ink-soft)"><strong>Availability.</strong> The server product is not generally released yet. A fit call covers what is available today. The browser demo on this site is available to everyone now.</p>
 
@@ -595,7 +595,7 @@ svg.ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;fill:n
     <div style="margin-top:10px;font-size:11px;line-height:1.6;color:#7A8290;max-width:780px;margin-left:auto;margin-right:auto">
       <strong>Zero external calls by default.</strong> Cloud LLM, SSO, webhooks, email, SIEM, and cloud storage are all opt-in via explicit configuration. The deterministic assessment path runs entirely inside the deployment boundary; no telemetry, no auto-update, no calls home.
     </div>
-    <div style="margin-top:12px;color:#7A8290">© 2026 SparkAE</div>
+    <div style="margin-top:12px;color:#7A8290">© 2026 ONE Solution Cyber (ONeill Enterprises LLC). SparkAE is a product of ONE Solution Cyber.</div>
   </div>
 </footer>
 </body>
