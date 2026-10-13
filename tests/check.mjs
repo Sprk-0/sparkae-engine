@@ -2696,5 +2696,34 @@ for (const f of published.filter(f => f.endsWith('.html'))) {
 check(/^\/ae-editorial\.css\n\s+Cache-Control:\s*public, max-age=0, must-revalidate\s*$/m.test(headers),
   '_headers: the stylesheet revalidates on every request, so its integrity hash and its bytes cannot be from different deploys');
 
+// 37: a row's reason says each gate sentence once. The page joins the
+// headline finding and the gap description with " — "; the engine's finding
+// is gaps[0] and its gap description is every gap, so the first gap must not
+// be printed twice. Checked on the §01 CloudVault Low run, every row.
+console.log('37. OTS reason text has no repeated segment');
+{
+  const shellCtx = vm.createContext({
+    document: { createElement: () => { const n = { set textContent(v) { n.innerHTML = String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); } }; return n; } },
+    SparkAEEngine: E,
+    // the statement and citation helpers are not what this checks
+    examineStatement: () => '', citedSection: () => '',
+  });
+  vm.runInContext(pageFn('function engEsc', 'function engineVerdict') + pageFn('function engineVerdict', 'function rankLiveRun'), shellCtx, { filename: 'demo-standalone.html#shell' });
+  shellCtx.__f = a.findings;
+  const rows = vm.runInContext('__f.map(f => engineFindingToShell(f, "CloudVault-Federal-SSP.txt"))', shellCtx);
+  const repeated = (t) => {
+    const segs = String(t || '').split(/ — |; /).map(x => x.trim()).filter(Boolean);
+    return segs.length !== new Set(segs).size || segs.some((s, i) => s.length > 20 && segs.slice(i + 1).some(o => o.startsWith(s) || s.startsWith(o)));
+  };
+  const dup = rows.filter(r => r.verdict === 'OTS' && repeated(r.text)).map(r => r.ctrl);
+  check(rows.some(r => r.verdict === 'OTS'), 'the CloudVault Low run has OTS rows to check (' + rows.filter(r => r.verdict === 'OTS').length + ')');
+  check(!dup.length, 'no OTS reason repeats a segment' + (dup.length ? ' — ' + dup.length + ' rows: ' + dup.slice(0, 8).join(', ') : ''));
+  for (const id of ['AC-1_a.(1)b', 'AT-4_a.[02]']) {
+    const r = rows.find(x => x.ctrl === id);
+    check(!!r && r.verdict === 'OTS' && (r.text.match(/Concept coverage \d+% \(need 40%\)/g) || []).length === 1,
+      id + ': the coverage-gate sentence appears exactly once' + (r ? ' — "' + r.text.slice(0, 120) + '"' : ' (row missing)'));
+  }
+}
+
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nall checks passed');
 process.exit(failures ? 1 : 0);
