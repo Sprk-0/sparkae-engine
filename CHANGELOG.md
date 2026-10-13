@@ -20,6 +20,10 @@ in `tests/golden/sample-ssp.expected.json`.
 A verdict digest that does not move across a change is the claim worth
 reading: it means the determinations are the same ones, byte for byte.
 
+## Unreleased
+
+- page: OTS reason no longer repeats its first gate sentence
+
 ## 2026-10-03 (the state this build is in)
 
 Engine 1.6.7 · catalog `2026-07-21` / `91ad1b17138f` · ruleset `e8663a497127` ·
