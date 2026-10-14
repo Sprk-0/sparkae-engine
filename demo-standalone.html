@@ -8961,8 +8961,11 @@ function engineFindingToShell(f, corpusLabel) {
       }];
 
   const bits = [];
-  if (f.finding) bits.push(f.finding);
-  if (f.gap_description && f.status !== 'Satisfied') bits.push(f.gap_description);
+  // The engine's finding is gaps[0] and its gap description is every gap
+  // joined, so the description already opens with the finding: print it once.
+  const gapText = f.gap_description && f.status !== 'Satisfied' ? f.gap_description : '';
+  if (f.finding && !(gapText && (gapText === f.finding || gapText.startsWith(f.finding + '; ')))) bits.push(f.finding);
+  if (gapText) bits.push(gapText);
   const conf = typeof f.confidence === 'number' ? Math.round(f.confidence * 100) + '%' : '—';
   const gates = f.gates || [];
   const review = f.review_required
